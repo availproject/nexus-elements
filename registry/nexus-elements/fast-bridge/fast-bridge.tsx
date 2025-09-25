@@ -13,6 +13,7 @@ import FeeBreakdown from "./components/fee-breakdown";
 import { FastBridgeProps, FastBridgeState } from "./types";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
+import AllowanceModal from "./components/allowance-modal";
 import useListenTransaction from "./hooks/useListenTransaction";
 
 const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
@@ -26,7 +27,14 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
   const [startTxn, setStartTxn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { nexusSDK, intent, setIntent, unifiedBalance } = useNexus();
+  const {
+    nexusSDK,
+    intent,
+    setIntent,
+    unifiedBalance,
+    allowance,
+    setAllowance,
+  } = useNexus();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -123,6 +131,13 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     setRefreshing(false);
   };
 
+  const startTransaction = () => {
+    setStartTxn(true);
+    intent?.allow();
+    setIsDialogOpen(true);
+    setTxError(null);
+  };
+
   useEffect(() => {
     let interval: any;
     if (intent) {
@@ -204,12 +219,7 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
               </Button>
               <DialogTrigger asChild>
                 <Button
-                  onClick={() => {
-                    setStartTxn(true);
-                    intent?.allow();
-                    setIsDialogOpen(true);
-                    setTxError(null);
-                  }}
+                  onClick={startTransaction}
                   className="w-1/2"
                   disabled={refreshing}
                 >
@@ -228,6 +238,14 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
             />
           </DialogContent>
         </Dialog>
+        {allowance && (
+          <AllowanceModal
+            allowanceModal={allowance}
+            setAllowanceModal={setAllowance}
+            callback={startTransaction}
+          />
+        )}
+
         {txError && (
           <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-start justify-between gap-x-3">
             <span className="flex-1">{txError}</span>
