@@ -29,12 +29,14 @@ function AccordionTrigger({
   className,
   children,
   hideChevron = true,
+  containerClassName = "w-full",
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Trigger> & {
   hideChevron?: boolean;
+  containerClassName?: string;
 }) {
   return (
-    <AccordionPrimitive.Header className="flex w-full">
+    <AccordionPrimitive.Header className={cn("flex", containerClassName)}>
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(

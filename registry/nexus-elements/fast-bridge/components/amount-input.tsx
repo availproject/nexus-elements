@@ -23,7 +23,7 @@ const AmountInput: React.FC<AmountInputProps> = ({
   return (
     <div className="w-full flex flex-col gap-y-2">
       <Input
-        value={amount}
+        value={amount ?? ""}
         placeholder="Enter Amount"
         onChange={(e) => onChange(e.target.value)}
         className="w-full"

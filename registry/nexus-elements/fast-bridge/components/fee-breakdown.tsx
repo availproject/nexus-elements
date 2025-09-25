@@ -11,17 +11,20 @@ const FeeBreakdown: React.FC<FeeBreakdownProps> = ({ intent }) => {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="breakdown">
-        <div className="w-full flex items-center justify-between">
-          <AccordionTrigger>
-            <p className="font-semibold text-base">Total fees</p>
-          </AccordionTrigger>
+        <div className="w-full flex items-start justify-between">
+          <p className="font-semibold text-base">Total fees</p>
 
-          <p className="font-semibold text-base min-w-max">
-            {intent.fees?.total} {intent.token?.symbol}
-          </p>
+          <div className="flex flex-col items-end justify-end-safe gap-y-1">
+            <p className="font-semibold text-base min-w-max">
+              {intent.fees?.total} {intent.token?.symbol}
+            </p>
+            <AccordionTrigger className="p-0" containerClassName="w-fit">
+              View Breakup
+            </AccordionTrigger>
+          </div>
         </div>
         <AccordionContent>
-          <div className="w-full flex flex-col items-center justify-between gap-y-3 bg-muted px-4 py-2 rounded-lg">
+          <div className="w-full flex flex-col items-center justify-between gap-y-3 bg-muted px-4 py-2 rounded-lg mt-2">
             <div className="flex items-center w-full justify-between">
               <p className="text-sm font-semibold">Fast Bridge Gas Fee</p>
               <p className="text-sm font-semibold">
