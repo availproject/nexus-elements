@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "unified-balance",
+  "type": "registry:component",
+  "title": "Unified Balance",
+  "description": "A simple component built with Nexus to display unified balance",
+  "registryDependencies": [
+    "accordion"
+  ],
+  "files": [
+    {
+      "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",
+      "content": "import * as React from \"react\";\n\ninterface UnifiedBalanceProps {\n  propName: \"type\";\n}\n\nconst UnifiedBalance: React.FC<UnifiedBalanceProps> = ({ propName }) => {\n  return <div></div>;\n};\n\nexport default UnifiedBalance;\n",
+      "type": "registry:component",
+      "target": "components/unified-balance/unified-balance.tsx"
+    }
+  ]
+}

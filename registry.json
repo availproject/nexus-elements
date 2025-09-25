@@ -1,6 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "nexus-elements",
+  "namespace": "nexus-elements",
   "homepage": "https://nexus-elements.dev",
   "items": [
     {
@@ -8,10 +9,193 @@
       "type": "registry:component",
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
-      "registryDependencies": ["button", "input"],
+      "dependencies": [
+        "@avail-project/nexus",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "lucide-react",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "accordion",
+        "button",
+        "card",
+        "dialog",
+        "input",
+        "label",
+        "select",
+        "utils"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/fast-bridge/fast-bridge.tsx",
+          "target": "components/fast-bridge/fast-bridge.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/allowance-modal.tsx",
+          "target": "components/fast-bridge/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/amount-input.tsx",
+          "target": "components/fast-bridge/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/chain-select.tsx",
+          "target": "components/fast-bridge/components/chain-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/fee-breakdown.tsx",
+          "target": "components/fast-bridge/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/receipient-address.tsx",
+          "target": "components/fast-bridge/components/receipient-address.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/token-select.tsx",
+          "target": "components/fast-bridge/components/token-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/transaction-progress.tsx",
+          "target": "components/fast-bridge/components/transaction-progress.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/hooks/useListenTransaction.ts",
+          "target": "components/fast-bridge/hooks/useListenTransaction.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/provider/NexusProvider.tsx",
+          "target": "components/fast-bridge/provider/NexusProvider.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/types/index.ts",
+          "target": "components/fast-bridge/types/index.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "accordion",
+      "type": "registry:component",
+      "title": "Accordion",
+      "description": "UI primitive: Accordion",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/accordion.tsx",
+          "target": "components/ui/accordion.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:component",
+      "title": "Button",
+      "description": "UI primitive: Button",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/button.tsx",
+          "target": "components/ui/button.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:component",
+      "title": "Card",
+      "description": "UI primitive: Card",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/card.tsx",
+          "target": "components/ui/card.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:component",
+      "title": "Dialog",
+      "description": "UI primitive: Dialog",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/dialog.tsx",
+          "target": "components/ui/dialog.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:component",
+      "title": "Input",
+      "description": "UI primitive: Input",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/input.tsx",
+          "target": "components/ui/input.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "label",
+      "type": "registry:component",
+      "title": "Label",
+      "description": "UI primitive: Label",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/label.tsx",
+          "target": "components/ui/label.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:component",
+      "title": "Select",
+      "description": "UI primitive: Select",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/select.tsx",
+          "target": "components/ui/select.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "utils",
+      "type": "registry:component",
+      "title": "Utils (cn)",
+      "description": "Utility helpers used by UI components",
+      "files": [
+        {
+          "path": "lib/utils.ts",
+          "target": "lib/utils.ts",
           "type": "registry:component"
         }
       ]
@@ -25,6 +209,7 @@
       "files": [
         {
           "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",
+          "target": "components/unified-balance/unified-balance.tsx",
           "type": "registry:component"
         }
       ]
