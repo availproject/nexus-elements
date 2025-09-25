@@ -4,14 +4,27 @@
   "homepage": "https://nexus-elements.dev",
   "items": [
     {
-      "name": "hello-world",
+      "name": "fast-bridge",
       "type": "registry:component",
-      "title": "Hello World",
-      "description": "A simple hello world component",
-      "registryDependencies": ["button"],
+      "title": "Fast Bridge",
+      "description": "A simple component built with Nexus to enable cross chain bridging",
+      "registryDependencies": ["button", "input"],
       "files": [
         {
-          "path": "registry/nexus-elements/hello-world/hello-world.tsx",
+          "path": "registry/nexus-elements/fast-bridge/fast-bridge.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "unified-balance",
+      "type": "registry:component",
+      "title": "Unified Balance",
+      "description": "A simple component built with Nexus to display unified balance",
+      "registryDependencies": ["accordion"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",
           "type": "registry:component"
         }
       ]
