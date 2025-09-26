@@ -2,33 +2,15 @@
 
 ## Install Fast Bridge (shadcn)
 
-You can install the `fast-bridge` component into any project using the shadcn CLI. Until our namespace is part of the CLI defaults, use one of the options below.
+You can install the `fast-bridge` component into any project using the shadcn CLI via a direct URL.
 
-### Option A: Namespace mapping (recommended, one-time)
-
-Add a registry mapping to your project's `components.json` so the CLI can resolve `@nexus-elements/*` without a URL:
-
-```json
-{
-  "registries": {
-    "@nexus-elements": "https://elements.nexus.availproject.org/r/{name}.json"
-  }
-}
-```
-
-Then install:
-
-```bash
-pnpm dlx shadcn@latest add @nexus-elements/fast-bridge
-```
-
-### Option B: Direct URL (zero setup)
+### Direct URL (zero setup)
 
 ```bash
 pnpm dlx shadcn@latest add https://elements.nexus.availproject.org/r/fast-bridge.json
 ```
 
-### Option C: Custom registry flag
+### Custom registry flag
 
 ```bash
 pnpm dlx shadcn@latest add --registry https://elements.nexus.availproject.org/r/{name}.json fast-bridge
@@ -44,20 +26,10 @@ If you’re running this repo locally:
 pnpm dev
 ```
 
-2. In your target project’s `components.json`, map the namespace to localhost:
-
-```json
-{
-  "registries": {
-    "@nexus-elements": "http://localhost:3000/r/{name}.json"
-  }
-}
-```
-
-3. Install:
+2. Install via direct URL:
 
 ```bash
-pnpm dlx shadcn@latest add @nexus-elements/fast-bridge
+pnpm dlx shadcn@latest add http://localhost:3000/r/fast-bridge.json
 ```
 
 ## Notes
@@ -68,5 +40,4 @@ pnpm dlx shadcn@latest add @nexus-elements/fast-bridge
 ## References
 
 - shadcn Registry Getting Started: https://ui.shadcn.com/docs/registry/getting-started.md
-- Namespaces: https://ui.shadcn.com/docs/registry/namespace.md
 - Item schema: https://ui.shadcn.com/docs/registry/registry-item-json.md

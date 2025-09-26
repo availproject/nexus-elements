@@ -8,7 +8,7 @@ const FastBridgeShowcase = () => {
   const { address } = useAccount();
 
   return (
-    <ShowcaseWrapper>
+    <ShowcaseWrapper registryItemName="fast-bridge">
       <FastBridge connectedAddress={address as `0x${string}`} />
     </ShowcaseWrapper>
   );

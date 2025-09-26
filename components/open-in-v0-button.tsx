@@ -5,21 +5,22 @@ export function OpenInV0Button({
   name,
   className,
 }: { name: string } & React.ComponentProps<typeof Button>) {
+  const href = () => {
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+    const target = `${base}/r/${name}.json`;
+    return `https://v0.app/chat/api/open?url=${encodeURIComponent(target)}`;
+  };
   return (
     <Button
       aria-label="Open in v0"
       size="sm"
       className={cn(
         "shadow-none bg-black text-white hover:bg-black hover:text-white dark:bg-white dark:text-black",
-        className,
+        className
       )}
       asChild
     >
-      <a
-        href={`https://v0.dev/chat/api/open?url=${process.env.NEXT_PUBLIC_BASE_URL}/r/${name}.json`}
-        target="_blank"
-        rel="noreferrer"
-      >
+      <a href={href()} target="_blank" rel="noreferrer">
         Open in{" "}
         <svg
           viewBox="0 0 40 20"

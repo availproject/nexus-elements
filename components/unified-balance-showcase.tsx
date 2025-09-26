@@ -8,6 +8,7 @@ const UnifiedBalanceShowcase = () => {
     <ShowcaseWrapper
       heading="Nexus Unified Balance"
       connectLabel="Connect wallet to use Nexus Unified Balance"
+      registryItemName="unified-balance"
     >
       <UnifiedBalance />
     </ShowcaseWrapper>
