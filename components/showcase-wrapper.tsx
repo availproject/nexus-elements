@@ -109,7 +109,7 @@ const ShowcaseWrapper = ({
         </button>
       </div>
 
-      {activeTab === "preview" && nexusSDK ? (
+      {activeTab === "preview" ? (
         <PreviewPanel
           status={status}
           nexusSDK={nexusSDK}

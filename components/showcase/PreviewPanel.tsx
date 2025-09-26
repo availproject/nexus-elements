@@ -14,7 +14,7 @@ export function PreviewPanel({
   children: React.ReactNode;
   connectLabel: string;
   status: string;
-  nexusSDK: NexusSDK;
+  nexusSDK: NexusSDK | null;
   loading: boolean;
 }>) {
   return (
