@@ -4,21 +4,9 @@ import {
   NexusSDK,
   OnAllowanceHookData,
   OnIntentHookData,
+  SupportedChainsResult,
   UserAsset,
 } from "@avail-project/nexus";
-
-export type SupportedChainsAndTokens = Array<{
-  id: number;
-  name: string;
-  logo: string;
-  tokens: Array<{
-    contractAddress: `0x${string}`;
-    decimals: string;
-    logo: string;
-    name: string;
-    symbol: string;
-  }>;
-}>;
 
 export interface NexusContextType {
   nexusSDK: NexusSDK | null;
@@ -33,5 +21,5 @@ export interface NexusContextType {
     React.SetStateAction<OnAllowanceHookData | null>
   >;
   handleInit: (provider: EthereumProvider) => Promise<void>;
-  supportedChainsAndTokens: SupportedChainsAndTokens | null;
+  supportedChainsAndTokens: SupportedChainsResult | null;
 }

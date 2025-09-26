@@ -4,6 +4,7 @@ import {
   NexusSDK,
   OnAllowanceHookData,
   OnIntentHookData,
+  SupportedChainsResult,
   UserAsset,
 } from "@avail-project/nexus";
 import {
@@ -13,7 +14,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { NexusContextType, SupportedChainsAndTokens } from "./types";
+import { NexusContextType } from "./types";
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
 const NexusProvider = ({ children }: { children: React.ReactNode }) => {
@@ -27,7 +28,7 @@ const NexusProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
-    useState<SupportedChainsAndTokens | null>(null);
+    useState<SupportedChainsResult | null>(null);
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
     null
   );
@@ -41,8 +42,7 @@ const NexusProvider = ({ children }: { children: React.ReactNode }) => {
       setNexusSDK(sdk);
       const unifiedBalance = await sdk?.getUnifiedBalances();
       setUnifiedBalance(unifiedBalance);
-      const supportedChainsAndTokens =
-        sdk?.utils?.getSupportedChains() as SupportedChainsAndTokens;
+      const supportedChainsAndTokens = sdk?.utils?.getSupportedChains();
       setSupportedChainsAndTokens(supportedChainsAndTokens);
     } catch (error) {
       console.error("Error initializing Nexus:", error);
