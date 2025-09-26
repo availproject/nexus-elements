@@ -5,7 +5,7 @@
   "title": "Input",
   "description": "UI primitive: Input",
   "registryDependencies": [
-    "utils"
+    "https://elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {

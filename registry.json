@@ -22,15 +22,15 @@
         "tailwind-merge"
       ],
       "registryDependencies": [
-        "@nexus-elements/accordion",
-        "@nexus-elements/button",
-        "@nexus-elements/card",
-        "@nexus-elements/dialog",
-        "@nexus-elements/input",
-        "@nexus-elements/label",
-        "@nexus-elements/select",
-        "@nexus-elements/nexus-provider",
-        "@nexus-elements/utils"
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -109,7 +109,9 @@
       "type": "registry:component",
       "title": "Accordion",
       "description": "UI primitive: Accordion",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/accordion.tsx",
@@ -123,7 +125,9 @@
       "type": "registry:component",
       "title": "Button",
       "description": "UI primitive: Button",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/button.tsx",
@@ -137,7 +141,9 @@
       "type": "registry:component",
       "title": "Card",
       "description": "UI primitive: Card",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/card.tsx",
@@ -151,7 +157,9 @@
       "type": "registry:component",
       "title": "Dialog",
       "description": "UI primitive: Dialog",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/dialog.tsx",
@@ -165,7 +173,9 @@
       "type": "registry:component",
       "title": "Input",
       "description": "UI primitive: Input",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/input.tsx",
@@ -179,7 +189,9 @@
       "type": "registry:component",
       "title": "Label",
       "description": "UI primitive: Label",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/label.tsx",
@@ -193,7 +205,9 @@
       "type": "registry:component",
       "title": "Select",
       "description": "UI primitive: Select",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/select.tsx",
@@ -236,10 +250,10 @@
       "description": "A simple component built with Nexus to display unified balance",
       "dependencies": ["lucide-react"],
       "registryDependencies": [
-        "@nexus-elements/accordion",
-        "@nexus-elements/nexus-provider",
-        "@nexus-elements/label",
-        "@nexus-elements/separator"
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/separator.json"
       ],
       "files": [
         {

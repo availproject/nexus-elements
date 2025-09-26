@@ -17,15 +17,15 @@
     "tailwind-merge"
   ],
   "registryDependencies": [
-    "@nexus-elements/accordion",
-    "@nexus-elements/button",
-    "@nexus-elements/card",
-    "@nexus-elements/dialog",
-    "@nexus-elements/input",
-    "@nexus-elements/label",
-    "@nexus-elements/select",
-    "@nexus-elements/nexus-provider",
-    "@nexus-elements/utils"
+    "https://elements.nexus.availproject.org/r/accordion.json",
+    "https://elements.nexus.availproject.org/r/button.json",
+    "https://elements.nexus.availproject.org/r/card.json",
+    "https://elements.nexus.availproject.org/r/dialog.json",
+    "https://elements.nexus.availproject.org/r/input.json",
+    "https://elements.nexus.availproject.org/r/label.json",
+    "https://elements.nexus.availproject.org/r/select.json",
+    "https://elements.nexus.availproject.org/r/nexus-provider.json",
+    "https://elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {

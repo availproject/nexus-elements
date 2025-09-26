@@ -4,9 +4,9 @@ import CodeBlock from "../ui/code-block";
 
 export function InstallPanel({
   registryItemName,
-}: {
+}: Readonly<{
   registryItemName: string;
-}) {
+}>) {
   const [installTab, setInstallTab] = React.useState<"cli" | "manual">("cli");
   const [pm, setPm] = React.useState<"pnpm" | "npm" | "yarn" | "bun">("pnpm");
 
@@ -16,20 +16,34 @@ export function InstallPanel({
   }
 }`;
 
-  const installUrlCmd = `pnpm dlx shadcn@latest add https://elements.nexus.availproject.org/r/${registryItemName}.json`;
-  const providerInstallUrlCmd = `pnpm dlx shadcn@latest add https://elements.nexus.availproject.org/r/nexus-provider.json`;
+  const buildUrl = (item: string) =>
+    `https://elements.nexus.availproject.org/r/${item}.json`;
 
-  const computeInstallCmd = (item: string) => {
-    const ns = `https://elements.nexus.availproject.org/r/${item}.json`;
+  const computeUrlCmd = (item: string) => {
+    const url = buildUrl(item);
     switch (pm) {
       case "npm":
-        return `npx shadcn@latest add ${ns}`;
+        return `npx shadcn@latest add ${url}`;
       case "yarn":
-        return `yarn dlx shadcn@latest add ${ns}`;
+        return `yarn dlx shadcn@latest add ${url}`;
       case "bun":
-        return `bunx shadcn@latest add ${ns}`;
+        return `bunx shadcn@latest add ${url}`;
       default:
-        return `pnpm dlx shadcn@latest add ${ns}`;
+        return `pnpm dlx shadcn@latest add ${url}`;
+    }
+  };
+
+  const computeNsCmd = (item: string) => {
+    const name = `@nexus-elements/${item}`;
+    switch (pm) {
+      case "npm":
+        return `npx shadcn@latest add ${name}`;
+      case "yarn":
+        return `yarn dlx shadcn@latest add ${name}`;
+      case "bun":
+        return `bunx shadcn@latest add ${name}`;
+      default:
+        return `pnpm dlx shadcn@latest add ${name}`;
     }
   };
 
@@ -95,11 +109,10 @@ export function InstallPanel({
               bun
             </button>
           </div>
-          <CodeBlock code={computeInstallCmd(registryItemName)} lang="bash" />
+          <CodeBlock code={computeUrlCmd(registryItemName)} lang="bash" />
           <p className="text-xs text-muted-foreground">
-            Install the shared provider (optional if copying code manually):
+            Dependencies (including provider) are installed automatically.
           </p>
-          <CodeBlock code={providerInstallUrlCmd} lang="bash" />
         </div>
       ) : (
         <div className="space-y-2">
@@ -107,8 +120,11 @@ export function InstallPanel({
             Map namespace in <code>components.json</code>:
           </p>
           <CodeBlock code={componentsJsonSnippet} lang="json" />
-          <p className="text-sm">Then run:</p>
-          <CodeBlock code={`${installUrlCmd}`} lang="bash" />
+          <p className="text-sm">Then run (namespaced install):</p>
+          <CodeBlock code={computeNsCmd(registryItemName)} lang="bash" />
+          <p className="text-xs text-muted-foreground">
+            Dependencies (including provider) are installed automatically.
+          </p>
           <p className="text-sm mt-2">If installing manually, add Nexus SDK:</p>
           <CodeBlock code={`pnpm add @avail-project/nexus`} lang="bash" />
           <p className="text-xs text-muted-foreground">

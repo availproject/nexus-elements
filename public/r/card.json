@@ -5,7 +5,7 @@
   "title": "Card",
   "description": "UI primitive: Card",
   "registryDependencies": [
-    "utils"
+    "https://elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {
