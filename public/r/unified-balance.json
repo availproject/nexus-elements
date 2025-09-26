@@ -8,10 +8,10 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "accordion",
-    "nexus-provider",
-    "label",
-    "separator"
+    "@nexus-elements/accordion",
+    "@nexus-elements/nexus-provider",
+    "@nexus-elements/label",
+    "@nexus-elements/separator"
   ],
   "files": [
     {

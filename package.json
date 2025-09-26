@@ -1,7 +1,7 @@
 {
   "name": "nexus-elements",
   "version": "0.0.1",
-  "description": "A modern component registry built with Next.js and shadcn/ui",
+  "description": "A modern component registry built with Next.js and shadcn/ui for Avail Nexus",
   "author": "decocereus<amartya@availproject.org>",
   "private": true,
   "scripts": {

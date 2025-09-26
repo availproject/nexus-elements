@@ -17,15 +17,15 @@
     "tailwind-merge"
   ],
   "registryDependencies": [
-    "accordion",
-    "button",
-    "card",
-    "dialog",
-    "input",
-    "label",
-    "select",
-    "nexus-provider",
-    "utils"
+    "@nexus-elements/accordion",
+    "@nexus-elements/button",
+    "@nexus-elements/card",
+    "@nexus-elements/dialog",
+    "@nexus-elements/input",
+    "@nexus-elements/label",
+    "@nexus-elements/select",
+    "@nexus-elements/nexus-provider",
+    "@nexus-elements/utils"
   ],
   "files": [
     {

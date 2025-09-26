@@ -22,15 +22,15 @@
         "tailwind-merge"
       ],
       "registryDependencies": [
-        "accordion",
-        "button",
-        "card",
-        "dialog",
-        "input",
-        "label",
-        "select",
-        "nexus-provider",
-        "utils"
+        "@nexus-elements/accordion",
+        "@nexus-elements/button",
+        "@nexus-elements/card",
+        "@nexus-elements/dialog",
+        "@nexus-elements/input",
+        "@nexus-elements/label",
+        "@nexus-elements/select",
+        "@nexus-elements/nexus-provider",
+        "@nexus-elements/utils"
       ],
       "files": [
         {
@@ -236,10 +236,10 @@
       "description": "A simple component built with Nexus to display unified balance",
       "dependencies": ["lucide-react"],
       "registryDependencies": [
-        "accordion",
-        "nexus-provider",
-        "label",
-        "separator"
+        "@nexus-elements/accordion",
+        "@nexus-elements/nexus-provider",
+        "@nexus-elements/label",
+        "@nexus-elements/separator"
       ],
       "files": [
         {
