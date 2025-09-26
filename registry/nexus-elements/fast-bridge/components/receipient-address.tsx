@@ -3,7 +3,7 @@ import * as React from "react";
 import { Input } from "../../ui/input";
 import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";
-import { useNexus } from "../provider/NexusProvider";
+import { useNexus } from "../../nexus/NexusProvider";
 import { ReceipientAddressProps } from "../types";
 
 const ReceipientAddress: React.FC<ReceipientAddressProps> = ({

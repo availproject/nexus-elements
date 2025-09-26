@@ -1,5 +1,6 @@
 import * as React from "react";
 import FastBridgeShowcase from "@/components/fast-bridge-showcase";
+import UnifiedBalanceShowcase from "@/components/unified-balance-showcase";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
       </header>
       <main className="flex flex-col flex-1 gap-8">
         <FastBridgeShowcase />
+        <UnifiedBalanceShowcase />
       </main>
     </div>
   );

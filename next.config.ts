@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   env: {
     NEXT_PUBLIC_WALLET_CONNECT_ID: process.env.NEXT_PUBLIC_WALLET_CONNECT_ID,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
 };
 

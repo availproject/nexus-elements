@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "nexus-elements",
   "namespace": "nexus-elements",
-  "homepage": "https://nexus-elements.dev",
+  "homepage": "https://elements.nexus.availproject.org",
   "items": [
     {
       "name": "fast-bridge",
@@ -29,6 +29,7 @@
         "input",
         "label",
         "select",
+        "nexus-provider",
         "utils"
       ],
       "files": [
@@ -78,13 +79,27 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/provider/NexusProvider.tsx",
-          "target": "components/fast-bridge/provider/NexusProvider.tsx",
+          "path": "registry/nexus-elements/fast-bridge/types/index.ts",
+          "target": "components/fast-bridge/types/index.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "nexus-provider",
+      "type": "registry:component",
+      "title": "Nexus Provider",
+      "description": "Shared Nexus SDK provider and types for Nexus Elements",
+      "dependencies": ["@avail-project/nexus"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
+          "target": "components/nexus/NexusProvider.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/types/index.ts",
-          "target": "components/fast-bridge/types/index.ts",
+          "path": "registry/nexus-elements/nexus/types.ts",
+          "target": "components/nexus/types.ts",
           "type": "registry:component"
         }
       ]
@@ -188,6 +203,20 @@
       ]
     },
     {
+      "name": "separator",
+      "type": "registry:component",
+      "title": "Separator",
+      "description": "UI primitive: Separator",
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/separator.tsx",
+          "target": "components/ui/separator.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "utils",
       "type": "registry:component",
       "title": "Utils (cn)",
@@ -205,7 +234,13 @@
       "type": "registry:component",
       "title": "Unified Balance",
       "description": "A simple component built with Nexus to display unified balance",
-      "registryDependencies": ["accordion"],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "accordion",
+        "nexus-provider",
+        "label",
+        "separator"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",

@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "../../ui/select";
 import { Label } from "../../ui/label";
-import { useNexus } from "../provider/NexusProvider";
+import { useNexus } from "../../nexus/NexusProvider";
 import { useMemo } from "react";
 import { TokenSelectProps } from "../types";
 
@@ -23,7 +23,7 @@ const TokenSelect = ({
   const { supportedChainsAndTokens } = useNexus();
   const tokenData = useMemo(() => {
     return supportedChainsAndTokens?.filter(
-      (chain) => chain.id === selectedChain,
+      (chain) => chain.id === selectedChain
     )[0]?.tokens;
   }, [selectedChain, supportedChainsAndTokens]);
 

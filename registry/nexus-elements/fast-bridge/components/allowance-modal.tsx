@@ -16,7 +16,7 @@ import {
   CHAIN_METADATA,
   OnAllowanceHookData,
 } from "@avail-project/nexus";
-import { useNexus } from "../provider/NexusProvider";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface AllowanceModalProps {
   allowanceModal: OnAllowanceHookData | null;

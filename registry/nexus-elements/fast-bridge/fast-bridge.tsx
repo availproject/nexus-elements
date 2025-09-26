@@ -6,7 +6,7 @@ import TokenSelect from "./components/token-select";
 import { SUPPORTED_CHAINS } from "@avail-project/nexus";
 import { Button } from "../ui/button";
 import { LoaderPinwheel } from "lucide-react";
-import { useNexus } from "./provider/NexusProvider";
+import { useNexus } from "../nexus/NexusProvider";
 import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
 import FeeBreakdown from "./components/fee-breakdown";

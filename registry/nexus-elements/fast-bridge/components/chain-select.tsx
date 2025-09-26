@@ -9,9 +9,9 @@ import {
   SelectValue,
 } from "../../ui/select";
 import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus";
-import { useNexus } from "../provider/NexusProvider";
 import { cn } from "@/lib/utils";
 import { ChainSelectProps } from "../types";
+import { useNexus } from "../../nexus/NexusProvider";
 
 const ChainSelect: React.FC<ChainSelectProps> = ({
   selectedChain,
