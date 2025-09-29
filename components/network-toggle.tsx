@@ -32,7 +32,7 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({ currentNetwork }) => {
         onCheckedChange={handleNetworkChange}
       />
       <Label htmlFor="nexus-network">
-        {currentNetwork === "testnet" ? "Testnet" : "Mainnet"}
+        {currentNetwork === "testnet" ? "Testnet Mode On" : "Testnet Mode Off"}
       </Label>
     </div>
   );
