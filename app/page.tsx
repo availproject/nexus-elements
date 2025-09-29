@@ -3,11 +3,14 @@ import FastBridgeShowcase from "@/components/fast-bridge-showcase";
 import UnifiedBalanceShowcase from "@/components/unified-balance-showcase";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import NetworkToggle from "@/components/network-toggle";
+import { NexusNetwork } from "@avail-project/nexus-core";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: Promise<any>;
+  searchParams?: Promise<{
+    network?: string;
+  }>;
 }) {
   const params = await searchParams;
   return (
@@ -20,12 +23,14 @@ export default async function Home({
       </header>
       <NexusProvider
         config={{
-          network: params?.network ?? "mainnet",
+          network: (params?.network ?? "mainnet") as NexusNetwork,
           debug: true,
         }}
       >
         <main className="flex flex-col flex-1 gap-8">
-          <NetworkToggle currentNetwork={params?.network ?? "mainnet"} />
+          <NetworkToggle
+            currentNetwork={(params?.network ?? "mainnet") as NexusNetwork}
+          />
           <FastBridgeShowcase />
           <UnifiedBalanceShowcase />
         </main>

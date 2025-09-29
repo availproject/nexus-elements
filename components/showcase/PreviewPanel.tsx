@@ -2,7 +2,7 @@
 import * as React from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { LoaderPinwheel } from "lucide-react";
-import { EthereumProvider, NexusSDK } from "@avail-project/nexus-core";
+import { EthereumProvider } from "@avail-project/nexus-core";
 import { useAccount } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";
