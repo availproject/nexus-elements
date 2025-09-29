@@ -42,7 +42,10 @@ const UnifiedBalance = () => {
               value={token.symbol}
               className="px-4 !shadow-[var(--ck-connectbutton-box-shadow)] !rounded-[var(--ck-connectbutton-border-radius)]"
             >
-              <AccordionTrigger className="hover:no-underline cursor-pointer">
+              <AccordionTrigger
+                className="hover:no-underline cursor-pointer"
+                hideChevron={false}
+              >
                 <div className="flex items-center justify-between w-full pr-4">
                   <div className="flex items-center gap-3">
                     <div className="relative h-8 w-8">

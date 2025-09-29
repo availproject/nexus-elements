@@ -181,6 +181,7 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
               chain,
             })
           }
+          label="To"
         />
         <TokenSelect
           selectedChain={inputs?.chain}
