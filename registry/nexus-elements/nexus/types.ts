@@ -1,12 +1,13 @@
 import * as React from "react";
 import {
   EthereumProvider,
+  NexusNetwork,
   NexusSDK,
   OnAllowanceHookData,
   OnIntentHookData,
   SupportedChainsResult,
   UserAsset,
-} from "@avail-project/nexus";
+} from "@avail-project/nexus-core";
 
 export interface NexusContextType {
   nexusSDK: NexusSDK | null;
@@ -22,4 +23,5 @@ export interface NexusContextType {
   >;
   handleInit: (provider: EthereumProvider) => Promise<void>;
   supportedChainsAndTokens: SupportedChainsResult | null;
+  network?: NexusNetwork;
 }

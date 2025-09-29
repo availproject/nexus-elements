@@ -1,4 +1,8 @@
-import { NEXUS_EVENTS, NexusSDK, ProgressStep } from "@avail-project/nexus";
+import {
+  NEXUS_EVENTS,
+  NexusSDK,
+  ProgressStep,
+} from "@avail-project/nexus-core";
 import { useEffect, useMemo, useState } from "react";
 
 type ProcessingState = Array<{
@@ -11,7 +15,7 @@ const useListenTransaction = (sdk: NexusSDK | null) => {
   const [processing, setProcessing] = useState<ProcessingState>([]);
   const [explorerUrl, setExplorerUrl] = useState("");
   const [latestCompleted, setLatestCompleted] = useState<ProgressStep | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -32,8 +36,8 @@ const useListenTransaction = (sdk: NexusSDK | null) => {
         prev.map((s) =>
           s.step && s.step.typeID === stepData?.typeID
             ? { ...s, completed: true }
-            : s
-        )
+            : s,
+        ),
       );
 
       setLatestCompleted(stepData);

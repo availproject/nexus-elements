@@ -10,7 +10,7 @@
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
       "dependencies": [
-        "@avail-project/nexus",
+        "@avail-project/nexus-core",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -90,7 +90,7 @@
       "type": "registry:component",
       "title": "Nexus Provider",
       "description": "Shared Nexus SDK provider and types for Nexus Elements",
-      "dependencies": ["@avail-project/nexus"],
+      "dependencies": ["@avail-project/nexus-core"],
       "files": [
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",

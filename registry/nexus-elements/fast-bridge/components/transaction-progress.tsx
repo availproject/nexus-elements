@@ -1,6 +1,6 @@
 import { Check, Circle, LoaderPinwheel } from "lucide-react";
 import * as React from "react";
-import { ProgressStep } from "@avail-project/nexus";
+import { ProgressStep } from "@avail-project/nexus-core";
 
 interface TransactionProgressProps {
   timer: number;
@@ -112,7 +112,7 @@ const TransactionProgress: React.FC<TransactionProgressProps> = ({
                 <span className="text-base font-semibold">
                   {getStatusText(
                     s.step?.type as unknown as string,
-                    operationType
+                    operationType,
                   )}
                 </span>
               </div>

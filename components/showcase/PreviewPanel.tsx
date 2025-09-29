@@ -2,30 +2,54 @@
 import * as React from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { LoaderPinwheel } from "lucide-react";
-import { NexusSDK } from "@avail-project/nexus";
+import { EthereumProvider, NexusSDK } from "@avail-project/nexus-core";
+import { useAccount } from "wagmi";
+import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
+import { toast } from "sonner";
+import { Button } from "@/registry/nexus-elements/ui/button";
+
+interface PreviewPanelProps {
+  children: React.ReactNode;
+  connectLabel: string;
+}
 
 export function PreviewPanel({
   children,
   connectLabel,
-  status,
-  nexusSDK,
-  loading,
-}: Readonly<{
-  children: React.ReactNode;
-  connectLabel: string;
-  status: string;
-  nexusSDK: NexusSDK | null;
-  loading: boolean;
-}>) {
+}: Readonly<PreviewPanelProps>) {
+  const [loading, setLoading] = React.useState(false);
+  const { status, connector } = useAccount();
+  const { nexusSDK, handleInit } = useNexus();
+
+  const initializeNexus = async () => {
+    setLoading(true);
+    try {
+      const provider = (await connector?.getProvider()) as EthereumProvider;
+      await handleInit(provider);
+    } catch (error) {
+      console.error(error);
+      toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="rounded-lg border p-4">
       <ConnectButton />
       <div className="flex items-center justify-center min-h-[400px] relative">
         {status === "connected" && nexusSDK && <>{children}</>}
+        {status === "connected" && !nexusSDK && (
+          <Button onClick={initializeNexus}>
+            {loading ? (
+              <LoaderPinwheel className="size-6 animate-spin" />
+            ) : (
+              "Initialize Nexus"
+            )}
+          </Button>
+        )}
         {status !== "connected" && (
           <p className="text-lg font-semibold">{connectLabel}</p>
         )}
-        {loading && <LoaderPinwheel className="size-6 animate-spin" />}
       </div>
     </div>
   );

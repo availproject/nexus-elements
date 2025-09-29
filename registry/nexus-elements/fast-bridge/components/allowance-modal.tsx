@@ -15,7 +15,7 @@ import {
   AllowanceHookSource,
   CHAIN_METADATA,
   OnAllowanceHookData,
-} from "@avail-project/nexus";
+} from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 
 interface AllowanceModalProps {
@@ -38,10 +38,10 @@ const AllowanceModal: React.FC<AllowanceModalProps> = ({
   React.useEffect(() => {
     if (allowanceModal) {
       setSelectedOption(
-        Array.from({ length: allowanceModal.sources.length }, () => "min")
+        Array.from({ length: allowanceModal.sources.length }, () => "min"),
       );
       setCustomValues(
-        Array.from({ length: allowanceModal.sources.length }, () => "")
+        Array.from({ length: allowanceModal.sources.length }, () => ""),
       );
     }
   }, [allowanceModal]);
@@ -106,7 +106,7 @@ const AllowanceModal: React.FC<AllowanceModalProps> = ({
                   <span className="font-semibold">
                     {nexusSDK?.utils.formatBalance(
                       source.allowance.current,
-                      source.token.decimals
+                      source.token.decimals,
                     )}
                   </span>
                 </div>
@@ -130,7 +130,7 @@ const AllowanceModal: React.FC<AllowanceModalProps> = ({
                     Minimum (
                     {nexusSDK?.utils.formatBalance(
                       source.allowance.minimum,
-                      source.token.decimals
+                      source.token.decimals,
                     )}
                     )
                   </span>

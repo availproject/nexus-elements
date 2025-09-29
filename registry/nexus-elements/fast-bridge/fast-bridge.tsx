@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
-import { SUPPORTED_CHAINS } from "@avail-project/nexus";
+import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
 import { Button } from "../ui/button";
 import { LoaderPinwheel } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
@@ -17,8 +17,20 @@ import AllowanceModal from "./components/allowance-modal";
 import useListenTransaction from "./hooks/useListenTransaction";
 
 const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
+  const {
+    nexusSDK,
+    intent,
+    setIntent,
+    unifiedBalance,
+    allowance,
+    setAllowance,
+    network,
+  } = useNexus();
   const [inputs, setInputs] = useState<FastBridgeState>({
-    chain: SUPPORTED_CHAINS.ETHEREUM,
+    chain:
+      network === "testnet"
+        ? SUPPORTED_CHAINS.SEPOLIA
+        : SUPPORTED_CHAINS.ETHEREUM,
     token: "USDC",
     amount: undefined,
     recipient: connectedAddress,
@@ -27,14 +39,6 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
   const [startTxn, setStartTxn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const {
-    nexusSDK,
-    intent,
-    setIntent,
-    unifiedBalance,
-    allowance,
-    setAllowance,
-  } = useNexus();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -69,7 +73,7 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
           console.log("Transfer transaction successful");
           console.log(
             "Transfer transaction explorer",
-            transferTxn?.explorerUrl
+            transferTxn?.explorerUrl,
           );
         }
         return;
@@ -121,7 +125,10 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     intent?.deny();
     setIntent(null);
     setInputs({
-      chain: SUPPORTED_CHAINS.ETHEREUM,
+      chain:
+        network === "testnet"
+          ? SUPPORTED_CHAINS.SEPOLIA
+          : SUPPORTED_CHAINS.ETHEREUM,
       token: "USDC",
       amount: undefined,
       recipient: connectedAddress,
@@ -139,7 +146,7 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
   };
 
   useEffect(() => {
-    let interval: any;
+    let interval: NodeJS.Timeout;
     if (intent) {
       interval = setInterval(refreshIntent, 5000);
     }

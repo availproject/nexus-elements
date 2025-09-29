@@ -3,7 +3,7 @@ import {
   SUPPORTED_CHAINS_IDS,
   SUPPORTED_TOKENS,
   UserAsset,
-} from "@avail-project/nexus";
+} from "@avail-project/nexus-core";
 
 export interface FastBridgeProps {
   connectedAddress: `0x${string}`;

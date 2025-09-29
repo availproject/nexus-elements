@@ -1,4 +1,4 @@
-import { SUPPORTED_TOKENS } from "@avail-project/nexus";
+import { SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ const TokenSelect = ({
   const { supportedChainsAndTokens } = useNexus();
   const tokenData = useMemo(() => {
     return supportedChainsAndTokens?.filter(
-      (chain) => chain.id === selectedChain
+      (chain) => chain.id === selectedChain,
     )[0]?.tokens;
   }, [selectedChain, supportedChainsAndTokens]);
 

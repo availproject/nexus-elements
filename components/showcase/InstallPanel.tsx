@@ -126,7 +126,7 @@ export function InstallPanel({
             Dependencies (including provider) are installed automatically.
           </p>
           <p className="text-sm mt-2">If installing manually, add Nexus SDK:</p>
-          <CodeBlock code={`pnpm add @avail-project/nexus`} lang="bash" />
+          <CodeBlock code={`pnpm add @avail-project/nexus-core`} lang="bash" />
           <p className="text-xs text-muted-foreground">
             Then create the provider files below (or install via the provider
             URL above).

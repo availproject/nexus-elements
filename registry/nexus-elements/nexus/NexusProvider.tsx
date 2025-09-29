@@ -1,12 +1,13 @@
 "use client";
 import {
   EthereumProvider,
+  NexusNetwork,
   NexusSDK,
   OnAllowanceHookData,
   OnIntentHookData,
   SupportedChainsResult,
   UserAsset,
-} from "@avail-project/nexus";
+} from "@avail-project/nexus-core";
 import {
   createContext,
   useCallback,
@@ -17,20 +18,25 @@ import {
 import { NexusContextType } from "./types";
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
-const NexusProvider = ({ children }: { children: React.ReactNode }) => {
-  const sdk = useMemo(
-    () =>
-      new NexusSDK({
-        network: "mainnet",
-        debug: true,
-      }),
-    []
-  );
+const NexusProvider = ({
+  children,
+  config = {
+    network: "mainnet",
+    debug: true,
+  },
+}: {
+  children: React.ReactNode;
+  config?: {
+    network?: NexusNetwork;
+    debug?: boolean;
+  };
+}) => {
+  const sdk = useMemo(() => new NexusSDK(config), [config]);
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
     useState<SupportedChainsResult | null>(null);
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
-    null
+    null,
   );
   const [intent, setIntent] = useState<OnIntentHookData | null>(null);
   const [allowance, setAllowance] = useState<OnAllowanceHookData | null>(null);
@@ -42,7 +48,9 @@ const NexusProvider = ({ children }: { children: React.ReactNode }) => {
       setNexusSDK(sdk);
       const unifiedBalance = await sdk?.getUnifiedBalances();
       setUnifiedBalance(unifiedBalance);
-      const supportedChainsAndTokens = sdk?.utils?.getSupportedChains();
+      const supportedChainsAndTokens = sdk?.utils?.getSupportedChains(
+        config?.network === "testnet" ? 0 : undefined,
+      );
       setSupportedChainsAndTokens(supportedChainsAndTokens);
     } catch (error) {
       console.error("Error initializing Nexus:", error);
@@ -78,7 +86,7 @@ const NexusProvider = ({ children }: { children: React.ReactNode }) => {
       await initializeNexus(provider);
       attachEventHooks();
     },
-    [sdk]
+    [sdk],
   );
 
   const value = useMemo(
@@ -94,6 +102,7 @@ const NexusProvider = ({ children }: { children: React.ReactNode }) => {
       handleInit,
       supportedChainsAndTokens,
       unifiedBalance,
+      network: config?.network,
     }),
     [
       nexusSDK,
@@ -107,7 +116,8 @@ const NexusProvider = ({ children }: { children: React.ReactNode }) => {
       handleInit,
       supportedChainsAndTokens,
       unifiedBalance,
-    ]
+      config,
+    ],
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>

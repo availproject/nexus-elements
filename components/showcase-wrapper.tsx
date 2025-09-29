@@ -1,15 +1,12 @@
 "use client";
 import * as React from "react";
 import { OpenInV0Button } from "./open-in-v0-button";
-import { useAccount } from "wagmi";
-import { EthereumProvider } from "@avail-project/nexus";
-import { toast } from "sonner";
-import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { Separator } from "@/registry/nexus-elements/ui/separator";
 import CodeBlock from "./ui/code-block";
 import { PreviewPanel } from "./showcase/PreviewPanel";
 import { CodeViewer } from "./showcase/CodeViewer";
 import { InstallPanel } from "./showcase/InstallPanel";
+import { Button } from "@/registry/nexus-elements/ui/button";
 
 const providerSetupCode = `"use client"
 import NexusProvider from "@/components/nexus/NexusProvider"
@@ -22,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 const initCode = `import { useEffect } from "react"
 import { useAccount } from "wagmi"
-import { EthereumProvider } from "@avail-project/nexus"
+import { EthereumProvider } from "@avail-project/nexus-core"
 import { useNexus } from "@/components/nexus/NexusProvider"
 
 export function InitNexusOnConnect() {
@@ -49,31 +46,9 @@ const ShowcaseWrapper = ({
   connectLabel?: string;
   registryItemName?: string;
 }) => {
-  const { status, connector } = useAccount();
-  const { nexusSDK, handleInit } = useNexus();
-  const [loading, setLoading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<"preview" | "code">(
-    "preview"
+    "preview",
   );
-
-  const initializeNexus = async () => {
-    setLoading(true);
-    try {
-      const provider = (await connector?.getProvider()) as EthereumProvider;
-      await handleInit(provider);
-    } catch (error) {
-      console.error(error);
-      toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    if (status === "connected") {
-      initializeNexus();
-    }
-  }, [status, initializeNexus]);
 
   return (
     <div className="flex flex-col gap-4 border rounded-lg p-4 min-h-[450px] relative">
@@ -85,7 +60,7 @@ const ShowcaseWrapper = ({
       </div>
 
       <div className="flex items-center gap-4 border-b">
-        <button
+        <Button
           role="tab"
           className={`text-sm px-2 py-2 -mb-px ${
             activeTab === "preview"
@@ -95,8 +70,9 @@ const ShowcaseWrapper = ({
           onClick={() => setActiveTab("preview")}
         >
           Preview
-        </button>
-        <button
+        </Button>
+        <Button
+          variant={"secondary"}
           role="tab"
           className={`text-sm px-2 py-2 -mb-px ${
             activeTab === "code"
@@ -106,18 +82,11 @@ const ShowcaseWrapper = ({
           onClick={() => setActiveTab("code")}
         >
           Code
-        </button>
+        </Button>
       </div>
 
       {activeTab === "preview" ? (
-        <PreviewPanel
-          status={status}
-          nexusSDK={nexusSDK}
-          loading={loading}
-          connectLabel={connectLabel}
-        >
-          {children}
-        </PreviewPanel>
+        <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
       ) : (
         <CodeViewer registryItemName={registryItemName} />
       )}

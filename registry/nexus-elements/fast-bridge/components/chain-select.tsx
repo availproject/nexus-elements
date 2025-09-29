@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus";
+import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
 import { cn } from "@/lib/utils";
 import { ChainSelectProps } from "../types";
 import { useNexus } from "../../nexus/NexusProvider";
@@ -22,11 +22,13 @@ const ChainSelect: React.FC<ChainSelectProps> = ({
   handleSelect,
 }) => {
   const { supportedChainsAndTokens } = useNexus();
-  if (hidden) return null;
+
   const selectedChainData = React.useMemo(() => {
     if (!supportedChainsAndTokens) return null;
     return supportedChainsAndTokens.find((c) => c.id === selectedChain);
   }, [selectedChain, supportedChainsAndTokens]);
+
+  if (hidden) return null;
   return (
     <Select
       value={selectedChain?.toString() ?? ""}
