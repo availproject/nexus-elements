@@ -18,8 +18,12 @@ const FeeBreakdown: React.FC<FeeBreakdownProps> = ({ intent }) => {
             <p className="font-semibold text-base min-w-max">
               {intent.fees?.total} {intent.token?.symbol}
             </p>
-            <AccordionTrigger className="p-0" containerClassName="w-fit">
-              View Breakup
+            <AccordionTrigger
+              containerClassName="w-fit"
+              className="p-0 items-center gap-x-1"
+              hideChevron={false}
+            >
+              <p className="text-sm font-medium">View Breakup</p>
             </AccordionTrigger>
           </div>
         </div>

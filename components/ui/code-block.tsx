@@ -70,7 +70,7 @@ export default function CodeBlock({
           </pre>
         ) : html ? (
           <div
-            className="no-scrollbar min-w-0 overflow-x-auto px-4 py-3.5 outline-none has-[[data-highlighted-line]]:px-0 has-[[data-line-numbers]]:px-0 has-[[data-slot=tabs]]:p-0 !bg-transparent"
+            className="no-scrollbar min-w-0 w-full max-w-4xl overflow-x-scroll px-4 py-3.5 outline-none has-[[data-highlighted-line]]:px-0 has-[[data-line-numbers]]:px-0 has-[[data-slot=tabs]]:p-0 !bg-transparent"
             style={{
               backgroundColor: "#fff",
               color: "#24292e",
@@ -81,7 +81,7 @@ export default function CodeBlock({
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
-          <pre className="text-xs bg-muted rounded p-2 overflow-x-auto">
+          <pre className="text-xs bg-muted rounded p-2 w-full overflow-x-scroll">
             <code>{code}</code>
           </pre>
         )}

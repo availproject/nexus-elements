@@ -36,7 +36,7 @@ export function PreviewPanel({
   return (
     <div className="rounded-lg border p-4">
       <ConnectButton />
-      <div className="flex items-center justify-center min-h-[400px] relative">
+      <div className="flex items-center justify-center min-h-[450px] relative">
         {status === "connected" && nexusSDK && <>{children}</>}
         {status === "connected" && !nexusSDK && (
           <Button onClick={initializeNexus}>

@@ -9,12 +9,9 @@ export function InstallPanel({
 }>) {
   const [installTab, setInstallTab] = React.useState<"cli" | "manual">("cli");
   const [pm, setPm] = React.useState<"pnpm" | "npm" | "yarn" | "bun">("pnpm");
-
-  const componentsJsonSnippet = `{
-  "registries": {
-    "@nexus-elements": "https://elements.nexus.availproject.org/r/{name}.json"
-  }
-}`;
+  const [deps, setDeps] = React.useState<string[]>([]);
+  const [depsLoading, setDepsLoading] = React.useState(false);
+  const [depsError, setDepsError] = React.useState<string | null>(null);
 
   const buildUrl = (item: string) =>
     `https://elements.nexus.availproject.org/r/${item}.json`;
@@ -33,19 +30,52 @@ export function InstallPanel({
     }
   };
 
-  const computeNsCmd = (item: string) => {
-    const name = `@nexus-elements/${item}`;
+  // Load dependencies for Manual install
+  React.useEffect(() => {
+    let isCancelled = false;
+    const loadDeps = async () => {
+      setDepsLoading(true);
+      setDepsError(null);
+      try {
+        const urls = [buildUrl(registryItemName), buildUrl("nexus-provider")];
+        const results = await Promise.all(
+          urls.map(async (u) => {
+            const res = await fetch(u);
+            if (!res.ok) throw new Error(`Failed to fetch ${u}`);
+            return (await res.json()) as { dependencies?: string[] };
+          })
+        );
+        const all = results.flatMap((j) => j?.dependencies || []);
+        const unique = Array.from(new Set(all));
+        if (!isCancelled) setDeps(unique);
+      } catch (e) {
+        console.error(e);
+        if (!isCancelled)
+          setDepsError((e as Error)?.message || "Failed to load dependencies");
+      } finally {
+        if (!isCancelled) setDepsLoading(false);
+      }
+    };
+    loadDeps();
+    return () => {
+      isCancelled = true;
+    };
+  }, [registryItemName]);
+
+  const computeDepsInstallCmd = React.useMemo(() => {
+    if (!deps?.length) return "";
+    const list = deps.join(" ");
     switch (pm) {
       case "npm":
-        return `npx shadcn@latest add ${name}`;
+        return `npm i ${list}`;
       case "yarn":
-        return `yarn dlx shadcn@latest add ${name}`;
+        return `yarn add ${list}`;
       case "bun":
-        return `bunx shadcn@latest add ${name}`;
+        return `bun add ${list}`;
       default:
-        return `pnpm dlx shadcn@latest add ${name}`;
+        return `pnpm add ${list}`;
     }
-  };
+  }, [pm, deps]);
 
   return (
     <div className="rounded-md border p-3">
@@ -116,20 +146,74 @@ export function InstallPanel({
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm">
-            Map namespace in <code>components.json</code>:
-          </p>
-          <CodeBlock code={componentsJsonSnippet} lang="json" />
-          <p className="text-sm">Then run (namespaced install):</p>
-          <CodeBlock code={computeNsCmd(registryItemName)} lang="bash" />
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              className={`px-2 py-1 rounded border ${
+                pm === "pnpm" ? "bg-accent" : ""
+              }`}
+              onClick={() => setPm("pnpm")}
+            >
+              pnpm
+            </button>
+            <button
+              className={`px-2 py-1 rounded border ${
+                pm === "npm" ? "bg-accent" : ""
+              }`}
+              onClick={() => setPm("npm")}
+            >
+              npm
+            </button>
+            <button
+              className={`px-2 py-1 rounded border ${
+                pm === "yarn" ? "bg-accent" : ""
+              }`}
+              onClick={() => setPm("yarn")}
+            >
+              yarn
+            </button>
+            <button
+              className={`px-2 py-1 rounded border ${
+                pm === "bun" ? "bg-accent" : ""
+              }`}
+              onClick={() => setPm("bun")}
+            >
+              bun
+            </button>
+          </div>
+
+          <p className="text-sm">Install required packages:</p>
+          {depsLoading ? (
+            <pre className="text-xs bg-muted rounded p-2 overflow-x-auto">
+              Loading dependencies...
+            </pre>
+          ) : depsError ? (
+            <pre className="text-xs bg-red-50 text-red-700 rounded p-2 overflow-x-auto">
+              {depsError}
+            </pre>
+          ) : (
+            <CodeBlock code={computeDepsInstallCmd || ""} lang="bash" />
+          )}
+
+          <p className="text-sm">Then copy code files:</p>
+          <ul className="list-disc ml-6 text-sm space-y-1">
+            <li>
+              Provider: open the <span className="font-semibold">Code</span> tab
+              → select <span className="font-semibold">Provider</span> and copy{" "}
+              <code className="mx-1">components/nexus/NexusProvider.tsx</code>{" "}
+              and <code className="mx-1">components/nexus/types.ts</code>.
+            </li>
+            <li>
+              Component: in the <span className="font-semibold">Code</span> tab
+              → select <span className="font-semibold">Component</span> and copy
+              the files for <code className="mx-1">{registryItemName}</code>{" "}
+              into your project.
+            </li>
+          </ul>
+
           <p className="text-xs text-muted-foreground">
-            Dependencies (including provider) are installed automatically.
-          </p>
-          <p className="text-sm mt-2">If installing manually, add Nexus SDK:</p>
-          <CodeBlock code={`pnpm add @avail-project/nexus-core`} lang="bash" />
-          <p className="text-xs text-muted-foreground">
-            Then create the provider files below (or install via the provider
-            URL above).
+            Note: UI primitives (e.g. accordion, button, card, dialog, input,
+            label, select, separator) should exist in your project. Install them
+            via the shadcn CLI or use your own equivalents.
           </p>
         </div>
       )}

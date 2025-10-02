@@ -1,7 +1,6 @@
 "use client";
 import * as React from "react";
 import { OpenInV0Button } from "./open-in-v0-button";
-import { Separator } from "@/registry/nexus-elements/ui/separator";
 import CodeBlock from "./ui/code-block";
 import { PreviewPanel } from "./showcase/PreviewPanel";
 import { CodeViewer } from "./showcase/CodeViewer";
@@ -47,19 +46,17 @@ const ShowcaseWrapper = ({
   registryItemName?: string;
 }) => {
   const [activeTab, setActiveTab] = React.useState<"preview" | "code">(
-    "preview",
+    "preview"
   );
 
   return (
-    <div className="flex flex-col gap-4 border rounded-lg p-4 min-h-[450px] relative">
+    <div className="flex flex-col gap-4 rounded-lg py-4 min-h-[450px] relative">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg text-muted-foreground sm:pl-3 font-semibold">
-          {heading}
-        </h2>
+        <h2 className="text-lg text-foreground font-semibold">{heading}</h2>
         <OpenInV0Button name={registryItemName} className="w-fit" />
       </div>
 
-      <div className="flex items-center gap-4 border-b">
+      <div className="flex items-center gap-4">
         <Button
           role="tab"
           className={`text-sm px-2 py-2 -mb-px ${
@@ -91,24 +88,22 @@ const ShowcaseWrapper = ({
         <CodeViewer registryItemName={registryItemName} />
       )}
 
-      <Separator />
-
       <div className="grid gap-3 sm:grid-rows-1">
-        <div className="rounded-md border p-3">
+        <div className="rounded-md">
           <p className="text-sm font-semibold mb-2">About</p>
           <p className="text-sm text-muted-foreground">
             This example demonstrates the {heading} component. It uses a shared
-            Nexus provider and shadcn/ui primitives. You can install it via the
-            shadcn CLI or copy source files directly.
+            Nexus provider and shadcn/ui primitives. Install dependencies and
+            copy the source files, or use the shadcn CLI.
           </p>
         </div>
 
         <InstallPanel registryItemName={registryItemName} />
       </div>
 
-      <div className="rounded-md border p-3">
+      <div className="rounded-md">
         <p className="text-sm font-semibold mb-2">Setup provider</p>
-        <p className="text-sm text-foreground">
+        <p className="text-sm text-foreground mb-2">
           Wrap your app with the provider:
         </p>
         <CodeBlock
@@ -116,7 +111,7 @@ const ShowcaseWrapper = ({
           lang="tsx"
           filename="app/layout.tsx"
         />
-        <p className="text-sm text-foreground mt-2 my-3">
+        <p className="text-sm text-foreground my-3">
           Initialize on wallet connect:
         </p>
         <CodeBlock

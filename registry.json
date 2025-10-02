@@ -49,6 +49,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/fast-bridge/components/source-breakdown.tsx",
+          "target": "components/fast-bridge/components/source-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/fast-bridge/components/chain-select.tsx",
           "target": "components/fast-bridge/components/chain-select.tsx",
           "type": "registry:component"
@@ -76,6 +81,11 @@
         {
           "path": "registry/nexus-elements/fast-bridge/hooks/useListenTransaction.ts",
           "target": "components/fast-bridge/hooks/useListenTransaction.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.tsx",
+          "target": "components/fast-bridge/hooks/useBridge.tsx",
           "type": "registry:component"
         },
         {

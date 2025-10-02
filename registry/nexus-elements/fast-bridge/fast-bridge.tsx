@@ -1,20 +1,22 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
-import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
 import { Button } from "../ui/button";
 import { LoaderPinwheel } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
 import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
 import FeeBreakdown from "./components/fee-breakdown";
-import { FastBridgeProps, FastBridgeState } from "./types";
+import { FastBridgeProps } from "./types";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
 import useListenTransaction from "./hooks/useListenTransaction";
+import useBridge from "./hooks/useBridge";
+import SourceBreakdown from "./components/source-breakdown";
+import { SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
 const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
   const {
@@ -26,149 +28,32 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     setAllowance,
     network,
   } = useNexus();
-  const [inputs, setInputs] = useState<FastBridgeState>({
-    chain:
-      network === "testnet"
-        ? SUPPORTED_CHAINS.SEPOLIA
-        : SUPPORTED_CHAINS.ETHEREUM,
-    token: "USDC",
-    amount: undefined,
-    recipient: connectedAddress,
+
+  const {
+    inputs,
+    setInputs,
+    timer,
+    loading,
+    refreshing,
+    isDialogOpen,
+    txError,
+    handleTransaction,
+    reset,
+    filteredUnifiedBalance,
+    startTransaction,
+    setIsDialogOpen,
+    setTxError,
+  } = useBridge({
+    network: network ?? "mainnet",
+    connectedAddress,
+    nexusSDK,
+    intent,
+    setIntent,
+    unifiedBalance,
   });
-  const [timer, setTimer] = useState(0);
-  const [startTxn, setStartTxn] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [txError, setTxError] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const { processing, latestCompletedIndex, explorerUrl } =
     useListenTransaction(nexusSDK);
-
-  const handleTransaction = async () => {
-    if (
-      !inputs?.amount ||
-      !inputs?.recipient ||
-      !inputs?.chain ||
-      !inputs?.token
-    ) {
-      console.error("Missing required inputs");
-      return;
-    }
-    setLoading(true);
-    setTxError(null);
-    try {
-      if (inputs?.recipient !== connectedAddress) {
-        // Transfer
-        const transferTxn = await nexusSDK?.transfer({
-          token: inputs?.token,
-          amount: inputs?.amount,
-          chainId: inputs?.chain,
-          recipient: inputs?.recipient,
-        });
-        if (!transferTxn?.success) {
-          throw new Error(transferTxn?.error || "Transaction rejected by user");
-        }
-        if (transferTxn?.success) {
-          console.log("Transfer transaction successful");
-          console.log(
-            "Transfer transaction explorer",
-            transferTxn?.explorerUrl,
-          );
-        }
-        return;
-      }
-      // Bridge
-      const bridgeTxn = await nexusSDK?.bridge({
-        token: inputs?.token,
-        amount: inputs?.amount,
-        chainId: inputs?.chain,
-      });
-      if (!bridgeTxn?.success) {
-        throw new Error(bridgeTxn?.error || "Transaction rejected by user");
-      }
-      if (bridgeTxn?.success) {
-        console.log("Bridge transaction successful");
-        console.log("Bridge transaction explorer", bridgeTxn?.explorerUrl);
-      }
-    } catch (error) {
-      console.error("Transaction failed:", error);
-      setTxError((error as Error)?.message || "Transaction failed");
-      setIsDialogOpen(false);
-    } finally {
-      setLoading(false);
-      setStartTxn(false);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setIntent(null);
-    }
-  };
-
-  const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.filter((bal) => bal?.symbol === inputs?.token)[0];
-  }, [unifiedBalance, inputs?.token]);
-
-  const refreshIntent = async () => {
-    setRefreshing(true);
-    try {
-      await intent?.refresh([]);
-    } catch (error) {
-      console.error("Transaction failed:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const reset = () => {
-    intent?.deny();
-    setIntent(null);
-    setInputs({
-      chain:
-        network === "testnet"
-          ? SUPPORTED_CHAINS.SEPOLIA
-          : SUPPORTED_CHAINS.ETHEREUM,
-      token: "USDC",
-      amount: undefined,
-      recipient: connectedAddress,
-    });
-    setLoading(false);
-    setStartTxn(false);
-    setRefreshing(false);
-  };
-
-  const startTransaction = () => {
-    setStartTxn(true);
-    intent?.allow();
-    setIsDialogOpen(true);
-    setTxError(null);
-  };
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (intent) {
-      interval = setInterval(refreshIntent, 5000);
-    }
-    return () => {
-      clearInterval(interval);
-    };
-  }, [intent]);
-
-  useEffect(() => {
-    if (startTxn) {
-      timerRef.current = setInterval(() => {
-        setTimer((prev) => prev + 0.1);
-      }, 100);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [startTxn]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -192,7 +77,6 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
           unifiedBalance={filteredUnifiedBalance}
-          sources={intent?.intent?.sources}
         />
         <ReceipientAddress
           address={inputs?.recipient}
@@ -200,7 +84,28 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
             setInputs({ ...inputs, recipient: address as `0x${string}` })
           }
         />
-        {intent?.intent && <FeeBreakdown intent={intent?.intent} />}
+        {intent?.intent && (
+          <>
+            <SourceBreakdown
+              intent={intent?.intent}
+              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            />
+            <div className="w-full flex items-start justify-between gap-x-4">
+              <p className="text-base font-semibold">You receive</p>
+              <div className="flex flex-col gap-y-1 min-w-fit">
+                <p className="text-base font-semibold text-right">
+                  {intent?.intent?.destination?.amount}{" "}
+                  {filteredUnifiedBalance?.symbol}
+                </p>
+                <p className="text-sm font-medium text-right">
+                  on {intent?.intent?.destination?.chainName}
+                </p>
+              </div>
+            </div>
+            <FeeBreakdown intent={intent?.intent} />
+          </>
+        )}
+
         {!intent && (
           <Button
             onClick={handleTransaction}

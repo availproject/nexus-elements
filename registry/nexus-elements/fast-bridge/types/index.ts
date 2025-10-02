@@ -19,13 +19,6 @@ export interface FastBridgeState {
 export interface AmountInputProps {
   amount?: string;
   onChange: (value: string) => void;
-  sources?: {
-    amount: string;
-    chainID: number;
-    chainLogo: string | undefined;
-    chainName: string;
-    contractAddress: `0x${string}`;
-  }[];
   unifiedBalance?: UserAsset;
 }
 

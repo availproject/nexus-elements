@@ -7,14 +7,14 @@ import { NexusNetwork } from "@avail-project/nexus-core";
 
 export default async function Home({
   searchParams,
-}: {
+}: Readonly<{
   searchParams?: Promise<{
     network?: string;
   }>;
-}) {
+}>) {
   const params = await searchParams;
   return (
-    <div className="max-w-6xl mx-auto flex flex-col min-h-svh px-4 py-8 gap-8">
+    <div className="max-w-6xl mx-auto flex flex-col min-h-svh px-4 py-8 gap-4">
       <header className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight">Nexus Elements</h1>
         <p className="text-muted-foreground">
