@@ -1,6 +1,7 @@
 import {
   NexusNetwork,
   NexusSDK,
+  OnAllowanceHookData,
   OnIntentHookData,
   SUPPORTED_CHAINS,
   UserAsset,
@@ -15,6 +16,9 @@ interface UseBridgeProps {
   nexusSDK: NexusSDK | null;
   intent: OnIntentHookData | null;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
+  setAllowance: React.Dispatch<
+    React.SetStateAction<OnAllowanceHookData | null>
+  >;
   unifiedBalance: UserAsset[] | null;
 }
 
@@ -24,6 +28,7 @@ const useBridge = ({
   nexusSDK,
   intent,
   setIntent,
+  setAllowance,
   unifiedBalance,
 }: UseBridgeProps) => {
   const [inputs, setInputs] = useState<FastBridgeState>({
@@ -35,6 +40,7 @@ const useBridge = ({
     amount: undefined,
     recipient: connectedAddress,
   });
+
   const [timer, setTimer] = useState(0);
   const [startTxn, setStartTxn] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,8 +86,20 @@ const useBridge = ({
           console.log("Transfer transaction successful");
           console.log(
             "Transfer transaction explorer",
-            transferTxn?.explorerUrl
+            transferTxn?.explorerUrl,
           );
+          setIntent(null);
+          setAllowance(null);
+          setInputs({
+            chain:
+              network === "testnet"
+                ? SUPPORTED_CHAINS.SEPOLIA
+                : SUPPORTED_CHAINS.ETHEREUM,
+            token: "USDC",
+            amount: undefined,
+            recipient: connectedAddress,
+          });
+          setRefreshing(false);
         }
         return;
       }
@@ -97,6 +115,18 @@ const useBridge = ({
       if (bridgeTxn?.success) {
         console.log("Bridge transaction successful");
         console.log("Bridge transaction explorer", bridgeTxn?.explorerUrl);
+        setIntent(null);
+        setAllowance(null);
+        setInputs({
+          chain:
+            network === "testnet"
+              ? SUPPORTED_CHAINS.SEPOLIA
+              : SUPPORTED_CHAINS.ETHEREUM,
+          token: "USDC",
+          amount: undefined,
+          recipient: connectedAddress,
+        });
+        setRefreshing(false);
       }
     } catch (error) {
       console.error("Transaction failed:", (error as Error)?.message);
@@ -132,6 +162,7 @@ const useBridge = ({
   const reset = () => {
     intent?.deny();
     setIntent(null);
+    setAllowance(null);
     setInputs({
       chain:
         network === "testnet"

@@ -50,6 +50,7 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     intent,
     setIntent,
     unifiedBalance,
+    setAllowance,
   });
 
   const { processing, latestCompletedIndex, explorerUrl } =
