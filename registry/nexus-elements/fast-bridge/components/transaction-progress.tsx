@@ -1,5 +1,5 @@
 import { Check, Circle, LoaderPinwheel } from "lucide-react";
-import * as React from "react";
+import React, { FC } from "react";
 import { ProgressStep } from "@avail-project/nexus-core";
 
 interface TransactionProgressProps {
@@ -53,7 +53,7 @@ export const getStatusText = (type: string, operationType: string) => {
   }
 };
 
-const TransactionProgress: React.FC<TransactionProgressProps> = ({
+const TransactionProgress: FC<TransactionProgressProps> = ({
   timer,
   steps,
   latestCompletedIndex,

@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react";
+import React, { FC, useCallback, useMemo } from "react";
 import { useNexus } from "../nexus/NexusProvider";
 import { Label } from "../ui/label";
 import { DollarSign } from "lucide-react";
@@ -11,29 +11,26 @@ import {
 } from "../ui/accordion";
 import { Separator } from "../ui/separator";
 
-const UnifiedBalance: React.FC = () => {
+const UnifiedBalance: FC = () => {
   const { unifiedBalance } = useNexus();
 
-  const formatBalance = React.useCallback(
-    (balance: string, decimals: number) => {
-      const num = parseFloat(balance);
-      return num.toFixed(Math.min(6, decimals));
-    },
-    []
-  );
+  const formatBalance = useCallback((balance: string, decimals: number) => {
+    const num = parseFloat(balance);
+    return num.toFixed(Math.min(6, decimals));
+  }, []);
 
-  const totalFiat = React.useMemo(() => {
+  const totalFiat = useMemo(() => {
     if (!unifiedBalance) return "0.00";
     const total = unifiedBalance.reduce(
       (acc, fiat) => acc + fiat.balanceInFiat,
-      0
+      0,
     );
     return total.toFixed(2);
   }, [unifiedBalance]);
 
-  const tokens = React.useMemo(() => {
+  const tokens = useMemo(() => {
     return (unifiedBalance ?? []).filter(
-      (token) => parseFloat(token.balance) > 0
+      (token) => parseFloat(token.balance) > 0,
     );
   }, [unifiedBalance]);
 
@@ -52,7 +49,7 @@ const UnifiedBalance: React.FC = () => {
       <Accordion type="single" collapsible className="w-full space-y-4">
         {tokens.map((token) => {
           const positiveBreakdown = token.breakdown.filter(
-            (chain) => parseFloat(chain.balance) > 0
+            (chain) => parseFloat(chain.balance) > 0,
           );
           const chainsCount = positiveBreakdown.length;
           const chainsLabel =

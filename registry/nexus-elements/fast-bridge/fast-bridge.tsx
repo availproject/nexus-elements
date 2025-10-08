@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { FC } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
@@ -18,7 +18,7 @@ import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import { SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
-const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
+const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
   const {
     nexusSDK,
     intent,

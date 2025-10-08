@@ -1,9 +1,9 @@
-import * as React from "react";
+import React, { FC } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { AmountInputProps } from "../types";
 
-const AmountInput: React.FC<AmountInputProps> = ({
+const AmountInput: FC<AmountInputProps> = ({
   amount,
   onChange,
   unifiedBalance,

@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { FC } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -7,7 +7,7 @@ import {
 } from "../../ui/accordion";
 import { FeeBreakdownProps } from "../types";
 
-const FeeBreakdown: React.FC<FeeBreakdownProps> = ({ intent }) => {
+const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent }) => {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="breakdown">
