@@ -5,7 +5,7 @@
   "title": "Nexus Provider",
   "description": "Shared Nexus SDK provider and types for Nexus Elements",
   "dependencies": [
-    "@avail-project/nexus-core"
+    "@avail-project/nexus-core@beta"
   ],
   "files": [
     {
