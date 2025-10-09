@@ -9,6 +9,7 @@ import {
 import { FastBridgeState } from "../types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Address, isAddress } from "viem";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface UseBridgeProps {
   network: NexusNetwork;
@@ -31,6 +32,7 @@ const useBridge = ({
   setAllowance,
   unifiedBalance,
 }: UseBridgeProps) => {
+  const { fetchUnifiedBalance } = useNexus();
   const [inputs, setInputs] = useState<FastBridgeState>({
     chain:
       network === "testnet"
@@ -88,18 +90,7 @@ const useBridge = ({
             "Transfer transaction explorer",
             transferTxn?.explorerUrl,
           );
-          setIntent(null);
-          setAllowance(null);
-          setInputs({
-            chain:
-              network === "testnet"
-                ? SUPPORTED_CHAINS.SEPOLIA
-                : SUPPORTED_CHAINS.ETHEREUM,
-            token: "USDC",
-            amount: undefined,
-            recipient: connectedAddress,
-          });
-          setRefreshing(false);
+          await onSuccess();
         }
         return;
       }
@@ -115,18 +106,7 @@ const useBridge = ({
       if (bridgeTxn?.success) {
         console.log("Bridge transaction successful");
         console.log("Bridge transaction explorer", bridgeTxn?.explorerUrl);
-        setIntent(null);
-        setAllowance(null);
-        setInputs({
-          chain:
-            network === "testnet"
-              ? SUPPORTED_CHAINS.SEPOLIA
-              : SUPPORTED_CHAINS.ETHEREUM,
-          token: "USDC",
-          amount: undefined,
-          recipient: connectedAddress,
-        });
-        setRefreshing(false);
+        await onSuccess();
       }
     } catch (error) {
       console.error("Transaction failed:", (error as Error)?.message);
@@ -142,6 +122,22 @@ const useBridge = ({
         timerRef.current = null;
       }
     }
+  };
+
+  const onSuccess = async () => {
+    setIntent(null);
+    setAllowance(null);
+    setInputs({
+      chain:
+        network === "testnet"
+          ? SUPPORTED_CHAINS.SEPOLIA
+          : SUPPORTED_CHAINS.ETHEREUM,
+      token: "USDC",
+      amount: undefined,
+      recipient: connectedAddress,
+    });
+    setRefreshing(false);
+    await fetchUnifiedBalance();
   };
 
   const filteredUnifiedBalance = useMemo(() => {

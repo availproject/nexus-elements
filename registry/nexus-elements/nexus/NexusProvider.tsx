@@ -93,6 +93,15 @@ const NexusProvider = ({
     [sdk],
   );
 
+  const fetchUnifiedBalance = async () => {
+    try {
+      const unifiedBalance = await sdk?.getUnifiedBalances();
+      setUnifiedBalance(unifiedBalance);
+    } catch (error) {
+      console.error("Error fetching unified balance:", error);
+    }
+  };
+
   const value = useMemo(
     () => ({
       nexusSDK,
@@ -108,6 +117,7 @@ const NexusProvider = ({
       unifiedBalance,
       network: config?.network,
       loading,
+      fetchUnifiedBalance,
     }),
     [
       nexusSDK,
@@ -123,6 +133,7 @@ const NexusProvider = ({
       unifiedBalance,
       config,
       loading,
+      fetchUnifiedBalance,
     ],
   );
   return (

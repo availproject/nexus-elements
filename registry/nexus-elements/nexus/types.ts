@@ -25,4 +25,5 @@ export interface NexusContextType {
   supportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
+  fetchUnifiedBalance: () => Promise<void>;
 }
