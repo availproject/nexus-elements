@@ -15,7 +15,7 @@ import AllowanceModal from "./components/allowance-modal";
 import useListenTransaction from "./hooks/useListenTransaction";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
-import { SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 
 interface FastBridgeProps {

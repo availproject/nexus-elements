@@ -9,7 +9,7 @@ import {
   type UserAsset,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Address, isAddress } from "viem";
+import { type Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
 
 interface FastBridgeState {

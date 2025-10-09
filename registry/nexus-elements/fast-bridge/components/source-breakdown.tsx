@@ -1,6 +1,6 @@
 import {
   type ReadableIntent,
-  SUPPORTED_TOKENS,
+  type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
 import {
   Accordion,

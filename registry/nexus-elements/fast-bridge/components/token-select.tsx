@@ -1,6 +1,6 @@
 import {
   type SUPPORTED_CHAINS_IDS,
-  SUPPORTED_TOKENS,
+  type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
 import {
   Select,
