@@ -38,10 +38,12 @@ const NexusProvider = ({
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
     null,
   );
+  const [loading, setLoading] = useState<boolean>(false);
   const [intent, setIntent] = useState<OnIntentHookData | null>(null);
   const [allowance, setAllowance] = useState<OnAllowanceHookData | null>(null);
 
   const initializeNexus = async (provider: EthereumProvider) => {
+    setLoading(true);
     try {
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
@@ -54,6 +56,8 @@ const NexusProvider = ({
       setSupportedChainsAndTokens(supportedChainsAndTokens);
     } catch (error) {
       console.error("Error initializing Nexus:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -103,6 +107,7 @@ const NexusProvider = ({
       supportedChainsAndTokens,
       unifiedBalance,
       network: config?.network,
+      loading,
     }),
     [
       nexusSDK,
@@ -117,6 +122,7 @@ const NexusProvider = ({
       supportedChainsAndTokens,
       unifiedBalance,
       config,
+      loading,
     ],
   );
   return (

@@ -24,4 +24,5 @@ export interface NexusContextType {
   handleInit: (provider: EthereumProvider) => Promise<void>;
   supportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
+  loading: boolean;
 }

@@ -6,7 +6,9 @@
   "description": "A simple component built with Nexus to display unified balance",
   "dependencies": [
     "lucide-react",
-    "@radix-ui/react-accordion"
+    "@radix-ui/react-accordion",
+    "@radix-ui/react-label",
+    "@radix-ui/react-slot"
   ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/accordion.json",
