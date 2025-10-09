@@ -8,10 +8,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
+import { type SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
 import { cn } from "@/lib/utils";
-import { ChainSelectProps } from "../types";
 import { useNexus } from "../../nexus/NexusProvider";
+
+interface ChainSelectProps {
+  selectedChain: number;
+  disabled?: boolean;
+  hidden?: boolean;
+  className?: string;
+  label?: string;
+  handleSelect: (chainId: SUPPORTED_CHAINS_IDS) => void;
+}
 
 const ChainSelect: React.FC<ChainSelectProps> = ({
   selectedChain,

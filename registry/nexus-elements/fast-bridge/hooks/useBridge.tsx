@@ -1,15 +1,23 @@
 import {
-  NexusNetwork,
+  type NexusNetwork,
   NexusSDK,
-  OnAllowanceHookData,
-  OnIntentHookData,
+  type OnAllowanceHookData,
+  type OnIntentHookData,
   SUPPORTED_CHAINS,
-  UserAsset,
+  type SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_TOKENS,
+  type UserAsset,
 } from "@avail-project/nexus-core";
-import { FastBridgeState } from "../types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
+
+interface FastBridgeState {
+  chain: SUPPORTED_CHAINS_IDS;
+  token: SUPPORTED_TOKENS;
+  amount?: string;
+  recipient?: `0x${string}`;
+}
 
 interface UseBridgeProps {
   network: NexusNetwork;

@@ -9,7 +9,6 @@ import { useNexus } from "../nexus/NexusProvider";
 import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
 import FeeBreakdown from "./components/fee-breakdown";
-import { FastBridgeProps } from "./types";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
@@ -17,6 +16,11 @@ import useListenTransaction from "./hooks/useListenTransaction";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import { SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import { type Address } from "viem";
+
+interface FastBridgeProps {
+  connectedAddress: Address;
+}
 
 const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
   const {

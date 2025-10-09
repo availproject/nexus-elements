@@ -4,7 +4,12 @@ import { Input } from "../../ui/input";
 import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
-import { ReceipientAddressProps } from "../types";
+import { type Address } from "viem";
+
+interface ReceipientAddressProps {
+  address?: Address;
+  onChange: (address: string) => void;
+}
 
 const ReceipientAddress: React.FC<ReceipientAddressProps> = ({
   address,

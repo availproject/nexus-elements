@@ -1,6 +1,6 @@
 import { Check, Circle, LoaderPinwheel } from "lucide-react";
 import * as React from "react";
-import { ProgressStep } from "@avail-project/nexus-core";
+import { type ProgressStep } from "@avail-project/nexus-core";
 
 interface TransactionProgressProps {
   timer: number;

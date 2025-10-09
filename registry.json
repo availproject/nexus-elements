@@ -87,11 +87,6 @@
           "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.tsx",
           "target": "components/fast-bridge/hooks/useBridge.tsx",
           "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/fast-bridge/types/index.ts",
-          "target": "components/fast-bridge/types/index.ts",
-          "type": "registry:component"
         }
       ]
     },
@@ -105,11 +100,6 @@
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
           "target": "components/nexus/NexusProvider.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/nexus/types.ts",
-          "target": "components/nexus/types.ts",
           "type": "registry:component"
         }
       ]

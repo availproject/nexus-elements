@@ -1,7 +1,7 @@
 import {
   NEXUS_EVENTS,
   NexusSDK,
-  ProgressStep,
+  type ProgressStep,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useState } from "react";
 

@@ -12,9 +12,9 @@ import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import {
-  AllowanceHookSource,
+  type AllowanceHookSource,
   CHAIN_METADATA,
-  OnAllowanceHookData,
+  type OnAllowanceHookData,
 } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 
