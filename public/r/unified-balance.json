@@ -5,10 +5,12 @@
   "title": "Unified Balance",
   "description": "A simple component built with Nexus to display unified balance",
   "dependencies": [
-    "lucide-react"
+    "lucide-react",
+    "@radix-ui/react-accordion"
   ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/accordion.json",
+    "https://elements.nexus.availproject.org/r/button.json",
     "https://elements.nexus.availproject.org/r/nexus-provider.json",
     "https://elements.nexus.availproject.org/r/label.json",
     "https://elements.nexus.availproject.org/r/separator.json"
