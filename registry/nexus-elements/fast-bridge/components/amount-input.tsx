@@ -1,7 +1,13 @@
 import React, { FC } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { AmountInputProps } from "../types";
+import { type UserAsset } from "@avail-project/nexus-core";
+
+interface AmountInputProps {
+  amount?: string;
+  onChange: (value: string) => void;
+  unifiedBalance?: UserAsset;
+}
 
 const AmountInput: FC<AmountInputProps> = ({
   amount,

@@ -87,11 +87,6 @@
           "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.tsx",
           "target": "components/fast-bridge/hooks/useBridge.tsx",
           "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/fast-bridge/types/index.ts",
-          "target": "components/fast-bridge/types/index.ts",
-          "type": "registry:component"
         }
       ]
     },
@@ -105,11 +100,6 @@
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
           "target": "components/nexus/NexusProvider.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/nexus/types.ts",
-          "target": "components/nexus/types.ts",
           "type": "registry:component"
         }
       ]
@@ -258,9 +248,15 @@
       "type": "registry:component",
       "title": "Unified Balance",
       "description": "A simple component built with Nexus to display unified balance",
-      "dependencies": ["lucide-react"],
+      "dependencies": [
+        "lucide-react",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-label",
+        "@radix-ui/react-slot"
+      ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/separator.json"

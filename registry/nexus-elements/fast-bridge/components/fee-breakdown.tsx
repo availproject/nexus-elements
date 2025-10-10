@@ -5,7 +5,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import { FeeBreakdownProps } from "../types";
+import { type ReadableIntent } from "@avail-project/nexus-core";
+
+interface FeeBreakdownProps {
+  intent: ReadableIntent;
+}
 
 const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent }) => {
   return (

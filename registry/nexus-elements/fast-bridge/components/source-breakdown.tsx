@@ -1,4 +1,7 @@
-import { ReadableIntent, SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import {
+  type ReadableIntent,
+  type SUPPORTED_TOKENS,
+} from "@avail-project/nexus-core";
 import {
   Accordion,
   AccordionContent,
@@ -6,13 +9,12 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 
-const SourceBreakdown = ({
-  intent,
-  tokenSymbol,
-}: {
+interface SourceBreakdownProps {
   intent: ReadableIntent;
   tokenSymbol: SUPPORTED_TOKENS;
-}) => {
+}
+
+const SourceBreakdown = ({ intent, tokenSymbol }: SourceBreakdownProps) => {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="sources">

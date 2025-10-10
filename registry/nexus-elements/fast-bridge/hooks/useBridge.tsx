@@ -1,13 +1,23 @@
 import {
-  NexusNetwork,
+  type NexusNetwork,
   NexusSDK,
-  OnIntentHookData,
+  type OnAllowanceHookData,
+  type OnIntentHookData,
   SUPPORTED_CHAINS,
-  UserAsset,
+  type SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_TOKENS,
+  type UserAsset,
 } from "@avail-project/nexus-core";
-import { FastBridgeState } from "../types";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Address, isAddress } from "viem";
+import { type Address, isAddress } from "viem";
+import { useNexus } from "../../nexus/NexusProvider";
+
+interface FastBridgeState {
+  chain: SUPPORTED_CHAINS_IDS;
+  token: SUPPORTED_TOKENS;
+  amount?: string;
+  recipient?: `0x${string}`;
+}
 
 interface UseBridgeProps {
   network: NexusNetwork;
@@ -15,6 +25,9 @@ interface UseBridgeProps {
   nexusSDK: NexusSDK | null;
   intent: OnIntentHookData | null;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
+  setAllowance: React.Dispatch<
+    React.SetStateAction<OnAllowanceHookData | null>
+  >;
   unifiedBalance: UserAsset[] | null;
 }
 
@@ -24,8 +37,10 @@ const useBridge = ({
   nexusSDK,
   intent,
   setIntent,
+  setAllowance,
   unifiedBalance,
 }: UseBridgeProps) => {
+  const { fetchUnifiedBalance } = useNexus();
   const [inputs, setInputs] = useState<FastBridgeState>({
     chain:
       network === "testnet"
@@ -35,6 +50,7 @@ const useBridge = ({
     amount: undefined,
     recipient: connectedAddress,
   });
+
   const [timer, setTimer] = useState(0);
   const [startTxn, setStartTxn] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,8 +96,9 @@ const useBridge = ({
           console.log("Transfer transaction successful");
           console.log(
             "Transfer transaction explorer",
-            transferTxn?.explorerUrl
+            transferTxn?.explorerUrl,
           );
+          await onSuccess();
         }
         return;
       }
@@ -97,6 +114,7 @@ const useBridge = ({
       if (bridgeTxn?.success) {
         console.log("Bridge transaction successful");
         console.log("Bridge transaction explorer", bridgeTxn?.explorerUrl);
+        await onSuccess();
       }
     } catch (error) {
       console.error("Transaction failed:", (error as Error)?.message);
@@ -112,6 +130,22 @@ const useBridge = ({
         timerRef.current = null;
       }
     }
+  };
+
+  const onSuccess = async () => {
+    setIntent(null);
+    setAllowance(null);
+    setInputs({
+      chain:
+        network === "testnet"
+          ? SUPPORTED_CHAINS.SEPOLIA
+          : SUPPORTED_CHAINS.ETHEREUM,
+      token: "USDC",
+      amount: undefined,
+      recipient: connectedAddress,
+    });
+    setRefreshing(false);
+    await fetchUnifiedBalance();
   };
 
   const filteredUnifiedBalance = useMemo(() => {
@@ -132,6 +166,7 @@ const useBridge = ({
   const reset = () => {
     intent?.deny();
     setIntent(null);
+    setAllowance(null);
     setInputs({
       chain:
         network === "testnet"

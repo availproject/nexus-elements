@@ -1,12 +1,12 @@
 "use client";
 import {
-  EthereumProvider,
-  NexusNetwork,
+  type EthereumProvider,
+  type NexusNetwork,
   NexusSDK,
-  OnAllowanceHookData,
-  OnIntentHookData,
-  SupportedChainsResult,
-  UserAsset,
+  type OnAllowanceHookData,
+  type OnIntentHookData,
+  type SupportedChainsResult,
+  type UserAsset,
 } from "@avail-project/nexus-core";
 import {
   createContext,
@@ -15,7 +15,25 @@ import {
   useMemo,
   useState,
 } from "react";
-import { NexusContextType } from "./types";
+
+interface NexusContextType {
+  nexusSDK: NexusSDK | null;
+  unifiedBalance: UserAsset[] | null;
+  initializeNexus: (provider: EthereumProvider) => Promise<void>;
+  deinitializeNexus: () => Promise<void>;
+  attachEventHooks: () => void;
+  intent: OnIntentHookData | null;
+  setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
+  allowance: OnAllowanceHookData | null;
+  setAllowance: React.Dispatch<
+    React.SetStateAction<OnAllowanceHookData | null>
+  >;
+  handleInit: (provider: EthereumProvider) => Promise<void>;
+  supportedChainsAndTokens: SupportedChainsResult | null;
+  network?: NexusNetwork;
+  loading: boolean;
+  fetchUnifiedBalance: () => Promise<void>;
+}
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
 const NexusProvider = ({
@@ -38,10 +56,12 @@ const NexusProvider = ({
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
     null,
   );
+  const [loading, setLoading] = useState<boolean>(false);
   const [intent, setIntent] = useState<OnIntentHookData | null>(null);
   const [allowance, setAllowance] = useState<OnAllowanceHookData | null>(null);
 
   const initializeNexus = async (provider: EthereumProvider) => {
+    setLoading(true);
     try {
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
@@ -54,6 +74,8 @@ const NexusProvider = ({
       setSupportedChainsAndTokens(supportedChainsAndTokens);
     } catch (error) {
       console.error("Error initializing Nexus:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,6 +111,15 @@ const NexusProvider = ({
     [sdk],
   );
 
+  const fetchUnifiedBalance = async () => {
+    try {
+      const unifiedBalance = await sdk?.getUnifiedBalances();
+      setUnifiedBalance(unifiedBalance);
+    } catch (error) {
+      console.error("Error fetching unified balance:", error);
+    }
+  };
+
   const value = useMemo(
     () => ({
       nexusSDK,
@@ -103,6 +134,8 @@ const NexusProvider = ({
       supportedChainsAndTokens,
       unifiedBalance,
       network: config?.network,
+      loading,
+      fetchUnifiedBalance,
     }),
     [
       nexusSDK,
@@ -117,6 +150,8 @@ const NexusProvider = ({
       supportedChainsAndTokens,
       unifiedBalance,
       config,
+      loading,
+      fetchUnifiedBalance,
     ],
   );
   return (

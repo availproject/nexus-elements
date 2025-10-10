@@ -1,4 +1,7 @@
-import { SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import {
+  type SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_TOKENS,
+} from "@avail-project/nexus-core";
 import {
   Select,
   SelectContent,
@@ -10,7 +13,15 @@ import {
 import { Label } from "../../ui/label";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useMemo } from "react";
-import { TokenSelectProps } from "../types";
+
+interface TokenSelectProps {
+  selectedToken?: SUPPORTED_TOKENS;
+  selectedChain: SUPPORTED_CHAINS_IDS;
+  handleTokenSelect: (token: SUPPORTED_TOKENS) => void;
+  isTestnet?: boolean;
+  disabled?: boolean;
+  label?: string;
+}
 
 const TokenSelect = ({
   selectedToken,
