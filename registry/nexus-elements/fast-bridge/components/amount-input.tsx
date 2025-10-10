@@ -31,7 +31,8 @@ const AmountInput: React.FC<AmountInputProps> = ({
         <div className="flex items-center gap-x-3 min-w-max">
           {unifiedBalance && (
             <p className="text-base font-semibold">
-              {unifiedBalance?.balance} {unifiedBalance?.symbol}
+              {parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
+              {unifiedBalance?.symbol}
             </p>
           )}
           <Button
