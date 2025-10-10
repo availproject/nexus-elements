@@ -1,6 +1,11 @@
+import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 import React from "react";
 
-const NexusDeposit = () => {
+interface NexusDepositProps {
+  token: SUPPORTED_TOKENS;
+}
+
+const NexusDeposit = ({ token }: NexusDepositProps) => {
   return <div></div>;
 };
 

@@ -221,11 +221,29 @@
       "type": "registry:component",
       "title": "Separator",
       "description": "UI primitive: Separator",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/separator.tsx",
           "target": "components/ui/separator.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:component",
+      "title": "Tabs",
+      "description": "UI primitive: Tabs",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/tabs.tsx",
+          "target": "components/ui/tabs.tsx",
           "type": "registry:component"
         }
       ]
@@ -265,6 +283,29 @@
         {
           "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",
           "target": "components/unified-balance/unified-balance.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "nexus-deposit",
+      "type": "registry:component",
+      "title": "Deposit",
+      "description": "A simple component built with Nexus to enable deposits",
+      "dependencies": [
+        "lucide-react",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-slot"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/tabs.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/deposit/deposit.tsx",
+          "target": "components/deposit/deposit.tsx",
           "type": "registry:component"
         }
       ]
