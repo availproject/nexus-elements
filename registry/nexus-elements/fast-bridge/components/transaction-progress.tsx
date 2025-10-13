@@ -1,6 +1,6 @@
 import { Check, Circle, LoaderPinwheel } from "lucide-react";
-import React, { FC } from "react";
-import { ProgressStep } from "@avail-project/nexus-core";
+import * as React from "react";
+import { type ProgressStep } from "@avail-project/nexus-core";
 
 interface TransactionProgressProps {
   timer: number;
@@ -52,9 +52,6 @@ export const getStatusText = (type: string, operationType: string) => {
   }
 };
 
-<<<<<<< HEAD
-const TransactionProgress: FC<TransactionProgressProps> = ({
-=======
 // Known step types emitted by the SDK (stable `type` values)
 const KNOWN_TYPES = new Set<string>([
   "INTENT_ACCEPTED",
@@ -105,7 +102,6 @@ const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> =
   });
 
 const TransactionProgress: React.FC<TransactionProgressProps> = ({
->>>>>>> main
   timer,
   steps,
   viewIntentUrl,
