@@ -225,33 +225,7 @@ const TransactionProgress: React.FC<TransactionProgressProps> = ({
         </div>
       </div>
 
-      <div className="w-full mt-6 space-y-6">
-        {effectiveSteps.map((s, idx) => {
-          const isCompleted = !!s.completed;
-          const isCurrent = currentIndex === -1 ? false : idx === currentIndex;
-
-          let rightIcon = <Circle className="size-5 text-muted-foreground" />;
-          if (isCompleted) {
-            rightIcon = <Check className="size-5 text-green-600" />;
-          } else if (isCurrent) {
-            rightIcon = (
-              <LoaderPinwheel className="size-5 animate-spin text-muted-foreground" />
-            );
-          }
-
-          return (
-            <div
-              key={s.id}
-              className="flex items-center justify-between w-full"
-            >
-              <div className="flex items-center gap-x-3">
-                <span className="text-base font-semibold">{s.label}</span>
-              </div>
-              {rightIcon}
-            </div>
-          );
-        })}
-      </div>
+      <StepList steps={effectiveSteps} currentIndex={currentIndex} />
 
       {viewIntentUrl && (
         <a
