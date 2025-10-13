@@ -1,6 +1,10 @@
 "use client";
 import "@rainbow-me/rainbowkit/styles.css";
-import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import {
+  Chain,
+  getDefaultConfig,
+  RainbowKitProvider,
+} from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import {
   mainnet,
@@ -10,8 +14,8 @@ import {
   arbitrum,
   base,
   avalanche,
-  sophon,
   kaia,
+  bsc,
   sepolia,
   baseSepolia,
   arbitrumSepolia,
@@ -19,6 +23,58 @@ import {
   polygonAmoy,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { defineChain } from "viem";
+
+const hyperEVM = defineChain({
+  id: 999,
+  name: "HyperEVM",
+  nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.hyperliquid.xyz/evm"] },
+  },
+  blockExplorers: {
+    default: { name: "HyperEVM Scan", url: "https://hyperevmscan.io" },
+  },
+});
+
+const sophon = defineChain({
+  id: 50104,
+  name: "Sophon",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Sophon",
+    symbol: "SOPH",
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://rpc.sophon.xyz"],
+      webSocket: ["wss://rpc.sophon.xyz/ws"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Sophon Block Explorer",
+      url: "https://explorer.sophon.xyz",
+    },
+  },
+});
+
+// Add chain icons for RainbowKit
+type RainbowKitChain = Chain & { iconUrl?: string; iconBackground?: string };
+
+const hyperEVMWithIcon: RainbowKitChain = {
+  ...hyperEVM,
+  iconUrl:
+    "https://assets.coingecko.com/coins/images/50882/standard/hyperliquid.jpg?1729431300",
+  iconBackground: "#0a3cff",
+};
+
+const sophonWithIcon: RainbowKitChain = {
+  ...sophon,
+  iconUrl:
+    "https://assets.coingecko.com/coins/images/38680/standard/sophon_logo_200.png?1747898236",
+  iconBackground: "#6b5cff",
+};
 
 const config = getDefaultConfig({
   appName: "Nexus Elements",
@@ -26,7 +82,9 @@ const config = getDefaultConfig({
   chains: [
     mainnet,
     base,
-    sophon,
+    sophonWithIcon,
+    hyperEVMWithIcon,
+    bsc,
     kaia,
     arbitrum,
     avalanche,

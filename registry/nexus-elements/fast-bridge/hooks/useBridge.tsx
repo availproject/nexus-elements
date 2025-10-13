@@ -96,7 +96,7 @@ const useBridge = ({
           console.log("Transfer transaction successful");
           console.log(
             "Transfer transaction explorer",
-            transferTxn?.explorerUrl,
+            transferTxn?.explorerUrl
           );
           await onSuccess();
         }
@@ -133,6 +133,12 @@ const useBridge = ({
   };
 
   const onSuccess = async () => {
+    // Close dialog and stop timer on success
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setStartTxn(false);
     setIntent(null);
     setAllowance(null);
     setInputs({
@@ -182,6 +188,8 @@ const useBridge = ({
   };
 
   const startTransaction = () => {
+    // Reset timer for a fresh run
+    setTimer(0);
     setStartTxn(true);
     intent?.allow();
     setIsDialogOpen(true);
@@ -224,9 +232,35 @@ const useBridge = ({
     if (intent || loading || !areInputsValid || txError) return;
     const timeout = setTimeout(() => {
       void handleTransaction();
-    }, 700);
+    }, 800);
     return () => clearTimeout(timeout);
-  }, [areInputsValid, intent, loading, txError]);
+  }, [inputs, areInputsValid, intent, loading, txError]);
+
+  // Stop timer when dialog closes
+  useEffect(() => {
+    if (!isDialogOpen) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setStartTxn(false);
+    }
+  }, [isDialogOpen]);
+
+  // Dismiss error upon any input edit to allow re-attempt
+  useEffect(() => {
+    if (txError) {
+      setTxError(null);
+    }
+  }, [inputs]);
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setStartTxn(false);
+  };
 
   return {
     inputs,
@@ -242,6 +276,7 @@ const useBridge = ({
     reset,
     filteredUnifiedBalance,
     startTransaction,
+    stopTimer,
   };
 };
 

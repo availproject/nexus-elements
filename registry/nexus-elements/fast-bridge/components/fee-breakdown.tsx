@@ -40,6 +40,12 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent }) => {
               </p>
             </div>
             <div className="flex items-center w-full justify-between">
+              <p className="text-sm font-semibold">Gas Supplied</p>
+              <p className="text-sm font-semibold">
+                {intent?.fees?.gasSupplied} {intent?.token?.symbol}
+              </p>
+            </div>
+            <div className="flex items-center w-full justify-between">
               <p className="text-sm font-semibold">Solver Fees</p>
               <p className="text-sm font-semibold">
                 {intent?.fees?.solver} {intent?.token?.symbol}
