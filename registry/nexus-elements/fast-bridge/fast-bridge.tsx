@@ -9,7 +9,13 @@ import { useNexus } from "../nexus/NexusProvider";
 import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
 import FeeBreakdown from "./components/fee-breakdown";
-import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
 import useListenTransaction from "./hooks/useListenTransaction";
@@ -47,6 +53,7 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     startTransaction,
     setIsDialogOpen,
     setTxError,
+    stopTimer,
   } = useBridge({
     network: network ?? "mainnet",
     connectedAddress,
@@ -57,8 +64,16 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     setAllowance,
   });
 
-  const { processing, latestCompletedIndex, explorerUrl } =
-    useListenTransaction(nexusSDK);
+  const { processing, explorerUrl } = useListenTransaction(nexusSDK);
+
+  // Stop the timer when all steps are complete
+  const allCompleted =
+    processing?.length > 0 && processing.every((s) => s.completed);
+  React.useEffect(() => {
+    if (allCompleted) {
+      stopTimer();
+    }
+  }, [allCompleted, stopTimer]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -147,10 +162,12 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
             </div>
           )}
           <DialogContent>
+            <DialogHeader className="sr-only">
+              <DialogTitle>Transaction Progress</DialogTitle>
+            </DialogHeader>
             <TransactionProgress
               timer={timer}
               steps={processing}
-              latestCompletedIndex={latestCompletedIndex}
               viewIntentUrl={explorerUrl}
               operationType={"bridge"}
             />
