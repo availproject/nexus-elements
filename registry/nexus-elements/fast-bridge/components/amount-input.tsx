@@ -24,12 +24,10 @@ const AmountInput: FC<AmountInputProps> = ({
       <Input
         type="number"
         inputMode="decimal"
-        step="any"
-        min="0"
         value={amount ?? ""}
         placeholder="Enter Amount"
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-0!"
         aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
       />
       <div className="flex items-center justify-end-safe gap-x-4 w-fit px-2 border-l border-border">

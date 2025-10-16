@@ -4,6 +4,7 @@ import UnifiedBalanceShowcase from "@/components/unified-balance-showcase";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import NetworkToggle from "@/components/network-toggle";
 import { NexusNetwork } from "@avail-project/nexus-core";
+import DepositShowcase from "@/components/deposit-showcase";
 
 export default async function Home({
   searchParams,
@@ -33,6 +34,7 @@ export default async function Home({
           />
           <FastBridgeShowcase />
           <UnifiedBalanceShowcase />
+          <DepositShowcase />
         </main>
       </NexusProvider>
     </div>
