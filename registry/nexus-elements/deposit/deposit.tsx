@@ -1,11 +1,10 @@
 import {
-  SUPPORTED_CHAINS,
   SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
 import React from "react";
 import DepositModal from "./components/deposit-modal";
-import { Address } from "viem";
+import { Abi, Address } from "viem";
 import Container from "./components/container";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useNexus } from "../nexus/NexusProvider";
@@ -19,11 +18,27 @@ export interface BaseDepositProps {
     name: string;
     logo: string;
   }[];
+  depositExecute?: {
+    contractAddress: string;
+    contractAbi: Abi;
+    functionName: string;
+    buildFunctionParams: (
+      token: SUPPORTED_TOKENS,
+      amount: string,
+      chainId: SUPPORTED_CHAINS_IDS,
+      userAddress: `0x${string}`
+    ) => { functionParams: unknown[] };
+    tokenApproval?: {
+      token: SUPPORTED_TOKENS;
+      amount: string;
+    };
+  };
 }
 
 interface NexusDepositProps extends BaseDepositProps {
   heading?: string;
   embed?: boolean;
+  destinationLabel?: string;
 }
 
 const NexusDeposit = ({
@@ -33,6 +48,8 @@ const NexusDeposit = ({
   chainOptions,
   heading = "Deposit USDC",
   embed = false,
+  destinationLabel,
+  depositExecute,
 }: NexusDepositProps) => {
   const { supportedChainsAndTokens } = useNexus();
   const formatedChainOptions =
@@ -56,6 +73,8 @@ const NexusDeposit = ({
             token={token}
             chain={chain}
             chainOptions={formatedChainOptions}
+            destinationLabel={destinationLabel}
+            depositExecute={depositExecute}
           />
         </CardContent>
       </Card>
@@ -68,6 +87,8 @@ const NexusDeposit = ({
       chain={chain}
       chainOptions={formatedChainOptions}
       heading={heading}
+      destinationLabel={destinationLabel}
+      depositExecute={depositExecute}
     />
   );
 };

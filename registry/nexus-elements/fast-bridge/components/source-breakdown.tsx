@@ -16,7 +16,7 @@ interface SourceBreakdownProps {
 
 const SourceBreakdown = ({ intent, tokenSymbol }: SourceBreakdownProps) => {
   return (
-    <Accordion type="single" collapsible>
+    <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="sources">
         <div className="flex items-start justify-between gap-x-4 w-full">
           {intent?.sources && (

@@ -11,6 +11,7 @@ import { BaseDepositProps } from "../deposit";
 
 interface DepositModalProps extends BaseDepositProps {
   heading?: string;
+  destinationLabel?: string;
 }
 
 const DepositModal = ({
@@ -19,6 +20,8 @@ const DepositModal = ({
   chain,
   chainOptions,
   heading,
+  destinationLabel,
+  depositExecute,
 }: DepositModalProps) => {
   return (
     <Dialog>
@@ -32,6 +35,8 @@ const DepositModal = ({
           token={token}
           chain={chain}
           chainOptions={chainOptions}
+          destinationLabel={destinationLabel}
+          depositExecute={depositExecute}
         />
       </DialogContent>
     </Dialog>

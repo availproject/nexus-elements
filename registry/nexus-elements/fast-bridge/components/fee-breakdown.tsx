@@ -13,7 +13,7 @@ interface FeeBreakdownProps {
 
 const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent }) => {
   return (
-    <Accordion type="single" collapsible>
+    <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="breakdown">
         <div className="w-full flex items-start justify-between">
           <p className="font-semibold text-base">Total fees</p>

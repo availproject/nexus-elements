@@ -9,12 +9,33 @@ interface SourceSelectProps {
     name: string;
     logo: string;
   }[];
+  selected?: number[];
+  onChange?: (selected: number[]) => void;
+  disabled?: boolean;
 }
 
-const SourceSelect = ({ chainOptions }: SourceSelectProps) => {
+const SourceSelect = ({
+  chainOptions,
+  selected = [],
+  onChange,
+  disabled = false,
+}: SourceSelectProps) => {
+  const isSelected = (id: number) => selected?.includes(id);
+  const toggle = (id: number) => {
+    if (!onChange) return;
+    if (disabled) return;
+    if (isSelected(id)) onChange(selected.filter((s) => s !== id));
+    else onChange([...selected, id]);
+  };
   return (
     <Popover>
-      <PopoverTrigger className="flex items-center justify-between w-full p-2 cursor-pointer">
+      <PopoverTrigger
+        disabled={disabled}
+        aria-disabled={disabled}
+        className={`flex items-center justify-between w-full p-2 ${
+          disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+        }`}
+      >
         Customise Source Assests (Use Any){" "}
         <ChevronDown className="size-4 text-primary data-[state=open]:rotate-180 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </PopoverTrigger>
@@ -23,7 +44,15 @@ const SourceSelect = ({ chainOptions }: SourceSelectProps) => {
           chainOptions?.map((chain) => {
             return (
               <div key={chain.id} className="flex items-center gap-x-2">
-                <Checkbox value={chain.id} className="cursor-pointer" />
+                <Checkbox
+                  checked={isSelected(chain.id)}
+                  onCheckedChange={() => toggle(chain.id)}
+                  value={chain.id}
+                  disabled={disabled}
+                  className={`${
+                    disabled ? "cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                />
                 <div className="flex items-center gap-x-2 p-2">
                   <img
                     src={chain.logo}

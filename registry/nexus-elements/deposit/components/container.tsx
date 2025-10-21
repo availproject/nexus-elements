@@ -7,6 +7,7 @@ import { BaseDepositProps } from "../deposit";
 
 interface ContainerProps extends BaseDepositProps {
   fiatSubheading?: string;
+  destinationLabel?: string;
 }
 
 const Container = ({
@@ -15,6 +16,8 @@ const Container = ({
   token,
   chain,
   chainOptions,
+  destinationLabel,
+  depositExecute,
 }: ContainerProps) => {
   const { nexusSDK } = useNexus();
   return (
@@ -43,9 +46,12 @@ const Container = ({
       </TabsList>
       <TabsContent value="simple">
         <SimpleDeposit
+          address={address}
           token={token}
           chain={chain}
           chainOptions={chainOptions}
+          destinationLabel={destinationLabel}
+          depositExecute={depositExecute}
         />
       </TabsContent>
       <TabsContent value="qr"></TabsContent>

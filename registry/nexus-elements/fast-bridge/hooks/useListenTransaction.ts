@@ -3,7 +3,7 @@ import {
   NexusSDK,
   type ProgressStep,
 } from "@avail-project/nexus-core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ProcessingState = Array<{
   id: number;
@@ -11,33 +11,59 @@ type ProcessingState = Array<{
   step: ProgressStep;
 }>;
 
-const useListenTransaction = (sdk: NexusSDK | null) => {
+const useListenTransaction = (
+  sdk: NexusSDK | null,
+  transactionType: "bridge" | "transfer" | "bridgeAndExecute" = "bridge"
+) => {
   const [processing, setProcessing] = useState<ProcessingState>([]);
   const [explorerUrl, setExplorerUrl] = useState("");
   const [latestCompleted, setLatestCompleted] = useState<ProgressStep | null>(
-    null,
+    null
   );
 
   useEffect(() => {
     if (!sdk) return;
 
+    const completedIds = new Set<string>();
+    const firstEmissionRef = { current: true } as const;
+    let rafId: number | null = null;
+
     const handleExpectedSteps = (expectedSteps: ProgressStep[]) => {
+      console.log("expected steps", expectedSteps);
       const stepsArray = Array.isArray(expectedSteps) ? expectedSteps : [];
-      const initialSteps: ProcessingState = stepsArray.map((step, index) => ({
-        id: index,
-        completed: false,
-        step,
-      }));
-      setProcessing(initialSteps);
+      const apply = () =>
+        setProcessing((prev) => {
+          prev.forEach((s) => {
+            if (s?.completed && s?.step?.typeID)
+              completedIds.add(s.step.typeID);
+          });
+          const next: ProcessingState = stepsArray.map((step, index) => ({
+            id: index,
+            completed: completedIds.has(step?.typeID ?? ""),
+            step,
+          }));
+          return next;
+        });
+
+      if (firstEmissionRef.current) {
+        // @ts-expect-error - mutating readonly-like for local pattern
+        firstEmissionRef.current = false;
+        apply();
+      } else {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(apply);
+      }
     };
 
     const handleStepComplete = (stepData: ProgressStep) => {
+      console.log("completed stepData", stepData);
+      if (stepData?.typeID) completedIds.add(stepData.typeID);
       setProcessing((prev) =>
         prev.map((s) =>
           s.step && s.step.typeID === stepData?.typeID
             ? { ...s, completed: true }
-            : s,
-        ),
+            : s
+        )
       );
 
       setLatestCompleted(stepData);
@@ -50,12 +76,20 @@ const useListenTransaction = (sdk: NexusSDK | null) => {
         setExplorerUrl(stepData?.data?.explorerURL);
       }
     };
-
-    sdk?.nexusEvents?.on(NEXUS_EVENTS.EXPECTED_STEPS, handleExpectedSteps);
-    sdk?.nexusEvents?.on(NEXUS_EVENTS.STEP_COMPLETE, handleStepComplete);
+    const exepectedEvent =
+      transactionType === "bridgeAndExecute"
+        ? NEXUS_EVENTS.BRIDGE_EXECUTE_EXPECTED_STEPS
+        : NEXUS_EVENTS.EXPECTED_STEPS;
+    const completeEvent =
+      transactionType === "bridgeAndExecute"
+        ? NEXUS_EVENTS.BRIDGE_EXECUTE_COMPLETED_STEPS
+        : NEXUS_EVENTS.STEP_COMPLETE;
+    sdk?.nexusEvents?.on(exepectedEvent, handleExpectedSteps);
+    sdk?.nexusEvents?.on(completeEvent, handleStepComplete);
     return () => {
-      sdk?.nexusEvents?.off(NEXUS_EVENTS.EXPECTED_STEPS, handleExpectedSteps);
-      sdk?.nexusEvents?.off(NEXUS_EVENTS.STEP_COMPLETE, handleStepComplete);
+      sdk?.nexusEvents?.off(exepectedEvent, handleExpectedSteps);
+      sdk?.nexusEvents?.off(completeEvent, handleStepComplete);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [sdk]);
 
