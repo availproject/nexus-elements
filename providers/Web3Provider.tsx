@@ -24,6 +24,11 @@ import {
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { defineChain } from "viem";
+import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
+import { useSearchParams } from "next/navigation";
+import { type NexusNetwork } from "@avail-project/nexus-core";
+import { Suspense, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const hyperEVM = defineChain({
   id: 999,
@@ -101,11 +106,27 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 
-const Web3Provider = ({ children }: { children: React.ReactNode }) => {
+function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
+  const searchParams = useSearchParams();
+  const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
+  const nexusConfig = useMemo(
+    () => ({ network: urlNetwork, debug: true as const }),
+    [urlNetwork]
+  );
+  return <NexusProvider config={nexusConfig}>{children}</NexusProvider>;
+}
+
+const Web3Provider = ({
+  children,
+}: Readonly<{ children: React.ReactNode }>) => {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider modalSize="compact">{children}</RainbowKitProvider>
+        <RainbowKitProvider modalSize="compact">
+          <Suspense fallback={<Skeleton className="w-full h-full" />}>
+            <NexusProviders>{children}</NexusProviders>
+          </Suspense>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

@@ -36,7 +36,7 @@ const SourceSelect = ({
           disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
         }`}
       >
-        Customise Source Assests (Use Any){" "}
+        Customise Source Assets (Use Any){" "}
         <ChevronDown className="size-4 text-primary data-[state=open]:rotate-180 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </PopoverTrigger>
       <PopoverContent className="grid grid-cols-2 w-max">

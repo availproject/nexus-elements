@@ -1,15 +1,21 @@
-import * as React from "react";
-import { OpenInV0Button } from "./open-in-v0-button";
-import CodeBlock from "./ui/code-block";
-import { PreviewPanel } from "./showcase/PreviewPanel";
-import { CodeViewer } from "./showcase/CodeViewer";
-import { InstallPanel } from "./showcase/InstallPanel";
+import React from "react";
+import { OpenInV0Button } from "../docs/open-in-v0-button";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
 } from "@/registry/nexus-elements/ui/tabs";
+import { PreviewPanel } from "../showcase/preview-panel";
+import dynamic from "next/dynamic";
+import { InstallPanel } from "../showcase/install-panel";
+import { Skeleton } from "../ui/skeleton";
+import CodeBlock from "../ui/code-block";
+
+const CodeViewer = dynamic(
+  () => import("../showcase/code-viewer").then((m) => m.CodeViewer),
+  { loading: () => <Skeleton className="w-full h-full" /> }
+);
 
 const providerSetupCode = `"use client"
 import NexusProvider from "@/components/nexus/NexusProvider"
@@ -56,7 +62,7 @@ const ShowcaseWrapper = ({
         <OpenInV0Button name={registryItemName} className="w-fit" />
       </div>
 
-      <Tabs>
+      <Tabs defaultValue="preview">
         <TabsList className="h-auto p-0 w-fit">
           <TabsTrigger value="preview" className="px-2 py-2 text-sm">
             Preview
@@ -74,7 +80,7 @@ const ShowcaseWrapper = ({
         </TabsContent>
       </Tabs>
 
-      <div className="grid gap-3 sm:grid-rows-1">
+      <div className="flex flex-col items-start gap-y-3 w-full">
         <div className="rounded-md">
           <p className="text-sm font-semibold mb-2">About</p>
           <p className="text-sm text-muted-foreground">
@@ -87,24 +93,28 @@ const ShowcaseWrapper = ({
         <InstallPanel registryItemName={registryItemName} />
       </div>
 
-      <div className="rounded-md">
+      <div className="rounded-md w-full">
         <p className="text-sm font-semibold mb-2">Setup provider</p>
         <p className="text-sm text-foreground mb-2">
           Wrap your app with the provider:
         </p>
-        <CodeBlock
-          code={providerSetupCode}
-          lang="tsx"
-          filename="app/layout.tsx"
-        />
-        <p className="text-sm text-foreground my-3">
+        <div className="rounded-md border overflow-hidden">
+          <CodeBlock
+            code={providerSetupCode}
+            lang="tsx"
+            filename="app/layout.tsx"
+          />
+        </div>
+        <p className="text-sm text-foreground font-semibold my-3">
           Initialize on wallet connect:
         </p>
-        <CodeBlock
-          code={initCode}
-          lang="tsx"
-          filename="components/InitNexusOnConnect.tsx"
-        />
+        <div className="rounded-md border overflow-hidden">
+          <CodeBlock
+            code={initCode}
+            lang="tsx"
+            filename="components/InitNexusOnConnect.tsx"
+          />
+        </div>
       </div>
     </div>
   );

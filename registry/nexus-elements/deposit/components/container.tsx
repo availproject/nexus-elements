@@ -46,7 +46,6 @@ const Container = ({
       </TabsList>
       <TabsContent value="simple">
         <SimpleDeposit
-          address={address}
           token={token}
           chain={chain}
           chainOptions={chainOptions}
@@ -54,8 +53,12 @@ const Container = ({
           depositExecute={depositExecute}
         />
       </TabsContent>
-      <TabsContent value="qr"></TabsContent>
-      <TabsContent value="fiat"></TabsContent>
+      <TabsContent value="qr">
+        <p className="text-xl text-primary text-center">Coming soon</p>
+      </TabsContent>
+      <TabsContent value="fiat">
+        <p className="text-xl text-primary text-center">Coming soon</p>
+      </TabsContent>
     </Tabs>
   );
 };

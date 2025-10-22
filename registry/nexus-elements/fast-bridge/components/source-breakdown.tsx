@@ -25,7 +25,7 @@ const SourceBreakdown = ({ intent, tokenSymbol }: SourceBreakdownProps) => {
                 <p className="text-base font-semibold">You Spend</p>
                 <p className="text-sm font-medium">
                   {intent?.sources?.length > 1
-                    ? `${intent?.sources?.length} assests on ${intent?.sources?.length} chains`
+                    ? `${intent?.sources?.length} Assets on ${intent?.sources?.length} chains`
                     : `${intent?.sources?.length} asset on ${intent?.sources?.length} chain`}
                 </p>
               </div>

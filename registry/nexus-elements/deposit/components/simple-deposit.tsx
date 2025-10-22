@@ -18,8 +18,9 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useListenTransaction from "../../fast-bridge/hooks/useListenTransaction";
 import React from "react";
 import useDeposit from "../hooks/useDeposit";
+import { LoaderPinwheel } from "lucide-react";
 
-interface SimpleDepositProps extends BaseDepositProps {
+interface SimpleDepositProps extends Omit<BaseDepositProps, "address"> {
   destinationLabel?: string;
 }
 
@@ -55,6 +56,7 @@ const SimpleDeposit = ({
     startTransaction,
     stopTimer,
     clearSimulation,
+    simulate,
   } = useDeposit({
     chain,
     nexusSDK,
@@ -89,10 +91,14 @@ const SimpleDeposit = ({
       />
       <AmountInput
         token={token}
-        chain={chain}
         value={inputs?.amount}
         onChange={(value) => setInputs({ ...inputs, amount: value })}
         unifiedBalance={filteredUnifiedBalance}
+        disabled={loading || simulating}
+        onCommit={(value) => {
+          setInputs({ ...inputs, amount: value });
+          void simulate(value);
+        }}
       />
 
       {simulation?.success && simulation?.bridgeSimulation?.intent && (
@@ -105,8 +111,7 @@ const SimpleDeposit = ({
             <p className="text-base font-semibold">You receive</p>
             <div className="flex flex-col gap-y-1 min-w-fit">
               <p className="text-base font-semibold text-right">
-                {simulation?.bridgeSimulation?.intent?.destination?.amount}{" "}
-                {filteredUnifiedBalance?.symbol}
+                {inputs?.amount} {filteredUnifiedBalance?.symbol}
               </p>
               <p className="text-sm font-medium text-right">
                 {destinationLabel}
@@ -159,22 +164,37 @@ const SimpleDeposit = ({
               }}
               className="w-1/2"
             >
-              Deny
+              Cancel
             </Button>
             <Button
               onClick={startTransaction}
-              disabled={loading}
+              disabled={loading || simulating}
               className="w-1/2"
             >
-              {loading ? "Processing..." : "Accept"}
+              {loading ? (
+                <div className="flex items-center gap-x-2">
+                  <LoaderPinwheel className="animate-spin size-4" />
+                  <p>Preparing quote</p>
+                </div>
+              ) : (
+                "Deposit"
+              )}
             </Button>
           </div>
         ) : (
           <Button
             disabled={!inputs?.amount || loading || simulating}
             className="w-full"
+            onClick={() => void simulate()}
           >
-            {loading || simulating ? "Simulating..." : "Simulate"}
+            {loading || simulating ? (
+              <div className="flex items-center gap-x-2">
+                <LoaderPinwheel className="animate-spin size-4" />
+                <p>Preparing quote</p>
+              </div>
+            ) : (
+              "Deposit"
+            )}
           </Button>
         ))}
 
@@ -201,7 +221,7 @@ const SimpleDeposit = ({
       )}
 
       {txError && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-start justify-between gap-x-3 mt-3 w-full max-w-xs">
+        <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
           <span className="flex-1 max-w-">{txError}</span>
           <Button
             type="button"
@@ -220,3 +240,9 @@ const SimpleDeposit = ({
 };
 
 export default SimpleDeposit;
+
+/**
+ * add shimmer when simulating
+ * when refreshing, say refreshing quote
+ * keep txn processor copy deposit oriented
+ */

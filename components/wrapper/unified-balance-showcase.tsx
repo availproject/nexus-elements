@@ -1,7 +1,13 @@
-"use client";
-import * as React from "react";
+import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
-import UnifiedBalance from "@/registry/nexus-elements/unified-balance/unified-balance";
+import dynamic from "next/dynamic";
+import { Skeleton } from "../ui/skeleton";
+const UnifiedBalance = dynamic(
+  () => import("@/registry/nexus-elements/unified-balance/unified-balance"),
+  {
+    loading: () => <Skeleton className="w-full h-full" />,
+  }
+);
 
 const UnifiedBalanceShowcase = () => {
   return (

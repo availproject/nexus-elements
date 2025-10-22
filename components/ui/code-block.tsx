@@ -2,7 +2,7 @@
 import * as React from "react";
 import { Button } from "@/registry/nexus-elements/ui/button";
 import { toast } from "sonner";
-import { codeToHtml, type BundledLanguage } from "shiki";
+import type { BundledLanguage } from "shiki";
 import { cn } from "@/lib/utils";
 
 type CodeBlockProps = {
@@ -27,6 +27,7 @@ export default function CodeBlock({
     async function run() {
       try {
         setLoading(true);
+        const { codeToHtml } = await import("shiki");
         const htmlOut = await codeToHtml(code, {
           lang: (lang ?? "tsx") as BundledLanguage,
           themes: { light: "github-light", dark: "github-dark" },

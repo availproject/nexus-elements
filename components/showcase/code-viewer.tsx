@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/registry/nexus-elements/ui/button";
 import CodeBlock from "../ui/code-block";
 import { toast } from "sonner";
@@ -17,16 +17,16 @@ import {
 export function CodeViewer({
   registryItemName,
 }: Readonly<{ registryItemName: string }>) {
-  const [sourceFiles, setSourceFiles] = React.useState<
+  const [sourceFiles, setSourceFiles] = useState<
     Array<{ path: string; content: string }>
   >([]);
-  const [selectedFileIdx, setSelectedFileIdx] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
-  const [sourceKind, setSourceKind] = React.useState<"component" | "provider">(
+  const [selectedFileIdx, setSelectedFileIdx] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [sourceKind, setSourceKind] = useState<"component" | "provider">(
     "component"
   );
 
-  const sourceJsonUrl = React.useMemo(
+  const sourceJsonUrl = useMemo(
     () =>
       `${process.env.NEXT_PUBLIC_BASE_URL}/r/${
         sourceKind === "component" ? registryItemName : "nexus-provider"
@@ -60,12 +60,33 @@ export function CodeViewer({
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadSource();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceKind, registryItemName]);
 
   const file = sourceFiles[selectedFileIdx];
+
+  const renderCodeblock = () => {
+    if (loading) {
+      return (
+        <pre className="text-xs bg-muted rounded p-2 overflow-x-auto">
+          Loading...
+        </pre>
+      );
+    }
+    if (file) {
+      return (
+        <CodeBlock
+          code={file.content}
+          filename={file.path}
+          lang={file.path.endsWith(".ts") ? "ts" : "tsx"}
+          className="overflow-y-scroll max-h-[600px]"
+        />
+      );
+    }
+    return null;
+  };
 
   return (
     <Tabs
@@ -117,18 +138,7 @@ export function CodeViewer({
         </div>
       </div>
 
-      {loading ? (
-        <pre className="text-xs bg-muted rounded p-2 overflow-x-auto">
-          Loading...
-        </pre>
-      ) : file ? (
-        <CodeBlock
-          code={file.content}
-          filename={file.path}
-          lang={file.path.endsWith(".ts") ? "ts" : "tsx"}
-          className="overflow-y-scroll max-h-[600px]"
-        />
-      ) : null}
+      {renderCodeblock()}
     </Tabs>
   );
 }

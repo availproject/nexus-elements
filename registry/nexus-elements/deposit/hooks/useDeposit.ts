@@ -114,24 +114,21 @@ const useDeposit = ({
       console.log("result", result);
 
       if (!result?.success) {
-        throw new Error(result?.error || "Transaction rejected by user");
+        setTxError(result?.error || "Transaction rejected by user");
+        setIsDialogOpen(false);
+        resetState();
+        return;
       }
       setLastResult(result);
-
       await onSuccess();
     } catch (error) {
       const msg = (error as Error)?.message || "Transaction failed";
       setTxError(
         msg.includes("User rejected") ? "User rejected the transaction" : msg
       );
-      // Reset inputs and avoid immediate resimulation
       setIsDialogOpen(false);
-      setStartTxn(false);
-      setSimulation(null);
-      setInputs({ chain, amount: undefined, selectedSources: allSourceIds });
     } finally {
-      setLoading(false);
-      setStartTxn(false);
+      resetState();
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -139,9 +136,10 @@ const useDeposit = ({
     }
   };
 
-  const simulate = async () => {
+  const simulate = async (overrideAmount?: string) => {
     if (!nexusSDK) return;
-    if (!inputs?.amount || !inputs?.chain) {
+    const amountToUse = overrideAmount ?? inputs?.amount;
+    if (!amountToUse || !inputs?.chain) {
       setSimulation(null);
       return;
     }
@@ -149,7 +147,7 @@ const useDeposit = ({
     try {
       const params: BridgeAndExecuteParams = {
         token: "USDC" as SUPPORTED_TOKENS,
-        amount: inputs.amount,
+        amount: amountToUse,
         toChainId: inputs.chain,
         sourceChains: inputs.selectedSources?.length
           ? inputs.selectedSources
@@ -160,12 +158,19 @@ const useDeposit = ({
       console.log("simulation params", params);
       const sim = await nexusSDK.simulateBridgeAndExecute(params);
       console.log("simulation result", sim);
-      setSimulation(sim?.success ? sim : null);
-    } catch (error) {
-      setSimulation(null);
-      if (!(error as Error)?.message?.includes("User rejected")) {
-        setTxError((error as Error)?.message || "Simulation failed");
+      if (sim?.success) {
+        setTxError(null);
+        setSimulation(sim);
+      } else {
+        setSimulation(null);
+        setTxError(sim?.error || "Simulation failed");
       }
+    } catch (error) {
+      const msg = (error as Error)?.message || "Simulation failed";
+      setSimulation(null);
+      setTxError(
+        msg.includes("User rejected") ? "User rejected the simulation" : msg
+      );
     } finally {
       setSimulating(false);
     }
@@ -176,20 +181,10 @@ const useDeposit = ({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    setStartTxn(false);
-    setIntent(null);
-    setAllowance(null);
-    setInputs({
-      chain,
-      amount: undefined,
-      selectedSources: allSourceIds,
-    });
-    setRefreshing(false);
     await fetchUnifiedBalance();
   };
 
-  const reset = () => {
-    intent?.deny();
+  const resetState = () => {
     setIntent(null);
     setAllowance(null);
     setInputs({
@@ -200,6 +195,13 @@ const useDeposit = ({
     setLoading(false);
     setStartTxn(false);
     setRefreshing(false);
+    setSimulation(null);
+    setIntent(null);
+  };
+
+  const reset = () => {
+    intent?.deny();
+    resetState();
   };
 
   const startTransaction = () => {
@@ -231,14 +233,6 @@ const useDeposit = ({
   }, [startTxn]);
 
   useEffect(() => {
-    if (loading || isDialogOpen || startTxn) return;
-    const timeout = setTimeout(() => {
-      void simulate();
-    }, 800);
-    return () => clearTimeout(timeout);
-  }, [inputs, executeConfig, loading, isDialogOpen, startTxn]);
-
-  useEffect(() => {
     if (!isDialogOpen) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -249,9 +243,8 @@ const useDeposit = ({
     }
   }, [isDialogOpen]);
 
-  useEffect(() => {
-    if (txError) setTxError(null);
-  }, [inputs]);
+  // Do not auto-clear txError on input changes. It is cleared explicitly
+  // when a new simulate/transaction starts or succeeds.
 
   const stopTimer = () => {
     if (timerRef.current) {
@@ -279,7 +272,8 @@ const useDeposit = ({
     startTransaction,
     reset,
     stopTimer,
-    clearSimulation: () => setSimulation(null),
+    simulate,
+    clearSimulation: () => reset(),
   };
 };
 

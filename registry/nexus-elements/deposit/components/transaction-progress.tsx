@@ -9,6 +9,96 @@ interface BridgeExecuteProgressProps {
   executeUrl?: string;
 }
 
+const getOperationText = (type: string) => {
+  switch (type) {
+    case "bridge":
+      return "Transaction";
+    case "transfer":
+      return "Transferring";
+    case "bridgeAndExecute":
+      return "Deposit";
+    case "swap":
+      return "Swapping";
+    default:
+      return "Processing";
+  }
+};
+
+const getStatusText = (type: string, operationType: string) => {
+  const opText = getOperationText(operationType);
+
+  switch (type) {
+    case "INTENT_ACCEPTED":
+      return "Intent Accepted";
+    case "INTENT_HASH_SIGNED":
+      return "Signing Transaction";
+    case "INTENT_SUBMITTED":
+      return "Submitting Transaction";
+    case "INTENT_COLLECTION":
+      return "Collecting Confirmations";
+    case "INTENT_COLLECTION_COMPLETE":
+      return "Confirmations Complete";
+    case "APPROVAL":
+      return "Approving";
+    case "TRANSACTION_SENT":
+      return "Sending Transaction";
+    case "RECEIPT_RECEIVED":
+      return "Receipt Received";
+    case "TRANSACTION_CONFIRMED":
+    case "INTENT_FULFILLED":
+      return `${opText} Complete`;
+    default:
+      return `Processing ${opText}`;
+  }
+};
+
+const KNOWN_TYPES = new Set<string>([
+  "INTENT_ACCEPTED",
+  "INTENT_HASH_SIGNED",
+  "INTENT_SUBMITTED",
+  "INTENT_COLLECTION",
+  "INTENT_COLLECTION_COMPLETE",
+  "APPROVAL",
+  "TRANSACTION_SENT",
+  "RECEIPT_RECEIVED",
+  "TRANSACTION_CONFIRMED",
+  "INTENT_FULFILLED",
+]);
+
+type DisplayStep = { id: string; label: string; completed: boolean };
+
+const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> = ({
+  steps,
+  currentIndex,
+}) => {
+  return (
+    <div className="w-full mt-6 space-y-6">
+      {steps.map((s, idx) => {
+        const isCompleted = !!s.completed;
+        const isCurrent = currentIndex === -1 ? false : idx === currentIndex;
+
+        let rightIcon = <Circle className="size-5 text-muted-foreground" />;
+        if (isCompleted) {
+          rightIcon = <Check className="size-5 text-green-600" />;
+        } else if (isCurrent) {
+          rightIcon = (
+            <LoaderPinwheel className="size-5 animate-spin text-muted-foreground" />
+          );
+        }
+
+        return (
+          <div key={s.id} className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-x-3">
+              <span className="text-base font-semibold">{s.label}</span>
+            </div>
+            {rightIcon}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
   timer,
   steps,
@@ -16,99 +106,6 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
   executeUrl,
 }) => {
   const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
-
-  // BEGIN: StepList + status mapping (aligned with fast-bridge component)
-  const getOperationText = (type: string) => {
-    switch (type) {
-      case "bridge":
-        return "Transaction";
-      case "transfer":
-        return "Transferring";
-      case "bridgeAndExecute":
-        return "Bridge & Execute";
-      case "swap":
-        return "Swapping";
-      default:
-        return "Processing";
-    }
-  };
-
-  const getStatusText = (type: string, operationType: string) => {
-    const opText = getOperationText(operationType);
-
-    switch (type) {
-      case "INTENT_ACCEPTED":
-        return "Intent Accepted";
-      case "INTENT_HASH_SIGNED":
-        return "Signing Transaction";
-      case "INTENT_SUBMITTED":
-        return "Submitting Transaction";
-      case "INTENT_COLLECTION":
-        return "Collecting Confirmations";
-      case "INTENT_COLLECTION_COMPLETE":
-        return "Confirmations Complete";
-      case "APPROVAL":
-        return "Approving";
-      case "TRANSACTION_SENT":
-        return "Sending Transaction";
-      case "RECEIPT_RECEIVED":
-        return "Receipt Received";
-      case "TRANSACTION_CONFIRMED":
-      case "INTENT_FULFILLED":
-        return `${opText} Complete`;
-      default:
-        return `Processing ${opText}`;
-    }
-  };
-
-  const KNOWN_TYPES = new Set<string>([
-    "INTENT_ACCEPTED",
-    "INTENT_HASH_SIGNED",
-    "INTENT_SUBMITTED",
-    "INTENT_COLLECTION",
-    "INTENT_COLLECTION_COMPLETE",
-    "APPROVAL",
-    "TRANSACTION_SENT",
-    "RECEIPT_RECEIVED",
-    "TRANSACTION_CONFIRMED",
-    "INTENT_FULFILLED",
-  ]);
-
-  type DisplayStep = { id: string; label: string; completed: boolean };
-
-  const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> =
-    React.memo(({ steps, currentIndex }) => {
-      return (
-        <div className="w-full mt-6 space-y-6">
-          {steps.map((s, idx) => {
-            const isCompleted = !!s.completed;
-            const isCurrent =
-              currentIndex === -1 ? false : idx === currentIndex;
-
-            let rightIcon = <Circle className="size-5 text-muted-foreground" />;
-            if (isCompleted) {
-              rightIcon = <Check className="size-5 text-green-600" />;
-            } else if (isCurrent) {
-              rightIcon = (
-                <LoaderPinwheel className="size-5 animate-spin text-muted-foreground" />
-              );
-            }
-
-            return (
-              <div
-                key={s.id}
-                className="flex items-center justify-between w-full"
-              >
-                <div className="flex items-center gap-x-3">
-                  <span className="text-base font-semibold">{s.label}</span>
-                </div>
-                {rightIcon}
-              </div>
-            );
-          })}
-        </div>
-      );
-    });
 
   const operationType = "bridgeAndExecute";
 
@@ -119,6 +116,26 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
 
     const displaySteps: DisplayStep[] = [];
     const seen = new Set<string>();
+
+    // Aggregate allowance progress across multiple chains
+    const allowanceRequiredChains = new Set<number | string>();
+    const allowanceMinedChains = new Set<number | string>();
+    let allowanceAllDoneCompleted = false;
+
+    const getChainIdFromStep = (st: any): number | string | undefined => {
+      const direct = st?.data?.chainID ?? st?.chainID;
+      if (direct !== undefined && direct !== null) return direct;
+      const typeID: string | undefined = st?.typeID;
+      if (typeof typeID === "string") {
+        const parts = typeID.split("_");
+        const last = parts[parts.length - 1];
+        if (last) {
+          const num = Number(last);
+          return Number.isNaN(num) ? last : num;
+        }
+      }
+      return undefined;
+    };
 
     const pushCombinedSignSubmit = () => {
       if (seen.has("SIGN_SUBMIT")) return;
@@ -162,6 +179,26 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
       const type = s?.step?.type as unknown as string;
       if (!type || seen.has(type)) return;
 
+      // Collect ALLOWANCE_* steps into a single aggregated step later
+      if (type.startsWith("ALLOWANCE_")) {
+        const chainId = getChainIdFromStep(s?.step as any);
+        if (type === "ALLOWANCE_USER_APPROVAL") {
+          if (chainId !== undefined) allowanceRequiredChains.add(chainId);
+          return;
+        }
+        if (type === "ALLOWANCE_APPROVAL_MINED") {
+          if (chainId !== undefined) {
+            allowanceRequiredChains.add(chainId);
+            if (s.completed) allowanceMinedChains.add(chainId);
+          }
+          return;
+        }
+        if (type === "ALLOWANCE_ALL_DONE") {
+          if (s.completed) allowanceAllDoneCompleted = true;
+          return;
+        }
+      }
+
       if (type === "INTENT_HASH_SIGNED" || type === "INTENT_SUBMITTED") {
         pushCombinedSignSubmit();
         return;
@@ -190,6 +227,34 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
       }
     });
 
+    // Insert aggregated Allowances step before signing, or after intent accepted
+    const totalAllowances = new Set([
+      ...Array.from(allowanceRequiredChains.values()),
+      ...Array.from(allowanceMinedChains.values()),
+    ]).size;
+    if (totalAllowances > 0 || allowanceAllDoneCompleted) {
+      const allowancesCompleted = allowanceMinedChains.size;
+      const completed =
+        allowanceAllDoneCompleted ||
+        (totalAllowances > 0 && allowancesCompleted >= totalAllowances);
+      const label = completed
+        ? "Allowances Complete"
+        : `Setting allowances ${allowancesCompleted}/${totalAllowances}`;
+
+      let insertIdx = displaySteps.findIndex((st) => st.id === "SIGN_SUBMIT");
+      if (insertIdx === -1) {
+        const idxAccepted = displaySteps.findIndex(
+          (st) => st.id === "INTENT_ACCEPTED"
+        );
+        insertIdx = idxAccepted === -1 ? 0 : idxAccepted + 1;
+      }
+      displaySteps.splice(insertIdx, 0, {
+        id: "ALLOWANCES",
+        label,
+        completed,
+      });
+    }
+
     let effective: DisplayStep[] = displaySteps;
     if (!displaySteps.length) {
       effective = allCompleted
@@ -206,7 +271,6 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
 
     return { effectiveSteps: effective, currentIndex: current };
   }, [steps, allCompleted]);
-  // END: StepList + status mapping
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -216,11 +280,7 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
         ) : (
           <LoaderPinwheel className="size-6 animate-spin" />
         )}
-        <p>
-          {allCompleted
-            ? "Bridge & Execute Completed"
-            : "Bridge & Execute In Progress..."}
-        </p>
+        <p>{allCompleted ? "Deposit Completed" : "Processing your deposit"}</p>
         <div className="flex items-center justify-center w-full">
           <span className="text-2xl font-semibold">{Math.floor(timer)}</span>
           <span className="text-base font-semibold">.</span>

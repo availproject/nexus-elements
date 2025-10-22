@@ -1,8 +1,7 @@
 "use client";
 import * as React from "react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { LoaderPinwheel } from "lucide-react";
-import { EthereumProvider } from "@avail-project/nexus-core";
+import { type EthereumProvider } from "@avail-project/nexus-core";
 import { useAccount } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";
@@ -35,10 +34,11 @@ export function PreviewPanel({
   };
   return (
     <div className="rounded-lg border p-4">
-      <ConnectButton />
       <div className="flex items-center justify-center min-h-[450px] relative">
-        {status === "connected" && nexusSDK && <>{children}</>}
-        {status === "connected" && !nexusSDK && (
+        {(status === "connected" || status === "connecting") && nexusSDK && (
+          <>{children}</>
+        )}
+        {(status === "connected" || status === "connecting") && !nexusSDK && (
           <Button onClick={initializeNexus}>
             {loading ? (
               <LoaderPinwheel className="size-6 animate-spin" />

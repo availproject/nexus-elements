@@ -8,6 +8,7 @@ import {
 } from "../../ui/dialog";
 import Container from "./container";
 import { BaseDepositProps } from "../deposit";
+import { Button } from "../../ui/button";
 
 interface DepositModalProps extends BaseDepositProps {
   heading?: string;
@@ -25,7 +26,9 @@ const DepositModal = ({
 }: DepositModalProps) => {
   return (
     <Dialog>
-      <DialogTrigger>Open</DialogTrigger>
+      <DialogTrigger asChild>
+        <Button>Deposit</Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{heading}</DialogTitle>

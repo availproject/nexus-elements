@@ -38,10 +38,10 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   useEffect(() => {
     if (allowanceModal) {
       setSelectedOption(
-        Array.from({ length: allowanceModal.sources.length }, () => "min"),
+        Array.from({ length: allowanceModal.sources.length }, () => "min")
       );
       setCustomValues(
-        Array.from({ length: allowanceModal.sources.length }, () => ""),
+        Array.from({ length: allowanceModal.sources.length }, () => "")
       );
     }
   }, [allowanceModal]);
@@ -63,9 +63,13 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       if (v && !isNaN(Number(v))) return v;
       return "min";
     });
-    allow(processed);
-    setAllowanceModal(null);
-    callback?.();
+    try {
+      allow(processed);
+      setAllowanceModal(null);
+      callback?.();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -106,7 +110,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
                   <span className="font-semibold">
                     {nexusSDK?.utils.formatBalance(
                       source.allowance.current,
-                      source.token.decimals,
+                      source.token.decimals
                     )}
                   </span>
                 </div>
@@ -130,7 +134,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
                     Minimum (
                     {nexusSDK?.utils.formatBalance(
                       source.allowance.minimum,
-                      source.token.decimals,
+                      source.token.decimals
                     )}
                     )
                   </span>
