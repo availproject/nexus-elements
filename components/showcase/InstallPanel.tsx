@@ -14,7 +14,7 @@ export function InstallPanel({
   const [depsError, setDepsError] = React.useState<string | null>(null);
 
   const buildUrl = (item: string) =>
-    `https://elements.nexus.availproject.org/r/${item}.json`;
+    `${process.env.NEXT_PUBLIC_BASE_URL}/r/${item}.json`;
 
   const computeUrlCmd = (item: string) => {
     const url = buildUrl(item);
@@ -199,8 +199,7 @@ export function InstallPanel({
             <li>
               Provider: open the <span className="font-semibold">Code</span> tab
               → select <span className="font-semibold">Provider</span> and copy{" "}
-              <code className="mx-1">components/nexus/NexusProvider.tsx</code>{" "}
-              and <code className="mx-1">components/nexus/types.ts</code>.
+              <code className="mx-1">components/nexus/NexusProvider.tsx</code>
             </li>
             <li>
               Component: in the <span className="font-semibold">Code</span> tab

@@ -1,11 +1,15 @@
-"use client";
 import * as React from "react";
 import { OpenInV0Button } from "./open-in-v0-button";
 import CodeBlock from "./ui/code-block";
 import { PreviewPanel } from "./showcase/PreviewPanel";
 import { CodeViewer } from "./showcase/CodeViewer";
 import { InstallPanel } from "./showcase/InstallPanel";
-import { Button } from "@/registry/nexus-elements/ui/button";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/registry/nexus-elements/ui/tabs";
 
 const providerSetupCode = `"use client"
 import NexusProvider from "@/components/nexus/NexusProvider"
@@ -45,10 +49,6 @@ const ShowcaseWrapper = ({
   connectLabel?: string;
   registryItemName?: string;
 }) => {
-  const [activeTab, setActiveTab] = React.useState<"preview" | "code">(
-    "preview"
-  );
-
   return (
     <div className="flex flex-col gap-4 rounded-lg py-4 min-h-[450px] relative">
       <div className="flex items-center justify-between">
@@ -56,37 +56,23 @@ const ShowcaseWrapper = ({
         <OpenInV0Button name={registryItemName} className="w-fit" />
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button
-          role="tab"
-          className={`text-sm px-2 py-2 -mb-px ${
-            activeTab === "preview"
-              ? "border-b-2 border-foreground font-semibold"
-              : "text-muted-foreground"
-          }`}
-          onClick={() => setActiveTab("preview")}
-        >
-          Preview
-        </Button>
-        <Button
-          variant={"secondary"}
-          role="tab"
-          className={`text-sm px-2 py-2 -mb-px ${
-            activeTab === "code"
-              ? "border-b-2 border-foreground font-semibold"
-              : "text-muted-foreground"
-          }`}
-          onClick={() => setActiveTab("code")}
-        >
-          Code
-        </Button>
-      </div>
+      <Tabs>
+        <TabsList className="h-auto p-0 w-fit">
+          <TabsTrigger value="preview" className="px-2 py-2 text-sm">
+            Preview
+          </TabsTrigger>
+          <TabsTrigger value="code" className="px-2 py-2 text-sm">
+            Code
+          </TabsTrigger>
+        </TabsList>
 
-      {activeTab === "preview" ? (
-        <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
-      ) : (
-        <CodeViewer registryItemName={registryItemName} />
-      )}
+        <TabsContent value="preview" className="mt-2">
+          <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+        </TabsContent>
+        <TabsContent value="code" className="mt-2">
+          <CodeViewer registryItemName={registryItemName} />
+        </TabsContent>
+      </Tabs>
 
       <div className="grid gap-3 sm:grid-rows-1">
         <div className="rounded-md">

@@ -3,6 +3,16 @@ import * as React from "react";
 import { Button } from "@/registry/nexus-elements/ui/button";
 import CodeBlock from "../ui/code-block";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/registry/nexus-elements/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/registry/nexus-elements/ui/select";
 
 export function CodeViewer({
   registryItemName,
@@ -18,7 +28,7 @@ export function CodeViewer({
 
   const sourceJsonUrl = React.useMemo(
     () =>
-      `https://elements.nexus.availproject.org/r/${
+      `${process.env.NEXT_PUBLIC_BASE_URL}/r/${
         sourceKind === "component" ? registryItemName : "nexus-provider"
       }.json`,
     [registryItemName, sourceKind]
@@ -58,42 +68,43 @@ export function CodeViewer({
   const file = sourceFiles[selectedFileIdx];
 
   return (
-    <div className="grid gap-4">
+    <Tabs
+      value={sourceKind}
+      onValueChange={(v) => setSourceKind(v as "component" | "provider")}
+      className="grid gap-4"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {sourceFiles.length > 1 && (
-            <select
-              className="text-sm border rounded px-2 py-1 bg-background"
-              value={selectedFileIdx}
-              onChange={(e) => setSelectedFileIdx(parseInt(e.target.value))}
+            <Select
+              value={String(selectedFileIdx)}
+              onValueChange={(value) => setSelectedFileIdx(parseInt(value))}
             >
-              {sourceFiles.map((f, i) => (
-                <option key={f.path} value={i}>
-                  {f.path}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="text-sm border rounded px-2 py-1 bg-background">
+                <SelectValue placeholder="Select a fruit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Components</SelectLabel>
+                  {sourceFiles.map((f, i) => (
+                    <SelectItem key={f.path} value={String(i)}>
+                      {f.path}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-xs">
-            <button
-              className={`px-2 py-1 rounded border ${
-                sourceKind === "component" ? "bg-accent" : ""
-              }`}
-              onClick={() => setSourceKind("component")}
-            >
+          <TabsList className="h-auto p-0">
+            <TabsTrigger value="component" className="px-2 py-1 text-xs">
               Component
-            </button>
-            <button
-              className={`px-2 py-1 rounded border ${
-                sourceKind === "provider" ? "bg-accent" : ""
-              }`}
-              onClick={() => setSourceKind("provider")}
-            >
+            </TabsTrigger>
+            <TabsTrigger value="provider" className="px-2 py-1 text-xs">
               Provider
-            </button>
-          </div>
+            </TabsTrigger>
+          </TabsList>
           {file && (
             <Button
               size="sm"
@@ -118,6 +129,6 @@ export function CodeViewer({
           className="overflow-y-scroll max-h-[600px]"
         />
       ) : null}
-    </div>
+    </Tabs>
   );
 }

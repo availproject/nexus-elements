@@ -13,7 +13,11 @@ import { parseUnits } from "viem";
 const DepositShowcase = () => {
   const { address } = useAccount();
   return (
-    <ShowcaseWrapper heading="Nexus Deposit">
+    <ShowcaseWrapper
+      heading="Nexus Deposit"
+      connectLabel="Connect wallet to use Nexus Deposit"
+      registryItemName="deposit"
+    >
       <NexusDeposit
         address={address ?? `0x`}
         token="USDC"
