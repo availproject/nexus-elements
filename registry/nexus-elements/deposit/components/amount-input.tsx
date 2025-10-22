@@ -96,7 +96,7 @@ const AmountInput = ({
               onCommit?.(value ?? "");
             }
           }}
-          className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          className="py-0 px-1  text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
           disabled={disabled}
         />
         <p>{token}</p>

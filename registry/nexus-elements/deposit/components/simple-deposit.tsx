@@ -18,7 +18,7 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useListenTransaction from "../../fast-bridge/hooks/useListenTransaction";
 import React from "react";
 import useDeposit from "../hooks/useDeposit";
-import { LoaderPinwheel } from "lucide-react";
+import { LoaderPinwheel, X } from "lucide-react";
 
 interface SimpleDepositProps extends Omit<BaseDepositProps, "address"> {
   destinationLabel?: string;
@@ -182,11 +182,7 @@ const SimpleDeposit = ({
             </Button>
           </div>
         ) : (
-          <Button
-            disabled={!inputs?.amount || loading || simulating}
-            className="w-full"
-            onClick={() => void simulate()}
-          >
+          <Button disabled={true} className="w-full">
             {loading || simulating ? (
               <div className="flex items-center gap-x-2">
                 <LoaderPinwheel className="animate-spin size-4" />
@@ -221,17 +217,20 @@ const SimpleDeposit = ({
       )}
 
       {txError && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
+        <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
           <span className="flex-1 max-w-">{txError}</span>
           <Button
             type="button"
             size={"icon"}
             variant={"ghost"}
-            onClick={() => setTxError(null)}
-            className="text-red-700/80 hover:text-red-900 focus:outline-none"
+            onClick={() => {
+              clearSimulation();
+              setTxError(null);
+            }}
+            className="text-destructive-foreground/80 hover:text-destructive-foreground focus:outline-none"
             aria-label="Dismiss error"
           >
-            ×
+            <X className="size-4" />
           </Button>
         </div>
       )}
@@ -245,4 +244,6 @@ export default SimpleDeposit;
  * add shimmer when simulating
  * when refreshing, say refreshing quote
  * keep txn processor copy deposit oriented
+ * when txn has started make sure the deposit button (L169) doesn't say prepare quote, this is happening because of shared loading state variable
+ * do custom copy for bridge and execute altogether
  */

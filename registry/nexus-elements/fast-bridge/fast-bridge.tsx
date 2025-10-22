@@ -4,7 +4,7 @@ import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
 import { Button } from "../ui/button";
-import { LoaderPinwheel } from "lucide-react";
+import { LoaderPinwheel, X } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
 import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
@@ -47,12 +47,12 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
     refreshing,
     isDialogOpen,
     txError,
+    setTxError,
     handleTransaction,
     reset,
     filteredUnifiedBalance,
     startTransaction,
     setIsDialogOpen,
-    setTxError,
     stopTimer,
   } = useBridge({
     network: network ?? "mainnet",
@@ -182,17 +182,20 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
         )}
 
         {txError && (
-          <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-start justify-between gap-x-3">
-            <span className="flex-1">{txError}</span>
+          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
+            <span className="flex-1 max-w-">{txError}</span>
             <Button
               type="button"
               size={"icon"}
               variant={"ghost"}
-              onClick={() => setTxError(null)}
-              className="text-red-700/80 hover:text-red-900 focus:outline-none"
+              onClick={() => {
+                reset();
+                setTxError(null);
+              }}
+              className="text-destructive-foreground/80 hover:text-destructive-foreground focus:outline-none"
               aria-label="Dismiss error"
             >
-              ×
+              <X className="size-4" />
             </Button>
           </div>
         )}

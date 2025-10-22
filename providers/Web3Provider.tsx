@@ -4,6 +4,8 @@ import {
   Chain,
   getDefaultConfig,
   RainbowKitProvider,
+  darkTheme,
+  lightTheme,
 } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import {
@@ -28,6 +30,7 @@ import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import { useSearchParams } from "next/navigation";
 import { type NexusNetwork } from "@avail-project/nexus-core";
 import { Suspense, useMemo } from "react";
+import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const hyperEVM = defineChain({
@@ -119,10 +122,30 @@ function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
 const Web3Provider = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
+  const { resolvedTheme } = useTheme();
+  const rkTheme = useMemo(
+    () =>
+      resolvedTheme === "dark"
+        ? darkTheme({
+            accentColor: "#0ea5e9",
+            accentColorForeground: "#ffffff",
+            borderRadius: "small",
+            fontStack: "system",
+            overlayBlur: "small",
+          })
+        : lightTheme({
+            accentColor: "#0ea5e9",
+            accentColorForeground: "#ffffff",
+            borderRadius: "small",
+            fontStack: "system",
+            overlayBlur: "small",
+          }),
+    [resolvedTheme]
+  );
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider modalSize="compact">
+        <RainbowKitProvider modalSize="compact" theme={rkTheme}>
           <Suspense fallback={<Skeleton className="w-full h-full" />}>
             <NexusProviders>{children}</NexusProviders>
           </Suspense>

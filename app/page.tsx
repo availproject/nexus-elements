@@ -22,18 +22,6 @@ export default function Home() {
           a single command, theme with your design tokens, and ship faster with
           critical functionality already wired to the Nexus SDK.
         </p>
-
-        <div className="flex items-center gap-3">
-          <Link href="/components/fast-bridge">
-            <Button variant="secondary"> Explore Fast Bridge</Button>
-          </Link>
-          <Link href="/components/deposit">
-            <Button variant="secondary">Explore Deposit</Button>
-          </Link>
-          <Link href="/components/unified-balance">
-            <Button variant="secondary">Explore Unified Balance</Button>
-          </Link>
-        </div>
       </section>
 
       <Separator />
