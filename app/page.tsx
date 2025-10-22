@@ -4,6 +4,7 @@ import { Button } from "@/registry/nexus-elements/ui/button";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/registry/nexus-elements/ui/card";
@@ -80,12 +81,14 @@ export default function Home() {
               progress steps, and allowance flow. Intent-based and optimized for
               UX.
             </p>
+          </CardContent>
+          <CardFooter>
             <Link href="/components/fast-bridge">
-              <Button size="sm" value={"secondary"}>
+              <Button size="sm" variant="secondary">
                 Open Fast Bridge
               </Button>
             </Link>
-          </CardContent>
+          </CardFooter>
         </Card>
 
         <Card>
@@ -94,16 +97,18 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Bridge & execute in one flow. Simulates costs, supports execute
-              only paths, and shows total/execute/bridge fees with clear
+              Deposit funds from anywhere in one flow. Simulates costs, supports
+              execute only paths, and shows total/execute/bridge fees with clear
               confirmations.
             </p>
+          </CardContent>
+          <CardFooter>
             <Link href="/components/deposit">
               <Button size="sm" variant="secondary">
                 Open Deposit
               </Button>
             </Link>
-          </CardContent>
+          </CardFooter>
         </Card>
 
         <Card>
@@ -112,15 +117,18 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Fetch and display balances across supported chains, normalized and
-              ready for product surfaces.
+              Fetch and display token balances across supported chains,
+              normalized to USD, and ready for product surfaces. Compatible with
+              any design system.
             </p>
+          </CardContent>
+          <CardFooter>
             <Link href="/components/unified-balance">
               <Button size="sm" variant="secondary">
                 Open Unified Balance
               </Button>
             </Link>
-          </CardContent>
+          </CardFooter>
         </Card>
       </section>
     </main>

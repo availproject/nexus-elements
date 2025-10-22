@@ -66,10 +66,18 @@ export default function RootLayout({
                 <Link href={"/"} className="cursor-pointer">
                   <SidebarHeader className="px-3 py-2 h-12">
                     <Image
-                      src={"/avail-logo.svg"}
+                      src="/avail-light-logo.svg"
                       alt="Nexus Elements"
                       width={100}
                       height={100}
+                      className="hidden dark:block"
+                    />
+                    <Image
+                      src="/avail-logo.svg"
+                      alt="Nexus Elements"
+                      width={100}
+                      height={100}
+                      className="block dark:hidden"
                     />
                   </SidebarHeader>
                 </Link>
