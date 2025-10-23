@@ -23,6 +23,7 @@ import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 import { type Address } from "viem";
+import { Skeleton } from "../ui/skeleton";
 
 interface FastBridgeProps {
   connectedAddress: Address;
@@ -109,20 +110,29 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             <SourceBreakdown
               intent={intent?.intent}
               tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
             />
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">You receive</p>
               <div className="flex flex-col gap-y-1 min-w-fit">
-                <p className="text-base font-semibold text-right">
-                  {intent?.intent?.destination?.amount}{" "}
-                  {filteredUnifiedBalance?.symbol}
-                </p>
-                <p className="text-sm font-medium text-right">
-                  on {intent?.intent?.destination?.chainName}
-                </p>
+                {refreshing ? (
+                  <Skeleton className="h-5 w-28" />
+                ) : (
+                  <p className="text-base font-semibold text-right">
+                    {intent?.intent?.destination?.amount}{" "}
+                    {filteredUnifiedBalance?.symbol}
+                  </p>
+                )}
+                {refreshing ? (
+                  <Skeleton className="h-4 w-36" />
+                ) : (
+                  <p className="text-sm font-medium text-right">
+                    on {intent?.intent?.destination?.chainName}
+                  </p>
+                )}
               </div>
             </div>
-            <FeeBreakdown intent={intent?.intent} />
+            <FeeBreakdown intent={intent?.intent} isLoading={refreshing} />
           </>
         )}
 

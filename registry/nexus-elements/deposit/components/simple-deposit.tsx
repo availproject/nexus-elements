@@ -19,6 +19,7 @@ import useListenTransaction from "../../fast-bridge/hooks/useListenTransaction";
 import React from "react";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
+import { Skeleton } from "../../ui/skeleton";
 
 interface SimpleDepositProps extends Omit<BaseDepositProps, "address"> {
   destinationLabel?: string;
@@ -45,6 +46,7 @@ const SimpleDeposit = ({
     setInputs,
     loading,
     simulating,
+    refreshing,
     lastResult,
     isDialogOpen,
     setIsDialogOpen,
@@ -79,8 +81,28 @@ const SimpleDeposit = ({
     if (allCompleted) stopTimer();
   }, [allCompleted, stopTimer]);
 
+  const renderDepositButtonContent = () => {
+    if (isDialogOpen) return "Deposit";
+    if (refreshing)
+      return (
+        <div className="flex items-center gap-x-2">
+          <LoaderPinwheel className="animate-spin size-4" />
+          <p>Refreshing quote</p>
+        </div>
+      );
+    if (simulating)
+      return (
+        <div className="flex items-center gap-x-2">
+          <LoaderPinwheel className="animate-spin size-4" />
+          <p>Preparing quote</p>
+        </div>
+      );
+    return "Deposit";
+  };
+
   return (
     <div className="flex flex-col items-center w-full gap-y-3 rounded-lg">
+      {/* Sources */}
       <SourceSelect
         chainOptions={chainOptions}
         selected={inputs?.selectedSources}
@@ -101,18 +123,47 @@ const SimpleDeposit = ({
         }}
       />
 
+      {/* Shimmer while simulating */}
+      {simulating && !simulation?.success && (
+        <>
+          <SourceBreakdown
+            isLoading
+            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+          />
+          <div className="w-full flex items-start justify-between gap-x-4">
+            <p className="text-base font-semibold">You receive</p>
+            <div className="flex flex-col gap-y-1 min-w-fit items-end">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+          </div>
+          <DepositFeeBreakdown
+            isLoading
+            total={"0"}
+            bridge={"0"}
+            execute={"0"}
+            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+          />
+        </>
+      )}
+
       {simulation?.success && simulation?.bridgeSimulation?.intent && (
         <>
           <SourceBreakdown
             intent={simulation?.bridgeSimulation?.intent as any}
             tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            isLoading={refreshing}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
             <p className="text-base font-semibold">You receive</p>
             <div className="flex flex-col gap-y-1 min-w-fit">
-              <p className="text-base font-semibold text-right">
-                {inputs?.amount} {filteredUnifiedBalance?.symbol}
-              </p>
+              {refreshing ? (
+                <Skeleton className="h-5 w-28" />
+              ) : (
+                <p className="text-base font-semibold text-right">
+                  {inputs?.amount} {filteredUnifiedBalance?.symbol}
+                </p>
+              )}
               <p className="text-sm font-medium text-right">
                 {destinationLabel}
               </p>
@@ -123,6 +174,7 @@ const SimpleDeposit = ({
             bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
             execute={simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"}
             tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            isLoading={refreshing}
           />
         </>
       )}
@@ -132,10 +184,14 @@ const SimpleDeposit = ({
           <div className="w-full flex items-start justify-between gap-x-4">
             <p className="text-base font-semibold">You receive</p>
             <div className="flex flex-col gap-y-1 min-w-fit">
-              <p className="text-base font-semibold text-right">
-                {simulation?.metadata?.bridgeReceiveAmount ?? inputs?.amount}{" "}
-                {filteredUnifiedBalance?.symbol}
-              </p>
+              {refreshing ? (
+                <Skeleton className="h-5 w-28" />
+              ) : (
+                <p className="text-base font-semibold text-right">
+                  {simulation?.metadata?.bridgeReceiveAmount ?? inputs?.amount}{" "}
+                  {filteredUnifiedBalance?.symbol}
+                </p>
+              )}
               <p className="text-sm font-medium text-right">
                 {destinationLabel}
               </p>
@@ -146,6 +202,7 @@ const SimpleDeposit = ({
             bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
             execute={simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"}
             tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            isLoading={refreshing}
           />
           <div className="w-full text-sm text-muted-foreground px-2">
             Bridge skipped, executing directly on destination chain
@@ -168,29 +225,15 @@ const SimpleDeposit = ({
             </Button>
             <Button
               onClick={startTransaction}
-              disabled={loading || simulating}
+              disabled={isDialogOpen || loading || simulating || refreshing}
               className="w-1/2"
             >
-              {loading ? (
-                <div className="flex items-center gap-x-2">
-                  <LoaderPinwheel className="animate-spin size-4" />
-                  <p>Preparing quote</p>
-                </div>
-              ) : (
-                "Deposit"
-              )}
+              {renderDepositButtonContent()}
             </Button>
           </div>
         ) : (
           <Button disabled={true} className="w-full">
-            {loading || simulating ? (
-              <div className="flex items-center gap-x-2">
-                <LoaderPinwheel className="animate-spin size-4" />
-                <p>Preparing quote</p>
-              </div>
-            ) : (
-              "Deposit"
-            )}
+            {renderDepositButtonContent()}
           </Button>
         ))}
 
@@ -241,9 +284,6 @@ const SimpleDeposit = ({
 export default SimpleDeposit;
 
 /**
- * add shimmer when simulating
- * when refreshing, say refreshing quote
- * keep txn processor copy deposit oriented
- * when txn has started make sure the deposit button (L169) doesn't say prepare quote, this is happening because of shared loading state variable
  * do custom copy for bridge and execute altogether
+ * keep txn processor copy deposit oriented
  */

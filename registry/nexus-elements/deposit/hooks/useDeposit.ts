@@ -72,6 +72,7 @@ const useDeposit = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [simulation, setSimulation] =
     useState<BridgeAndExecuteSimulationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
@@ -176,6 +177,15 @@ const useDeposit = ({
     }
   };
 
+  const refreshSimulation = async () => {
+    if (simulating || refreshing) return;
+    if (!simulation?.success || !simulation?.bridgeSimulation?.intent) return;
+    if (!inputs?.amount) return;
+    setRefreshing(true);
+    await simulate(inputs?.amount);
+    setRefreshing(false);
+  };
+
   const onSuccess = async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -197,6 +207,10 @@ const useDeposit = ({
     setRefreshing(false);
     setSimulation(null);
     setIntent(null);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
   };
 
   const reset = () => {
@@ -211,6 +225,10 @@ const useDeposit = ({
     setTxError(null);
     setAutoAllow(true);
     void handleTransaction();
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -243,8 +261,24 @@ const useDeposit = ({
     }
   }, [isDialogOpen]);
 
-  // Do not auto-clear txError on input changes. It is cleared explicitly
-  // when a new simulate/transaction starts or succeeds.
+  useEffect(() => {
+    if (
+      simulation?.success &&
+      simulation?.bridgeSimulation?.intent &&
+      !isDialogOpen
+    ) {
+      refreshIntervalRef.current ??= setInterval(refreshSimulation, 5000);
+    } else if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    };
+  }, [simulation?.success, simulation?.bridgeSimulation, isDialogOpen]);
 
   const stopTimer = () => {
     if (timerRef.current) {
