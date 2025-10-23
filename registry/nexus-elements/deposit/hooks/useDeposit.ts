@@ -24,6 +24,7 @@ interface DepositInputs {
 type ExecuteConfig = Omit<ExecuteParams, "toChainId">;
 
 interface UseDepositProps {
+  token: SUPPORTED_TOKENS;
   chain: SUPPORTED_CHAINS_IDS;
   nexusSDK: NexusSDK | null;
   intent: OnIntentHookData | null;
@@ -38,6 +39,7 @@ interface UseDepositProps {
 }
 
 const useDeposit = ({
+  token,
   chain,
   nexusSDK,
   intent,
@@ -88,7 +90,7 @@ const useDeposit = ({
   }, [inputs]);
 
   const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.filter((bal) => bal?.symbol === "USDC")[0];
+    return unifiedBalance?.filter((bal) => bal?.symbol === token)[0];
   }, [unifiedBalance]);
 
   const handleTransaction = async () => {
@@ -99,7 +101,7 @@ const useDeposit = ({
       if (!nexusSDK) throw new Error("Nexus SDK not initialized");
 
       const params: BridgeAndExecuteParams = {
-        token: "USDC" as SUPPORTED_TOKENS,
+        token,
         amount: inputs.amount,
         toChainId: inputs.chain,
         sourceChains: inputs.selectedSources?.length
@@ -147,7 +149,7 @@ const useDeposit = ({
     setSimulating(true);
     try {
       const params: BridgeAndExecuteParams = {
-        token: "USDC" as SUPPORTED_TOKENS,
+        token,
         amount: amountToUse,
         toChainId: inputs.chain,
         sourceChains: inputs.selectedSources?.length

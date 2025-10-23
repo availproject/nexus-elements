@@ -41,42 +41,57 @@ const DepositShowcase = () => {
       </Toggle>
       <NexusDeposit
         address={address ?? `0x`}
-        token="USDC"
-        chain={SUPPORTED_CHAINS.BASE}
+        token="USDT"
+        chain={SUPPORTED_CHAINS.ARBITRUM}
         embed={viewAs}
         destinationLabel="on Aave v3"
+        heading="Deposit USDT"
         depositExecute={{
-          contractAddress: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          contractAddress: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
           contractAbi: [
             {
-              inputs: [
-                {
-                  internalType: "address",
-                  name: "asset",
-                  type: "address",
-                },
-                {
-                  internalType: "uint256",
-                  name: "amount",
-                  type: "uint256",
-                },
-                {
-                  internalType: "address",
-                  name: "onBehalfOf",
-                  type: "address",
-                },
-                {
-                  internalType: "uint16",
-                  name: "referralCode",
-                  type: "uint16",
-                },
-              ],
               name: "supply",
-              outputs: [],
-              stateMutability: "nonpayable",
               type: "function",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "asset", type: "address" },
+                { name: "amount", type: "uint256" },
+                { name: "onBehalfOf", type: "address" },
+                { name: "referralCode", type: "uint16" },
+              ],
+              outputs: [],
             },
           ] as const,
+          // contractAbi: [
+          //   {
+          //     inputs: [
+          //       {
+          //         internalType: "address",
+          //         name: "asset",
+          //         type: "address",
+          //       },
+          //       {
+          //         internalType: "uint256",
+          //         name: "amount",
+          //         type: "uint256",
+          //       },
+          //       {
+          //         internalType: "address",
+          //         name: "onBehalfOf",
+          //         type: "address",
+          //       },
+          //       {
+          //         internalType: "uint16",
+          //         name: "referralCode",
+          //         type: "uint16",
+          //       },
+          //     ],
+          //     name: "supply",
+          //     outputs: [],
+          //     stateMutability: "nonpayable",
+          //     type: "function",
+          //   },
+          // ] as const,
           functionName: "supply",
           buildFunctionParams: (token, amount, _chainId, user) => {
             const decimals = TOKEN_METADATA[token].decimals;

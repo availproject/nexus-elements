@@ -20,6 +20,7 @@ import React from "react";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
+import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
 interface SimpleDepositProps extends Omit<BaseDepositProps, "address"> {
   destinationLabel?: string;
@@ -60,6 +61,7 @@ const SimpleDeposit = ({
     clearSimulation,
     simulate,
   } = useDeposit({
+    token: token ?? "USDC",
     chain,
     nexusSDK,
     intent,
@@ -128,7 +130,7 @@ const SimpleDeposit = ({
         <>
           <SourceBreakdown
             isLoading
-            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
             <p className="text-base font-semibold">You receive</p>
@@ -142,7 +144,7 @@ const SimpleDeposit = ({
             total={"0"}
             bridge={"0"}
             execute={"0"}
-            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
           />
         </>
       )}
@@ -150,8 +152,8 @@ const SimpleDeposit = ({
       {simulation?.success && simulation?.bridgeSimulation?.intent && (
         <>
           <SourceBreakdown
-            intent={simulation?.bridgeSimulation?.intent as any}
-            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            intent={simulation?.bridgeSimulation?.intent}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
             isLoading={refreshing}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
@@ -173,7 +175,7 @@ const SimpleDeposit = ({
             total={simulation?.totalEstimatedCost?.total ?? "0"}
             bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
             execute={simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"}
-            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
             isLoading={refreshing}
           />
         </>
@@ -201,7 +203,7 @@ const SimpleDeposit = ({
             total={simulation?.totalEstimatedCost?.total ?? "0"}
             bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
             execute={simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"}
-            tokenSymbol={filteredUnifiedBalance?.symbol as "USDC"}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
             isLoading={refreshing}
           />
           <div className="w-full text-sm text-muted-foreground px-2">
