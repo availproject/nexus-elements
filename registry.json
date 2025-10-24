@@ -29,6 +29,7 @@
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json"
       ],
@@ -309,6 +310,7 @@
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json",
         "https://elements.nexus.availproject.org/r/tabs.json"
@@ -370,18 +372,18 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/hooks/useListenTransaction.ts",
-          "target": "components/fast-bridge/hooks/useListenTransaction.ts",
+          "path": "registry/nexus-elements/deposit/hooks/useListenTransaction.ts",
+          "target": "components/deposit/hooks/useListenTransaction.ts",
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/components/allowance-modal.tsx",
-          "target": "components/fast-bridge/components/allowance-modal.tsx",
+          "path": "registry/nexus-elements/deposit/components/allowance-modal.tsx",
+          "target": "components/deposit/components/allowance-modal.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/components/source-breakdown.tsx",
-          "target": "components/fast-bridge/components/source-breakdown.tsx",
+          "path": "registry/nexus-elements/deposit/components/source-breakdown.tsx",
+          "target": "components/deposit/components/source-breakdown.tsx",
           "type": "registry:component"
         }
       ]

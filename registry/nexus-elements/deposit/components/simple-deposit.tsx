@@ -10,12 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../ui/dialog";
-import AllowanceModal from "../../fast-bridge/components/allowance-modal";
+import AllowanceModal from "./allowance-modal";
 import BridgeExecuteProgress from "./transaction-progress";
 import DepositFeeBreakdown from "./fee-breakdown";
-import SourceBreakdown from "../../fast-bridge/components/source-breakdown";
+import SourceBreakdown from "./source-breakdown";
 import { useNexus } from "../../nexus/NexusProvider";
-import useListenTransaction from "../../fast-bridge/hooks/useListenTransaction";
+import useListenTransaction from "../hooks/useListenTransaction";
 import React from "react";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";

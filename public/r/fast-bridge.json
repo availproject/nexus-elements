@@ -24,6 +24,7 @@
     "https://elements.nexus.availproject.org/r/input.json",
     "https://elements.nexus.availproject.org/r/label.json",
     "https://elements.nexus.availproject.org/r/select.json",
+    "https://elements.nexus.availproject.org/r/skeleton.json",
     "https://elements.nexus.availproject.org/r/nexus-provider.json",
     "https://elements.nexus.availproject.org/r/utils.json"
   ],
