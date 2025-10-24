@@ -58,6 +58,7 @@ const useBridge = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const commitLockRef = useRef<boolean>(false);
 
   const areInputsValid = useMemo(() => {
     const hasToken = inputs?.token !== undefined && inputs?.token !== null;
@@ -196,6 +197,17 @@ const useBridge = ({
     setTxError(null);
   };
 
+  const commitAmount = async () => {
+    if (commitLockRef.current) return;
+    if (intent || loading || txError || !areInputsValid) return;
+    commitLockRef.current = true;
+    try {
+      await handleTransaction();
+    } finally {
+      commitLockRef.current = false;
+    }
+  };
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (intent) {
@@ -229,15 +241,6 @@ const useBridge = ({
   }, [inputs]);
 
   useEffect(() => {
-    if (intent || loading || !areInputsValid || txError) return;
-    const timeout = setTimeout(() => {
-      void handleTransaction();
-    }, 800);
-    return () => clearTimeout(timeout);
-  }, [inputs, areInputsValid, intent, loading, txError]);
-
-  // Stop timer when dialog closes
-  useEffect(() => {
     if (!isDialogOpen) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -247,7 +250,6 @@ const useBridge = ({
     }
   }, [isDialogOpen]);
 
-  // Dismiss error upon any input edit to allow re-attempt
   useEffect(() => {
     if (txError) {
       setTxError(null);
@@ -277,6 +279,7 @@ const useBridge = ({
     filteredUnifiedBalance,
     startTransaction,
     stopTimer,
+    commitAmount,
   };
 };
 

@@ -23,6 +23,7 @@ import {
   arbitrumSepolia,
   optimismSepolia,
   polygonAmoy,
+  monadTestnet,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { defineChain } from "viem";
@@ -104,6 +105,7 @@ const config = getDefaultConfig({
     arbitrumSepolia,
     optimismSepolia,
     polygonAmoy,
+    monadTestnet,
   ],
 });
 

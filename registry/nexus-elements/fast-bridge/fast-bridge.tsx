@@ -55,6 +55,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
     startTransaction,
     setIsDialogOpen,
     stopTimer,
+    commitAmount,
   } = useBridge({
     network: network ?? "mainnet",
     connectedAddress,
@@ -98,6 +99,8 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
           unifiedBalance={filteredUnifiedBalance}
+          onCommit={() => void commitAmount()}
+          disabled={refreshing}
         />
         <ReceipientAddress
           address={inputs?.recipient}

@@ -424,6 +424,122 @@
   --shadow-2xl: 0px 1px 0px 0px hsl(0 0% 0% / 0);
 }
 
+.light-neo {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 0%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 0%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 0%);
+  --primary: hsl(0 100% 60%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(60 100% 50%);
+  --secondary-foreground: hsl(0 0% 0%);
+  --muted: hsl(0 0% 94.1176%);
+  --muted-foreground: hsl(0 0% 20%);
+  --accent: hsl(216 100% 50%);
+  --accent-foreground: hsl(0 0% 100%);
+  --destructive: hsl(0 0% 0%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(0 0% 0%);
+  --input: hsl(0 0% 0%);
+  --ring: hsl(0 100% 60%);
+  --chart-1: hsl(0 100% 60%);
+  --chart-2: hsl(60 100% 50%);
+  --chart-3: hsl(216 100% 50%);
+  --chart-4: hsl(120 100% 40%);
+  --chart-5: hsl(300 100% 40%);
+  --sidebar: hsl(0 0% 94.1176%);
+  --sidebar-foreground: hsl(0 0% 0%);
+  --sidebar-primary: hsl(0 100% 60%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(216 100% 50%);
+  --sidebar-accent-foreground: hsl(0 0% 100%);
+  --sidebar-border: hsl(0 0% 0%);
+  --sidebar-ring: hsl(0 100% 60%);
+  --font-sans: DM Sans, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: Space Mono, monospace;
+  --radius: 0px;
+  --shadow-x: 4px;
+  --shadow-y: 4px;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 1;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 4px 4px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-xs: 4px 4px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-sm: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 2px 4px -1px hsl(0 0% 0% / 1);
+  --shadow-lg: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 4px 6px -1px hsl(0 0% 0% / 1);
+  --shadow-xl: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 8px 10px -1px hsl(0 0% 0% / 1);
+  --shadow-2xl: 4px 4px 0px 0px hsl(0 0% 0% / 2.5);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark-neo {
+  --background: hsl(0 0% 0%);
+  --foreground: hsl(0 0% 100%);
+  --card: hsl(0 0% 20%);
+  --card-foreground: hsl(0 0% 100%);
+  --popover: hsl(0 0% 20%);
+  --popover-foreground: hsl(0 0% 100%);
+  --primary: hsl(0 100% 70%);
+  --primary-foreground: hsl(0 0% 0%);
+  --secondary: hsl(60 100% 60%);
+  --secondary-foreground: hsl(0 0% 0%);
+  --muted: hsl(0 0% 10.1961%);
+  --muted-foreground: hsl(0 0% 80%);
+  --accent: hsl(210 100% 60%);
+  --accent-foreground: hsl(0 0% 0%);
+  --destructive: hsl(0 0% 100%);
+  --destructive-foreground: hsl(0 0% 0%);
+  --border: hsl(0 0% 100%);
+  --input: hsl(0 0% 100%);
+  --ring: hsl(0 100% 70%);
+  --chart-1: hsl(0 100% 70%);
+  --chart-2: hsl(60 100% 60%);
+  --chart-3: hsl(210 100% 60%);
+  --chart-4: hsl(120 60% 50%);
+  --chart-5: hsl(300 60% 50%);
+  --sidebar: hsl(0 0% 0%);
+  --sidebar-foreground: hsl(0 0% 100%);
+  --sidebar-primary: hsl(0 100% 70%);
+  --sidebar-primary-foreground: hsl(0 0% 0%);
+  --sidebar-accent: hsl(210 100% 60%);
+  --sidebar-accent-foreground: hsl(0 0% 0%);
+  --sidebar-border: hsl(0 0% 100%);
+  --sidebar-ring: hsl(0 100% 70%);
+  --font-sans: DM Sans, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: Space Mono, monospace;
+  --radius: 0px;
+  --shadow-x: 4px;
+  --shadow-y: 4px;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 1;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 4px 4px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-xs: 4px 4px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-sm: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 2px 4px -1px hsl(0 0% 0% / 1);
+  --shadow-lg: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 4px 6px -1px hsl(0 0% 0% / 1);
+  --shadow-xl: 4px 4px 0px 0px hsl(0 0% 0% / 1),
+    4px 8px 10px -1px hsl(0 0% 0% / 1);
+  --shadow-2xl: 4px 4px 0px 0px hsl(0 0% 0% / 2.5);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

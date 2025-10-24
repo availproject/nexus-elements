@@ -26,6 +26,7 @@ const PALETTES: Record<string, string> = {
   blue: "blue",
   cyber: "cyber",
   mono: "mono",
+  neo: "neo",
 };
 
 export default function Topbar() {
