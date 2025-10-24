@@ -107,7 +107,12 @@ const TransactionProgress: React.FC<TransactionProgressProps> = ({
   viewIntentUrl,
   operationType = "bridge",
 }) => {
-  const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
+  const totalSteps = Array.isArray(steps) ? steps.length : 0;
+  const completedSteps = Array.isArray(steps)
+    ? steps.reduce((acc, s) => acc + (s?.completed ? 1 : 0), 0)
+    : 0;
+  const percent = totalSteps > 0 ? completedSteps / totalSteps : 0;
+  const allCompleted = percent >= 1;
   const opText = getOperationText(operationType);
   const headerText = allCompleted
     ? `${opText} Completed`
@@ -115,93 +120,22 @@ const TransactionProgress: React.FC<TransactionProgressProps> = ({
   const ctaText = allCompleted ? `View Explorer` : "View Intent";
 
   const { effectiveSteps, currentIndex } = React.useMemo(() => {
-    const isCompleted = (type: string) =>
-      Array.isArray(steps) &&
-      steps.some((s) => s?.step?.type === type && s.completed);
-
-    const displaySteps: DisplayStep[] = [];
-    const seen = new Set<string>();
-
-    const pushCombinedSignSubmit = () => {
-      if (seen.has("SIGN_SUBMIT")) return;
-      const label = isCompleted("INTENT_HASH_SIGNED")
-        ? "Submitting Transaction"
-        : "Signing Transaction";
-      const completed = isCompleted("INTENT_SUBMITTED");
-      displaySteps.push({ id: "SIGN_SUBMIT", label, completed });
-      seen.add("SIGN_SUBMIT");
-      seen.add("INTENT_HASH_SIGNED");
-      seen.add("INTENT_SUBMITTED");
-    };
-
-    const pushCombinedConfirmations = () => {
-      if (seen.has("CONFIRMATIONS")) return;
-      const label = isCompleted("INTENT_COLLECTION")
-        ? "Confirmations Complete"
-        : "Collecting Confirmations";
-      const completed = isCompleted("INTENT_COLLECTION_COMPLETE");
-      displaySteps.push({ id: "CONFIRMATIONS", label, completed });
-      seen.add("CONFIRMATIONS");
-      seen.add("INTENT_COLLECTION");
-      seen.add("INTENT_COLLECTION_COMPLETE");
-    };
-
-    const pushTransactionComplete = (type: string) => {
-      if (seen.has("TX_COMPLETE")) return;
-      const completed =
-        isCompleted("TRANSACTION_CONFIRMED") ||
-        isCompleted("INTENT_FULFILLED") ||
-        isCompleted(type);
-      displaySteps.push({
-        id: "TX_COMPLETE",
-        label: getStatusText("INTENT_FULFILLED", operationType),
-        completed,
-      });
-      seen.add("TX_COMPLETE");
-    };
-
-    (steps ?? []).forEach((s) => {
-      const type = s?.step?.type as unknown as string;
-      if (!type || seen.has(type)) return;
-
-      if (type === "INTENT_HASH_SIGNED" || type === "INTENT_SUBMITTED") {
-        pushCombinedSignSubmit();
-        return;
-      }
-
-      if (
-        type === "INTENT_COLLECTION" ||
-        type === "INTENT_COLLECTION_COMPLETE"
-      ) {
-        pushCombinedConfirmations();
-        return;
-      }
-
-      if (type === "TRANSACTION_CONFIRMED" || type === "INTENT_FULFILLED") {
-        pushTransactionComplete(type);
-        return;
-      }
-
-      if (KNOWN_TYPES.has(type)) {
-        displaySteps.push({
-          id: type,
-          label: getStatusText(type, operationType),
-          completed: !!s.completed,
-        });
-        seen.add(type);
-      }
-    });
-
-    let effective: DisplayStep[] = displaySteps;
-    if (!displaySteps.length) {
-      effective = allCompleted
-        ? []
-        : [{ id: "GENERIC", label: `Processing ${opText}`, completed: false }];
-    }
-    const current = effective.findIndex((st) => !st.completed);
-
-    return { effectiveSteps: effective, currentIndex: current };
-  }, [steps, operationType, allCompleted, opText]);
+    const milestones = [
+      "Intent verified",
+      "Collected on sources",
+      "Filled on destination",
+    ];
+    const thresholds = milestones.map(
+      (_, idx) => (idx + 1) / milestones.length
+    );
+    const displaySteps: DisplayStep[] = milestones.map((label, idx) => ({
+      id: `M${idx}`,
+      label,
+      completed: percent >= thresholds[idx],
+    }));
+    const current = displaySteps.findIndex((st) => !st.completed);
+    return { effectiveSteps: displaySteps, currentIndex: current };
+  }, [percent, opText]);
 
   return (
     <div className="w-full flex flex-col items-center">

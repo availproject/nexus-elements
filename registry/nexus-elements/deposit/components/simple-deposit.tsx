@@ -284,8 +284,3 @@ const SimpleDeposit = ({
 };
 
 export default SimpleDeposit;
-
-/**
- * do custom copy for bridge and execute altogether
- * keep txn processor copy deposit oriented
- */

@@ -9,62 +9,6 @@ interface BridgeExecuteProgressProps {
   executeUrl?: string;
 }
 
-const getOperationText = (type: string) => {
-  switch (type) {
-    case "bridge":
-      return "Transaction";
-    case "transfer":
-      return "Transferring";
-    case "bridgeAndExecute":
-      return "Deposit";
-    case "swap":
-      return "Swapping";
-    default:
-      return "Processing";
-  }
-};
-
-const getStatusText = (type: string, operationType: string) => {
-  const opText = getOperationText(operationType);
-
-  switch (type) {
-    case "INTENT_ACCEPTED":
-      return "Intent Accepted";
-    case "INTENT_HASH_SIGNED":
-      return "Signing Transaction";
-    case "INTENT_SUBMITTED":
-      return "Submitting Transaction";
-    case "INTENT_COLLECTION":
-      return "Collecting Confirmations";
-    case "INTENT_COLLECTION_COMPLETE":
-      return "Confirmations Complete";
-    case "APPROVAL":
-      return "Approving";
-    case "TRANSACTION_SENT":
-      return "Sending Transaction";
-    case "RECEIPT_RECEIVED":
-      return "Receipt Received";
-    case "TRANSACTION_CONFIRMED":
-    case "INTENT_FULFILLED":
-      return `${opText} Complete`;
-    default:
-      return `Processing ${opText}`;
-  }
-};
-
-const KNOWN_TYPES = new Set<string>([
-  "INTENT_ACCEPTED",
-  "INTENT_HASH_SIGNED",
-  "INTENT_SUBMITTED",
-  "INTENT_COLLECTION",
-  "INTENT_COLLECTION_COMPLETE",
-  "APPROVAL",
-  "TRANSACTION_SENT",
-  "RECEIPT_RECEIVED",
-  "TRANSACTION_CONFIRMED",
-  "INTENT_FULFILLED",
-]);
-
 type DisplayStep = { id: string; label: string; completed: boolean };
 
 const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> = ({
@@ -105,172 +49,33 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
   intentUrl,
   executeUrl,
 }) => {
-  const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
+  const totalSteps = Array.isArray(steps) ? steps.length : 0;
+  const completedSteps = Array.isArray(steps)
+    ? steps.reduce((acc, s) => acc + (s?.completed ? 1 : 0), 0)
+    : 0;
+  const percent = totalSteps > 0 ? completedSteps / totalSteps : 0;
+  const allCompleted = percent >= 1;
 
-  const operationType = "bridgeAndExecute";
-
-  const { effectiveSteps, currentIndex } = React.useMemo(() => {
-    const isCompleted = (type: string) =>
-      Array.isArray(steps) &&
-      steps.some((s) => s?.step?.type === type && s.completed);
-
-    const displaySteps: DisplayStep[] = [];
-    const seen = new Set<string>();
-
-    // Aggregate allowance progress across multiple chains
-    const allowanceRequiredChains = new Set<number | string>();
-    const allowanceMinedChains = new Set<number | string>();
-    let allowanceAllDoneCompleted = false;
-
-    const getChainIdFromStep = (st: any): number | string | undefined => {
-      const direct = st?.data?.chainID ?? st?.chainID;
-      if (direct !== undefined && direct !== null) return direct;
-      const typeID: string | undefined = st?.typeID;
-      if (typeof typeID === "string") {
-        const parts = typeID.split("_");
-        const last = parts[parts.length - 1];
-        if (last) {
-          const num = Number(last);
-          return Number.isNaN(num) ? last : num;
-        }
-      }
-      return undefined;
-    };
-
-    const pushCombinedSignSubmit = () => {
-      if (seen.has("SIGN_SUBMIT")) return;
-      const label = isCompleted("INTENT_HASH_SIGNED")
-        ? "Submitting Transaction"
-        : "Signing Transaction";
-      const completed = isCompleted("INTENT_SUBMITTED");
-      displaySteps.push({ id: "SIGN_SUBMIT", label, completed });
-      seen.add("SIGN_SUBMIT");
-      seen.add("INTENT_HASH_SIGNED");
-      seen.add("INTENT_SUBMITTED");
-    };
-
-    const pushCombinedConfirmations = () => {
-      if (seen.has("CONFIRMATIONS")) return;
-      const label = isCompleted("INTENT_COLLECTION")
-        ? "Confirmations Complete"
-        : "Collecting Confirmations";
-      const completed = isCompleted("INTENT_COLLECTION_COMPLETE");
-      displaySteps.push({ id: "CONFIRMATIONS", label, completed });
-      seen.add("CONFIRMATIONS");
-      seen.add("INTENT_COLLECTION");
-      seen.add("INTENT_COLLECTION_COMPLETE");
-    };
-
-    const pushTransactionComplete = (type: string) => {
-      if (seen.has("TX_COMPLETE")) return;
-      const completed =
-        isCompleted("TRANSACTION_CONFIRMED") ||
-        isCompleted("INTENT_FULFILLED") ||
-        isCompleted(type);
-      displaySteps.push({
-        id: "TX_COMPLETE",
-        label: getStatusText("INTENT_FULFILLED", operationType),
-        completed,
-      });
-      seen.add("TX_COMPLETE");
-    };
-
-    (steps ?? []).forEach((s) => {
-      const type = s?.step?.type as unknown as string;
-      if (!type || seen.has(type)) return;
-
-      // Collect ALLOWANCE_* steps into a single aggregated step later
-      if (type.startsWith("ALLOWANCE_")) {
-        const chainId = getChainIdFromStep(s?.step as any);
-        if (type === "ALLOWANCE_USER_APPROVAL") {
-          if (chainId !== undefined) allowanceRequiredChains.add(chainId);
-          return;
-        }
-        if (type === "ALLOWANCE_APPROVAL_MINED") {
-          if (chainId !== undefined) {
-            allowanceRequiredChains.add(chainId);
-            if (s.completed) allowanceMinedChains.add(chainId);
-          }
-          return;
-        }
-        if (type === "ALLOWANCE_ALL_DONE") {
-          if (s.completed) allowanceAllDoneCompleted = true;
-          return;
-        }
-      }
-
-      if (type === "INTENT_HASH_SIGNED" || type === "INTENT_SUBMITTED") {
-        pushCombinedSignSubmit();
-        return;
-      }
-
-      if (
-        type === "INTENT_COLLECTION" ||
-        type === "INTENT_COLLECTION_COMPLETE"
-      ) {
-        pushCombinedConfirmations();
-        return;
-      }
-
-      if (type === "TRANSACTION_CONFIRMED" || type === "INTENT_FULFILLED") {
-        pushTransactionComplete(type);
-        return;
-      }
-
-      if (KNOWN_TYPES.has(type)) {
-        displaySteps.push({
-          id: type,
-          label: getStatusText(type, operationType),
-          completed: !!s.completed,
-        });
-        seen.add(type);
-      }
-    });
-
-    // Insert aggregated Allowances step before signing, or after intent accepted
-    const totalAllowances = new Set([
-      ...Array.from(allowanceRequiredChains.values()),
-      ...Array.from(allowanceMinedChains.values()),
-    ]).size;
-    if (totalAllowances > 0 || allowanceAllDoneCompleted) {
-      const allowancesCompleted = allowanceMinedChains.size;
-      const completed =
-        allowanceAllDoneCompleted ||
-        (totalAllowances > 0 && allowancesCompleted >= totalAllowances);
-      const label = completed
-        ? "Allowances Complete"
-        : `Setting allowances ${allowancesCompleted}/${totalAllowances}`;
-
-      let insertIdx = displaySteps.findIndex((st) => st.id === "SIGN_SUBMIT");
-      if (insertIdx === -1) {
-        const idxAccepted = displaySteps.findIndex(
-          (st) => st.id === "INTENT_ACCEPTED"
-        );
-        insertIdx = idxAccepted === -1 ? 0 : idxAccepted + 1;
-      }
-      displaySteps.splice(insertIdx, 0, {
-        id: "ALLOWANCES",
-        label,
-        completed,
-      });
-    }
-
-    let effective: DisplayStep[] = displaySteps;
-    if (!displaySteps.length) {
-      effective = allCompleted
-        ? []
-        : [
-            {
-              id: "GENERIC",
-              label: `Processing ${getOperationText(operationType)}`,
-              completed: false,
-            },
-          ];
-    }
-    const current = effective.findIndex((st) => !st.completed);
-
-    return { effectiveSteps: effective, currentIndex: current };
-  }, [steps, allCompleted]);
+  // Custom milestone copy for deposit flow
+  const milestones = React.useMemo(
+    () => [
+      "Intent verified",
+      "Collected on sources",
+      "Filled on destination",
+      "Depositing",
+    ],
+    []
+  );
+  const thresholds = React.useMemo(
+    () => milestones.map((_, idx) => (idx + 1) / milestones.length),
+    [milestones]
+  );
+  const displaySteps: DisplayStep[] = milestones.map((label, idx) => ({
+    id: `M${idx}`,
+    label,
+    completed: percent >= thresholds[idx],
+  }));
+  const currentIndex = displaySteps.findIndex((st) => !st.completed);
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -290,7 +95,7 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
         </div>
       </div>
 
-      <StepList steps={effectiveSteps} currentIndex={currentIndex} />
+      <StepList steps={displaySteps} currentIndex={currentIndex} />
 
       <div className="mt-6 w-full flex items-center justify-center gap-x-4">
         {intentUrl && (
