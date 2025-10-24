@@ -1,11 +1,21 @@
-"use client";
-import * as React from "react";
-import { OpenInV0Button } from "./open-in-v0-button";
-import CodeBlock from "./ui/code-block";
-import { PreviewPanel } from "./showcase/PreviewPanel";
-import { CodeViewer } from "./showcase/CodeViewer";
-import { InstallPanel } from "./showcase/InstallPanel";
-import { Button } from "@/registry/nexus-elements/ui/button";
+import React from "react";
+import { OpenInV0Button } from "../docs/open-in-v0-button";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/registry/nexus-elements/ui/tabs";
+import { PreviewPanel } from "../showcase/preview-panel";
+import dynamic from "next/dynamic";
+import { InstallPanel } from "../showcase/install-panel";
+import { Skeleton } from "../ui/skeleton";
+import CodeBlock from "../ui/code-block";
+
+const CodeViewer = dynamic(
+  () => import("../showcase/code-viewer").then((m) => m.CodeViewer),
+  { loading: () => <Skeleton className="w-full h-full" /> }
+);
 
 const providerSetupCode = `"use client"
 import NexusProvider from "@/components/nexus/NexusProvider"
@@ -45,10 +55,6 @@ const ShowcaseWrapper = ({
   connectLabel?: string;
   registryItemName?: string;
 }) => {
-  const [activeTab, setActiveTab] = React.useState<"preview" | "code">(
-    "preview"
-  );
-
   return (
     <div className="flex flex-col gap-4 rounded-lg py-4 min-h-[450px] relative">
       <div className="flex items-center justify-between">
@@ -56,39 +62,25 @@ const ShowcaseWrapper = ({
         <OpenInV0Button name={registryItemName} className="w-fit" />
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button
-          role="tab"
-          className={`text-sm px-2 py-2 -mb-px ${
-            activeTab === "preview"
-              ? "border-b-2 border-foreground font-semibold"
-              : "text-muted-foreground"
-          }`}
-          onClick={() => setActiveTab("preview")}
-        >
-          Preview
-        </Button>
-        <Button
-          variant={"secondary"}
-          role="tab"
-          className={`text-sm px-2 py-2 -mb-px ${
-            activeTab === "code"
-              ? "border-b-2 border-foreground font-semibold"
-              : "text-muted-foreground"
-          }`}
-          onClick={() => setActiveTab("code")}
-        >
-          Code
-        </Button>
-      </div>
+      <Tabs defaultValue="preview">
+        <TabsList className="h-auto p-0 w-fit">
+          <TabsTrigger value="preview" className="px-2 py-2 text-sm">
+            Preview
+          </TabsTrigger>
+          <TabsTrigger value="code" className="px-2 py-2 text-sm">
+            Code
+          </TabsTrigger>
+        </TabsList>
 
-      {activeTab === "preview" ? (
-        <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
-      ) : (
-        <CodeViewer registryItemName={registryItemName} />
-      )}
+        <TabsContent value="preview" className="mt-2">
+          <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+        </TabsContent>
+        <TabsContent value="code" className="mt-2">
+          <CodeViewer registryItemName={registryItemName} />
+        </TabsContent>
+      </Tabs>
 
-      <div className="grid gap-3 sm:grid-rows-1">
+      <div className="flex flex-col items-start gap-y-3 w-full">
         <div className="rounded-md">
           <p className="text-sm font-semibold mb-2">About</p>
           <p className="text-sm text-muted-foreground">
@@ -101,24 +93,28 @@ const ShowcaseWrapper = ({
         <InstallPanel registryItemName={registryItemName} />
       </div>
 
-      <div className="rounded-md">
+      <div className="rounded-md w-full">
         <p className="text-sm font-semibold mb-2">Setup provider</p>
         <p className="text-sm text-foreground mb-2">
           Wrap your app with the provider:
         </p>
-        <CodeBlock
-          code={providerSetupCode}
-          lang="tsx"
-          filename="app/layout.tsx"
-        />
-        <p className="text-sm text-foreground my-3">
+        <div className="rounded-md border overflow-hidden">
+          <CodeBlock
+            code={providerSetupCode}
+            lang="tsx"
+            filename="app/layout.tsx"
+          />
+        </div>
+        <p className="text-sm text-foreground font-semibold my-3">
           Initialize on wallet connect:
         </p>
-        <CodeBlock
-          code={initCode}
-          lang="tsx"
-          filename="components/InitNexusOnConnect.tsx"
-        />
+        <div className="rounded-md border overflow-hidden">
+          <CodeBlock
+            code={initCode}
+            lang="tsx"
+            filename="components/InitNexusOnConnect.tsx"
+          />
+        </div>
       </div>
     </div>
   );

@@ -221,11 +221,29 @@
       "type": "registry:component",
       "title": "Separator",
       "description": "UI primitive: Separator",
-      "registryDependencies": ["utils"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
       "files": [
         {
           "path": "registry/nexus-elements/ui/separator.tsx",
           "target": "components/ui/separator.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:component",
+      "title": "Tabs",
+      "description": "UI primitive: Tabs",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/tabs.tsx",
+          "target": "components/ui/tabs.tsx",
           "type": "registry:component"
         }
       ]
@@ -265,6 +283,105 @@
         {
           "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",
           "target": "components/unified-balance/unified-balance.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "type": "registry:component",
+      "title": "Deposit",
+      "description": "A simple component built with Nexus to enable deposits",
+      "dependencies": [
+        "lucide-react",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-label",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-slot"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/tabs.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/deposit/deposit.tsx",
+          "target": "components/deposit/deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/container.tsx",
+          "target": "components/deposit/components/container.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/deposit-modal.tsx",
+          "target": "components/deposit/components/deposit-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/simple-deposit.tsx",
+          "target": "components/deposit/components/simple-deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/source-select.tsx",
+          "target": "components/deposit/components/source-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/amount-input.tsx",
+          "target": "components/deposit/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/fee-breakdown.tsx",
+          "target": "components/deposit/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/transaction-progress.tsx",
+          "target": "components/deposit/components/transaction-progress.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/hooks/useDeposit.ts",
+          "target": "components/deposit/hooks/useDeposit.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/ui/checkbox.tsx",
+          "target": "components/ui/checkbox.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/ui/popover.tsx",
+          "target": "components/ui/popover.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/hooks/useListenTransaction.ts",
+          "target": "components/fast-bridge/hooks/useListenTransaction.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/allowance-modal.tsx",
+          "target": "components/fast-bridge/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/source-breakdown.tsx",
+          "target": "components/fast-bridge/components/source-breakdown.tsx",
           "type": "registry:component"
         }
       ]

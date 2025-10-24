@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react";
+import React, { FC, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,22 +26,22 @@ interface AllowanceModalProps {
   callback?: () => void;
 }
 
-const AllowanceModal: React.FC<AllowanceModalProps> = ({
+const AllowanceModal: FC<AllowanceModalProps> = ({
   allowanceModal,
   setAllowanceModal,
   callback,
 }) => {
   const { nexusSDK } = useNexus();
-  const [selectedOption, setSelectedOption] = React.useState<string[]>([]);
-  const [customValues, setCustomValues] = React.useState<string[]>([]);
+  const [selectedOption, setSelectedOption] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<string[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (allowanceModal) {
       setSelectedOption(
-        Array.from({ length: allowanceModal.sources.length }, () => "min"),
+        Array.from({ length: allowanceModal.sources.length }, () => "min")
       );
       setCustomValues(
-        Array.from({ length: allowanceModal.sources.length }, () => ""),
+        Array.from({ length: allowanceModal.sources.length }, () => "")
       );
     }
   }, [allowanceModal]);
@@ -63,9 +63,13 @@ const AllowanceModal: React.FC<AllowanceModalProps> = ({
       if (v && !isNaN(Number(v))) return v;
       return "min";
     });
-    allow(processed);
-    setAllowanceModal(null);
-    callback?.();
+    try {
+      allow(processed);
+      setAllowanceModal(null);
+      callback?.();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -106,7 +110,7 @@ const AllowanceModal: React.FC<AllowanceModalProps> = ({
                   <span className="font-semibold">
                     {nexusSDK?.utils.formatBalance(
                       source.allowance.current,
-                      source.token.decimals,
+                      source.token.decimals
                     )}
                   </span>
                 </div>
@@ -130,7 +134,7 @@ const AllowanceModal: React.FC<AllowanceModalProps> = ({
                     Minimum (
                     {nexusSDK?.utils.formatBalance(
                       source.allowance.minimum,
-                      source.token.decimals,
+                      source.token.decimals
                     )}
                     )
                   </span>

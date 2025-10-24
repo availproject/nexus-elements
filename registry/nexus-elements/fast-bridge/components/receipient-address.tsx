@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react";
+import React, { FC, useState } from "react";
 import { Input } from "../../ui/input";
 import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";
@@ -11,12 +11,12 @@ interface ReceipientAddressProps {
   onChange: (address: string) => void;
 }
 
-const ReceipientAddress: React.FC<ReceipientAddressProps> = ({
+const ReceipientAddress: FC<ReceipientAddressProps> = ({
   address,
   onChange,
 }) => {
   const { nexusSDK } = useNexus();
-  const [isEditing, setIsEditing] = React.useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   return (
     <div className="w-full">
       {isEditing ? (

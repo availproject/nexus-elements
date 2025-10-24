@@ -1,10 +1,10 @@
 "use client";
-import React from "react";
+import React, { FC } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
 import { Button } from "../ui/button";
-import { LoaderPinwheel } from "lucide-react";
+import { LoaderPinwheel, X } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
 import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
@@ -23,12 +23,13 @@ import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 import { type Address } from "viem";
+import { Skeleton } from "../ui/skeleton";
 
 interface FastBridgeProps {
   connectedAddress: Address;
 }
 
-const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
+const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
   const {
     nexusSDK,
     intent,
@@ -47,13 +48,14 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
     refreshing,
     isDialogOpen,
     txError,
+    setTxError,
     handleTransaction,
     reset,
     filteredUnifiedBalance,
     startTransaction,
     setIsDialogOpen,
-    setTxError,
     stopTimer,
+    commitAmount,
   } = useBridge({
     network: network ?? "mainnet",
     connectedAddress,
@@ -97,6 +99,8 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
           unifiedBalance={filteredUnifiedBalance}
+          onCommit={() => void commitAmount()}
+          disabled={refreshing}
         />
         <ReceipientAddress
           address={inputs?.recipient}
@@ -109,20 +113,29 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
             <SourceBreakdown
               intent={intent?.intent}
               tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
             />
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">You receive</p>
               <div className="flex flex-col gap-y-1 min-w-fit">
-                <p className="text-base font-semibold text-right">
-                  {intent?.intent?.destination?.amount}{" "}
-                  {filteredUnifiedBalance?.symbol}
-                </p>
-                <p className="text-sm font-medium text-right">
-                  on {intent?.intent?.destination?.chainName}
-                </p>
+                {refreshing ? (
+                  <Skeleton className="h-5 w-28" />
+                ) : (
+                  <p className="text-base font-semibold text-right">
+                    {intent?.intent?.destination?.amount}{" "}
+                    {filteredUnifiedBalance?.symbol}
+                  </p>
+                )}
+                {refreshing ? (
+                  <Skeleton className="h-4 w-36" />
+                ) : (
+                  <p className="text-sm font-medium text-right">
+                    on {intent?.intent?.destination?.chainName}
+                  </p>
+                )}
               </div>
             </div>
-            <FeeBreakdown intent={intent?.intent} />
+            <FeeBreakdown intent={intent?.intent} isLoading={refreshing} />
           </>
         )}
 
@@ -182,17 +195,20 @@ const FastBridge: React.FC<FastBridgeProps> = ({ connectedAddress }) => {
         )}
 
         {txError && (
-          <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-start justify-between gap-x-3">
-            <span className="flex-1">{txError}</span>
+          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
+            <span className="flex-1 max-w-">{txError}</span>
             <Button
               type="button"
               size={"icon"}
               variant={"ghost"}
-              onClick={() => setTxError(null)}
-              className="text-red-700/80 hover:text-red-900 focus:outline-none"
+              onClick={() => {
+                reset();
+                setTxError(null);
+              }}
+              className="text-destructive-foreground/80 hover:text-destructive-foreground focus:outline-none"
               aria-label="Dismiss error"
             >
-              ×
+              <X className="size-4" />
             </Button>
           </div>
         )}

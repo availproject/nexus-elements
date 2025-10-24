@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { FC, useMemo } from "react";
 import { Label } from "../../ui/label";
 import {
   Select,
@@ -21,7 +21,7 @@ interface ChainSelectProps {
   handleSelect: (chainId: SUPPORTED_CHAINS_IDS) => void;
 }
 
-const ChainSelect: React.FC<ChainSelectProps> = ({
+const ChainSelect: FC<ChainSelectProps> = ({
   selectedChain,
   disabled,
   hidden = false,
@@ -31,7 +31,7 @@ const ChainSelect: React.FC<ChainSelectProps> = ({
 }) => {
   const { supportedChainsAndTokens } = useNexus();
 
-  const selectedChainData = React.useMemo(() => {
+  const selectedChainData = useMemo(() => {
     if (!supportedChainsAndTokens) return null;
     return supportedChainsAndTokens.find((c) => c.id === selectedChain);
   }, [selectedChain, supportedChainsAndTokens]);
