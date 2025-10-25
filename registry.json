@@ -234,6 +234,22 @@
       ]
     },
     {
+      "name": "skeleton",
+      "type": "registry:component",
+      "title": "Skeleton",
+      "description": "UI primitive: Skeleton",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/skeleton.tsx",
+          "target": "components/ui/skeleton.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "tabs",
       "type": "registry:component",
       "title": "Tabs",
