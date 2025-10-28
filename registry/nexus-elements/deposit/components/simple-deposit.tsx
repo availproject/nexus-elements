@@ -258,6 +258,7 @@ const SimpleDeposit = ({
           allowanceModal={allowance}
           setAllowanceModal={setAllowance}
           callback={startTransaction}
+          onCloseCallback={clearSimulation}
         />
       )}
 

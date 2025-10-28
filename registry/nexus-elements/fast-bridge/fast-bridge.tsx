@@ -191,6 +191,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             allowanceModal={allowance}
             setAllowanceModal={setAllowance}
             callback={startTransaction}
+            onCloseCallback={reset}
           />
         )}
 

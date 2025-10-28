@@ -25,12 +25,14 @@ interface AllowanceModalProps {
     React.SetStateAction<OnAllowanceHookData | null>
   >;
   callback?: () => void;
+  onCloseCallback?: () => void;
 }
 
 const AllowanceModal: FC<AllowanceModalProps> = ({
   allowanceModal,
   setAllowanceModal,
   callback,
+  onCloseCallback,
 }) => {
   const { nexusSDK } = useNexus();
   const [selectedOption, setSelectedOption] = useState<string[]>([]);
@@ -54,6 +56,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   const onClose = () => {
     deny();
     setAllowanceModal(null);
+    onCloseCallback?.();
   };
 
   const onApprove = () => {
@@ -70,6 +73,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       callback?.();
     } catch (error) {
       console.error(error);
+      onCloseCallback?.();
     }
   };
 
