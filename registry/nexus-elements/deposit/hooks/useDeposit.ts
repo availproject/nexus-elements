@@ -90,7 +90,7 @@ const useDeposit = ({
   }, [inputs]);
 
   const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.filter((bal) => bal?.symbol === token)[0];
+    return unifiedBalance?.find((bal) => bal?.symbol === token);
   }, [unifiedBalance]);
 
   const handleTransaction = async () => {
@@ -216,6 +216,7 @@ const useDeposit = ({
   };
 
   const reset = () => {
+    console.log("reset");
     intent?.deny();
     resetState();
   };

@@ -239,7 +239,13 @@ const SimpleDeposit = ({
           </Button>
         ))}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          if (loading) return;
+          setIsDialogOpen(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader className="sr-only">
             <DialogTitle>Transaction Progress</DialogTitle>

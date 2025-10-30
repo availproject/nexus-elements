@@ -157,7 +157,13 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             )}
           </Button>
         )}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            if (loading) return;
+            setIsDialogOpen(open);
+          }}
+        >
           {intent && (
             <div className="w-full flex items-center gap-x-2 justify-between">
               <Button variant={"destructive"} onClick={reset} className="w-1/2">
