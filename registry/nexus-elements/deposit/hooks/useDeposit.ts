@@ -83,6 +83,10 @@ const useDeposit = ({
     null
   );
 
+  // Track in-flight simulation requests to prevent stale updates
+  const simulationRequestIdRef = useRef(0);
+  const activeSimulationIdRef = useRef<number | null>(null);
+
   useMemo(() => {
     const hasChain = inputs?.chain !== undefined && inputs?.chain !== null;
     const hasAmount = Boolean(inputs?.amount) && Number(inputs?.amount) > 0;
@@ -143,9 +147,13 @@ const useDeposit = ({
     if (!nexusSDK) return;
     const amountToUse = overrideAmount ?? inputs?.amount;
     if (!amountToUse || !inputs?.chain) {
+      // Invalidate any pending simulation and clear result if input is empty
+      activeSimulationIdRef.current = null;
       setSimulation(null);
       return;
     }
+    const requestId = ++simulationRequestIdRef.current;
+    activeSimulationIdRef.current = requestId;
     setSimulating(true);
     try {
       const params: BridgeAndExecuteParams = {
@@ -161,6 +169,10 @@ const useDeposit = ({
       console.log("simulation params", params);
       const sim = await nexusSDK.simulateBridgeAndExecute(params);
       console.log("simulation result", sim);
+      // Ignore if this request is no longer the active one
+      if (activeSimulationIdRef.current !== requestId) {
+        return;
+      }
       if (sim?.success) {
         setTxError(null);
         setSimulation(sim);
@@ -169,13 +181,18 @@ const useDeposit = ({
         setTxError(sim?.error || "Simulation failed");
       }
     } catch (error) {
+      if (activeSimulationIdRef.current !== requestId) {
+        return;
+      }
       const msg = (error as Error)?.message || "Simulation failed";
       setSimulation(null);
       setTxError(
         msg.includes("User rejected") ? "User rejected the simulation" : msg
       );
     } finally {
-      setSimulating(false);
+      if (activeSimulationIdRef.current === requestId) {
+        setSimulating(false);
+      }
     }
   };
 
@@ -209,6 +226,8 @@ const useDeposit = ({
     setRefreshing(false);
     setSimulation(null);
     setIntent(null);
+    activeSimulationIdRef.current = null;
+    setSimulating(false);
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
       refreshIntervalRef.current = null;
@@ -270,7 +289,7 @@ const useDeposit = ({
       simulation?.bridgeSimulation?.intent &&
       !isDialogOpen
     ) {
-      refreshIntervalRef.current ??= setInterval(refreshSimulation, 5000);
+      refreshIntervalRef.current ??= setInterval(refreshSimulation, 15000);
     } else if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
       refreshIntervalRef.current = null;
@@ -311,6 +330,16 @@ const useDeposit = ({
     stopTimer,
     simulate,
     clearSimulation: () => reset(),
+    cancelSimulation: () => {
+      activeSimulationIdRef.current = null;
+      setSimulating(false);
+      setRefreshing(false);
+      setSimulation(null);
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    },
   };
 };
 

@@ -60,6 +60,7 @@ const SimpleDeposit = ({
     stopTimer,
     clearSimulation,
     simulate,
+    cancelSimulation,
   } = useDeposit({
     token: token ?? "USDC",
     chain,
@@ -89,14 +90,14 @@ const SimpleDeposit = ({
       return (
         <div className="flex items-center gap-x-2">
           <LoaderPinwheel className="animate-spin size-4" />
-          <p>Refreshing quote</p>
+          <p>Refreshing Quote</p>
         </div>
       );
     if (simulating)
       return (
         <div className="flex items-center gap-x-2">
           <LoaderPinwheel className="animate-spin size-4" />
-          <p>Preparing quote</p>
+          <p>Preparing Quote</p>
         </div>
       );
     return "Deposit";
@@ -116,7 +117,13 @@ const SimpleDeposit = ({
       <AmountInput
         token={token}
         value={inputs?.amount}
-        onChange={(value) => setInputs({ ...inputs, amount: value })}
+        onChange={(value) => {
+          setInputs({ ...inputs, amount: value });
+          if (!value) {
+            cancelSimulation();
+            setTxError(null);
+          }
+        }}
         unifiedBalance={filteredUnifiedBalance}
         disabled={loading || simulating}
         onCommit={(value) => {
@@ -133,7 +140,7 @@ const SimpleDeposit = ({
             tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
-            <p className="text-base font-semibold">You receive</p>
+            <p className="text-base font-semibold">You Receive</p>
             <div className="flex flex-col gap-y-1 min-w-fit items-end">
               <Skeleton className="h-5 w-28" />
               <Skeleton className="h-4 w-36" />
@@ -149,68 +156,77 @@ const SimpleDeposit = ({
         </>
       )}
 
-      {simulation?.success && simulation?.bridgeSimulation?.intent && (
-        <>
-          <SourceBreakdown
-            intent={simulation?.bridgeSimulation?.intent}
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-            isLoading={refreshing}
-          />
-          <div className="w-full flex items-start justify-between gap-x-4">
-            <p className="text-base font-semibold">You receive</p>
-            <div className="flex flex-col gap-y-1 min-w-fit">
-              {refreshing ? (
-                <Skeleton className="h-5 w-28" />
-              ) : (
-                <p className="text-base font-semibold text-right">
-                  {inputs?.amount} {filteredUnifiedBalance?.symbol}
+      {simulation?.success &&
+        inputs?.amount &&
+        simulation?.bridgeSimulation?.intent && (
+          <>
+            <SourceBreakdown
+              intent={simulation?.bridgeSimulation?.intent}
+              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
+            />
+            <div className="w-full flex items-start justify-between gap-x-4">
+              <p className="text-base font-semibold">You Receive</p>
+              <div className="flex flex-col gap-y-1 min-w-fit">
+                {refreshing ? (
+                  <Skeleton className="h-5 w-28" />
+                ) : (
+                  <p className="text-base font-semibold text-right">
+                    {inputs?.amount} {filteredUnifiedBalance?.symbol}
+                  </p>
+                )}
+                <p className="text-sm font-medium text-right">
+                  {destinationLabel}
                 </p>
-              )}
-              <p className="text-sm font-medium text-right">
-                {destinationLabel}
-              </p>
+              </div>
             </div>
-          </div>
-          <DepositFeeBreakdown
-            total={simulation?.totalEstimatedCost?.total ?? "0"}
-            bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
-            execute={simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"}
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-            isLoading={refreshing}
-          />
-        </>
-      )}
+            <DepositFeeBreakdown
+              total={simulation?.totalEstimatedCost?.total ?? "0"}
+              bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
+              execute={
+                simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"
+              }
+              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
+            />
+          </>
+        )}
 
-      {simulation?.success && !simulation?.bridgeSimulation && (
-        <>
-          <div className="w-full flex items-start justify-between gap-x-4">
-            <p className="text-base font-semibold">You receive</p>
-            <div className="flex flex-col gap-y-1 min-w-fit">
-              {refreshing ? (
-                <Skeleton className="h-5 w-28" />
-              ) : (
-                <p className="text-base font-semibold text-right">
-                  {simulation?.metadata?.bridgeReceiveAmount ?? inputs?.amount}{" "}
-                  {filteredUnifiedBalance?.symbol}
+      {simulation?.success &&
+        inputs?.amount &&
+        !simulation?.bridgeSimulation && (
+          <>
+            <div className="w-full flex items-start justify-between gap-x-4">
+              <p className="text-base font-semibold">You Receive</p>
+              <div className="flex flex-col gap-y-1 min-w-fit">
+                {refreshing ? (
+                  <Skeleton className="h-5 w-28" />
+                ) : (
+                  <p className="text-base font-semibold text-right">
+                    {simulation?.metadata?.bridgeReceiveAmount ??
+                      inputs?.amount}{" "}
+                    {filteredUnifiedBalance?.symbol}
+                  </p>
+                )}
+                <p className="text-sm font-medium text-right">
+                  {destinationLabel}
                 </p>
-              )}
-              <p className="text-sm font-medium text-right">
-                {destinationLabel}
-              </p>
+              </div>
             </div>
-          </div>
-          <DepositFeeBreakdown
-            total={simulation?.totalEstimatedCost?.total ?? "0"}
-            bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
-            execute={simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"}
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-            isLoading={refreshing}
-          />
-          <div className="w-full text-sm text-muted-foreground px-2">
-            Bridge skipped, executing directly on destination chain
-          </div>
-        </>
-      )}
+            <DepositFeeBreakdown
+              total={simulation?.totalEstimatedCost?.total ?? "0"}
+              bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
+              execute={
+                simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"
+              }
+              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
+            />
+            <div className="w-full text-sm text-muted-foreground px-2">
+              Bridge skipped, executing directly on destination chain
+            </div>
+          </>
+        )}
 
       {!intent &&
         (simulation?.success ? (
@@ -291,3 +307,10 @@ const SimpleDeposit = ({
 };
 
 export default SimpleDeposit;
+
+/**
+ * change you spend amount to receive + fee
+ * if total amount is not being bridged then also show how much the user already has on the destination chain in you spend breakdown
+ * if the input is cleared while a simulation is in progress, then don't show the simulation result. Basically stop the inflight request somehow, or don't display it on the UI same thing with the cancel button
+ * add total token balance on the right side of the amount input
+ */

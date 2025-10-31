@@ -27,14 +27,14 @@ const DepositFeeBreakdown = ({
   isLoading = false,
 }: DepositFeeBreakdownProps) => {
   const formatBalance = useCallback((balance: string, decimals: number) => {
-    const num = parseFloat(balance);
+    const num = Number.parseFloat(balance);
     return num.toFixed(Math.min(6, decimals));
   }, []);
   return (
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="deposit-fee-breakdown">
         <div className="w-full flex items-start justify-between">
-          <p className="font-semibold text-base">Total fees</p>
+          <p className="font-semibold text-base">Total Fees</p>
 
           <div className="flex flex-col items-end justify-end-safe gap-y-1">
             {isLoading ? (
@@ -57,7 +57,7 @@ const DepositFeeBreakdown = ({
         <AccordionContent>
           <div className="w-full flex flex-col items-center justify-between gap-y-3 bg-muted px-4 py-2 rounded-lg mt-2">
             <div className="flex items-center w-full justify-between">
-              <p className="text-sm font-semibold">Transaction Fees</p>
+              <p className="text-sm font-semibold">Transaction Fee</p>
               {isLoading ? (
                 <Skeleton className="h-4 w-20" />
               ) : (
