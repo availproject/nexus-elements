@@ -5,8 +5,11 @@ import {
   NexusSDK,
   type OnAllowanceHookData,
   type OnIntentHookData,
+  type OnSwapIntentHook,
   type SupportedChainsResult,
   type UserAsset,
+  NexusError,
+  ERROR_CODES,
 } from "@avail-project/nexus-core";
 import {
   createContext,
@@ -23,6 +26,7 @@ interface NexusContextType {
   deinitializeNexus: () => Promise<void>;
   attachEventHooks: () => void;
   intent: OnIntentHookData | null;
+  swapIntent: Parameters<OnSwapIntentHook>[0] | null;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
   allowance: OnAllowanceHookData | null;
   setAllowance: React.Dispatch<
@@ -30,9 +34,16 @@ interface NexusContextType {
   >;
   handleInit: (provider: EthereumProvider) => Promise<void>;
   supportedChainsAndTokens: SupportedChainsResult | null;
+  swapSupportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
   fetchUnifiedBalance: () => Promise<void>;
+  handleNexusError: (err: unknown) => {
+    code?: (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+    message: string;
+    context?: string;
+    details?: Record<string, unknown>;
+  };
 }
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
@@ -53,25 +64,37 @@ const NexusProvider = ({
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
     useState<SupportedChainsResult | null>(null);
+  const [swapSupportedChainsAndTokens, setSwapSupportedChainsAndTokens] =
+    useState<SupportedChainsResult | null>(null);
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
-    null,
+    null
   );
   const [loading, setLoading] = useState<boolean>(false);
   const [intent, setIntent] = useState<OnIntentHookData | null>(null);
+  const [swapIntent, setSwapIntent] = useState<
+    Parameters<OnSwapIntentHook>[0] | null
+  >(null);
   const [allowance, setAllowance] = useState<OnAllowanceHookData | null>(null);
+
+  useMemo(() => {
+    const list = sdk?.utils?.getSupportedChains(
+      config?.network === "testnet" ? 0 : undefined
+    );
+    setSupportedChainsAndTokens(list ?? null);
+    const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
+    console.log("swapList", swapList);
+    setSwapSupportedChainsAndTokens(swapList ?? null);
+  }, [sdk, config?.network]);
 
   const initializeNexus = async (provider: EthereumProvider) => {
     setLoading(true);
     try {
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
+      console.log("Nexus initialized with Provider:", provider);
       setNexusSDK(sdk);
       const unifiedBalance = await sdk?.getUnifiedBalances();
       setUnifiedBalance(unifiedBalance);
-      const supportedChainsAndTokens = sdk?.utils?.getSupportedChains(
-        config?.network === "testnet" ? 0 : undefined,
-      );
-      setSupportedChainsAndTokens(supportedChainsAndTokens);
     } catch (error) {
       console.error("Error initializing Nexus:", error);
     } finally {
@@ -94,8 +117,13 @@ const NexusProvider = ({
       setAllowance(data);
     });
 
-    sdk.setOnIntentHook((data) => {
+    sdk.setOnIntentHook((data: OnIntentHookData) => {
       setIntent(data);
+    });
+
+    sdk.setOnSwapIntentHook((data: Parameters<OnSwapIntentHook>[0]) => {
+      console.log("swapIntent", data);
+      setSwapIntent(data);
     });
   };
 
@@ -108,7 +136,7 @@ const NexusProvider = ({
       await initializeNexus(provider);
       attachEventHooks();
     },
-    [sdk],
+    [sdk]
   );
 
   const fetchUnifiedBalance = async () => {
@@ -118,6 +146,19 @@ const NexusProvider = ({
     } catch (error) {
       console.error("Error fetching unified balance:", error);
     }
+  };
+
+  const handleNexusError: NexusContextType["handleNexusError"] = (err) => {
+    if (err instanceof NexusError) {
+      const { code, message, data } = err;
+      return {
+        code,
+        message,
+        context: data?.context,
+        details: data?.details ?? undefined,
+      };
+    }
+    return { message: (err as Error)?.message || "Unexpected error" };
   };
 
   const value = useMemo(
@@ -132,10 +173,13 @@ const NexusProvider = ({
       setAllowance,
       handleInit,
       supportedChainsAndTokens,
+      swapSupportedChainsAndTokens,
       unifiedBalance,
       network: config?.network,
       loading,
       fetchUnifiedBalance,
+      swapIntent,
+      handleNexusError,
     }),
     [
       nexusSDK,
@@ -148,11 +192,14 @@ const NexusProvider = ({
       setAllowance,
       handleInit,
       supportedChainsAndTokens,
+      swapSupportedChainsAndTokens,
       unifiedBalance,
       config,
       loading,
       fetchUnifiedBalance,
-    ],
+      swapIntent,
+      handleNexusError,
+    ]
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>

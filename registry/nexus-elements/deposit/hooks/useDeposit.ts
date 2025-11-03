@@ -10,10 +10,15 @@ import {
   type ExecuteParams,
   type BridgeAndExecuteParams,
   type BridgeAndExecuteResult,
-  BridgeAndExecuteSimulationResult,
+  type BridgeAndExecuteSimulationResult,
+  TOKEN_METADATA,
+  parseUnits,
+  NEXUS_EVENTS,
+  type BridgeStepType,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
+import { type Address } from "viem";
 
 interface DepositInputs {
   chain: SUPPORTED_CHAINS_IDS;
@@ -35,7 +40,14 @@ interface UseDepositProps {
   >;
   unifiedBalance: UserAsset[] | null;
   chainOptions?: { id: number; name: string; logo: string }[];
-  executeConfig?: ExecuteConfig;
+  address: Address;
+  executeBuilder?: (
+    token: SUPPORTED_TOKENS,
+    amount: string,
+    chainId: SUPPORTED_CHAINS_IDS,
+    userAddress: `0x${string}`
+  ) => ExecuteConfig;
+  executeConfig?: ExecuteConfig; // fallback if pre-encoded params are provided
 }
 
 const useDeposit = ({
@@ -48,9 +60,11 @@ const useDeposit = ({
   setAllowance,
   unifiedBalance,
   chainOptions,
+  address,
+  executeBuilder,
   executeConfig,
 }: UseDepositProps) => {
-  const { fetchUnifiedBalance } = useNexus();
+  const { fetchUnifiedBalance, handleNexusError } = useNexus();
   const allSourceIds = useMemo(
     () => chainOptions?.map((c) => c.id) ?? [],
     [chainOptions]
@@ -82,6 +96,9 @@ const useDeposit = ({
   const [lastResult, setLastResult] = useState<BridgeAndExecuteResult | null>(
     null
   );
+  const [steps, setSteps] = useState<
+    Array<{ id: number; completed: boolean; step: BridgeStepType }>
+  >([]);
 
   // Track in-flight simulation requests to prevent stale updates
   const simulationRequestIdRef = useRef(0);
@@ -95,7 +112,7 @@ const useDeposit = ({
 
   const filteredUnifiedBalance = useMemo(() => {
     return unifiedBalance?.find((bal) => bal?.symbol === token);
-  }, [unifiedBalance]);
+  }, [unifiedBalance, token]);
 
   const handleTransaction = async () => {
     if (!inputs?.amount || !inputs?.chain) return;
@@ -103,22 +120,56 @@ const useDeposit = ({
     setTxError(null);
     try {
       if (!nexusSDK) throw new Error("Nexus SDK not initialized");
-
+      const decimals = TOKEN_METADATA[token].decimals;
+      const amountBigInt = parseUnits(inputs.amount, decimals);
+      const executeParams: ExecuteConfig | undefined = executeBuilder
+        ? executeBuilder(token, inputs.amount, inputs.chain, address)
+        : executeConfig;
       const params: BridgeAndExecuteParams = {
         token,
-        amount: inputs.amount,
+        amount: amountBigInt,
         toChainId: inputs.chain,
         sourceChains: inputs.selectedSources?.length
           ? inputs.selectedSources
           : allSourceIds,
-        execute: executeConfig,
+        execute: executeParams as ExecuteConfig,
         waitForReceipt: true,
       };
 
       const result: BridgeAndExecuteResult = await nexusSDK.bridgeAndExecute(
-        params
+        params,
+        {
+          onEvent: (event) => {
+            if (event.name === NEXUS_EVENTS.STEPS_LIST) {
+              const list = Array.isArray(event.args)
+                ? (event.args as BridgeStepType[])
+                : [];
+              setSteps((prev) => {
+                const completedTypes = new Set(
+                  prev
+                    .filter((s) => s.completed)
+                    .map((s) => s.step?.typeID ?? "")
+                );
+                return list.map((step, index) => ({
+                  id: index,
+                  completed: completedTypes.has(step?.typeID ?? ""),
+                  step,
+                }));
+              });
+            }
+            if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+              const step = event.args as BridgeStepType;
+              setSteps((prev) =>
+                prev.map((s) =>
+                  s.step && s.step.typeID === step?.typeID
+                    ? { ...s, completed: true }
+                    : s
+                )
+              );
+            }
+          },
+        }
       );
-      console.log("result", result);
 
       if (!result?.success) {
         setTxError(result?.error || "Transaction rejected by user");
@@ -129,10 +180,8 @@ const useDeposit = ({
       setLastResult(result);
       await onSuccess();
     } catch (error) {
-      const msg = (error as Error)?.message || "Transaction failed";
-      setTxError(
-        msg.includes("User rejected") ? "User rejected the transaction" : msg
-      );
+      const { message } = handleNexusError(error);
+      setTxError(message);
       setIsDialogOpen(false);
     } finally {
       resetState();
@@ -156,19 +205,22 @@ const useDeposit = ({
     activeSimulationIdRef.current = requestId;
     setSimulating(true);
     try {
+      const decimals = TOKEN_METADATA[token].decimals;
+      const amountBigInt = parseUnits(amountToUse, decimals);
+      const executeParams: ExecuteConfig | undefined = executeBuilder
+        ? executeBuilder(token, amountToUse, inputs.chain, address)
+        : executeConfig;
       const params: BridgeAndExecuteParams = {
         token,
-        amount: amountToUse,
+        amount: amountBigInt,
         toChainId: inputs.chain,
         sourceChains: inputs.selectedSources?.length
           ? inputs.selectedSources
           : allSourceIds,
-        execute: executeConfig,
+        execute: executeParams as ExecuteConfig,
         waitForReceipt: false,
       };
-      console.log("simulation params", params);
       const sim = await nexusSDK.simulateBridgeAndExecute(params);
-      console.log("simulation result", sim);
       // Ignore if this request is no longer the active one
       if (activeSimulationIdRef.current !== requestId) {
         return;
@@ -184,11 +236,9 @@ const useDeposit = ({
       if (activeSimulationIdRef.current !== requestId) {
         return;
       }
-      const msg = (error as Error)?.message || "Simulation failed";
       setSimulation(null);
-      setTxError(
-        msg.includes("User rejected") ? "User rejected the simulation" : msg
-      );
+      const { message } = handleNexusError(error);
+      setTxError(message);
     } finally {
       if (activeSimulationIdRef.current === requestId) {
         setSimulating(false);
@@ -214,7 +264,6 @@ const useDeposit = ({
   };
 
   const resetState = () => {
-    setIntent(null);
     setAllowance(null);
     setInputs({
       chain,
@@ -285,8 +334,9 @@ const useDeposit = ({
 
   useEffect(() => {
     if (
-      simulation?.success &&
-      simulation?.bridgeSimulation?.intent &&
+      simulation &&
+      simulation.success &&
+      simulation.bridgeSimulation?.intent &&
       !isDialogOpen
     ) {
       refreshIntervalRef.current ??= setInterval(refreshSimulation, 15000);
@@ -300,7 +350,7 @@ const useDeposit = ({
         refreshIntervalRef.current = null;
       }
     };
-  }, [simulation?.success, simulation?.bridgeSimulation, isDialogOpen]);
+  }, [simulation, isDialogOpen]);
 
   const stopTimer = () => {
     if (timerRef.current) {
@@ -324,6 +374,7 @@ const useDeposit = ({
     filteredUnifiedBalance,
     simulation,
     lastResult,
+    steps,
     handleTransaction,
     startTransaction,
     reset,

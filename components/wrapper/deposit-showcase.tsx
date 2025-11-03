@@ -5,8 +5,9 @@ import {
   SUPPORTED_CHAINS,
   TOKEN_CONTRACT_ADDRESSES,
   TOKEN_METADATA,
+  encodeContractCall,
 } from "@avail-project/nexus-core";
-import { parseUnits } from "viem";
+import { parseUnits, type Abi } from "viem";
 import dynamic from "next/dynamic";
 import { Skeleton } from "../ui/skeleton";
 import { useState } from "react";
@@ -46,9 +47,10 @@ const DepositShowcase = () => {
         embed={viewAs}
         destinationLabel="on Aave v3"
         heading="Deposit USDT"
-        depositExecute={{
-          contractAddress: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
-          contractAbi: [
+        depositExecute={(token, amount, _chainId, user) => {
+          const contractAddress =
+            "0x794a61358D6845594F94dc1DB02A252b5b4814aD" as const;
+          const abi: Abi = [
             {
               name: "supply",
               type: "function",
@@ -61,44 +63,36 @@ const DepositShowcase = () => {
               ],
               outputs: [],
             },
-          ] as const,
-          // contractAbi: [
-          //   {
-          //     inputs: [
-          //       {
-          //         internalType: "address",
-          //         name: "asset",
-          //         type: "address",
-          //       },
-          //       {
-          //         internalType: "uint256",
-          //         name: "amount",
-          //         type: "uint256",
-          //       },
-          //       {
-          //         internalType: "address",
-          //         name: "onBehalfOf",
-          //         type: "address",
-          //       },
-          //       {
-          //         internalType: "uint16",
-          //         name: "referralCode",
-          //         type: "uint16",
-          //       },
-          //     ],
-          //     name: "supply",
-          //     outputs: [],
-          //     stateMutability: "nonpayable",
-          //     type: "function",
-          //   },
-          // ] as const,
-          functionName: "supply",
-          buildFunctionParams: (token, amount, _chainId, user) => {
-            const decimals = TOKEN_METADATA[token].decimals;
-            const amountWei = parseUnits(amount, decimals);
-            const tokenAddr = TOKEN_CONTRACT_ADDRESSES[token][_chainId];
-            return { functionParams: [tokenAddr, amountWei, user, 0] };
-          },
+          ];
+          const decimals = TOKEN_METADATA[token].decimals;
+          const amountWei = parseUnits(amount, decimals);
+          if (token === "ETH") {
+            throw new Error(
+              "ETH is native and not supported for this execute builder"
+            );
+          }
+          const chainMap = TOKEN_CONTRACT_ADDRESSES[token];
+          if (!(_chainId in chainMap)) {
+            throw new Error("Selected chain is not supported for this token");
+          }
+          const tokenAddr = chainMap[_chainId as keyof typeof chainMap];
+          const encoded = encodeContractCall({
+            contractAbi: abi,
+            functionName: "supply",
+            functionParams: [tokenAddr, amountWei, user, 0],
+          });
+          if (!encoded.success || !encoded.data) {
+            throw new Error("Failed to encode contract call");
+          }
+          return {
+            to: contractAddress,
+            data: encoded.data,
+            tokenApproval: {
+              token,
+              amount: amountWei,
+              spender: contractAddress,
+            },
+          };
         }}
       />
     </ShowcaseWrapper>

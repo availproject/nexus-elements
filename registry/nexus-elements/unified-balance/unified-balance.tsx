@@ -15,7 +15,7 @@ const UnifiedBalance: FC = () => {
   const { unifiedBalance } = useNexus();
 
   const formatBalance = useCallback((balance: string, decimals: number) => {
-    const num = parseFloat(balance);
+    const num = Number.parseFloat(balance);
     return num.toFixed(Math.min(6, decimals));
   }, []);
 
@@ -23,14 +23,14 @@ const UnifiedBalance: FC = () => {
     if (!unifiedBalance) return "0.00";
     const total = unifiedBalance.reduce(
       (acc, fiat) => acc + fiat.balanceInFiat,
-      0,
+      0
     );
     return total.toFixed(2);
   }, [unifiedBalance]);
 
   const tokens = useMemo(() => {
     return (unifiedBalance ?? []).filter(
-      (token) => parseFloat(token.balance) > 0,
+      (token) => Number.parseFloat(token.balance) > 0
     );
   }, [unifiedBalance]);
 
@@ -49,7 +49,7 @@ const UnifiedBalance: FC = () => {
       <Accordion type="single" collapsible className="w-full space-y-4">
         {tokens.map((token) => {
           const positiveBreakdown = token.breakdown.filter(
-            (chain) => parseFloat(chain.balance) > 0,
+            (chain) => Number.parseFloat(chain.balance) > 0
           );
           const chainsCount = positiveBreakdown.length;
           const chainsLabel =

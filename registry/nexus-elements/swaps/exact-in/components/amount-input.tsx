@@ -1,28 +1,21 @@
 import React, { FC, useEffect, useRef } from "react";
-import { Input } from "../../ui/input";
-import { Button } from "../../ui/button";
-import { type UserAsset } from "@avail-project/nexus-core";
-import { useNexus } from "../../nexus/NexusProvider";
-import { FastBridgeState } from "../hooks/useBridge";
+import { Input } from "../../../ui/input";
 
 interface AmountInputProps {
   amount?: string;
   onChange: (value: string) => void;
-  unifiedBalance?: UserAsset;
   onCommit?: (value: string) => void;
   disabled?: boolean;
-  inputs: FastBridgeState;
+  symbol?: string;
 }
 
 const AmountInput: FC<AmountInputProps> = ({
   amount,
   onChange,
-  unifiedBalance,
   onCommit,
   disabled,
-  inputs,
+  symbol,
 }) => {
-  const { nexusSDK } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const scheduleCommit = (val: string) => {
@@ -30,19 +23,7 @@ const AmountInput: FC<AmountInputProps> = ({
     if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
     commitTimerRef.current = setTimeout(() => {
       onCommit(val);
-    }, 800);
-  };
-
-  const onMaxClick = async () => {
-    if (!nexusSDK || !inputs) return;
-    const maxBalAvailable = await nexusSDK?.calculateMaxForBridge({
-      token: inputs?.token,
-      chainId: inputs?.chain,
-      recipient: inputs?.recipient,
-    });
-    if (!maxBalAvailable) return;
-    onChange(maxBalAvailable.amount);
-    onCommit?.(maxBalAvailable.amount);
+    }, 600);
   };
 
   useEffect(() => {
@@ -60,7 +41,7 @@ const AmountInput: FC<AmountInputProps> = ({
         type="text"
         inputMode="decimal"
         value={amount ?? ""}
-        placeholder="Enter Amount"
+        placeholder={`Enter Amount${symbol ? ` (${symbol})` : ""}`}
         onChange={(e) => {
           let next = e.target.value.replace(/[^0-9.]/g, "");
           const parts = next.split(".");
@@ -83,23 +64,7 @@ const AmountInput: FC<AmountInputProps> = ({
         disabled={disabled}
       />
       <div className="flex items-center justify-end-safe gap-x-4 w-fit px-2 border-l border-border">
-        <div className="flex items-center gap-x-3 min-w-max">
-          {unifiedBalance && (
-            <p className="text-base font-semibold">
-              {parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
-              {unifiedBalance?.symbol}
-            </p>
-          )}
-          <Button
-            size={"sm"}
-            variant={"ghost"}
-            onClick={onMaxClick}
-            className="px-0"
-            disabled={disabled}
-          >
-            Max
-          </Button>
-        </div>
+        {symbol && <p className="text-base font-semibold">{symbol}</p>}
       </div>
     </div>
   );

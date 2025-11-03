@@ -80,11 +80,6 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/hooks/useListenTransaction.ts",
-          "target": "components/fast-bridge/hooks/useListenTransaction.ts",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.tsx",
           "target": "components/fast-bridge/hooks/useBridge.tsx",
           "type": "registry:component"
@@ -388,11 +383,6 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/deposit/hooks/useListenTransaction.ts",
-          "target": "components/deposit/hooks/useListenTransaction.ts",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/nexus-elements/deposit/components/allowance-modal.tsx",
           "target": "components/deposit/components/allowance-modal.tsx",
           "type": "registry:component"
@@ -402,6 +392,47 @@
           "target": "components/deposit/components/source-breakdown.tsx",
           "type": "registry:component"
         }
+      ]
+    }
+    ,
+    {
+      "name": "swaps",
+      "type": "registry:component",
+      "title": "Swaps",
+      "description": "Swap tokens across chains (Exact In)",
+      "dependencies": [
+        "@avail-project/nexus-core@latest",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        { "path": "registry/nexus-elements/swaps/swaps.tsx", "target": "components/swaps/swaps.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/exact-in.tsx", "target": "components/swaps/exact-in/exact-in.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/source-chain-select.tsx", "target": "components/swaps/exact-in/components/source-chain-select.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/source-token-select.tsx", "target": "components/swaps/exact-in/components/source-token-select.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/destination-chain-select.tsx", "target": "components/swaps/exact-in/components/destination-chain-select.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/destination-token-select.tsx", "target": "components/swaps/exact-in/components/destination-token-select.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/amount-input.tsx", "target": "components/swaps/exact-in/components/amount-input.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/swap-source-breakdown.tsx", "target": "components/swaps/exact-in/components/swap-source-breakdown.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/components/swap-fee-breakdown.tsx", "target": "components/swaps/exact-in/components/swap-fee-breakdown.tsx", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/hooks/useExactIn.ts", "target": "components/swaps/exact-in/hooks/useExactIn.ts", "type": "registry:component" },
+        { "path": "registry/nexus-elements/swaps/exact-in/config/destination.ts", "target": "components/swaps/exact-in/config/destination.ts", "type": "registry:component" },
+        { "path": "registry/nexus-elements/fast-bridge/components/transaction-progress.tsx", "target": "components/fast-bridge/components/transaction-progress.tsx", "type": "registry:component" }
       ]
     }
   ]

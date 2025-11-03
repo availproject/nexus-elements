@@ -1,4 +1,5 @@
 import {
+  NEXUS_EVENTS,
   type NexusNetwork,
   NexusSDK,
   type OnAllowanceHookData,
@@ -12,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { type Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
 
-interface FastBridgeState {
+export interface FastBridgeState {
   chain: SUPPORTED_CHAINS_IDS;
   token: SUPPORTED_TOKENS;
   amount?: string;
@@ -40,7 +41,7 @@ const useBridge = ({
   setAllowance,
   unifiedBalance,
 }: UseBridgeProps) => {
-  const { fetchUnifiedBalance } = useNexus();
+  const { fetchUnifiedBalance, handleNexusError } = useNexus();
   const [inputs, setInputs] = useState<FastBridgeState>({
     chain:
       network === "testnet"
@@ -57,8 +58,12 @@ const useBridge = ({
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
+  const [lastExplorerUrl, setLastExplorerUrl] = useState<string>("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const commitLockRef = useRef<boolean>(false);
+  const [steps, setSteps] = useState<
+    Array<{ id: number; completed: boolean; step: any }>
+  >([]);
 
   const areInputsValid = useMemo(() => {
     const hasToken = inputs?.token !== undefined && inputs?.token !== null;
@@ -84,44 +89,99 @@ const useBridge = ({
     try {
       if (inputs?.recipient !== connectedAddress) {
         // Transfer
-        const transferTxn = await nexusSDK?.transfer({
-          token: inputs?.token,
-          amount: inputs?.amount,
-          chainId: inputs?.chain,
-          recipient: inputs?.recipient,
-        });
+        const transferTxn = await nexusSDK?.bridgeAndTransfer(
+          {
+            token: inputs?.token,
+            amount: inputs?.amount,
+            chainId: inputs?.chain,
+            recipient: inputs?.recipient,
+          },
+          {
+            onEvent: (event) => {
+              if (event.name === NEXUS_EVENTS.STEPS_LIST) {
+                const list = Array.isArray(event.args) ? event.args : [];
+                setSteps((prev) => {
+                  const completedTypes = new Set(
+                    prev
+                      .filter((s) => s.completed)
+                      .map((s) => s.step?.typeID ?? "")
+                  );
+                  return list.map((step, index) => ({
+                    id: index,
+                    completed: completedTypes.has(step?.typeID ?? ""),
+                    step,
+                  }));
+                });
+              }
+              if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+                const step = event.args;
+                setSteps((prev) =>
+                  prev.map((s) =>
+                    s.step && s.step.typeID === step?.typeID
+                      ? { ...s, completed: true }
+                      : s
+                  )
+                );
+              }
+            },
+          }
+        );
         if (!transferTxn?.success) {
           throw new Error(transferTxn?.error || "Transaction rejected by user");
         }
         if (transferTxn?.success) {
-          console.log("Transfer transaction successful");
-          console.log(
-            "Transfer transaction explorer",
-            transferTxn?.explorerUrl
-          );
+          setLastExplorerUrl(transferTxn.explorerUrl);
           await onSuccess();
         }
         return;
       }
       // Bridge
-      const bridgeTxn = await nexusSDK?.bridge({
-        token: inputs?.token,
-        amount: inputs?.amount,
-        chainId: inputs?.chain,
-      });
+      const bridgeTxn = await nexusSDK?.bridge(
+        {
+          token: inputs?.token,
+          amount: inputs?.amount,
+          chainId: inputs?.chain,
+        },
+        {
+          onEvent: (event) => {
+            if (event.name === NEXUS_EVENTS.STEPS_LIST) {
+              const list = Array.isArray(event.args) ? event.args : [];
+              setSteps((prev) => {
+                const completedTypes = new Set(
+                  prev
+                    .filter((s) => s.completed)
+                    .map((s) => s.step?.typeID ?? "")
+                );
+                return list.map((step, index) => ({
+                  id: index,
+                  completed: completedTypes.has(step?.typeID ?? ""),
+                  step,
+                }));
+              });
+            }
+            if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+              const step = event.args;
+              setSteps((prev) =>
+                prev.map((s) =>
+                  s.step && s.step.typeID === step?.typeID
+                    ? { ...s, completed: true }
+                    : s
+                )
+              );
+            }
+          },
+        }
+      );
       if (!bridgeTxn?.success) {
         throw new Error(bridgeTxn?.error || "Transaction rejected by user");
       }
       if (bridgeTxn?.success) {
-        console.log("Bridge transaction successful");
-        console.log("Bridge transaction explorer", bridgeTxn?.explorerUrl);
+        setLastExplorerUrl(bridgeTxn.explorerUrl);
         await onSuccess();
       }
     } catch (error) {
-      console.error("Transaction failed:", (error as Error)?.message);
-      if (!(error as Error)?.message?.includes("User rejected the request")) {
-        setTxError((error as Error)?.message || "Transaction failed");
-      }
+      const { message } = handleNexusError(error);
+      setTxError(message);
       setIsDialogOpen(false);
     } finally {
       setLoading(false);
@@ -156,7 +216,7 @@ const useBridge = ({
   };
 
   const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.filter((bal) => bal?.symbol === inputs?.token)[0];
+    return unifiedBalance?.find((bal) => bal?.symbol === inputs?.token);
   }, [unifiedBalance, inputs?.token]);
 
   const refreshIntent = async () => {
@@ -280,6 +340,8 @@ const useBridge = ({
     startTransaction,
     stopTimer,
     commitAmount,
+    lastExplorerUrl,
+    steps,
   };
 };
 

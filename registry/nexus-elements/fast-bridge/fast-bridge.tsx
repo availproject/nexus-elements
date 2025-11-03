@@ -18,7 +18,6 @@ import {
 } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
-import useListenTransaction from "./hooks/useListenTransaction";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
@@ -27,9 +26,10 @@ import { Skeleton } from "../ui/skeleton";
 
 interface FastBridgeProps {
   connectedAddress: Address;
+  onComplete?: () => void;
 }
 
-const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
+const FastBridge: FC<FastBridgeProps> = ({ connectedAddress, onComplete }) => {
   const {
     nexusSDK,
     intent,
@@ -56,6 +56,8 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
     setIsDialogOpen,
     stopTimer,
     commitAmount,
+    lastExplorerUrl,
+    steps,
   } = useBridge({
     network: network ?? "mainnet",
     connectedAddress,
@@ -66,14 +68,11 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
     setAllowance,
   });
 
-  const { processing, explorerUrl } = useListenTransaction(nexusSDK);
-
-  // Stop the timer when all steps are complete
-  const allCompleted =
-    processing?.length > 0 && processing.every((s) => s.completed);
+  const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
   React.useEffect(() => {
     if (allCompleted) {
       stopTimer();
+      if (onComplete) onComplete();
     }
   }, [allCompleted, stopTimer]);
 
@@ -101,6 +100,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
           unifiedBalance={filteredUnifiedBalance}
           onCommit={() => void commitAmount()}
           disabled={refreshing}
+          inputs={inputs}
         />
         <ReceipientAddress
           address={inputs?.recipient}
@@ -186,8 +186,8 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             </DialogHeader>
             <TransactionProgress
               timer={timer}
-              steps={processing}
-              viewIntentUrl={explorerUrl}
+              steps={steps}
+              viewIntentUrl={lastExplorerUrl}
               operationType={"bridge"}
             />
           </DialogContent>

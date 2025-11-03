@@ -41,12 +41,26 @@ export default function SidebarNav() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/components/swaps")}>
+              <Link href="/components/swaps" prefetch>
+                Swaps
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={isActive("/components/unified-balance")}
             >
               <Link href="/components/unified-balance" prefetch>
                 Unified Balance
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/experience")}>
+              <Link href="/experience" prefetch>
+                Experience Nexus
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

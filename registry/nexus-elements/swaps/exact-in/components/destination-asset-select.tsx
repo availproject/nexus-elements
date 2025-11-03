@@ -1,0 +1,138 @@
+"use client";
+import React, { FC, useMemo, useState } from "react";
+import { Button } from "../../../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../../ui/dialog";
+import { type SUPPORTED_CHAINS_IDS, CHAIN_METADATA } from "@avail-project/nexus-core";
+import { DESTINATION_SWAP_TOKENS } from "../config/destination";
+
+type DestinationTokenInfo = {
+  tokenAddress: `0x${string}`;
+  decimals: number;
+  logo: string;
+  name: string;
+  symbol: string;
+};
+
+interface DestinationAssetSelectProps {
+  selectedChain?: SUPPORTED_CHAINS_IDS;
+  selectedToken?: DestinationTokenInfo;
+  onSelect: (
+    chainId: SUPPORTED_CHAINS_IDS,
+    token: DestinationTokenInfo
+  ) => void;
+  disabled?: boolean;
+  label?: string;
+}
+
+const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
+  selectedChain,
+  selectedToken,
+  onSelect,
+  disabled,
+  label = "To",
+}) => {
+  const [open, setOpen] = useState(false);
+  const [tempChain, setTempChain] = useState<number | null>(null);
+
+  const chains = useMemo(() => Array.from(DESTINATION_SWAP_TOKENS.keys()), []);
+  const tokensForTempChain: DestinationTokenInfo[] = useMemo(() => {
+    if (!tempChain) return [] as DestinationTokenInfo[];
+    return DESTINATION_SWAP_TOKENS.get(tempChain) ?? [];
+  }, [tempChain]);
+
+  const handlePick = (tok: DestinationTokenInfo) => {
+    if (!tempChain) return;
+    onSelect(tempChain as SUPPORTED_CHAINS_IDS, tok);
+    setOpen(false);
+  };
+
+  return (
+    <div className="w-full">
+      <p className="text-sm font-semibold mb-1">{label}</p>
+      <Dialog open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="w-full justify-between" disabled={disabled}>
+            <div className="flex items-center gap-x-2">
+              {selectedChain && selectedToken ? (
+                <>
+                  {selectedToken.logo ? (
+                    <img
+                      src={selectedToken.logo}
+                      alt={selectedToken.symbol}
+                      width={20}
+                      height={20}
+                      className="rounded-full"
+                    />
+                  ) : null}
+                  <span className="text-sm font-medium">{selectedToken.symbol}</span>
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">Select chain and token</span>
+              )}
+            </div>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Select destination asset</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
+              <p className="text-xs font-medium mb-2">Chains</p>
+              <div className="flex flex-col gap-y-1">
+                {chains.map((id) => {
+                  const meta = CHAIN_METADATA[id as SUPPORTED_CHAINS_IDS];
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setTempChain(id)}
+                      className={`flex items-center gap-x-2 p-2 rounded hover:bg-muted ${
+                        tempChain === id ? "bg-muted" : ""
+                      }`}
+                    >
+                      <img src={meta.logo} alt={meta.name} width={18} height={18} className="rounded-full" />
+                      <span className="text-sm">{meta.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
+              <p className="text-xs font-medium mb-2">Tokens</p>
+              <div className="flex flex-col gap-y-1">
+                {tempChain ? (
+                  tokensForTempChain.map((t) => (
+                    <button
+                      key={t.symbol}
+                      type="button"
+                      onClick={() => handlePick(t)}
+                      className="flex items-center gap-x-2 p-2 rounded hover:bg-muted"
+                    >
+                      {t.logo ? (
+                        <img src={t.logo} alt={t.symbol} width={18} height={18} className="rounded-full" />
+                      ) : null}
+                      <span className="text-sm">{t.symbol}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">Select a chain</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default DestinationAssetSelect;
+
+

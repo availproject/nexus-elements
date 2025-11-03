@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { BaseDepositProps } from "../deposit";
 import AmountInput from "./amount-input";
 import SourceSelect from "./source-select";
@@ -15,18 +16,17 @@ import BridgeExecuteProgress from "./transaction-progress";
 import DepositFeeBreakdown from "./fee-breakdown";
 import SourceBreakdown from "./source-breakdown";
 import { useNexus } from "../../nexus/NexusProvider";
-import useListenTransaction from "../hooks/useListenTransaction";
-import React from "react";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
 import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
-interface SimpleDepositProps extends Omit<BaseDepositProps, "address"> {
+interface SimpleDepositProps extends BaseDepositProps {
   destinationLabel?: string;
 }
 
 const SimpleDeposit = ({
+  address,
   token,
   chain,
   chainOptions,
@@ -61,6 +61,7 @@ const SimpleDeposit = ({
     clearSimulation,
     simulate,
     cancelSimulation,
+    steps,
   } = useDeposit({
     token: token ?? "USDC",
     chain,
@@ -71,15 +72,10 @@ const SimpleDeposit = ({
     allowance,
     setAllowance,
     chainOptions,
-    executeConfig: depositExecute,
+    address,
+    executeBuilder: depositExecute,
   });
-
-  const { processing, explorerUrl } = useListenTransaction(
-    nexusSDK,
-    "bridgeAndExecute"
-  );
-  const allCompleted =
-    processing?.length > 0 && processing.every((s) => s.completed);
+  const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
   React.useEffect(() => {
     if (allCompleted) stopTimer();
   }, [allCompleted, stopTimer]);
@@ -158,10 +154,10 @@ const SimpleDeposit = ({
 
       {simulation?.success &&
         inputs?.amount &&
-        simulation?.bridgeSimulation?.intent && (
+        simulation.bridgeSimulation?.intent && (
           <>
             <SourceBreakdown
-              intent={simulation?.bridgeSimulation?.intent}
+              intent={simulation.bridgeSimulation.intent}
               tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
             />
@@ -181,10 +177,12 @@ const SimpleDeposit = ({
               </div>
             </div>
             <DepositFeeBreakdown
-              total={simulation?.totalEstimatedCost?.total ?? "0"}
-              bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
+              total={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
+              bridge={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
               execute={
-                simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"
+                simulation.executeSimulation?.success
+                  ? simulation.executeSimulation.gasFee.toString()
+                  : "0"
               }
               tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
@@ -194,7 +192,7 @@ const SimpleDeposit = ({
 
       {simulation?.success &&
         inputs?.amount &&
-        !simulation?.bridgeSimulation && (
+        !simulation.bridgeSimulation && (
           <>
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">You Receive</p>
@@ -203,9 +201,7 @@ const SimpleDeposit = ({
                   <Skeleton className="h-5 w-28" />
                 ) : (
                   <p className="text-base font-semibold text-right">
-                    {simulation?.metadata?.bridgeReceiveAmount ??
-                      inputs?.amount}{" "}
-                    {filteredUnifiedBalance?.symbol}
+                    {inputs?.amount} {filteredUnifiedBalance?.symbol}
                   </p>
                 )}
                 <p className="text-sm font-medium text-right">
@@ -214,10 +210,16 @@ const SimpleDeposit = ({
               </div>
             </div>
             <DepositFeeBreakdown
-              total={simulation?.totalEstimatedCost?.total ?? "0"}
-              bridge={simulation?.totalEstimatedCost?.breakdown?.bridge ?? "0"}
+              total={
+                simulation.executeSimulation?.success
+                  ? simulation.executeSimulation.gasFee.toString()
+                  : "0"
+              }
+              bridge={"0"}
               execute={
-                simulation?.totalEstimatedCost?.breakdown?.execute ?? "0"
+                simulation.executeSimulation?.success
+                  ? simulation.executeSimulation.gasFee.toString()
+                  : "0"
               }
               tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
@@ -268,9 +270,13 @@ const SimpleDeposit = ({
           </DialogHeader>
           <BridgeExecuteProgress
             timer={timer}
-            steps={processing}
-            intentUrl={explorerUrl ?? simulation ?? undefined}
-            executeUrl={lastResult?.executeExplorerUrl}
+            steps={steps}
+            intentUrl={
+              lastResult?.success ? lastResult.bridgeExplorerUrl : undefined
+            }
+            executeUrl={
+              lastResult?.success ? lastResult.executeExplorerUrl : undefined
+            }
           />
         </DialogContent>
       </Dialog>

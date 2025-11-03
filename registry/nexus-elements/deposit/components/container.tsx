@@ -46,6 +46,7 @@ const Container = ({
       </TabsList>
       <TabsContent value="simple">
         <SimpleDeposit
+          address={address}
           token={token}
           chain={chain}
           chainOptions={chainOptions}

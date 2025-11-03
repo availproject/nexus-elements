@@ -69,7 +69,7 @@ export default function Topbar() {
   }, [palette, resolvedTheme, mounted]);
 
   return (
-    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60 border-b">
       <div className="h-12 px-3 flex items-center justify-between md:justify-end gap-3">
         <SidebarTrigger className="block md:hidden" />
         {mounted ? (
