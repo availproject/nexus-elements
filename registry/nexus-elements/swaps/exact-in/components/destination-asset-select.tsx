@@ -8,8 +8,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../../ui/dialog";
-import { type SUPPORTED_CHAINS_IDS, CHAIN_METADATA } from "@avail-project/nexus-core";
-import { DESTINATION_SWAP_TOKENS } from "../config/destination";
+import {
+  type SUPPORTED_CHAINS_IDS,
+  CHAIN_METADATA,
+} from "@avail-project/nexus-core";
+import { DESTINATION_SWAP_TOKENS, TOKEN_IMAGES } from "../config/destination";
 
 type DestinationTokenInfo = {
   tokenAddress: `0x${string}`;
@@ -57,25 +60,39 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
       <p className="text-sm font-semibold mb-1">{label}</p>
       <Dialog open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="w-full justify-between" disabled={disabled}>
-            <div className="flex items-center gap-x-2">
-              {selectedChain && selectedToken ? (
-                <>
-                  {selectedToken.logo ? (
-                    <img
-                      src={selectedToken.logo}
-                      alt={selectedToken.symbol}
-                      width={20}
-                      height={20}
-                      className="rounded-full"
-                    />
-                  ) : null}
-                  <span className="text-sm font-medium">{selectedToken.symbol}</span>
-                </>
-              ) : (
-                <span className="text-sm text-muted-foreground">Select chain and token</span>
-              )}
-            </div>
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            disabled={disabled}
+          >
+            {selectedChain && selectedToken ? (
+              <div className="flex items-center gap-x-3">
+                <div className="relative">
+                  <img
+                    src={TOKEN_IMAGES[selectedToken?.symbol]}
+                    alt={selectedToken.symbol}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  <img
+                    src={CHAIN_METADATA[selectedChain].logo}
+                    alt={CHAIN_METADATA[selectedChain].name}
+                    width={16}
+                    height={16}
+                    className="rounded-full absolute bottom-0 right-0 translate-x-1/3 translate-y-1/6"
+                  />
+                </div>
+
+                <span className="text-sm font-medium">
+                  {selectedToken.symbol} on {CHAIN_METADATA[selectedChain].name}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Select chain and token
+              </span>
+            )}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-3xl">
@@ -97,7 +114,13 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                         tempChain === id ? "bg-muted" : ""
                       }`}
                     >
-                      <img src={meta.logo} alt={meta.name} width={18} height={18} className="rounded-full" />
+                      <img
+                        src={meta.logo}
+                        alt={meta.name}
+                        width={18}
+                        height={18}
+                        className="rounded-full"
+                      />
                       <span className="text-sm">{meta.name}</span>
                     </button>
                   );
@@ -116,13 +139,21 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                       className="flex items-center gap-x-2 p-2 rounded hover:bg-muted"
                     >
                       {t.logo ? (
-                        <img src={t.logo} alt={t.symbol} width={18} height={18} className="rounded-full" />
+                        <img
+                          src={t.logo}
+                          alt={t.symbol}
+                          width={18}
+                          height={18}
+                          className="rounded-full"
+                        />
                       ) : null}
                       <span className="text-sm">{t.symbol}</span>
                     </button>
                   ))
                 ) : (
-                  <p className="text-xs text-muted-foreground">Select a chain</p>
+                  <p className="text-xs text-muted-foreground">
+                    Select a chain
+                  </p>
                 )}
               </div>
             </div>
@@ -134,5 +165,3 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
 };
 
 export default DestinationAssetSelect;
-
-
