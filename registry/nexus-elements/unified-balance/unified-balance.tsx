@@ -1,5 +1,5 @@
 "use client";
-import React, { FC, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import { useNexus } from "../nexus/NexusProvider";
 import { Label } from "../ui/label";
 import { DollarSign } from "lucide-react";
@@ -10,8 +10,9 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import { Separator } from "../ui/separator";
+import { cn } from "@/lib/utils";
 
-const UnifiedBalance: FC = () => {
+const UnifiedBalance = ({ className }: { className?: string }) => {
   const { unifiedBalance } = useNexus();
 
   const formatBalance = useCallback((balance: string, decimals: number) => {
@@ -35,7 +36,12 @@ const UnifiedBalance: FC = () => {
   }, [unifiedBalance]);
 
   return (
-    <div className="w-full max-w-lg mx-auto p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border">
+    <div
+      className={cn(
+        "w-full max-w-lg mx-auto p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border",
+        className
+      )}
+    >
       <div className="flex items-center justify-start w-full">
         <Label className="font-semibold text-muted-foreground">
           Total Balance:
@@ -141,5 +147,5 @@ const UnifiedBalance: FC = () => {
     </div>
   );
 };
-
-export default React.memo(UnifiedBalance);
+UnifiedBalance.displayName = "UnifiedBalance";
+export default memo(UnifiedBalance);

@@ -38,16 +38,62 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   disabled,
   label = "From",
 }) => {
-  const { swapSupportedChainsAndTokens } = useNexus();
+  const { swapSupportedChainsAndTokens, unifiedBalance } = useNexus();
   const [open, setOpen] = useState(false);
   const [tempChain, setTempChain] = useState<number | null>(null);
+  // const [tokensForTempChain, setTokensForTempChain] = useState<
+  //   | {
+  //       amount: string;
+  //       chainID: number;
+  //       decimals: number;
+  //       symbol: string;
+  //       tokenAddress: `0x${string}`;
+  //       value: number;
+  //       logo: string;
+  //     }[]
+  //   | undefined
+  // >(undefined);
 
   const chains = swapSupportedChainsAndTokens ?? [];
+
+  // const fetchTokens = useCallback(async () => {
+  //   const balances = await nexusSDK?.getBalancesForSwap();
+  //   console.log("swap balances HELLO", balances);
+  //   setTokensForTempChain(balances);
+  // }, [tempChain]);
+
+  // useEffect(() => {
+  //   if (!tempChain) return;
+  //   fetchTokens();
+  // }, [tempChain]);
+
   const tokensForTempChain: SourceTokenInfo[] = useMemo(() => {
     if (!tempChain) return [] as SourceTokenInfo[];
-    const c = chains.find((c: any) => c.id === tempChain);
-    return (c?.tokens ?? []) as SourceTokenInfo[];
-  }, [tempChain, chains]);
+    const balances = unifiedBalance ?? [];
+    const tokens: SourceTokenInfo[] = [];
+
+    for (const asset of balances) {
+      if (!asset?.breakdown?.length) continue;
+      const breakdownForChain = asset.breakdown.find(
+        (b) => b.chain?.id === tempChain && Number.parseFloat(b.balance) > 0
+      );
+      if (!breakdownForChain) continue;
+
+      tokens.push({
+        contractAddress: breakdownForChain.contractAddress,
+        decimals: breakdownForChain.decimals ?? asset.decimals,
+        logo: TOKEN_IMAGES[asset.symbol] ?? "",
+        name: asset.symbol,
+        symbol: asset.symbol,
+      });
+    }
+
+    const unique = new Map<string, SourceTokenInfo>();
+    for (const t of tokens) {
+      unique.set(t.contractAddress.toLowerCase(), t);
+    }
+    return Array.from(unique.values());
+  }, [tempChain, unifiedBalance]);
 
   const handlePick = (tok: SourceTokenInfo) => {
     if (!tempChain) return;
@@ -102,13 +148,13 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
               <p className="text-xs font-medium mb-2">Chains</p>
-              <div className="flex flex-col items-start gap-y-1">
+              <div className="flex flex-col items-start gap-y-1 w-full">
                 {chains.map((c: any) => (
                   <Button
                     key={c.id}
                     variant={"ghost"}
                     onClick={() => setTempChain(c.id)}
-                    className={`flex items-center gap-x-2 p-2 rounded hover:bg-muted ${
+                    className={`flex items-center justify-start w-full gap-x-2 p-2 rounded hover:bg-muted ${
                       tempChain === c.id ? "bg-muted" : ""
                     }`}
                   >
@@ -126,14 +172,14 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
             </div>
             <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
               <p className="text-xs font-medium mb-2">Tokens</p>
-              <div className="flex flex-col items-start gap-y-1">
-                {tempChain ? (
-                  tokensForTempChain.map((t) => (
+              <div className="flex flex-col items-start gap-y-1 w-full">
+                {tempChain && tokensForTempChain ? (
+                  tokensForTempChain?.map((t) => (
                     <Button
                       key={t.symbol}
                       variant={"ghost"}
                       onClick={() => handlePick(t)}
-                      className="flex items-center gap-x-2 p-2 rounded hover:bg-muted"
+                      className="flex items-center justify-start w-full gap-x-2 p-2 rounded hover:bg-muted"
                     >
                       {t.symbol ? (
                         <img

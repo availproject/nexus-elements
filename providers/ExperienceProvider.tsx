@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 
-export type ExperienceStepType = "transfer" | "xcs" | "bridge-execute";
+export type ExperienceStepType = "bridge" | "xcs" | "swap-execute";
 
 export interface ExperienceStep {
   id: string;
@@ -41,21 +41,22 @@ const ExperienceContext = createContext<ExperienceContextValue | undefined>(
 function buildDefaultSteps(): ExperienceStep[] {
   return [
     {
-      id: "transfer",
-      type: "transfer",
-      title: "Transfer to Chain 3",
+      id: "bridge",
+      type: "bridge",
+      title: "Bridge all USDC (MAX) to Base",
       action: "fast-bridge",
     },
     {
       id: "xcs",
       type: "xcs",
-      title: "XCS: USDC → ETH (Arbitrum)",
+      title: "Swap half your USDC on Base to Eth on Arb",
       action: "swap",
     },
     {
-      id: "bridge-execute",
-      type: "bridge-execute",
-      title: "Bridge & Execute on Aave",
+      id: "swap-execute",
+      type: "swap-execute",
+      title:
+        "Swap remaining USDC (MAX) on Base to USDT on Arb and then deposit to AAVE",
       action: "swap-execute",
     },
   ];

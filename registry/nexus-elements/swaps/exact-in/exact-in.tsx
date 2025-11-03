@@ -13,16 +13,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../ui/dialog";
-import TransactionProgress from "../../fast-bridge/components/transaction-progress";
+import TransactionProgress from "./components/transaction-progress";
 import SwapSourceBreakdown from "./components/swap-source-breakdown";
-import SwapFeeBreakdown from "./components/swap-fee-breakdown";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
+import { LoaderPinwheel } from "lucide-react";
 
-interface SwapExactInProps {}
+interface SwapExactInProps {
+  onComplete?: (amount?: string) => void;
+  prefill?: {
+    fromChainID?: number;
+    fromToken?: string;
+    fromAmount?: string;
+    toChainID?: number;
+    toToken?: string;
+  };
+}
 
-const SwapExactIn: FC<SwapExactInProps> = () => {
-  const { nexusSDK, swapIntent } = useNexus();
+const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
+  const { nexusSDK, swapIntent, setSwapIntent } = useNexus();
   const {
     inputs,
     setInputs,
@@ -30,12 +39,13 @@ const SwapExactIn: FC<SwapExactInProps> = () => {
     isDialogOpen,
     setIsDialogOpen,
     txError,
-    setTxError,
     timer,
     steps,
-    explorerUrl,
+    sourceExplorerUrl,
+    destinationExplorerUrl,
     handleSwap,
-  } = useExactIn({ nexusSDK });
+    reset,
+  } = useExactIn({ nexusSDK, onComplete, prefill });
 
   return (
     <Card className="w-full max-w-xl">
@@ -51,6 +61,7 @@ const SwapExactIn: FC<SwapExactInProps> = () => {
           onSelect={(fromChainID, fromToken) =>
             setInputs({ ...inputs, fromChainID, fromToken })
           }
+          disabled={Boolean(prefill?.fromChainID && prefill?.fromToken)}
         />
         <div className="flex flex-col gap-y-2">
           <label className="text-sm font-medium" htmlFor="swap-amount">
@@ -60,6 +71,7 @@ const SwapExactIn: FC<SwapExactInProps> = () => {
             amount={inputs.fromAmount}
             onChange={(val) => setInputs({ ...inputs, fromAmount: val })}
             symbol={inputs.fromToken?.symbol}
+            disabled={Boolean(prefill?.fromAmount)}
           />
         </div>
 
@@ -69,59 +81,67 @@ const SwapExactIn: FC<SwapExactInProps> = () => {
           onSelect={(toChainID, toToken) =>
             setInputs({ ...inputs, toChainID, toToken })
           }
+          disabled={Boolean(prefill?.toChainID && prefill?.toToken)}
         />
-
-        {swapIntent && (
-          <div className="flex flex-col gap-y-2">
-            <Label className="text-sm font-medium" htmlFor="swap-receive">
-              You receive (estimated)
-            </Label>
-            <Input
-              id="swap-receive"
-              className="w-full border rounded px-3 py-2 text-sm bg-muted cursor-not-allowed"
-              value={`${swapIntent.intent.destination.amount}`}
-              placeholder="—"
-              readOnly
-            />
-          </div>
-        )}
 
         {!swapIntent && (
           <Button onClick={handleSwap} disabled={loading}>
-            {loading ? "Swapping..." : "Swap"}
+            {loading ? (
+              <LoaderPinwheel className="animate-spin size-5" />
+            ) : (
+              "Swap"
+            )}
           </Button>
         )}
 
         {swapIntent && (
-          <div className="w-full flex items-center gap-x-2 justify-between">
-            <Button
-              variant={"destructive"}
-              onClick={() => swapIntent.deny()}
-              className="w-1/2"
-            >
-              Deny
-            </Button>
-            <Button
-              onClick={() => {
-                // swapIntent.allow()
-              }}
-              className="w-1/2"
-            >
-              Accept
-            </Button>
-          </div>
-        )}
-
-        {swapIntent?.intent && (
           <>
+            <div className="flex flex-col gap-y-2">
+              <Label className="text-sm font-medium" htmlFor="swap-receive">
+                You receive (estimated)
+              </Label>
+              <Input
+                id="swap-receive"
+                disabled
+                className="w-full border rounded px-3 py-2 text-sm bg-muted cursor-not-allowed"
+                value={`${swapIntent.intent.destination.amount}`}
+                placeholder="—"
+                readOnly
+              />
+            </div>
+            <div className="w-full flex items-center gap-x-2 justify-between">
+              <Button
+                variant={"destructive"}
+                onClick={() => {
+                  swapIntent.deny();
+                  setSwapIntent(null);
+                  reset();
+                }}
+                className="w-1/2"
+              >
+                Deny
+              </Button>
+              <Button
+                onClick={() => {
+                  swapIntent.allow();
+                  setIsDialogOpen(true);
+                }}
+                className="w-1/2"
+              >
+                Accept
+              </Button>
+            </div>
             <SwapSourceBreakdown intent={swapIntent.intent} />
-            <SwapFeeBreakdown />
           </>
         )}
 
         <Dialog
           open={isDialogOpen}
-          onOpenChange={(o) => !loading && setIsDialogOpen(o)}
+          onOpenChange={(o) => {
+            if (loading) return;
+            if (!o) reset();
+            setIsDialogOpen(o);
+          }}
         >
           <DialogContent>
             <DialogHeader className="sr-only">
@@ -130,20 +150,22 @@ const SwapExactIn: FC<SwapExactInProps> = () => {
             <TransactionProgress
               timer={timer}
               steps={steps}
-              viewIntentUrl={explorerUrl}
-              operationType="swap"
+              sourceExplorerUrl={sourceExplorerUrl}
+              destinationExplorerUrl={destinationExplorerUrl}
             />
           </DialogContent>
         </Dialog>
 
         {txError && (
           <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
-            <span className="flex-1 max-w-">{txError}</span>
+            <span className="flex-1 max-w-md truncate">{txError}</span>
             <Button
               type="button"
               size={"icon"}
               variant={"ghost"}
-              onClick={() => setTxError(null)}
+              onClick={() => {
+                reset();
+              }}
               className="text-destructive-foreground/80 hover:text-destructive-foreground focus:outline-none"
               aria-label="Dismiss error"
             >

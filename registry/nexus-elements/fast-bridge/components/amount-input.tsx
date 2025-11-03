@@ -62,7 +62,7 @@ const AmountInput: FC<AmountInputProps> = ({
         value={amount ?? ""}
         placeholder="Enter Amount"
         onChange={(e) => {
-          let next = e.target.value.replace(/[^0-9.]/g, "");
+          let next = e.target.value.replaceAll(/[^0-9.]/g, "");
           const parts = next.split(".");
           if (parts.length > 2) next = parts[0] + "." + parts.slice(1).join("");
           if (next === ".") next = "0.";
@@ -86,7 +86,7 @@ const AmountInput: FC<AmountInputProps> = ({
         <div className="flex items-center gap-x-3 min-w-max">
           {unifiedBalance && (
             <p className="text-base font-semibold">
-              {parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
+              {Number.parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
               {unifiedBalance?.symbol}
             </p>
           )}

@@ -17,6 +17,18 @@ export default function SidebarNav() {
 
   return (
     <SidebarGroup>
+      <SidebarGroupLabel>Experience Nexus</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/experience")}>
+              <Link href="/experience" prefetch>
+                Build Once, Scale Everywhere
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroupContent>
       <SidebarGroupLabel>Components</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
@@ -54,13 +66,6 @@ export default function SidebarNav() {
             >
               <Link href="/components/unified-balance" prefetch>
                 Unified Balance
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/experience")}>
-              <Link href="/experience" prefetch>
-                Experience Nexus
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

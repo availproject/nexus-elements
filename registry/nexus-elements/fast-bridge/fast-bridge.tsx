@@ -6,7 +6,6 @@ import TokenSelect from "./components/token-select";
 import { Button } from "../ui/button";
 import { LoaderPinwheel, X } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
-import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
 import FeeBreakdown from "./components/fee-breakdown";
 import {
@@ -23,13 +22,24 @@ import SourceBreakdown from "./components/source-breakdown";
 import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
+import RecipientAddress from "./components/recipient-address";
 
 interface FastBridgeProps {
   connectedAddress: Address;
+  prefill?: {
+    token: string;
+    chainId: number;
+    amount?: string;
+    recipient?: Address;
+  };
   onComplete?: () => void;
 }
 
-const FastBridge: FC<FastBridgeProps> = ({ connectedAddress, onComplete }) => {
+const FastBridge: FC<FastBridgeProps> = ({
+  connectedAddress,
+  onComplete,
+  prefill,
+}) => {
   const {
     nexusSDK,
     intent,
@@ -59,6 +69,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress, onComplete }) => {
     lastExplorerUrl,
     steps,
   } = useBridge({
+    prefill,
     network: network ?? "mainnet",
     connectedAddress,
     nexusSDK,
@@ -66,13 +77,13 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress, onComplete }) => {
     setIntent,
     unifiedBalance,
     setAllowance,
+    onComplete,
   });
 
   const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
   React.useEffect(() => {
     if (allCompleted) {
       stopTimer();
-      if (onComplete) onComplete();
     }
   }, [allCompleted, stopTimer]);
 
@@ -88,25 +99,28 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress, onComplete }) => {
             })
           }
           label="To"
+          disabled={!!prefill?.chainId}
         />
         <TokenSelect
           selectedChain={inputs?.chain}
           selectedToken={inputs?.token}
           handleTokenSelect={(token) => setInputs({ ...inputs, token })}
+          disabled={!!prefill?.token}
         />
         <AmountInput
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
           unifiedBalance={filteredUnifiedBalance}
           onCommit={() => void commitAmount()}
-          disabled={refreshing}
+          disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
         />
-        <ReceipientAddress
+        <RecipientAddress
           address={inputs?.recipient}
           onChange={(address) =>
             setInputs({ ...inputs, recipient: address as `0x${string}` })
           }
+          disabled={!!prefill?.recipient}
         />
         {intent?.intent && (
           <>
@@ -203,7 +217,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress, onComplete }) => {
 
         {txError && (
           <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
-            <span className="flex-1 max-w-">{txError}</span>
+            <span className="flex-1 w-md truncate">{txError}</span>
             <Button
               type="button"
               size={"icon"}

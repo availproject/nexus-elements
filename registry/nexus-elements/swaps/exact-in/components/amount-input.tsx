@@ -1,5 +1,6 @@
-import React, { FC, useEffect, useRef } from "react";
+import React, { FC, useEffect, useMemo, useRef } from "react";
 import { Input } from "../../../ui/input";
+import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 
 interface AmountInputProps {
   amount?: string;
@@ -16,6 +17,7 @@ const AmountInput: FC<AmountInputProps> = ({
   disabled,
   symbol,
 }) => {
+  const { unifiedBalance } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const scheduleCommit = (val: string) => {
@@ -25,6 +27,12 @@ const AmountInput: FC<AmountInputProps> = ({
       onCommit(val);
     }, 600);
   };
+
+  const tokenBalance = useMemo(() => {
+    const token = unifiedBalance?.find((u) => u.symbol === symbol);
+    if (!token) return "";
+    return Number.parseFloat(token.balance).toFixed(6);
+  }, [unifiedBalance, symbol]);
 
   useEffect(() => {
     return () => {
@@ -41,9 +49,9 @@ const AmountInput: FC<AmountInputProps> = ({
         type="text"
         inputMode="decimal"
         value={amount ?? ""}
-        placeholder={`Enter Amount${symbol ? ` (${symbol})` : ""}`}
+        placeholder={`Enter Amount ${symbol ?? ""}`}
         onChange={(e) => {
-          let next = e.target.value.replace(/[^0-9.]/g, "");
+          let next = e.target.value.replaceAll(/[^0-9.]/g, "");
           const parts = next.split(".");
           if (parts.length > 2) next = parts[0] + "." + parts.slice(1).join("");
           if (next === ".") next = "0.";
@@ -63,9 +71,12 @@ const AmountInput: FC<AmountInputProps> = ({
         aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
         disabled={disabled}
       />
-      <div className="flex items-center justify-end-safe gap-x-4 w-fit px-2 border-l border-border">
-        {symbol && <p className="text-base font-semibold">{symbol}</p>}
-      </div>
+      {symbol && (
+        <div className="flex items-center justify-end-safe gap-x-4 w-max px-2 border-l border-border">
+          <p className="text-sm font-semibold w-max">{tokenBalance}</p>
+          <p className="text-sm font-semibold">{symbol}</p>
+        </div>
+      )}
     </div>
   );
 };

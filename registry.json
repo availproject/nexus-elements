@@ -65,8 +65,8 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/components/receipient-address.tsx",
-          "target": "components/fast-bridge/components/receipient-address.tsx",
+          "path": "registry/nexus-elements/fast-bridge/components/recipient-address.tsx",
+          "target": "components/fast-bridge/components/recipient-address.tsx",
           "type": "registry:component"
         },
         {
@@ -450,11 +450,7 @@
           "target": "components/swaps/exact-in/components/swap-source-breakdown.tsx",
           "type": "registry:component"
         },
-        {
-          "path": "registry/nexus-elements/swaps/exact-in/components/swap-fee-breakdown.tsx",
-          "target": "components/swaps/exact-in/components/swap-fee-breakdown.tsx",
-          "type": "registry:component"
-        },
+
         {
           "path": "registry/nexus-elements/swaps/exact-in/hooks/useExactIn.ts",
           "target": "components/swaps/exact-in/hooks/useExactIn.ts",

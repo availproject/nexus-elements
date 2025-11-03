@@ -27,6 +27,9 @@ interface NexusContextType {
   attachEventHooks: () => void;
   intent: OnIntentHookData | null;
   swapIntent: Parameters<OnSwapIntentHook>[0] | null;
+  setSwapIntent: React.Dispatch<
+    React.SetStateAction<Parameters<OnSwapIntentHook>[0] | null>
+  >;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
   allowance: OnAllowanceHookData | null;
   setAllowance: React.Dispatch<
@@ -82,7 +85,6 @@ const NexusProvider = ({
     );
     setSupportedChainsAndTokens(list ?? null);
     const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
-    console.log("swapList", swapList);
     setSwapSupportedChainsAndTokens(swapList ?? null);
   }, [sdk, config?.network]);
 
@@ -93,7 +95,8 @@ const NexusProvider = ({
       await sdk.initialize(provider);
       console.log("Nexus initialized with Provider:", provider);
       setNexusSDK(sdk);
-      const unifiedBalance = await sdk?.getUnifiedBalances();
+      const unifiedBalance = await sdk?.getUnifiedBalances(true);
+      console.log("unifiedBalance", unifiedBalance);
       setUnifiedBalance(unifiedBalance);
     } catch (error) {
       console.error("Error initializing Nexus:", error);
@@ -141,7 +144,7 @@ const NexusProvider = ({
 
   const fetchUnifiedBalance = async () => {
     try {
-      const unifiedBalance = await sdk?.getUnifiedBalances();
+      const unifiedBalance = await sdk?.getUnifiedBalances(true);
       setUnifiedBalance(unifiedBalance);
     } catch (error) {
       console.error("Error fetching unified balance:", error);
@@ -179,6 +182,7 @@ const NexusProvider = ({
       loading,
       fetchUnifiedBalance,
       swapIntent,
+      setSwapIntent,
       handleNexusError,
     }),
     [
@@ -198,6 +202,7 @@ const NexusProvider = ({
       loading,
       fetchUnifiedBalance,
       swapIntent,
+      setSwapIntent,
       handleNexusError,
     ]
   );

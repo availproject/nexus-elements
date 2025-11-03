@@ -6,14 +6,16 @@ import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
 
-interface ReceipientAddressProps {
+interface RecipientAddressProps {
   address?: Address;
   onChange: (address: string) => void;
+  disabled?: boolean;
 }
 
-const ReceipientAddress: FC<ReceipientAddressProps> = ({
+const RecipientAddress: FC<RecipientAddressProps> = ({
   address,
   onChange,
+  disabled,
 }) => {
   const { nexusSDK } = useNexus();
   const [isEditing, setIsEditing] = useState(false);
@@ -41,9 +43,11 @@ const ReceipientAddress: FC<ReceipientAddressProps> = ({
         <div className="flex items-center w-full justify-between">
           <p className="font-semibold">Recipient Address</p>
           <div className="flex items-center gap-x-3 ">
-            <p className="font-semibold">
-              {nexusSDK?.utils?.truncateAddress(address ?? "", 6, 6)}
-            </p>
+            {address && (
+              <p className="font-semibold text-primary-foreground">
+                {nexusSDK?.utils?.truncateAddress(address, 6, 6)}
+              </p>
+            )}
 
             <Button
               variant={"ghost"}
@@ -52,6 +56,7 @@ const ReceipientAddress: FC<ReceipientAddressProps> = ({
                 setIsEditing(true);
               }}
               className="px-0 size-6"
+              disabled={disabled}
             >
               <Edit className="size-6" />
             </Button>
@@ -62,4 +67,4 @@ const ReceipientAddress: FC<ReceipientAddressProps> = ({
   );
 };
 
-export default ReceipientAddress;
+export default RecipientAddress;

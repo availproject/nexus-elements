@@ -30,7 +30,36 @@ interface UseBridgeProps {
     React.SetStateAction<OnAllowanceHookData | null>
   >;
   unifiedBalance: UserAsset[] | null;
+  prefill?: {
+    token: string;
+    chainId: number;
+    amount?: string;
+    recipient?: Address;
+  };
+  onComplete?: () => void;
 }
+
+const buildInitialInputs = (
+  network: NexusNetwork,
+  connectedAddress: Address,
+  prefill?: {
+    token: string;
+    chainId: number;
+    amount?: string;
+    recipient?: Address;
+  }
+): FastBridgeState => {
+  return {
+    chain:
+      (prefill?.chainId as SUPPORTED_CHAINS_IDS) ??
+      (network === "testnet"
+        ? SUPPORTED_CHAINS.SEPOLIA
+        : SUPPORTED_CHAINS.ETHEREUM),
+    token: (prefill?.token as SUPPORTED_TOKENS) ?? "USDC",
+    amount: prefill?.amount ?? undefined,
+    recipient: (prefill?.recipient as `0x${string}`) ?? connectedAddress,
+  };
+};
 
 const useBridge = ({
   network,
@@ -40,17 +69,13 @@ const useBridge = ({
   setIntent,
   setAllowance,
   unifiedBalance,
+  prefill,
+  onComplete,
 }: UseBridgeProps) => {
   const { fetchUnifiedBalance, handleNexusError } = useNexus();
-  const [inputs, setInputs] = useState<FastBridgeState>({
-    chain:
-      network === "testnet"
-        ? SUPPORTED_CHAINS.SEPOLIA
-        : SUPPORTED_CHAINS.ETHEREUM,
-    token: "USDC",
-    amount: undefined,
-    recipient: connectedAddress,
-  });
+  const [inputs, setInputs] = useState<FastBridgeState>(() =>
+    buildInitialInputs(network, connectedAddress, prefill)
+  );
 
   const [timer, setTimer] = useState(0);
   const [startTxn, setStartTxn] = useState(false);
@@ -69,9 +94,9 @@ const useBridge = ({
     const hasToken = inputs?.token !== undefined && inputs?.token !== null;
     const hasChain = inputs?.chain !== undefined && inputs?.chain !== null;
     const hasAmount = Boolean(inputs?.amount) && Number(inputs?.amount) > 0;
-    const hasValidRecipient =
+    const hasValidrecipient =
       Boolean(inputs?.recipient) && isAddress(inputs?.recipient as string);
-    return hasToken && hasChain && hasAmount && hasValidRecipient;
+    return hasToken && hasChain && hasAmount && hasValidrecipient;
   }, [inputs]);
 
   const handleTransaction = async () => {
@@ -199,18 +224,11 @@ const useBridge = ({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    onComplete?.();
     setStartTxn(false);
     setIntent(null);
     setAllowance(null);
-    setInputs({
-      chain:
-        network === "testnet"
-          ? SUPPORTED_CHAINS.SEPOLIA
-          : SUPPORTED_CHAINS.ETHEREUM,
-      token: "USDC",
-      amount: undefined,
-      recipient: connectedAddress,
-    });
+    setInputs(buildInitialInputs(network, connectedAddress, prefill));
     setRefreshing(false);
     await fetchUnifiedBalance();
   };
@@ -234,15 +252,7 @@ const useBridge = ({
     intent?.deny();
     setIntent(null);
     setAllowance(null);
-    setInputs({
-      chain:
-        network === "testnet"
-          ? SUPPORTED_CHAINS.SEPOLIA
-          : SUPPORTED_CHAINS.ETHEREUM,
-      token: "USDC",
-      amount: undefined,
-      recipient: connectedAddress,
-    });
+    setInputs(buildInitialInputs(network, connectedAddress, prefill));
     setLoading(false);
     setStartTxn(false);
     setRefreshing(false);

@@ -106,11 +106,12 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                 {chains.map((id) => {
                   const meta = CHAIN_METADATA[id as SUPPORTED_CHAINS_IDS];
                   return (
-                    <button
+                    <Button
                       key={id}
                       type="button"
+                      variant="ghost"
                       onClick={() => setTempChain(id)}
-                      className={`flex items-center gap-x-2 p-2 rounded hover:bg-muted ${
+                      className={`flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full ${
                         tempChain === id ? "bg-muted" : ""
                       }`}
                     >
@@ -122,7 +123,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                         className="rounded-full"
                       />
                       <span className="text-sm">{meta.name}</span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -132,11 +133,12 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
               <div className="flex flex-col gap-y-1">
                 {tempChain ? (
                   tokensForTempChain.map((t) => (
-                    <button
+                    <Button
                       key={t.symbol}
                       type="button"
+                      variant="ghost"
                       onClick={() => handlePick(t)}
-                      className="flex items-center gap-x-2 p-2 rounded hover:bg-muted"
+                      className="flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full"
                     >
                       {t.logo ? (
                         <img
@@ -148,7 +150,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                         />
                       ) : null}
                       <span className="text-sm">{t.symbol}</span>
-                    </button>
+                    </Button>
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground">
