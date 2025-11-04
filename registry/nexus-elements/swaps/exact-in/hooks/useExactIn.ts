@@ -297,8 +297,7 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
           ...prev,
           fromToken: {
             contractAddress: matchedBreakdown.contractAddress,
-            decimals: (matchedBreakdown.decimals ??
-              matchedAsset.decimals) as number,
+            decimals: matchedBreakdown.decimals ?? matchedAsset.decimals,
             logo: TOKEN_IMAGES[matchedAsset.symbol] ?? "",
             name: matchedAsset.symbol,
             symbol: matchedAsset.symbol,

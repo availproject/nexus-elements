@@ -10,7 +10,7 @@ import { useNexus } from "../nexus/NexusProvider";
 import useSwapExecuteExactOut from "./hooks/useSwapExecuteExactOut";
 import type { Address } from "viem";
 import type { ExecuteParams } from "@avail-project/nexus-core";
-import BridgeExecuteProgress from "../deposit/components/transaction-progress";
+import SwapExecuteProgress from "./components/transaction-progress";
 import SwapSourceBreakdown from "../swaps/exact-in/components/swap-source-breakdown";
 import DepositFeeBreakdown from "../deposit/components/fee-breakdown";
 import { LoaderPinwheel } from "lucide-react";
@@ -41,18 +41,12 @@ const SwapExecuteExactOut: FC<SwapExecuteExactOutProps> = ({
     swapExplorerUrl,
     executeExplorerUrl,
     executeSimGas,
-    simulateExecute,
     handleStart,
     acceptAndRun,
     deny,
     reset,
+    executeCompleted,
   } = useSwapExecuteExactOut({ nexusSDK, address, executeBuilder });
-
-  React.useEffect(() => {
-    if (swapIntent) {
-      void simulateExecute();
-    }
-  }, [swapIntent]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -89,16 +83,6 @@ const SwapExecuteExactOut: FC<SwapExecuteExactOutProps> = ({
 
         {swapIntent && (
           <>
-            <div className="flex flex-col gap-y-2">
-              <Label className="text-sm font-medium">
-                You receive (estimated)
-              </Label>
-              <Input
-                disabled
-                value={`${swapIntent.intent.destination.amount}`}
-              />
-            </div>
-
             <SwapSourceBreakdown intent={swapIntent.intent} />
 
             <DepositFeeBreakdown
@@ -135,11 +119,12 @@ const SwapExecuteExactOut: FC<SwapExecuteExactOutProps> = ({
             <DialogHeader className="sr-only">
               <DialogTitle>Progress</DialogTitle>
             </DialogHeader>
-            <BridgeExecuteProgress
+            <SwapExecuteProgress
               timer={timer}
-              steps={steps}
-              intentUrl={swapExplorerUrl}
+              swapSteps={steps}
+              swapUrl={swapExplorerUrl}
               executeUrl={executeExplorerUrl}
+              executeCompleted={executeCompleted}
             />
           </DialogContent>
         </Dialog>

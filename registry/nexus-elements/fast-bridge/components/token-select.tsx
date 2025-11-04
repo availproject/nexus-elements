@@ -1,4 +1,5 @@
 import {
+  TOKEN_METADATA,
   type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
@@ -33,9 +34,7 @@ const TokenSelect = ({
 }: TokenSelectProps) => {
   const { supportedChainsAndTokens } = useNexus();
   const tokenData = useMemo(() => {
-    return supportedChainsAndTokens?.filter(
-      (chain) => chain.id === selectedChain,
-    )[0]?.tokens;
+    return Object.values(TOKEN_METADATA);
   }, [selectedChain, supportedChainsAndTokens]);
 
   const selectedTokenData = tokenData?.find((token) => {
@@ -56,7 +55,7 @@ const TokenSelect = ({
             {selectedChain && selectedTokenData && (
               <div className="flex items-center gap-x-2 w-full">
                 <img
-                  src={selectedTokenData?.logo}
+                  src={selectedTokenData?.icon}
                   alt={selectedTokenData?.symbol}
                   width={24}
                   height={24}
@@ -75,7 +74,7 @@ const TokenSelect = ({
             <SelectItem key={token.symbol} value={token.symbol}>
               <div className="flex items-center gap-x-2 my-1">
                 <img
-                  src={token.logo}
+                  src={token.icon}
                   alt={token.symbol}
                   width={24}
                   height={24}

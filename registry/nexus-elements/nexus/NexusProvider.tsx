@@ -116,6 +116,7 @@ const NexusProvider = ({
   };
 
   const attachEventHooks = () => {
+    console.log("attachEventHooks");
     sdk.setOnAllowanceHook((data: OnAllowanceHookData) => {
       setAllowance(data);
     });
@@ -137,6 +138,7 @@ const NexusProvider = ({
         return;
       }
       await initializeNexus(provider);
+      console.log("handleInit attachEventHooks");
       attachEventHooks();
     },
     [sdk]

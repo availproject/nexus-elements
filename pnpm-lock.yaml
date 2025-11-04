@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: 1.0.0-beta.6
-        version: 1.0.0-beta.6(bufferutil@4.0.9)(google-protobuf@3.21.4)(utf-8-validate@5.0.10)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))
+        specifier: 1.0.0-beta.11
+        version: 1.0.0-beta.11(bufferutil@4.0.9)(google-protobuf@3.21.4)(utf-8-validate@5.0.10)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -153,8 +153,8 @@ packages:
     resolution: {integrity: sha512-C90iyzm/jLV7Lomv2UzwWUzRv9WZr1oRsFRKsX5HjQL4EXrbi9H/RtBkjCP+NF+ABZXUKpAa4F1dkoTaea4zHg==}
     hasBin: true
 
-  '@avail-project/ca-common@1.0.0-beta.3':
-    resolution: {integrity: sha512-RQ7L4op5PH+ytxaHC4a8StikptxAkXJ+SiPZd8LfhpUNBSwweoa7pbGz2ISnAl7MeykkNRT9z1EDEGeh4Vn+bg==}
+  '@avail-project/ca-common@1.0.0-beta.4':
+    resolution: {integrity: sha512-OKVqRGx/jI1TcDo6mFIssJjSVg6UpCw0H09cjPbv3qGdFyYyP5kmGA6L0PxuiDxmHpgs4Z9PSfx6ViJWPWKdRw==}
     peerDependencies:
       '@cosmjs/proto-signing': ^0.34.0
       '@cosmjs/stargate': ^0.34.0
@@ -165,8 +165,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@1.0.0-beta.6':
-    resolution: {integrity: sha512-DivyjEpzXuYSgxey0pyQGSDCDBRldT53D5KFvo3gVwyCxASJ60R1/kqXuXdFZJzB5H1G5jg400GG5HMu5kI18g==}
+  '@avail-project/nexus-core@1.0.0-beta.11':
+    resolution: {integrity: sha512-W3G8C+Ab1X05D9MVzYWnP4YgFTESPHrKQI5myN5e9gG5wQuJNcwtCIsDWInZSlsa8GNtinon4TTlQVZaGdBOJQ==}
     peerDependencies:
       viem: ^2.0.0
 
@@ -2872,8 +2872,8 @@ packages:
     peerDependencies:
       axios: 0.x || 1.x
 
-  axios@1.11.0:
-    resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
+  axios@1.12.2:
+    resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
 
   axios@1.13.1:
     resolution: {integrity: sha512-hU4EGxxt+j7TQijx1oYdAjw4xuIp1wRQSsbMFwSthCWeBQur1eF+qJ5iQ5sN3Tw8YRzQNKb8jszgBdMDVqwJcw==}
@@ -5758,8 +5758,8 @@ packages:
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
 
-  tronweb@6.0.4:
-    resolution: {integrity: sha512-+9Nc7H4FYVh2DcOnQG93WLm3UdlHSf9W+GXkfrXI77oLjTB1cptROJDKRSSxQBiOAyjjAJOOTuYDzlAkaLT85w==}
+  tronweb@6.1.0:
+    resolution: {integrity: sha512-ANEr2YneA2frXTpsxDR21yk2cJLIvOdPe7dg7gu96TyqfVbS9eCrguNuN+qCUZOC/zW3n6R880bBDbEWKZiWzA==}
 
   ts-api-utils@2.1.0:
     resolution: {integrity: sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ==}
@@ -6018,8 +6018,8 @@ packages:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
 
-  validator@13.12.0:
-    resolution: {integrity: sha512-c1Q0mCiPlgdTVVVIJIrBuxNicYE+t/7oKeI9MWLj3fh/uq2Pxh/3eeWbVZ4OcGW1TUf53At0njHw5SMdA3tmMg==}
+  validator@13.15.20:
+    resolution: {integrity: sha512-KxPOq3V2LmfQPP4eqf3Mq/zrT0Dqp2Vmx2Bn285LwVahLc+CsxOM0crBHczm8ijlcjZ0Q5Xd6LW3z3odTPnlrw==}
     engines: {node: '>= 0.10'}
 
   valtio@1.13.2:
@@ -6388,7 +6388,7 @@ snapshots:
 
   '@antfu/ni@23.3.1': {}
 
-  '@avail-project/ca-common@1.0.0-beta.3(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@avail-project/ca-common@1.0.0-beta.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@bufbuild/protobuf': 2.10.0
       '@cosmjs/proto-signing': 0.34.1
@@ -6406,9 +6406,9 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@1.0.0-beta.6(bufferutil@4.0.9)(google-protobuf@3.21.4)(utf-8-validate@5.0.10)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))':
+  '@avail-project/nexus-core@1.0.0-beta.11(bufferutil@4.0.9)(google-protobuf@3.21.4)(utf-8-validate@5.0.10)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))':
     dependencies:
-      '@avail-project/ca-common': 1.0.0-beta.3(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@avail-project/ca-common': 1.0.0-beta.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.1
       '@cosmjs/stargate': 0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@metamask/safe-event-emitter': 3.1.2
@@ -6421,7 +6421,7 @@ snapshots:
       it-ws: 6.1.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       long: 5.3.2
       msgpackr: 1.11.5
-      tronweb: 6.0.4(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      tronweb: 6.1.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       tslib: 2.8.1
       viem: 2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
@@ -9121,7 +9121,7 @@ snapshots:
   '@tronweb3/tronwallet-abstract-adapter@1.1.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       eventemitter3: 4.0.7
-      tronweb: 6.0.4(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      tronweb: 6.1.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -10242,7 +10242,7 @@ snapshots:
       axios: 1.13.1
       is-retry-allowed: 2.2.0
 
-  axios@1.11.0:
+  axios@1.12.2:
     dependencies:
       follow-redirects: 1.15.11
       form-data: 4.0.4
@@ -13613,17 +13613,17 @@ snapshots:
 
   trim-lines@3.0.1: {}
 
-  tronweb@6.0.4(bufferutil@4.0.9)(utf-8-validate@5.0.10):
+  tronweb@6.1.0(bufferutil@4.0.9)(utf-8-validate@5.0.10):
     dependencies:
       '@babel/runtime': 7.26.10
-      axios: 1.11.0
+      axios: 1.12.2
       bignumber.js: 9.1.2
       ethereum-cryptography: 2.2.1
       ethers: 6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       eventemitter3: 5.0.1
       google-protobuf: 3.21.4
       semver: 7.7.1
-      validator: 13.12.0
+      validator: 13.15.20
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -13862,7 +13862,7 @@ snapshots:
 
   uuid@9.0.1: {}
 
-  validator@13.12.0: {}
+  validator@13.15.20: {}
 
   valtio@1.13.2(@types/react@19.1.2)(react@19.1.0):
     dependencies:

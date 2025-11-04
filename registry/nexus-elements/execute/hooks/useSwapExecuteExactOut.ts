@@ -11,7 +11,7 @@ import {
   type ExecuteParams,
   TOKEN_CONTRACT_ADDRESSES,
 } from "@avail-project/nexus-core";
-import type { Address } from "viem";
+import { formatUnits, type Address } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
 
 type ProgressStep = SwapStepType | BridgeStepType;
@@ -80,6 +80,7 @@ const useSwapExecuteExactOut = ({
   const [swapExplorerUrl, setSwapExplorerUrl] = useState<string>("");
   const [executeExplorerUrl, setExecuteExplorerUrl] = useState<string>("");
   const [executeSimGas, setExecuteSimGas] = useState<string | null>(null);
+  const [executeCompleted, setExecuteCompleted] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -102,10 +103,10 @@ const useSwapExecuteExactOut = ({
   };
 
   const handleStart = async () => {
-    console.log("handleStart", nexusSDK, areInputsValid);
     if (!nexusSDK || !areInputsValid) return;
     setLoading(true);
     setTxError(null);
+    setExecuteCompleted(false);
     setSteps(
       EXPECTED_SWAP_STEPS.map((st, idx) => ({
         id: idx,
@@ -124,13 +125,15 @@ const useSwapExecuteExactOut = ({
       };
 
       // Begin swap to raise intent; keep promise to await after accept
+      void simulateExecute();
       const result = await nexusSDK.swapWithExactOut(input, {
         onEvent: (event) => {
+          console.log("swap event", event);
           if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-            const step = event.args;
+            const step: any = event.args;
             setSteps((prev) =>
               prev.map((s) =>
-                s.step?.typeID === step?.typeID
+                s.step?.type === step?.type
                   ? {
                       ...s,
                       completed: true,
@@ -142,29 +145,24 @@ const useSwapExecuteExactOut = ({
                   : s
               )
             );
+            // Capture explorer URLs from source/destination hash events when available
+            const url: string | undefined = step?.explorerURL;
+            if (url && step?.type === "SOURCE_SWAP_HASH") {
+              setSwapExplorerUrl(url);
+            }
+            if (url && step?.type === "DESTINATION_SWAP_HASH") {
+              // Prefer destination tx URL if provided
+              setSwapExplorerUrl((prev) => prev || url);
+            }
           }
         },
       });
-      if (!result?.success) throw new Error(result?.error || "Swap failed");
-      setSwapExplorerUrl(result.result.explorerURL);
-    } catch (error) {
-      const { message } = handleNexusError(error);
-      setTxError(message);
-      setLoading(false);
-    }
-  };
+      console.log("exact out swap result", result);
+      if (!result?.success) throw new Error("Swap failed");
+      setSwapExplorerUrl((prev) => prev || result.result.explorerURL);
 
-  const acceptAndRun = async () => {
-    if (!nexusSDK || !swapIntent) return;
-    try {
-      swapIntent.allow();
-      startTimer();
-      setIsDialogOpen(true);
-      await new Promise((r) => setTimeout(r, 1500));
-
-      // Build execute params with exact destination amount via provided builder
       const builder = executeBuilder(
-        swapIntent.intent.destination.amount,
+        swapIntent?.intent.destination.amount ?? (inputs.amount as string),
         address
       );
       const execParams = {
@@ -172,20 +170,29 @@ const useSwapExecuteExactOut = ({
         ...builder,
       } as const;
 
-      // Reset steps for execute phase (bridge-style events)
-      setSteps([]);
-
       const execRes: ExecuteResult = await nexusSDK.execute(execParams);
       if (!execRes?.transactionHash) throw new Error("Execute failed");
       setExecuteExplorerUrl(execRes.explorerUrl);
+      setExecuteCompleted(true);
     } catch (error) {
       const { message } = handleNexusError(error);
       setTxError(message);
       setIsDialogOpen(false);
+      setLoading(false);
     } finally {
       setLoading(false);
       stopTimer();
+      setSwapIntent(null);
+      setInputs({});
+      stopTimer();
     }
+  };
+
+  const acceptAndRun = async () => {
+    if (!nexusSDK || !swapIntent) return;
+    swapIntent.allow();
+    startTimer();
+    setIsDialogOpen(true);
   };
 
   const simulateExecute = async () => {
@@ -199,8 +206,9 @@ const useSwapExecuteExactOut = ({
         toChainId: SUPPORTED_CHAINS.ARBITRUM,
         ...builder,
       });
+      console.log("simulate execute", sim);
       if (sim?.success) {
-        setExecuteSimGas(sim.gasFee.toString());
+        setExecuteSimGas(formatUnits(sim.gasFee, 18));
       } else {
         setExecuteSimGas(null);
       }
@@ -212,17 +220,17 @@ const useSwapExecuteExactOut = ({
 
   const deny = () => {
     if (swapIntent) swapIntent.deny();
-    setSwapIntent(null);
-    setIsDialogOpen(false);
-    setLoading(false);
+    reset();
   };
 
   const reset = () => {
+    setSwapIntent(null);
     setInputs({});
     setTxError(null);
     setSteps([]);
     setSwapExplorerUrl("");
     setExecuteExplorerUrl("");
+    setExecuteCompleted(false);
     setIsDialogOpen(false);
     setLoading(false);
     stopTimer();
@@ -230,7 +238,7 @@ const useSwapExecuteExactOut = ({
 
   // Auto-refresh swap intent every 15s during review phase
   useEffect(() => {
-    if (!swapIntent) return;
+    if (!swapIntent || isDialogOpen) return;
     const id = setInterval(async () => {
       try {
         const updated = await swapIntent.refresh();
@@ -242,8 +250,6 @@ const useSwapExecuteExactOut = ({
     }, 15000);
     return () => clearInterval(id);
   }, [swapIntent, setSwapIntent]);
-
-  useEffect(() => () => stopTimer(), []);
 
   return {
     inputs,
@@ -259,6 +265,7 @@ const useSwapExecuteExactOut = ({
     executeExplorerUrl,
     executeSimGas,
     setExecuteSimGas,
+    executeCompleted,
     handleStart,
     acceptAndRun,
     simulateExecute,

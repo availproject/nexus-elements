@@ -14,7 +14,6 @@ import {
   parseUnits,
   type ExecuteParams,
   EthereumProvider,
-  // ExecuteResult,
 } from "@avail-project/nexus-core";
 import type { Abi } from "viem";
 import SwapExecuteExactOut from "@/registry/nexus-elements/execute/swap-execute-exact-out";
@@ -96,30 +95,14 @@ const executeBuilder = (
     tokenApproval: {
       token: "USDT",
       amount: amountWei,
-      spender: contractAddress,
+      spender: user,
     },
   };
 };
 
 function StepContent() {
-  // const { nexusSDK } = useNexus();
   const { currentStep, completeCurrent } = useExperience();
   const { address } = useAccount();
-
-  // const executeDeposit = async (amount: string) => {
-  //   try {
-  //     const builder = executeBuilder(amount, address ?? "0x");
-  //     const execParams = {
-  //       toChainId: SUPPORTED_CHAINS.ARBITRUM,
-  //       ...builder,
-  //     } as const;
-
-  //     const execRes = await nexusSDK?.execute(execParams);
-  //     console.log("executeDeposit", execRes);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
 
   if (currentStep.type === "bridge") {
     if (!address) {
@@ -155,13 +138,6 @@ function StepContent() {
       />
     );
   }
-
-  // return (
-  //   <Swaps
-  //     exactIn={true}
-  //     onComplete={(amount) => executeDeposit(amount ?? "0.1")}
-  //   />
-  // );
   return (
     <SwapExecuteExactOut
       address={address ?? "0x"}
@@ -171,13 +147,13 @@ function StepContent() {
 }
 
 export default function NexusExperience() {
-  const { nexusSDK, initializeNexus, loading } = useNexus();
+  const { nexusSDK, handleInit, loading } = useNexus();
   const { connector } = useAccount();
   const nexusInit = async () => {
     try {
       const provider = (await connector?.getProvider()) as EthereumProvider;
       if (!provider) throw new Error("No provider found");
-      await initializeNexus(provider);
+      await handleInit(provider);
     } catch (error) {
       console.error(error);
     }
