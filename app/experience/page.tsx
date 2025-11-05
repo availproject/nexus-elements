@@ -95,7 +95,7 @@ const executeBuilder = (
     tokenApproval: {
       token: "USDT",
       amount: amountWei,
-      spender: user,
+      spender: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
     },
   };
 };
@@ -140,7 +140,7 @@ function StepContent() {
   }
   return (
     <SwapExecuteExactOut
-      address={"0x794a61358D6845594F94dc1DB02A252b5b4814aD"}
+      address={address ?? "0x"}
       executeBuilder={executeBuilder}
     />
   );
@@ -189,23 +189,13 @@ export default function NexusExperience() {
 }
 
 function FooterNav() {
-  const { prev, next, currentIndex, steps, statusById, isLastStep, goTo } =
-    useExperience();
-  const current = steps[currentIndex];
-  const canNext = statusById[current.id] === "completed" && !isLastStep;
+  const { prev, next, currentIndex, isLastStep } = useExperience();
   return (
-    <div className="flex w-full items-center justify-between">
-      <div className="flex items-center gap-x-2 p-2 w-full">
-        <Button variant="outline" onClick={prev} disabled={currentIndex === 0}>
-          Back
-        </Button>
-        <Button onClick={next} disabled={!canNext}>
-          {isLastStep ? "Done" : "Next"}
-        </Button>
-      </div>
-      <Button variant={"ghost"} size={"lg"} onClick={() => goTo(2)}>
-        Skip to Step 3
+    <div className="flex items-center justify-between gap-x-2 p-2 w-full">
+      <Button variant="outline" onClick={prev} disabled={currentIndex === 0}>
+        Back
       </Button>
+      <Button onClick={next}>{isLastStep ? "Done" : "Next"}</Button>
     </div>
   );
 }
