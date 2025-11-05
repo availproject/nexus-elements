@@ -221,7 +221,7 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
       if (!result?.success) {
         throw new Error(result?.error || "Swap failed");
       }
-      setExplorerUrl(result.result.explorerURL);
+      setSwapIntent(null);
       onComplete?.(swapIntent?.intent?.destination?.amount);
       await fetchUnifiedBalance();
     } catch (error) {
@@ -250,6 +250,7 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
     setTxError(null);
     setSteps([]);
     setExplorerUrl("");
+    setSwapIntent(null);
     setSourceExplorerUrl("");
     setDestinationExplorerUrl("");
     setLoading(false);

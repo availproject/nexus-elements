@@ -20,6 +20,7 @@ import SwapExecuteExactOut from "@/registry/nexus-elements/execute/swap-execute-
 import Swaps from "@/registry/nexus-elements/swaps/swaps";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { LoaderPinwheel } from "lucide-react";
+import useBridge from "@/registry/nexus-elements/fast-bridge/hooks/useBridge";
 
 function Stepper() {
   const { steps, currentIndex, statusById, goTo } = useExperience();
