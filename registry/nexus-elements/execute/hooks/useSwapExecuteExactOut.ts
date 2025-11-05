@@ -71,6 +71,7 @@ const useSwapExecuteExactOut = ({
 
   const [inputs, setInputs] = useState<InputsState>({});
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const [timer, setTimer] = useState(0);
@@ -125,7 +126,6 @@ const useSwapExecuteExactOut = ({
       };
 
       // Begin swap to raise intent; keep promise to await after accept
-      void simulateExecute();
       const result = await nexusSDK.swapWithExactOut(input, {
         onEvent: (event) => {
           console.log("swap event", event);
@@ -234,22 +234,33 @@ const useSwapExecuteExactOut = ({
     setIsDialogOpen(false);
     setLoading(false);
     stopTimer();
+    setExecuteSimGas(null);
   };
 
   // Auto-refresh swap intent every 15s during review phase
   useEffect(() => {
     if (!swapIntent || isDialogOpen) return;
     const id = setInterval(async () => {
+      setRefreshing(true);
       try {
         const updated = await swapIntent.refresh();
         setSwapIntent({ ...swapIntent, intent: updated });
         await simulateExecute();
       } catch (error) {
         console.error(error);
+      } finally {
+        setRefreshing(false);
       }
     }, 15000);
     return () => clearInterval(id);
   }, [swapIntent, setSwapIntent]);
+
+  useEffect(() => {
+    if (!swapIntent || refreshing) return;
+    if (!executeSimGas) {
+      void simulateExecute();
+    }
+  }, [swapIntent, executeSimGas, refreshing]);
 
   return {
     inputs,
@@ -271,6 +282,7 @@ const useSwapExecuteExactOut = ({
     simulateExecute,
     deny,
     reset,
+    refreshing,
   };
 };
 

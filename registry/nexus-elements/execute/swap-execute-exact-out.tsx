@@ -12,7 +12,7 @@ import type { Address } from "viem";
 import type { ExecuteParams } from "@avail-project/nexus-core";
 import SwapExecuteProgress from "./components/transaction-progress";
 import SwapSourceBreakdown from "../swaps/exact-in/components/swap-source-breakdown";
-import DepositFeeBreakdown from "../deposit/components/fee-breakdown";
+import DepositFeeBreakdown from "./components/fee-breakdown";
 import { LoaderPinwheel } from "lucide-react";
 
 interface SwapExecuteExactOutProps {
@@ -46,6 +46,7 @@ const SwapExecuteExactOut: FC<SwapExecuteExactOutProps> = ({
     deny,
     reset,
     executeCompleted,
+    refreshing,
   } = useSwapExecuteExactOut({ nexusSDK, address, executeBuilder });
 
   return (
@@ -84,12 +85,11 @@ const SwapExecuteExactOut: FC<SwapExecuteExactOutProps> = ({
         {swapIntent && (
           <>
             <SwapSourceBreakdown intent={swapIntent.intent} />
-
             <DepositFeeBreakdown
               total={executeSimGas ?? "0"}
-              bridge={"0"}
               execute={executeSimGas ?? "0"}
-              tokenSymbol={"USDT"}
+              tokenSymbol={"ETH"}
+              isLoading={refreshing || !executeSimGas}
             />
 
             <div className="w-full flex items-center gap-x-2 justify-between">
@@ -101,11 +101,20 @@ const SwapExecuteExactOut: FC<SwapExecuteExactOutProps> = ({
                   reset();
                 }}
                 className="w-1/2"
+                disabled={refreshing}
               >
                 Deny
               </Button>
-              <Button onClick={() => acceptAndRun()} className="w-1/2">
-                Accept
+              <Button
+                onClick={() => acceptAndRun()}
+                disabled={refreshing}
+                className="w-1/2"
+              >
+                {refreshing ? (
+                  <LoaderPinwheel className="animate-spin size-5" />
+                ) : (
+                  "Accept"
+                )}
               </Button>
             </div>
           </>
