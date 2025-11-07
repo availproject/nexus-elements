@@ -207,7 +207,7 @@ const useSwapExecuteExactOut = ({
         ...builder,
       });
       console.log("simulate execute", sim);
-      if (sim?.success) {
+      if (sim) {
         setExecuteSimGas(formatUnits(sim.gasFee, 18));
       } else {
         setExecuteSimGas(null);

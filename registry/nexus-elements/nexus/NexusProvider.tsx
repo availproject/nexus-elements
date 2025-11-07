@@ -8,6 +8,7 @@ import {
   type OnSwapIntentHook,
   type SupportedChainsResult,
   type UserAsset,
+  type OnSwapIntentHookData,
   NexusError,
   ERROR_CODES,
 } from "@avail-project/nexus-core";
@@ -26,9 +27,9 @@ interface NexusContextType {
   deinitializeNexus: () => Promise<void>;
   attachEventHooks: () => void;
   intent: OnIntentHookData | null;
-  swapIntent: Parameters<OnSwapIntentHook>[0] | null;
+  swapIntent: OnSwapIntentHookData | null;
   setSwapIntent: React.Dispatch<
-    React.SetStateAction<Parameters<OnSwapIntentHook>[0] | null>
+    React.SetStateAction<OnSwapIntentHookData | null>
   >;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
   allowance: OnAllowanceHookData | null;
@@ -125,7 +126,7 @@ const NexusProvider = ({
       setIntent(data);
     });
 
-    sdk.setOnSwapIntentHook((data: Parameters<OnSwapIntentHook>[0]) => {
+    sdk.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
       console.log("swapIntent", data);
       setSwapIntent(data);
     });

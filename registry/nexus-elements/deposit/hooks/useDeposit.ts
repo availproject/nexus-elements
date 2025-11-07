@@ -171,8 +171,8 @@ const useDeposit = ({
         }
       );
 
-      if (!result?.success) {
-        setTxError(result?.error || "Transaction rejected by user");
+      if (!result) {
+        setTxError("Transaction rejected by user");
         setIsDialogOpen(false);
         resetState();
         return;
@@ -225,12 +225,12 @@ const useDeposit = ({
       if (activeSimulationIdRef.current !== requestId) {
         return;
       }
-      if (sim?.success) {
+      if (sim) {
         setTxError(null);
         setSimulation(sim);
       } else {
         setSimulation(null);
-        setTxError(sim?.error || "Simulation failed");
+        setTxError("Simulation failed");
       }
     } catch (error) {
       if (activeSimulationIdRef.current !== requestId) {
@@ -248,7 +248,7 @@ const useDeposit = ({
 
   const refreshSimulation = async () => {
     if (simulating || refreshing) return;
-    if (!simulation?.success || !simulation?.bridgeSimulation?.intent) return;
+    if (!simulation?.bridgeSimulation?.intent) return;
     if (!inputs?.amount) return;
     setRefreshing(true);
     await simulate(inputs?.amount);
@@ -333,12 +333,7 @@ const useDeposit = ({
   }, [isDialogOpen]);
 
   useEffect(() => {
-    if (
-      simulation &&
-      simulation.success &&
-      simulation.bridgeSimulation?.intent &&
-      !isDialogOpen
-    ) {
+    if (simulation?.bridgeSimulation?.intent && !isDialogOpen) {
       refreshIntervalRef.current ??= setInterval(refreshSimulation, 15000);
     } else if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);

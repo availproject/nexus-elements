@@ -108,7 +108,7 @@ const SimpleDeposit = ({
         onChange={(selected) =>
           setInputs({ ...inputs, selectedSources: selected })
         }
-        disabled={Boolean(simulation?.success && !simulation?.bridgeSimulation)}
+        disabled={Boolean(simulation && !simulation?.bridgeSimulation)}
       />
       <AmountInput
         token={token}
@@ -129,7 +129,7 @@ const SimpleDeposit = ({
       />
 
       {/* Shimmer while simulating */}
-      {simulating && !simulation?.success && (
+      {simulating && !simulation && (
         <>
           <SourceBreakdown
             isLoading
@@ -152,86 +152,82 @@ const SimpleDeposit = ({
         </>
       )}
 
-      {simulation?.success &&
-        inputs?.amount &&
-        simulation.bridgeSimulation?.intent && (
-          <>
-            <SourceBreakdown
-              intent={simulation.bridgeSimulation.intent}
-              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-              isLoading={refreshing}
-            />
-            <div className="w-full flex items-start justify-between gap-x-4">
-              <p className="text-base font-semibold">You Receive</p>
-              <div className="flex flex-col gap-y-1 min-w-fit">
-                {refreshing ? (
-                  <Skeleton className="h-5 w-28" />
-                ) : (
-                  <p className="text-base font-semibold text-right">
-                    {inputs?.amount} {filteredUnifiedBalance?.symbol}
-                  </p>
-                )}
-                <p className="text-sm font-medium text-right">
-                  {destinationLabel}
+      {simulation && inputs?.amount && simulation.bridgeSimulation?.intent && (
+        <>
+          <SourceBreakdown
+            intent={simulation.bridgeSimulation.intent}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            isLoading={refreshing}
+          />
+          <div className="w-full flex items-start justify-between gap-x-4">
+            <p className="text-base font-semibold">You Receive</p>
+            <div className="flex flex-col gap-y-1 min-w-fit">
+              {refreshing ? (
+                <Skeleton className="h-5 w-28" />
+              ) : (
+                <p className="text-base font-semibold text-right">
+                  {inputs?.amount} {filteredUnifiedBalance?.symbol}
                 </p>
-              </div>
+              )}
+              <p className="text-sm font-medium text-right">
+                {destinationLabel}
+              </p>
             </div>
-            <DepositFeeBreakdown
-              total={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
-              bridge={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
-              execute={
-                simulation.executeSimulation?.success
-                  ? simulation.executeSimulation.gasFee.toString()
-                  : "0"
-              }
-              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-              isLoading={refreshing}
-            />
-          </>
-        )}
+          </div>
+          <DepositFeeBreakdown
+            total={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
+            bridge={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
+            execute={
+              simulation.executeSimulation
+                ? simulation.executeSimulation.gasFee.toString()
+                : "0"
+            }
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            isLoading={refreshing}
+          />
+        </>
+      )}
 
-      {simulation?.success &&
-        inputs?.amount &&
-        !simulation.bridgeSimulation && (
-          <>
-            <div className="w-full flex items-start justify-between gap-x-4">
-              <p className="text-base font-semibold">You Receive</p>
-              <div className="flex flex-col gap-y-1 min-w-fit">
-                {refreshing ? (
-                  <Skeleton className="h-5 w-28" />
-                ) : (
-                  <p className="text-base font-semibold text-right">
-                    {inputs?.amount} {filteredUnifiedBalance?.symbol}
-                  </p>
-                )}
-                <p className="text-sm font-medium text-right">
-                  {destinationLabel}
+      {simulation && inputs?.amount && !simulation.bridgeSimulation && (
+        <>
+          <div className="w-full flex items-start justify-between gap-x-4">
+            <p className="text-base font-semibold">You Receive</p>
+            <div className="flex flex-col gap-y-1 min-w-fit">
+              {refreshing ? (
+                <Skeleton className="h-5 w-28" />
+              ) : (
+                <p className="text-base font-semibold text-right">
+                  {inputs?.amount} {filteredUnifiedBalance?.symbol}
                 </p>
-              </div>
+              )}
+              <p className="text-sm font-medium text-right">
+                {destinationLabel}
+              </p>
             </div>
-            <DepositFeeBreakdown
-              total={
-                simulation.executeSimulation?.success
-                  ? simulation.executeSimulation.gasFee.toString()
-                  : "0"
-              }
-              bridge={"0"}
-              execute={
-                simulation.executeSimulation?.success
-                  ? simulation.executeSimulation.gasFee.toString()
-                  : "0"
-              }
-              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-              isLoading={refreshing}
-            />
-            <div className="w-full text-sm text-muted-foreground px-2">
-              Bridge skipped, executing directly on destination chain
-            </div>
-          </>
-        )}
+          </div>
+          <DepositFeeBreakdown
+            total={
+              simulation.executeSimulation
+                ? simulation.executeSimulation.gasFee.toString()
+                : "0"
+            }
+            bridge={"0"}
+            execute={
+              simulation.executeSimulation
+                ? simulation.executeSimulation.gasFee.toString()
+                : "0"
+            }
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            isLoading={refreshing}
+          />
+          <div className="w-full text-sm text-muted-foreground px-2">
+            Bridge skipped, executing directly on destination chain
+          </div>
+        </>
+      )}
 
       {!intent &&
-        (simulation?.success ? (
+        (simulation ? (
           <div className="w-full flex items-center gap-x-2">
             <Button
               variant={"destructive"}
@@ -271,12 +267,8 @@ const SimpleDeposit = ({
           <BridgeExecuteProgress
             timer={timer}
             steps={steps}
-            intentUrl={
-              lastResult?.success ? lastResult.bridgeExplorerUrl : undefined
-            }
-            executeUrl={
-              lastResult?.success ? lastResult.executeExplorerUrl : undefined
-            }
+            intentUrl={lastResult ? lastResult.bridgeExplorerUrl : undefined}
+            executeUrl={lastResult ? lastResult.executeExplorerUrl : undefined}
           />
         </DialogContent>
       </Dialog>

@@ -72,23 +72,22 @@ const ChainSelect: FC<ChainSelectProps> = ({
 
       <SelectContent>
         <SelectGroup>
-          {supportedChainsAndTokens &&
-            supportedChainsAndTokens.map((chain) => {
-              return (
-                <SelectItem key={chain.id} value={String(chain.id)}>
-                  <div className="flex items-center gap-x-2 my-1">
-                    <img
-                      src={chain.logo}
-                      alt={chain?.name}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                    <p className="text-primary test-sm">{chain.name}</p>
-                  </div>
-                </SelectItem>
-              );
-            })}
+          {supportedChainsAndTokens?.map((chain) => {
+            return (
+              <SelectItem key={chain.id} value={String(chain.id)}>
+                <div className="flex items-center gap-x-2 my-1">
+                  <img
+                    src={chain.logo}
+                    alt={chain?.name}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  <p className="text-primary test-sm">{chain.name}</p>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectGroup>
       </SelectContent>
     </Select>

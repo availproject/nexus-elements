@@ -41,31 +41,8 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   const { swapSupportedChainsAndTokens, unifiedBalance } = useNexus();
   const [open, setOpen] = useState(false);
   const [tempChain, setTempChain] = useState<number | null>(null);
-  // const [tokensForTempChain, setTokensForTempChain] = useState<
-  //   | {
-  //       amount: string;
-  //       chainID: number;
-  //       decimals: number;
-  //       symbol: string;
-  //       tokenAddress: `0x${string}`;
-  //       value: number;
-  //       logo: string;
-  //     }[]
-  //   | undefined
-  // >(undefined);
 
   const chains = swapSupportedChainsAndTokens ?? [];
-
-  // const fetchTokens = useCallback(async () => {
-  //   const balances = await nexusSDK?.getBalancesForSwap();
-  //   console.log("swap balances HELLO", balances);
-  //   setTokensForTempChain(balances);
-  // }, [tempChain]);
-
-  // useEffect(() => {
-  //   if (!tempChain) return;
-  //   fetchTokens();
-  // }, [tempChain]);
 
   const tokensForTempChain: SourceTokenInfo[] = useMemo(() => {
     if (!tempChain) return [] as SourceTokenInfo[];

@@ -151,10 +151,10 @@ const useBridge = ({
             },
           }
         );
-        if (!transferTxn?.success) {
-          throw new Error(transferTxn?.error || "Transaction rejected by user");
+        if (!transferTxn) {
+          throw new Error("Transaction rejected by user");
         }
-        if (transferTxn?.success) {
+        if (transferTxn) {
           setLastExplorerUrl(transferTxn.explorerUrl);
           await onSuccess();
         }
@@ -197,10 +197,10 @@ const useBridge = ({
           },
         }
       );
-      if (!bridgeTxn?.success) {
-        throw new Error(bridgeTxn?.error || "Transaction rejected by user");
+      if (!bridgeTxn) {
+        throw new Error("Transaction rejected by user");
       }
-      if (bridgeTxn?.success) {
+      if (bridgeTxn) {
         setLastExplorerUrl(bridgeTxn.explorerUrl);
         await onSuccess();
       }
