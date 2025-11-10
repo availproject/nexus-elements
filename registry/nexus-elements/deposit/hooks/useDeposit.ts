@@ -47,7 +47,7 @@ interface UseDepositProps {
     chainId: SUPPORTED_CHAINS_IDS,
     userAddress: `0x${string}`
   ) => ExecuteConfig;
-  executeConfig?: ExecuteConfig; // fallback if pre-encoded params are provided
+  executeConfig?: ExecuteConfig;
 }
 
 const useDeposit = ({
@@ -77,7 +77,6 @@ const useDeposit = ({
   });
 
   useEffect(() => {
-    // keep default sources in sync if options change
     setInputs((prev) => ({ ...prev, selectedSources: allSourceIds }));
   }, [allSourceIds]);
 
@@ -100,7 +99,6 @@ const useDeposit = ({
     Array<{ id: number; completed: boolean; step: BridgeStepType }>
   >([]);
 
-  // Track in-flight simulation requests to prevent stale updates
   const simulationRequestIdRef = useRef(0);
   const activeSimulationIdRef = useRef<number | null>(null);
 
@@ -141,9 +139,7 @@ const useDeposit = ({
         {
           onEvent: (event) => {
             if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-              const list = Array.isArray(event.args)
-                ? (event.args as BridgeStepType[])
-                : [];
+              const list = Array.isArray(event.args) ? event.args : [];
               setSteps((prev) => {
                 const completedTypes = new Set(
                   prev
@@ -158,10 +154,10 @@ const useDeposit = ({
               });
             }
             if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
-              const step = event.args as BridgeStepType;
+              const step = event.args;
               setSteps((prev) =>
                 prev.map((s) =>
-                  s.step && s.step.typeID === step?.typeID
+                  s?.step?.typeID === step?.typeID
                     ? { ...s, completed: true }
                     : s
                 )
@@ -196,7 +192,6 @@ const useDeposit = ({
     if (!nexusSDK) return;
     const amountToUse = overrideAmount ?? inputs?.amount;
     if (!amountToUse || !inputs?.chain) {
-      // Invalidate any pending simulation and clear result if input is empty
       activeSimulationIdRef.current = null;
       setSimulation(null);
       return;
@@ -221,7 +216,7 @@ const useDeposit = ({
         waitForReceipt: false,
       };
       const sim = await nexusSDK.simulateBridgeAndExecute(params);
-      // Ignore if this request is no longer the active one
+      console.log("sim", sim);
       if (activeSimulationIdRef.current !== requestId) {
         return;
       }
@@ -284,7 +279,6 @@ const useDeposit = ({
   };
 
   const reset = () => {
-    console.log("reset");
     intent?.deny();
     resetState();
   };

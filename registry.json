@@ -10,7 +10,7 @@
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
       "dependencies": [
-        "@avail-project/nexus-core@latest",
+        "@avail-project/nexus-core@1.0.0-beta.22",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -91,7 +91,7 @@
       "type": "registry:component",
       "title": "Nexus Provider",
       "description": "Shared Nexus SDK provider and types for Nexus Elements",
-      "dependencies": ["@avail-project/nexus-core@latest"],
+      "dependencies": ["@avail-project/nexus-core@1.0.0-beta.22"],
       "files": [
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
@@ -400,7 +400,7 @@
       "title": "Swaps",
       "description": "Swap tokens across chains (Exact In)",
       "dependencies": [
-        "@avail-project/nexus-core@latest",
+        "@avail-project/nexus-core@1.0.0-beta.22",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
         "@radix-ui/react-select",

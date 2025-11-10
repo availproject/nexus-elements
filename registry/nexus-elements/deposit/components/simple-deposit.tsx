@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { BaseDepositProps } from "../deposit";
 import AmountInput from "./amount-input";
 import SourceSelect from "./source-select";
@@ -19,7 +19,11 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
-import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import {
+  CHAIN_METADATA,
+  type SUPPORTED_TOKENS,
+} from "@avail-project/nexus-core";
+import { formatUnits } from "viem";
 
 interface SimpleDepositProps extends BaseDepositProps {
   destinationLabel?: string;
@@ -76,11 +80,11 @@ const SimpleDeposit = ({
     executeBuilder: depositExecute,
   });
   const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
-  React.useEffect(() => {
+  useEffect(() => {
     if (allCompleted) stopTimer();
   }, [allCompleted, stopTimer]);
 
-  const renderDepositButtonContent = () => {
+  const renderDepositButtonContent = useCallback(() => {
     if (isDialogOpen) return "Deposit";
     if (refreshing)
       return (
@@ -97,7 +101,26 @@ const SimpleDeposit = ({
         </div>
       );
     return "Deposit";
-  };
+  }, [isDialogOpen, refreshing, simulating]);
+
+  const renderTotalFeeBreakdown = useMemo(() => {
+    if (simulation?.bridgeSimulation) {
+      return `${
+        simulation.bridgeSimulation?.intent?.fees?.total ?? "0"
+      } ${token} + ${
+        formatUnits(
+          simulation.executeSimulation.gasFee,
+          CHAIN_METADATA[chain].nativeCurrency.decimals
+        ) ?? "0"
+      } ${CHAIN_METADATA[chain].nativeCurrency.symbol}`;
+    }
+    return ` ${
+      formatUnits(
+        simulation?.executeSimulation?.gasFee ?? BigInt(0),
+        CHAIN_METADATA[chain].nativeCurrency.decimals
+      ) ?? "0"
+    } ${CHAIN_METADATA[chain].nativeCurrency.symbol}`;
+  }, [simulation, chain, token]);
 
   return (
     <div className="flex flex-col items-center w-full gap-y-3 rounded-lg">
@@ -111,7 +134,6 @@ const SimpleDeposit = ({
         disabled={Boolean(simulation && !simulation?.bridgeSimulation)}
       />
       <AmountInput
-        token={token}
         value={inputs?.amount}
         onChange={(value) => {
           setInputs({ ...inputs, amount: value });
@@ -147,18 +169,20 @@ const SimpleDeposit = ({
             total={"0"}
             bridge={"0"}
             execute={"0"}
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
           />
         </>
       )}
 
-      {simulation && inputs?.amount && simulation.bridgeSimulation?.intent && (
+      {simulation && inputs?.amount && (
         <>
-          <SourceBreakdown
-            intent={simulation.bridgeSimulation.intent}
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-            isLoading={refreshing}
-          />
+          {simulation.bridgeSimulation?.intent && (
+            <SourceBreakdown
+              intent={simulation.bridgeSimulation.intent}
+              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
+            />
+          )}
+
           <div className="w-full flex items-start justify-between gap-x-4">
             <p className="text-base font-semibold">You Receive</p>
             <div className="flex flex-col gap-y-1 min-w-fit">
@@ -174,61 +198,31 @@ const SimpleDeposit = ({
               </p>
             </div>
           </div>
-          <DepositFeeBreakdown
-            total={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
-            bridge={simulation.bridgeSimulation?.intent?.fees?.total ?? "0"}
-            execute={
-              simulation.executeSimulation
-                ? simulation.executeSimulation.gasFee.toString()
-                : "0"
-            }
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-            isLoading={refreshing}
-          />
-        </>
-      )}
 
-      {simulation && inputs?.amount && !simulation.bridgeSimulation && (
-        <>
-          <div className="w-full flex items-start justify-between gap-x-4">
-            <p className="text-base font-semibold">You Receive</p>
-            <div className="flex flex-col gap-y-1 min-w-fit">
-              {refreshing ? (
-                <Skeleton className="h-5 w-28" />
-              ) : (
-                <p className="text-base font-semibold text-right">
-                  {inputs?.amount} {filteredUnifiedBalance?.symbol}
-                </p>
-              )}
-              <p className="text-sm font-medium text-right">
-                {destinationLabel}
-              </p>
-            </div>
-          </div>
           <DepositFeeBreakdown
-            total={
-              simulation.executeSimulation
-                ? simulation.executeSimulation.gasFee.toString()
-                : "0"
-            }
-            bridge={"0"}
-            execute={
-              simulation.executeSimulation
-                ? simulation.executeSimulation.gasFee.toString()
-                : "0"
-            }
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            total={renderTotalFeeBreakdown}
+            bridge={`${
+              simulation.bridgeSimulation?.intent?.fees?.total ?? "0"
+            } ${token}`}
+            execute={`${
+              formatUnits(
+                simulation.executeSimulation.gasFee,
+                CHAIN_METADATA[chain].nativeCurrency.decimals
+              ) ?? "0"
+            } ${CHAIN_METADATA[chain].nativeCurrency.symbol}`}
             isLoading={refreshing}
           />
-          <div className="w-full text-sm text-muted-foreground px-2">
-            Bridge skipped, executing directly on destination chain
-          </div>
+          {!simulation.bridgeSimulation && (
+            <div className="w-full text-sm text-muted-foreground">
+              Bridge skipped, executing directly on destination chain
+            </div>
+          )}
         </>
       )}
 
       {!intent &&
         (simulation ? (
-          <div className="w-full flex items-center gap-x-2">
+          <div className="w-full flex items-center justify-center gap-x-2 px-1">
             <Button
               variant={"destructive"}
               onClick={() => {
@@ -248,7 +242,7 @@ const SimpleDeposit = ({
             </Button>
           </div>
         ) : (
-          <Button disabled={true} className="w-full">
+          <Button disabled={true} className="w-full px-2">
             {renderDepositButtonContent()}
           </Button>
         ))}

@@ -67,7 +67,7 @@ const AmountInput: FC<AmountInputProps> = ({
             onCommit?.(amount ?? "");
           }
         }}
-        className="w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
+        className="w-full border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
         aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
         disabled={disabled}
       />

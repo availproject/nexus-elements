@@ -44,7 +44,7 @@ const RecipientAddress: FC<RecipientAddressProps> = ({
           <p className="font-semibold">Recipient Address</p>
           <div className="flex items-center gap-x-3 ">
             {address && (
-              <p className="font-semibold text-primary-foreground">
+              <p className="font-semibold">
                 {nexusSDK?.utils?.truncateAddress(address, 6, 6)}
               </p>
             )}

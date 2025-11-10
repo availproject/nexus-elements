@@ -37,7 +37,7 @@ const AmountInput: FC<AmountInputProps> = ({
     if (!nexusSDK || !inputs) return;
     const maxBalAvailable = await nexusSDK?.calculateMaxForBridge({
       token: inputs?.token,
-      chainId: inputs?.chain,
+      toChainId: inputs?.chain,
       recipient: inputs?.recipient,
     });
     if (!maxBalAvailable) return;
@@ -78,7 +78,7 @@ const AmountInput: FC<AmountInputProps> = ({
             onCommit?.(amount ?? "");
           }
         }}
-        className="w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
+        className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
         aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
         disabled={disabled}
       />

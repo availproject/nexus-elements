@@ -32,7 +32,7 @@ const SourceSelect = ({
       <PopoverTrigger
         disabled={disabled}
         aria-disabled={disabled}
-        className={`flex items-center justify-between w-full p-2 ${
+        className={`flex items-center justify-between w-full px-0 py-2 ${
           disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
         }`}
       >

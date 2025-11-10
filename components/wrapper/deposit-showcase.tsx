@@ -23,7 +23,7 @@ const NexusDeposit = dynamic(
 
 const DepositShowcase = () => {
   const { address } = useAccount();
-  const [viewAs, setViewAs] = useState<boolean>(false);
+  const [viewAs, setViewAs] = useState<boolean>(true);
   return (
     <ShowcaseWrapper
       heading="Nexus Deposit"
@@ -37,8 +37,8 @@ const DepositShowcase = () => {
         onPressedChange={(value) => setViewAs(value)}
         className="absolute top-0 left-2 cursor-pointer"
       >
-        <p className="text-sm font-medium">Embedded</p>
-        {viewAs ? <Check className="size-4" /> : <X className="size-4" />}
+        <p className="text-sm font-medium">View as Modal</p>
+        {viewAs ? <X className="size-4" /> : <Check className="size-4" />}
       </Toggle>
       <NexusDeposit
         address={address ?? `0x`}

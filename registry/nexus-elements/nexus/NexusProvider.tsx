@@ -80,7 +80,7 @@ const NexusProvider = ({
   >(null);
   const [allowance, setAllowance] = useState<OnAllowanceHookData | null>(null);
 
-  useMemo(() => {
+  const initChainsAndTokens = useCallback(() => {
     const list = sdk?.utils?.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
@@ -99,6 +99,7 @@ const NexusProvider = ({
       const unifiedBalance = await sdk?.getUnifiedBalances(true);
       console.log("unifiedBalance", unifiedBalance);
       setUnifiedBalance(unifiedBalance);
+      initChainsAndTokens();
     } catch (error) {
       console.error("Error initializing Nexus:", error);
     } finally {

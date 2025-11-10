@@ -118,7 +118,7 @@ const useBridge = ({
           {
             token: inputs?.token,
             amount: inputs?.amount,
-            chainId: inputs?.chain,
+            toChainId: inputs?.chain,
             recipient: inputs?.recipient,
           },
           {
@@ -142,7 +142,7 @@ const useBridge = ({
                 const step = event.args;
                 setSteps((prev) =>
                   prev.map((s) =>
-                    s.step && s.step.typeID === step?.typeID
+                    s?.step?.typeID === step?.typeID
                       ? { ...s, completed: true }
                       : s
                   )
@@ -165,7 +165,7 @@ const useBridge = ({
         {
           token: inputs?.token,
           amount: inputs?.amount,
-          chainId: inputs?.chain,
+          toChainId: inputs?.chain,
         },
         {
           onEvent: (event) => {

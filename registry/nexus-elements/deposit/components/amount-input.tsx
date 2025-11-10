@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import { type UserAsset } from "@avail-project/nexus-core";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { useCallback, useEffect, useRef } from "react";
@@ -23,12 +20,11 @@ const RANGE_OPTIONS = [
   },
   {
     label: "MAX",
-    value: 1.0,
+    value: 1,
   },
 ];
 
 interface AmountInputProps {
-  token?: SUPPORTED_TOKENS;
   value?: string;
   onChange: (value: string) => void;
   unifiedBalance?: UserAsset;
@@ -37,7 +33,6 @@ interface AmountInputProps {
 }
 
 const AmountInput = ({
-  token,
   value,
   onChange,
   unifiedBalance,
@@ -67,8 +62,8 @@ const AmountInput = ({
   }, []);
 
   return (
-    <div className="flex flex-col items-start gap-y-1 w-full p-2">
-      <div className="flex items-center justify-between w-full">
+    <div className="flex flex-col items-start gap-y-1 w-full py-2">
+      <div className="flex items-center justify-between gap-x-3 w-full">
         <Input
           type="number"
           inputMode="decimal"
@@ -96,10 +91,15 @@ const AmountInput = ({
               onCommit?.(value ?? "");
             }
           }}
-          className="py-0 px-1  text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
+          className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
           disabled={disabled}
         />
-        <p>{token}</p>
+        {unifiedBalance && (
+          <p className="text-base font-semibold min-w-max">
+            {Number.parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
+            {unifiedBalance?.symbol}
+          </p>
+        )}
       </div>
       <div className="flex gap-x-3">
         {RANGE_OPTIONS.map((option) => (

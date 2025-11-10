@@ -37,7 +37,7 @@ const NexusDeposit = ({
   address,
   token = "USDC",
   chain,
-  chainOptions,
+  chainOptions, // pass to customise sources displayed, if not provided, all sources will be shown
   heading = "Deposit USDC",
   embed = false,
   destinationLabel,

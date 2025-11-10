@@ -109,8 +109,6 @@ const config = getDefaultConfig({
   ],
 });
 
-const queryClient = new QueryClient();
-
 function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
@@ -124,6 +122,7 @@ function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
 const Web3Provider = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
+  const queryClient = useMemo(() => new QueryClient(), []);
   const { resolvedTheme } = useTheme();
   const rkTheme = useMemo(
     () =>
@@ -145,15 +144,15 @@ const Web3Provider = ({
     [resolvedTheme]
   );
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider modalSize="compact" theme={rkTheme}>
-          <Suspense fallback={<Skeleton className="w-full h-full" />}>
+    <Suspense fallback={<Skeleton className="w-full h-full" />}>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider modalSize="compact" theme={rkTheme}>
             <NexusProviders>{children}</NexusProviders>
-          </Suspense>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </Suspense>
   );
 };
 
