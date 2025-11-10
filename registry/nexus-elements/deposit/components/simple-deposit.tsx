@@ -156,6 +156,7 @@ const SimpleDeposit = ({
           <SourceBreakdown
             isLoading
             tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            chain={chain}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
             <p className="text-base font-semibold">You Receive</p>
@@ -175,13 +176,14 @@ const SimpleDeposit = ({
 
       {simulation && inputs?.amount && (
         <>
-          {simulation.bridgeSimulation?.intent && (
-            <SourceBreakdown
-              intent={simulation.bridgeSimulation.intent}
-              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-              isLoading={refreshing}
-            />
-          )}
+          <SourceBreakdown
+            intent={simulation?.bridgeSimulation?.intent}
+            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            isLoading={refreshing}
+            chain={chain}
+            unifiedBalance={filteredUnifiedBalance}
+            requiredAmount={inputs?.amount}
+          />
 
           <div className="w-full flex items-start justify-between gap-x-4">
             <p className="text-base font-semibold">You Receive</p>
@@ -299,10 +301,3 @@ const SimpleDeposit = ({
 };
 
 export default SimpleDeposit;
-
-/**
- * change you spend amount to receive + fee
- * if total amount is not being bridged then also show how much the user already has on the destination chain in you spend breakdown
- * if the input is cleared while a simulation is in progress, then don't show the simulation result. Basically stop the inflight request somehow, or don't display it on the UI same thing with the cancel button
- * add total token balance on the right side of the amount input
- */

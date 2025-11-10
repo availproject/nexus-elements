@@ -188,11 +188,15 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
               setDestinationExplorerUrl(step.explorerURL);
             }
 
-            // Update progress by matching on step.type (ignore dynamic typeID suffixes)
             setSteps((prev) => {
-              const existingIndex = prev.findIndex(
-                (s) => s.step?.type === step?.type
-              );
+              let existingIndex = -1;
+              for (let i = 0; i < prev.length; i++) {
+                const s = prev[i];
+                if (s?.step?.type === step?.type) {
+                  existingIndex = i;
+                  break;
+                }
+              }
               if (existingIndex !== -1) {
                 const updated = [...prev];
                 const wasCompleted = updated[existingIndex].completed;
@@ -204,7 +208,6 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
                 };
                 return updated;
               }
-              // Step not in expected list; append it
               return [
                 ...prev,
                 {

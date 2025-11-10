@@ -141,27 +141,45 @@ const useDeposit = ({
             if (event.name === NEXUS_EVENTS.STEPS_LIST) {
               const list = Array.isArray(event.args) ? event.args : [];
               setSteps((prev) => {
-                const completedTypes = new Set(
-                  prev
-                    .filter((s) => s.completed)
-                    .map((s) => s.step?.typeID ?? "")
-                );
-                return list.map((step, index) => ({
-                  id: index,
-                  completed: completedTypes.has(step?.typeID ?? ""),
-                  step,
-                }));
+                const completedTypes = new Set<string>();
+                for (const prevStep of prev) {
+                  if (prevStep.completed) {
+                    completedTypes.add(prevStep.step?.typeID ?? "");
+                  }
+                }
+                const nextSteps: Array<{
+                  id: number;
+                  completed: boolean;
+                  step: BridgeStepType;
+                }> = [];
+                for (let index = 0; index < list.length; index++) {
+                  const step = list[index];
+                  nextSteps.push({
+                    id: index,
+                    completed: completedTypes.has(step?.typeID ?? ""),
+                    step,
+                  });
+                }
+                return nextSteps;
               });
             }
             if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
               const step = event.args;
-              setSteps((prev) =>
-                prev.map((s) =>
-                  s?.step?.typeID === step?.typeID
-                    ? { ...s, completed: true }
-                    : s
-                )
-              );
+              setSteps((prev) => {
+                const updated: Array<{
+                  id: number;
+                  completed: boolean;
+                  step: BridgeStepType;
+                }> = [];
+                for (const s of prev) {
+                  if (s?.step?.typeID === step?.typeID) {
+                    updated.push({ ...s, completed: true });
+                  } else {
+                    updated.push(s);
+                  }
+                }
+                return updated;
+              });
             }
           },
         }
@@ -190,9 +208,20 @@ const useDeposit = ({
 
   const simulate = async (overrideAmount?: string) => {
     if (!nexusSDK) return;
+
     const amountToUse = overrideAmount ?? inputs?.amount;
+
     if (!amountToUse || !inputs?.chain) {
       activeSimulationIdRef.current = null;
+      setSimulation(null);
+      return;
+    }
+    if (
+      Number.parseFloat(amountToUse) >
+      Number.parseFloat(filteredUnifiedBalance?.balance ?? "0")
+    ) {
+      activeSimulationIdRef.current = null;
+      setTxError("Insufficient balance");
       setSimulation(null);
       return;
     }
