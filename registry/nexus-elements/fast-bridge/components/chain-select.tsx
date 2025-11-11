@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from "react";
+import React, { type FC, useMemo } from "react";
 import { Label } from "../../ui/label";
 import {
   Select,
@@ -42,7 +42,7 @@ const ChainSelect: FC<ChainSelectProps> = ({
       value={selectedChain?.toString() ?? ""}
       onValueChange={(value) => {
         if (!disabled) {
-          handleSelect(parseInt(value) as SUPPORTED_CHAINS_IDS);
+          handleSelect(Number.parseInt(value) as SUPPORTED_CHAINS_IDS);
         }
       }}
     >

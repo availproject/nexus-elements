@@ -5,7 +5,7 @@ import {
 } from "@avail-project/nexus-core";
 import React from "react";
 import DepositModal from "./components/deposit-modal";
-import { Address } from "viem";
+import { type Address } from "viem";
 import Container from "./components/container";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useNexus } from "../nexus/NexusProvider";

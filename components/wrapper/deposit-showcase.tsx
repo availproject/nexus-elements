@@ -5,9 +5,8 @@ import {
   SUPPORTED_CHAINS,
   TOKEN_CONTRACT_ADDRESSES,
   TOKEN_METADATA,
-  encodeContractCall,
 } from "@avail-project/nexus-core";
-import { parseUnits, type Abi } from "viem";
+import { encodeFunctionData, parseUnits, type Abi } from "viem";
 import dynamic from "next/dynamic";
 import { Skeleton } from "../ui/skeleton";
 import { useState } from "react";
@@ -76,17 +75,17 @@ const DepositShowcase = () => {
             throw new Error("Selected chain is not supported for this token");
           }
           const tokenAddr = chainMap[_chainId as keyof typeof chainMap];
-          const encoded = encodeContractCall({
-            contractAbi: abi,
+          const encoded = encodeFunctionData({
+            abi: abi,
             functionName: "supply",
-            functionParams: [tokenAddr, amountWei, user, 0],
+            args: [tokenAddr, amountWei, user, 0],
           });
-          if (!encoded.success || !encoded.data) {
+          if (!encoded) {
             throw new Error("Failed to encode contract call");
           }
           return {
             to: contractAddress,
-            data: encoded.data,
+            data: encoded,
             tokenApproval: {
               token,
               amount: amountWei,

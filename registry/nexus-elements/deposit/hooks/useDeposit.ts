@@ -12,13 +12,12 @@ import {
   type BridgeAndExecuteResult,
   type BridgeAndExecuteSimulationResult,
   TOKEN_METADATA,
-  parseUnits,
   NEXUS_EVENTS,
   type BridgeStepType,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState, useReducer } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
-import { type Address } from "viem";
+import { parseUnits, type Address } from "viem";
 import { useStopwatch } from "../../common/hooks/useStopwatch";
 import { usePolling } from "../../common/hooks/usePolling";
 import { useTransactionSteps } from "../../common/tx/useTransactionSteps";

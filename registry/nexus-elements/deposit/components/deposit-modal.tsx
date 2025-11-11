@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "../../ui/dialog";
 import Container from "./container";
-import { BaseDepositProps } from "../deposit";
+import { type BaseDepositProps } from "../deposit";
 import { Button } from "../../ui/button";
 
 interface DepositModalProps extends BaseDepositProps {

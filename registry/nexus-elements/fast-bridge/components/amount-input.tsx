@@ -1,9 +1,9 @@
-import React, { FC, Fragment, useEffect, useRef } from "react";
+import React, { type FC, Fragment, useEffect, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { type UserAsset } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
-import { FastBridgeState } from "../hooks/useBridge";
+import { type FastBridgeState } from "../hooks/useBridge";
 import {
   Accordion,
   AccordionContent,

@@ -1,5 +1,5 @@
 import { Check, LoaderPinwheel, Circle, Link as LinkIcon } from "lucide-react";
-import React, { FC, memo, useMemo } from "react";
+import React, { type FC, memo, useMemo } from "react";
 
 interface SwapExecuteProgressProps {
   timer: number;

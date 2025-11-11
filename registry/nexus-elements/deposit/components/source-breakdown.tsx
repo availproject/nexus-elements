@@ -1,7 +1,7 @@
 import {
   CHAIN_METADATA,
-  SUPPORTED_CHAINS_IDS,
-  UserAsset,
+  type SUPPORTED_CHAINS_IDS,
+  type UserAsset,
   type ReadableIntent,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";

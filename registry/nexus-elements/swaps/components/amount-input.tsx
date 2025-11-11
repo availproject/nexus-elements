@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useRef } from "react";
+import React, { type FC, useEffect, useMemo, useRef } from "react";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { Input } from "../../ui/input";
 

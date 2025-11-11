@@ -1,5 +1,5 @@
 import { Check, Circle, Link as LinkIcon, LoaderPinwheel } from "lucide-react";
-import React, { FC, memo, useMemo } from "react";
+import React, { type FC, memo, useMemo } from "react";
 import {
   type BridgeStepType,
   type SwapStepType,
@@ -57,23 +57,22 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   destinationExplorerUrl,
 }) => {
   const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
-    const completedTypes = new Set<
-      string | undefined
-    >(steps?.filter((s) => s?.completed).map((s) => (s?.step as any)?.type));
+    const completedTypes = new Set<string | undefined>(
+      steps?.filter((s) => s?.completed).map((s) => (s?.step as any)?.type)
+    );
     // Consider only steps that were actually emitted by the SDK (ignore pre-seeded placeholders)
     const eventfulTypes = new Set<string | undefined>(
       steps
         ?.filter((s) => {
           const st = (s?.step as any) ?? {};
           return (
-            "explorerURL" in st ||
-            "chain" in st ||
-            "completed" in st // present when event args were merged into step
+            "explorerURL" in st || "chain" in st || "completed" in st // present when event args were merged into step
           );
         })
         .map((s) => (s?.step as any)?.type)
     );
-    const hasAny = (types: string[]) => types.some((t) => completedTypes.has(t));
+    const hasAny = (types: string[]) =>
+      types.some((t) => completedTypes.has(t));
     const sawAny = (types: string[]) => types.some((t) => eventfulTypes.has(t));
 
     const intentVerified = hasAny(["DETERMINING_SWAP", "SWAP_START"]);
@@ -118,7 +117,11 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
     // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
     const done = hasAny(["SWAP_COMPLETE"]);
     const current = displaySteps.findIndex((st) => !st.completed);
-    return { effectiveSteps: displaySteps, currentIndex: current, allCompleted: done };
+    return {
+      effectiveSteps: displaySteps,
+      currentIndex: current,
+      allCompleted: done,
+    };
   }, [steps]);
 
   return (

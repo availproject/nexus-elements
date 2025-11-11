@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import SimpleDeposit from "./simple-deposit";
 import { useNexus } from "../../nexus/NexusProvider";
-import { BaseDepositProps } from "../deposit";
+import { type BaseDepositProps } from "../deposit";
 
 interface ContainerProps extends BaseDepositProps {
   fiatSubheading?: string;
