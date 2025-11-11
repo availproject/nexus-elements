@@ -129,7 +129,7 @@ function StepContent() {
       <Swaps
         exactIn={true}
         onComplete={() => completeCurrent()}
-        prefill={{
+        exactInprefill={{
           fromChainID: SUPPORTED_CHAINS.BASE,
           toChainID: SUPPORTED_CHAINS.ARBITRUM,
           fromToken: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],

@@ -11,9 +11,9 @@ import useSwapExecuteExactOut from "./hooks/useSwapExecuteExactOut";
 import type { Address } from "viem";
 import type { ExecuteParams } from "@avail-project/nexus-core";
 import SwapExecuteProgress from "./components/transaction-progress";
-import SwapSourceBreakdown from "../swaps/exact-in/components/swap-source-breakdown";
 import DepositFeeBreakdown from "./components/fee-breakdown";
 import { LoaderPinwheel } from "lucide-react";
+import SwapSourceBreakdown from "../swaps/components/swap-source-breakdown";
 
 interface SwapExecuteExactOutProps {
   address: Address;

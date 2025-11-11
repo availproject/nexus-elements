@@ -112,9 +112,12 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
                 <div className="text-sm">
                   <span className="mr-1 text-muted-foreground">Current:</span>
                   <span className="font-semibold">
-                    {nexusSDK?.utils.formatBalance(
+                    {nexusSDK?.utils?.formatTokenBalance(
                       source.allowance.current,
-                      source.token.decimals
+                      {
+                        symbol: source.token.symbol,
+                        decimals: source.token.decimals,
+                      }
                     )}
                   </span>
                 </div>
@@ -136,9 +139,12 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
                   />
                   <span>
                     Minimum (
-                    {nexusSDK?.utils.formatBalance(
+                    {nexusSDK?.utils?.formatTokenBalance(
                       source.allowance.minimum,
-                      source.token.decimals
+                      {
+                        symbol: source.token.symbol,
+                        decimals: source.token.decimals,
+                      }
                     )}
                     )
                   </span>
