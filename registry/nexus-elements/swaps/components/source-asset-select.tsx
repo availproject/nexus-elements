@@ -1,14 +1,14 @@
 "use client";
 import React, { FC, useMemo, useState } from "react";
-import { Button } from "../../../ui/button";
+import { Button } from "../../ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../../ui/dialog";
-import { useNexus } from "../../../nexus/NexusProvider";
+} from "../../ui/dialog";
+import { useNexus } from "../../nexus/NexusProvider";
 import {
   CHAIN_METADATA,
   type SUPPORTED_CHAINS_IDS,

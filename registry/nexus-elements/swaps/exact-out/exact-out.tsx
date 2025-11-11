@@ -1,36 +1,32 @@
-"use client";
 import React, { FC } from "react";
 import { Card, CardContent } from "../../ui/card";
+import AmountInput from "../components/amount-input";
+import DestinationAssetSelect from "../components/destination-asset-select";
 import { Button } from "../../ui/button";
-import { useNexus } from "../../nexus/NexusProvider";
-import useExactIn from "./hooks/useExactIn";
+import { LoaderPinwheel } from "lucide-react";
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
+import SwapSourceBreakdown from "../components/swap-source-breakdown";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "../../ui/dialog";
-import { Input } from "../../ui/input";
-import { Label } from "../../ui/label";
-import { LoaderPinwheel } from "lucide-react";
-import SourceAssetSelect from "../components/source-asset-select";
-import AmountInput from "../components/amount-input";
-import DestinationAssetSelect from "../components/destination-asset-select";
-import SwapSourceBreakdown from "../components/swap-source-breakdown";
 import TransactionProgress from "../components/transaction-progress";
+import { useNexus } from "../../nexus/NexusProvider";
+import useExactOut from "./hooks/useExactOut";
 
-interface SwapExactInProps {
+interface SwapExactOutProps {
   onComplete?: (amount?: string) => void;
   prefill?: {
-    fromChainID?: number;
-    fromToken?: string;
-    fromAmount?: string;
     toChainID?: number;
     toToken?: string;
+    toAmount?: string;
   };
 }
 
-const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
+const SwapExactOut: FC<SwapExactOutProps> = ({ onComplete, prefill }) => {
   const { nexusSDK, swapIntent, setSwapIntent } = useNexus();
   const {
     inputs,
@@ -45,33 +41,24 @@ const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
     destinationExplorerUrl,
     handleSwap,
     reset,
-  } = useExactIn({ nexusSDK, onComplete, prefill });
-
+  } = useExactOut({ nexusSDK, onComplete, prefill });
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full">
         <div className="flex items-center justify-between">
           <p className="text-base font-semibold">Swap</p>
-          <span className="text-xs text-muted-foreground">Exact In</span>
+          <span className="text-xs text-muted-foreground">Exact Out</span>
         </div>
-
-        <SourceAssetSelect
-          selectedChain={inputs.fromChainID}
-          selectedToken={inputs.fromToken}
-          onSelect={(fromChainID, fromToken) =>
-            setInputs({ ...inputs, fromChainID, fromToken })
-          }
-          disabled={Boolean(prefill?.fromChainID && prefill?.fromToken)}
-        />
         <div className="flex flex-col gap-y-2">
           <label className="text-sm font-medium" htmlFor="swap-amount">
             Amount
           </label>
           <AmountInput
-            amount={inputs.fromAmount}
-            onChange={(val) => setInputs({ ...inputs, fromAmount: val })}
-            symbol={inputs.fromToken?.symbol}
-            disabled={Boolean(prefill?.fromAmount)}
+            amount={inputs.toAmount}
+            onChange={(val) => setInputs({ ...inputs, toAmount: val })}
+            symbol={inputs.toToken?.symbol}
+            disabled={Boolean(prefill?.toAmount)}
+            hideBalance={true}
           />
         </div>
 
@@ -169,7 +156,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
               className="text-destructive-foreground/80 hover:text-destructive-foreground focus:outline-none"
               aria-label="Dismiss error"
             >
-              ×
+              X
             </Button>
           </div>
         )}
@@ -178,4 +165,4 @@ const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
   );
 };
 
-export default SwapExactIn;
+export default SwapExactOut;

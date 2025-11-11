@@ -56,30 +56,69 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   sourceExplorerUrl,
   destinationExplorerUrl,
 }) => {
-  const totalSteps = Array.isArray(steps) ? steps.length : 0;
-  const completedSteps = Array.isArray(steps)
-    ? steps.reduce((acc, s) => acc + (s?.completed ? 1 : 0), 0)
-    : 0;
-  const percent = totalSteps > 0 ? completedSteps / totalSteps : 0;
-  const allCompleted = percent >= 1;
-
-  const { effectiveSteps, currentIndex } = useMemo(() => {
-    const milestones = [
-      "Intent verified",
-      "Collected on sources",
-      "Filled on destination",
-    ];
-    const thresholds = milestones.map(
-      (_, idx) => (idx + 1) / milestones.length
+  const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
+    const completedTypes = new Set<
+      string | undefined
+    >(steps?.filter((s) => s?.completed).map((s) => (s?.step as any)?.type));
+    // Consider only steps that were actually emitted by the SDK (ignore pre-seeded placeholders)
+    const eventfulTypes = new Set<string | undefined>(
+      steps
+        ?.filter((s) => {
+          const st = (s?.step as any) ?? {};
+          return (
+            "explorerURL" in st ||
+            "chain" in st ||
+            "completed" in st // present when event args were merged into step
+          );
+        })
+        .map((s) => (s?.step as any)?.type)
     );
-    const displaySteps: DisplayStep[] = milestones.map((label, idx) => ({
-      id: `M${idx}`,
-      label,
-      completed: percent >= thresholds[idx],
-    }));
+    const hasAny = (types: string[]) => types.some((t) => completedTypes.has(t));
+    const sawAny = (types: string[]) => types.some((t) => eventfulTypes.has(t));
+
+    const intentVerified = hasAny(["DETERMINING_SWAP", "SWAP_START"]);
+
+    // If the flow does not include SOURCE_* steps, consider it implicitly collected
+    const sourceStepTypes = [
+      "CREATE_PERMIT_EOA_TO_EPHEMERAL",
+      "CREATE_PERMIT_FOR_SOURCE_SWAP",
+      "SOURCE_SWAP_BATCH_TX",
+      "SOURCE_SWAP_HASH",
+    ];
+    const collectedOnSources =
+      (sawAny(sourceStepTypes) &&
+        hasAny(["SOURCE_SWAP_HASH", "SOURCE_SWAP_BATCH_TX"])) ||
+      (!sawAny(sourceStepTypes) &&
+        hasAny([
+          "DESTINATION_SWAP_BATCH_TX",
+          "DESTINATION_SWAP_HASH",
+          "SWAP_COMPLETE",
+        ]));
+
+    const filledOnDestination = hasAny([
+      "DESTINATION_SWAP_HASH",
+      "DESTINATION_SWAP_BATCH_TX",
+      "SWAP_COMPLETE",
+    ]);
+
+    const displaySteps: DisplayStep[] = [
+      { id: "intent", label: "Intent verified", completed: intentVerified },
+      {
+        id: "collected",
+        label: "Collected on sources",
+        completed: collectedOnSources,
+      },
+      {
+        id: "filled",
+        label: "Filled on destination",
+        completed: filledOnDestination,
+      },
+    ];
+
+    const done = displaySteps.every((s) => s.completed) || hasAny(["SWAP_COMPLETE"]);
     const current = displaySteps.findIndex((st) => !st.completed);
-    return { effectiveSteps: displaySteps, currentIndex: current };
-  }, [percent]);
+    return { effectiveSteps: displaySteps, currentIndex: current, allCompleted: done };
+  }, [steps]);
 
   return (
     <div className="w-full flex flex-col items-center">

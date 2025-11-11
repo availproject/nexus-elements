@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useMemo, useRef } from "react";
-import { Input } from "../../../ui/input";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
+import { Input } from "../../ui/input";
 
 interface AmountInputProps {
   amount?: string;
@@ -8,6 +8,7 @@ interface AmountInputProps {
   onCommit?: (value: string) => void;
   disabled?: boolean;
   symbol?: string;
+  hideBalance?: boolean;
 }
 
 const AmountInput: FC<AmountInputProps> = ({
@@ -16,6 +17,7 @@ const AmountInput: FC<AmountInputProps> = ({
   onCommit,
   disabled,
   symbol,
+  hideBalance = false,
 }) => {
   const { unifiedBalance } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -71,7 +73,7 @@ const AmountInput: FC<AmountInputProps> = ({
         aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
         disabled={disabled}
       />
-      {symbol && (
+      {!hideBalance && symbol && (
         <div className="flex items-center justify-end-safe gap-x-4 w-max px-2 border-l border-border">
           <p className="text-sm font-semibold w-max">{tokenBalance}</p>
           <p className="text-sm font-semibold">{symbol}</p>

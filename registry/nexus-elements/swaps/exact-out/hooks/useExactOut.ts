@@ -3,11 +3,11 @@ import {
   NexusSDK,
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
-  type ExactInSwapInput,
   type SwapResult,
   NEXUS_EVENTS,
   type SwapStepType,
   parseUnits,
+  type ExactOutSwapInput,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { useNexus } from "../../../nexus/NexusProvider";
@@ -16,13 +16,6 @@ import {
   TOKEN_IMAGES,
 } from "../../config/destination";
 
-type SourceTokenInfo = {
-  contractAddress: `0x${string}`;
-  decimals: number;
-  logo: string;
-  name: string;
-  symbol: string;
-};
 type DestinationTokenInfo = {
   tokenAddress: `0x${string}`;
   decimals: number;
@@ -32,21 +25,17 @@ type DestinationTokenInfo = {
 };
 
 interface SwapInputs {
-  fromChainID: SUPPORTED_CHAINS_IDS;
-  fromToken?: SourceTokenInfo;
-  fromAmount?: string;
+  toAmount?: string;
   toChainID: SUPPORTED_CHAINS_IDS;
   toToken?: DestinationTokenInfo;
 }
 
-interface UseExactInProps {
+interface UseExactOutProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
   onComplete?: (amount?: string) => void;
   prefill?: {
-    fromChainID?: number;
-    fromToken?: string;
-    fromAmount?: string;
+    toAmount?: string;
     toChainID?: number;
     toToken?: string;
   };
@@ -80,7 +69,7 @@ const EXPECTED_SWAP_STEPS: SwapStepType[] = [
   { type: "SWAP_COMPLETE", typeID: "SWAP_COMPLETE" } as SwapStepType,
 ];
 
-const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
+const useExactOut = ({ nexusSDK, onComplete, prefill }: UseExactOutProps) => {
   const {
     handleNexusError,
     swapIntent,
@@ -90,11 +79,9 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
   } = useNexus();
 
   const [inputs, setInputs] = useState<SwapInputs>({
-    fromChainID:
-      (prefill?.fromChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.BASE,
     toChainID:
       (prefill?.toChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.OPTIMISM,
-    fromAmount: prefill?.fromAmount ?? undefined,
+    toAmount: prefill?.toAmount ?? undefined,
   });
   const [timer, setTimer] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -112,12 +99,10 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
 
   const areInputsValid = useMemo(() => {
     return (
-      inputs.fromChainID !== undefined &&
       inputs.toChainID !== undefined &&
-      inputs.fromToken &&
       inputs.toToken &&
-      inputs.fromAmount &&
-      Number(inputs.fromAmount) > 0
+      inputs.toAmount &&
+      Number(inputs.toAmount) > 0
     );
   }, [inputs]);
 
@@ -136,13 +121,7 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
   };
 
   const handleSwap = async () => {
-    if (
-      !nexusSDK ||
-      !areInputsValid ||
-      !inputs.fromToken ||
-      !inputs.toToken ||
-      !inputs.fromAmount
-    )
+    if (!nexusSDK || !areInputsValid || !inputs.toToken || !inputs.toAmount)
       return;
     setLoading(true);
     setTxError(null);
@@ -154,27 +133,17 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
         step: st,
       }))
     );
-    startTimer();
     try {
-      const amountWei = parseUnits(
-        inputs.fromAmount,
-        inputs.fromToken.decimals
-      );
-      const swapInput: ExactInSwapInput = {
-        from: [
-          {
-            chainId: inputs.fromChainID,
-            amount: amountWei,
-            tokenAddress: inputs.fromToken.contractAddress,
-          },
-        ],
+      const amountWei = parseUnits(inputs.toAmount, inputs.toToken.decimals);
+      const swapInput: ExactOutSwapInput = {
+        toAmount: amountWei,
         toChainId: inputs.toChainID,
         toTokenAddress: inputs.toToken.tokenAddress,
       };
 
       console.log("swapInput", swapInput);
 
-      const result: SwapResult = await nexusSDK.swapWithExactIn(swapInput, {
+      const result: SwapResult = await nexusSDK.swapWithExactOut(swapInput, {
         onEvent: (event) => {
           console.log("swap event", event);
           if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
@@ -243,13 +212,10 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
 
   const reset = () => {
     setInputs({
-      fromChainID:
-        (prefill?.fromChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.BASE,
       toChainID:
         (prefill?.toChainID as SUPPORTED_CHAINS_IDS) ??
         SUPPORTED_CHAINS.OPTIMISM,
-      fromAmount: prefill?.fromAmount ?? undefined,
-      fromToken: undefined,
+      toAmount: prefill?.toAmount ?? undefined,
       toToken: undefined,
     });
     setIsDialogOpen(false);
@@ -269,16 +235,25 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
     };
   }, []);
 
+  // Start/stop timer based on dialog visibility (Accept clicked)
+  useEffect(() => {
+    if (isDialogOpen) {
+      startTimer();
+    } else {
+      stopTimer();
+    }
+  }, [isDialogOpen]);
+
   // Apply token selections when prefilled and data is available
   useEffect(() => {
     // Source token prefill
     if (
-      prefill?.fromToken &&
-      inputs.fromChainID !== undefined &&
-      !inputs.fromToken &&
+      prefill?.toToken &&
+      inputs.toChainID !== undefined &&
+      !inputs.toToken &&
       unifiedBalance
     ) {
-      const targetAddr = prefill.fromToken.toLowerCase();
+      const targetAddr = prefill.toToken.toLowerCase();
       let matchedAsset: (typeof unifiedBalance)[number] | undefined;
       let matchedBreakdown:
         | {
@@ -291,7 +266,7 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
         const candidate = a.breakdown?.find(
           (b) =>
             b.contractAddress?.toLowerCase() === targetAddr &&
-            (b.chain?.id as number | undefined) === inputs.fromChainID
+            (b.chain?.id as number | undefined) === inputs.toChainID
         );
         if (candidate) {
           matchedAsset = a;
@@ -302,8 +277,8 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
       if (matchedAsset && matchedBreakdown) {
         setInputs((prev) => ({
           ...prev,
-          fromToken: {
-            contractAddress: matchedBreakdown.contractAddress,
+          toToken: {
+            tokenAddress: matchedBreakdown.contractAddress,
             decimals: matchedBreakdown.decimals ?? matchedAsset.decimals,
             logo: TOKEN_IMAGES[matchedAsset.symbol] ?? "",
             name: matchedAsset.symbol,
@@ -326,14 +301,7 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
         }));
       }
     }
-  }, [
-    prefill,
-    unifiedBalance,
-    inputs.fromChainID,
-    inputs.toChainID,
-    inputs.fromToken,
-    inputs.toToken,
-  ]);
+  }, [prefill, unifiedBalance, inputs.toChainID, inputs.toToken]);
 
   useEffect(() => {
     // Do not refresh after the user has accepted the intent (dialog open)
@@ -367,4 +335,4 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
   };
 };
 
-export default useExactIn;
+export default useExactOut;

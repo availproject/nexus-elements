@@ -1,13 +1,13 @@
 "use client";
 import React, { FC, useMemo, useState } from "react";
-import { Button } from "../../../ui/button";
+import { Button } from "../../ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../../ui/dialog";
+} from "../../ui/dialog";
 import {
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
