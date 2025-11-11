@@ -40,6 +40,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
           "target": "components/common/hooks/useStableCallback.ts",
           "type": "registry:component"
@@ -380,6 +385,11 @@
         {
           "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
           "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
           "type": "registry:component"
         },
         {

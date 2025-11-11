@@ -10,7 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import { SHORT_CHAIN_NAME } from "../util/constant";
+import { SHORT_CHAIN_NAME } from "../../common/utils/constant";
 import { useNexus } from "../../nexus/NexusProvider";
 
 const RANGE_OPTIONS = [
