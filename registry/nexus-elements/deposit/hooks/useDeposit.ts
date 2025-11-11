@@ -16,9 +16,13 @@ import {
   NEXUS_EVENTS,
   type BridgeStepType,
 } from "@avail-project/nexus-core";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useReducer } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
+import { useStopwatch } from "../../common/hooks/useStopwatch";
+import { usePolling } from "../../common/hooks/usePolling";
+import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
+import type { TransactionStatus } from "../../common/tx/types";
 
 interface DepositInputs {
   chain: SUPPORTED_CHAINS_IDS;
@@ -70,24 +74,54 @@ const useDeposit = ({
     [chainOptions]
   );
 
-  const [inputs, setInputs] = useState<DepositInputs>({
-    chain,
-    amount: undefined,
-    selectedSources: allSourceIds,
-  });
+  interface DepositState {
+    inputs: DepositInputs;
+    status: TransactionStatus;
+  }
+  type Action =
+    | { type: "setInputs"; payload: Partial<DepositInputs> }
+    | { type: "resetInputs" }
+    | { type: "setStatus"; payload: TransactionStatus };
+
+  const initialState: DepositState = {
+    inputs: {
+      chain,
+      amount: undefined,
+      selectedSources: allSourceIds,
+    },
+    status: "idle",
+  };
+
+  function reducer(state: DepositState, action: Action): DepositState {
+    switch (action.type) {
+      case "setInputs":
+        return { ...state, inputs: { ...state.inputs, ...action.payload } };
+      case "resetInputs":
+        return {
+          ...state,
+          inputs: { chain, amount: undefined, selectedSources: allSourceIds },
+        };
+      case "setStatus":
+        return { ...state, status: action.payload };
+      default:
+        return state;
+    }
+  }
+
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const inputs = state.inputs;
+  const setInputs = (next: Partial<DepositInputs>) => {
+    dispatch({ type: "setInputs", payload: next });
+  };
 
   useEffect(() => {
-    setInputs((prev) => ({ ...prev, selectedSources: allSourceIds }));
+    dispatch({ type: "setInputs", payload: { selectedSources: allSourceIds } });
   }, [allSourceIds]);
 
-  const [timer, setTimer] = useState(0);
-  const [startTxn, setStartTxn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [simulation, setSimulation] =
     useState<BridgeAndExecuteSimulationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
@@ -95,22 +129,21 @@ const useDeposit = ({
   const [lastResult, setLastResult] = useState<BridgeAndExecuteResult | null>(
     null
   );
-  const [steps, setSteps] = useState<
-    Array<{ id: number; completed: boolean; step: BridgeStepType }>
-  >([]);
+  const {
+    steps,
+    onStepsList,
+    onStepComplete,
+    reset: resetSteps,
+  } = useTransactionSteps<BridgeStepType>();
 
   const simulationRequestIdRef = useRef(0);
   const activeSimulationIdRef = useRef<number | null>(null);
 
-  useMemo(() => {
-    const hasChain = inputs?.chain !== undefined && inputs?.chain !== null;
-    const hasAmount = Boolean(inputs?.amount) && Number(inputs?.amount) > 0;
-    return hasChain && hasAmount;
-  }, [inputs]);
-
   const filteredUnifiedBalance = useMemo(() => {
     return unifiedBalance?.find((bal) => bal?.symbol === token);
   }, [unifiedBalance, token]);
+
+  const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
 
   const handleTransaction = async () => {
     if (!inputs?.amount || !inputs?.chain) return;
@@ -140,46 +173,10 @@ const useDeposit = ({
           onEvent: (event) => {
             if (event.name === NEXUS_EVENTS.STEPS_LIST) {
               const list = Array.isArray(event.args) ? event.args : [];
-              setSteps((prev) => {
-                const completedTypes = new Set<string>();
-                for (const prevStep of prev) {
-                  if (prevStep.completed) {
-                    completedTypes.add(prevStep.step?.typeID ?? "");
-                  }
-                }
-                const nextSteps: Array<{
-                  id: number;
-                  completed: boolean;
-                  step: BridgeStepType;
-                }> = [];
-                for (let index = 0; index < list.length; index++) {
-                  const step = list[index];
-                  nextSteps.push({
-                    id: index,
-                    completed: completedTypes.has(step?.typeID ?? ""),
-                    step,
-                  });
-                }
-                return nextSteps;
-              });
+              onStepsList(list);
             }
             if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
-              const step = event.args;
-              setSteps((prev) => {
-                const updated: Array<{
-                  id: number;
-                  completed: boolean;
-                  step: BridgeStepType;
-                }> = [];
-                for (const s of prev) {
-                  if (s?.step?.typeID === step?.typeID) {
-                    updated.push({ ...s, completed: true });
-                  } else {
-                    updated.push(s);
-                  }
-                }
-                return updated;
-              });
+              onStepComplete(event.args);
             }
           },
         }
@@ -199,10 +196,6 @@ const useDeposit = ({
       setIsDialogOpen(false);
     } finally {
       resetState();
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
     }
   };
 
@@ -280,10 +273,7 @@ const useDeposit = ({
   };
 
   const onSuccess = async () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    stopwatch.stop();
     await fetchUnifiedBalance();
   };
 
@@ -295,16 +285,14 @@ const useDeposit = ({
       selectedSources: allSourceIds,
     });
     setLoading(false);
-    setStartTxn(false);
     setRefreshing(false);
     setSimulation(null);
     setIntent(null);
     activeSimulationIdRef.current = null;
     setSimulating(false);
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
+    resetSteps();
+    stopwatch.stop();
+    stopwatch.reset();
   };
 
   const reset = () => {
@@ -313,16 +301,10 @@ const useDeposit = ({
   };
 
   const startTransaction = () => {
-    setTimer(0);
-    setStartTxn(true);
     setIsDialogOpen(true);
     setTxError(null);
     setAutoAllow(true);
     void handleTransaction();
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
   };
 
   useEffect(() => {
@@ -333,49 +315,23 @@ const useDeposit = ({
   }, [autoAllow, intent]);
 
   useEffect(() => {
-    if (startTxn) {
-      timerRef.current = setInterval(() => setTimer((prev) => prev + 0.1), 100);
-    }
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [startTxn]);
-
-  useEffect(() => {
     if (!isDialogOpen) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setStartTxn(false);
+      stopwatch.stop();
+      stopwatch.reset();
       setLastResult(null);
     }
-  }, [isDialogOpen]);
+  }, [isDialogOpen, stopwatch]);
 
-  useEffect(() => {
-    if (simulation?.bridgeSimulation?.intent && !isDialogOpen) {
-      refreshIntervalRef.current ??= setInterval(refreshSimulation, 15000);
-    } else if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-      }
-    };
-  }, [simulation, isDialogOpen]);
+  usePolling(
+    Boolean(simulation?.bridgeSimulation?.intent) && !isDialogOpen,
+    async () => {
+      await refreshSimulation();
+    },
+    15000
+  );
 
   const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setStartTxn(false);
+    stopwatch.stop();
   };
 
   return {
@@ -388,7 +344,7 @@ const useDeposit = ({
     setIsDialogOpen,
     txError,
     setTxError,
-    timer,
+    timer: stopwatch.seconds,
     filteredUnifiedBalance,
     simulation,
     lastResult,
@@ -404,10 +360,6 @@ const useDeposit = ({
       setSimulating(false);
       setRefreshing(false);
       setSimulation(null);
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-      }
     },
   };
 };

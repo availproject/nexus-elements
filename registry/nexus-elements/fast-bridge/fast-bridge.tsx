@@ -33,11 +33,15 @@ interface FastBridgeProps {
     recipient?: Address;
   };
   onComplete?: () => void;
+  onStart?: () => void;
+  onError?: (message: string) => void;
 }
 
 const FastBridge: FC<FastBridgeProps> = ({
   connectedAddress,
   onComplete,
+  onStart,
+  onError,
   prefill,
 }) => {
   const {
@@ -78,6 +82,8 @@ const FastBridge: FC<FastBridgeProps> = ({
     unifiedBalance,
     setAllowance,
     onComplete,
+    onStart,
+    onError,
   });
 
   const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);

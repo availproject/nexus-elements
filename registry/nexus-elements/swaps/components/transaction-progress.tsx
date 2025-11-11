@@ -115,7 +115,8 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       },
     ];
 
-    const done = displaySteps.every((s) => s.completed) || hasAny(["SWAP_COMPLETE"]);
+    // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
+    const done = hasAny(["SWAP_COMPLETE"]);
     const current = displaySteps.findIndex((st) => !st.completed);
     return { effectiveSteps: displaySteps, currentIndex: current, allCompleted: done };
   }, [steps]);

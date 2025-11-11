@@ -27,6 +27,7 @@ interface NexusContextType {
   deinitializeNexus: () => Promise<void>;
   attachEventHooks: () => void;
   intent: OnIntentHookData | null;
+  exchangeRate: Record<string, number> | null;
   swapIntent: OnSwapIntentHookData | null;
   setSwapIntent: React.Dispatch<
     React.SetStateAction<OnSwapIntentHookData | null>
@@ -48,6 +49,7 @@ interface NexusContextType {
     context?: string;
     details?: Record<string, unknown>;
   };
+  getFiatValue: (amount: string | number | bigint, token: string) => string;
 }
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
@@ -73,6 +75,10 @@ const NexusProvider = ({
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
     null
   );
+  const [exchangeRate, setExchangeRate] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [intent, setIntent] = useState<OnIntentHookData | null>(null);
   const [swapIntent, setSwapIntent] = useState<
@@ -99,6 +105,23 @@ const NexusProvider = ({
       const unifiedBalance = await sdk?.getUnifiedBalances(true);
       console.log("unifiedBalance", unifiedBalance);
       setUnifiedBalance(unifiedBalance);
+      // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
+      // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
+      const rates = await sdk?.utils?.getCoinbaseRates();
+      const usdPerUnit: Record<string, number> = {};
+
+      for (const [symbol, value] of Object.entries(rates ?? {})) {
+        const unitsPerUsd = Number.parseFloat(String(value));
+        if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
+          usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
+        }
+      }
+
+      for (const token of ["ETH", "USDC", "USDT"]) {
+        usdPerUnit[token] ??= 1;
+      }
+      console.log("exchangeRate (USD per unit)", usdPerUnit);
+      setExchangeRate(usdPerUnit);
       initChainsAndTokens();
     } catch (error) {
       console.error("Error initializing Nexus:", error);
@@ -155,6 +178,22 @@ const NexusProvider = ({
     }
   };
 
+  function getFiatValue(amount: string | number | bigint, token: string) {
+    const key = (token || "").toUpperCase();
+    const rate = Number.parseFloat(String(exchangeRate?.[key] ?? "0"));
+    const amountNum =
+      typeof amount === "number"
+        ? amount
+        : Number.parseFloat(
+            (typeof amount === "bigint" ? amount.toString() : amount) || "0"
+          );
+
+    const isValid = Number.isFinite(amountNum) && Number.isFinite(rate);
+    const approx = isValid ? rate * amountNum : 0;
+
+    return approx.toFixed(3);
+  }
+
   const handleNexusError: NexusContextType["handleNexusError"] = (err) => {
     if (err instanceof NexusError) {
       const { code, message, data } = err;
@@ -188,6 +227,8 @@ const NexusProvider = ({
       swapIntent,
       setSwapIntent,
       handleNexusError,
+      exchangeRate,
+      getFiatValue,
     }),
     [
       nexusSDK,
@@ -208,6 +249,8 @@ const NexusProvider = ({
       swapIntent,
       setSwapIntent,
       handleNexusError,
+      exchangeRate,
+      getFiatValue,
     ]
   );
   return (

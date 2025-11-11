@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   NexusSDK,
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
   type ExactInSwapInput,
-  type SwapResult,
   NEXUS_EVENTS,
   type SwapStepType,
   parseUnits,
@@ -12,9 +11,12 @@ import {
 import { type Address } from "viem";
 import { useNexus } from "../../../nexus/NexusProvider";
 import {
-  DESTINATION_SWAP_TOKENS,
-  TOKEN_IMAGES,
-} from "../../config/destination";
+  resolveDestinationFromPrefill,
+  resolveSourceFromPrefill,
+} from "../../utils/prefill";
+import { useStopwatch } from "../../../common/hooks/useStopwatch";
+import { useTransactionSteps } from "../../../common/tx/useTransactionSteps";
+import { SWAP_EXPECTED_STEPS } from "../../../common/tx/steps";
 
 type SourceTokenInfo = {
   contractAddress: `0x${string}`;
@@ -43,6 +45,8 @@ interface UseExactInProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
   onComplete?: (amount?: string) => void;
+  onStart?: () => void;
+  onError?: (message: string) => void;
   prefill?: {
     fromChainID?: number;
     fromToken?: string;
@@ -52,35 +56,13 @@ interface UseExactInProps {
   };
 }
 
-const EXPECTED_SWAP_STEPS: SwapStepType[] = [
-  { type: "SWAP_START", typeID: "SWAP_START" } as SwapStepType,
-  { type: "DETERMINING_SWAP", typeID: "DETERMINING_SWAP" } as SwapStepType,
-  {
-    type: "CREATE_PERMIT_FOR_SOURCE_SWAP",
-    typeID:
-      "CREATE_PERMIT_FOR_SOURCE_SWAP" as unknown as SwapStepType["typeID"],
-  } as SwapStepType,
-  {
-    type: "SOURCE_SWAP_BATCH_TX",
-    typeID: "SOURCE_SWAP_BATCH_TX",
-  } as SwapStepType,
-  {
-    type: "SOURCE_SWAP_HASH",
-    typeID: "SOURCE_SWAP_HASH" as unknown as SwapStepType["typeID"],
-  } as SwapStepType,
-  { type: "RFF_ID", typeID: "RFF_ID" } as SwapStepType,
-  {
-    type: "DESTINATION_SWAP_BATCH_TX",
-    typeID: "DESTINATION_SWAP_BATCH_TX",
-  } as SwapStepType,
-  {
-    type: "DESTINATION_SWAP_HASH",
-    typeID: "DESTINATION_SWAP_HASH" as unknown as SwapStepType["typeID"],
-  } as SwapStepType,
-  { type: "SWAP_COMPLETE", typeID: "SWAP_COMPLETE" } as SwapStepType,
-];
-
-const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
+const useExactIn = ({
+  nexusSDK,
+  onComplete,
+  onStart,
+  onError,
+  prefill,
+}: UseExactInProps) => {
   const {
     handleNexusError,
     swapIntent,
@@ -96,19 +78,29 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
       (prefill?.toChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.OPTIMISM,
     fromAmount: prefill?.fromAmount ?? undefined,
   });
-  const [timer, setTimer] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
-  const [explorerUrl, setExplorerUrl] = useState<string>("");
   const [sourceExplorerUrl, setSourceExplorerUrl] = useState<string>("");
   const [destinationExplorerUrl, setDestinationExplorerUrl] =
     useState<string>("");
-  const [steps, setSteps] = useState<
-    Array<{ id: number; completed: boolean; step: SwapStepType }>
-  >([]);
-
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const {
+    steps,
+    seed,
+    onStepComplete,
+    reset: resetSteps,
+  } = useTransactionSteps<SwapStepType>();
+  const swapCompleted = useMemo(
+    () =>
+      steps.some(
+        (s) => (s.step as any)?.type === "SWAP_COMPLETE" && s.completed
+      ),
+    [steps]
+  );
+  const stopwatch = useStopwatch({
+    running: isDialogOpen && !swapCompleted,
+    intervalMs: 100,
+  });
 
   const areInputsValid = useMemo(() => {
     return (
@@ -121,20 +113,6 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
     );
   }, [inputs]);
 
-  const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  const startTimer = () => {
-    if (!timerRef.current) {
-      setTimer(0);
-      timerRef.current = setInterval(() => setTimer((prev) => prev + 0.1), 100);
-    }
-  };
-
   const handleSwap = async () => {
     if (
       !nexusSDK ||
@@ -144,18 +122,11 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
       !inputs.fromAmount
     )
       return;
-    setLoading(true);
-    setTxError(null);
-    // Seed steps with expected swap steps, all incomplete initially
-    setSteps(
-      EXPECTED_SWAP_STEPS.map((st, idx) => ({
-        id: idx,
-        completed: false,
-        step: st,
-      }))
-    );
-    startTimer();
     try {
+      onStart?.();
+      setLoading(true);
+      setTxError(null);
+      seed(SWAP_EXPECTED_STEPS);
       const amountWei = parseUnits(
         inputs.fromAmount,
         inputs.fromToken.decimals
@@ -171,59 +142,23 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
         toChainId: inputs.toChainID,
         toTokenAddress: inputs.toToken.tokenAddress,
       };
-
-      console.log("swapInput", swapInput);
-
-      const result: SwapResult = await nexusSDK.swapWithExactIn(swapInput, {
+      const result = await nexusSDK.swapWithExactIn(swapInput, {
         onEvent: (event) => {
-          console.log("swap event", event);
           if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
             const step = event.args as SwapStepType & {
               explorerURL?: string;
               completed?: boolean;
             };
-
-            // Capture explorer URLs for source and destination txs
             if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
               setSourceExplorerUrl(step.explorerURL);
             }
             if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
               setDestinationExplorerUrl(step.explorerURL);
             }
-
-            setSteps((prev) => {
-              let existingIndex = -1;
-              for (let i = 0; i < prev.length; i++) {
-                const s = prev[i];
-                if (s?.step?.type === step?.type) {
-                  existingIndex = i;
-                  break;
-                }
-              }
-              if (existingIndex !== -1) {
-                const updated = [...prev];
-                const wasCompleted = updated[existingIndex].completed;
-                const nowCompleted = step.completed === true;
-                updated[existingIndex] = {
-                  ...updated[existingIndex],
-                  completed: wasCompleted || nowCompleted,
-                  step: { ...updated[existingIndex].step, ...step },
-                };
-                return updated;
-              }
-              return [
-                ...prev,
-                {
-                  id: prev.length,
-                  completed: step.completed === true,
-                  step: step as SwapStepType,
-                },
-              ];
-            });
+            onStepComplete(step);
           }
         },
       });
-
       if (!result?.success) {
         throw new Error(result?.error || "Swap failed");
       }
@@ -233,15 +168,16 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
     } catch (error) {
       const { message } = handleNexusError(error);
       setTxError(message);
+      onError?.(message);
       setSwapIntent(null);
       setIsDialogOpen(false);
     } finally {
       setLoading(false);
-      stopTimer();
+      stopwatch.stop();
     }
   };
 
-  const reset = () => {
+  const resetLocal = () => {
     setInputs({
       fromChainID:
         (prefill?.fromChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.BASE,
@@ -254,76 +190,36 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
     });
     setIsDialogOpen(false);
     setTxError(null);
-    setSteps([]);
-    setExplorerUrl("");
+    resetSteps();
     setSwapIntent(null);
     setSourceExplorerUrl("");
     setDestinationExplorerUrl("");
     setLoading(false);
-    stopTimer();
+    stopwatch.stop();
   };
 
   useEffect(() => {
-    return () => {
-      stopTimer();
-    };
-  }, []);
-
-  // Apply token selections when prefilled and data is available
-  useEffect(() => {
-    // Source token prefill
     if (
       prefill?.fromToken &&
       inputs.fromChainID !== undefined &&
-      !inputs.fromToken &&
-      unifiedBalance
+      !inputs.fromToken
     ) {
-      const targetAddr = prefill.fromToken.toLowerCase();
-      let matchedAsset: (typeof unifiedBalance)[number] | undefined;
-      let matchedBreakdown:
-        | {
-            chain?: { id?: number };
-            contractAddress: `0x${string}`;
-            decimals?: number;
-          }
-        | undefined;
-      for (const a of unifiedBalance) {
-        const candidate = a.breakdown?.find(
-          (b) =>
-            b.contractAddress?.toLowerCase() === targetAddr &&
-            (b.chain?.id as number | undefined) === inputs.fromChainID
-        );
-        if (candidate) {
-          matchedAsset = a;
-          matchedBreakdown = candidate as any;
-          break;
-        }
-      }
-      if (matchedAsset && matchedBreakdown) {
-        setInputs((prev) => ({
-          ...prev,
-          fromToken: {
-            contractAddress: matchedBreakdown.contractAddress,
-            decimals: matchedBreakdown.decimals ?? matchedAsset.decimals,
-            logo: TOKEN_IMAGES[matchedAsset.symbol] ?? "",
-            name: matchedAsset.symbol,
-            symbol: matchedAsset.symbol,
-          },
-        }));
+      const src = resolveSourceFromPrefill(
+        unifiedBalance,
+        inputs.fromChainID,
+        prefill.fromToken
+      );
+      if (src) {
+        setInputs((prev) => ({ ...prev, fromToken: src }));
       }
     }
-    // Destination token prefill
     if (prefill?.toToken && inputs.toChainID !== undefined && !inputs.toToken) {
-      const list = DESTINATION_SWAP_TOKENS.get(inputs.toChainID);
-      const targetAddr = prefill.toToken.toLowerCase();
-      const tok = list?.find(
-        (t) => t.tokenAddress?.toLowerCase() === targetAddr
+      const dst = resolveDestinationFromPrefill(
+        inputs.toChainID,
+        prefill.toToken
       );
-      if (tok) {
-        setInputs((prev) => ({
-          ...prev,
-          toToken: tok,
-        }));
+      if (dst) {
+        setInputs((prev) => ({ ...prev, toToken: dst }));
       }
     }
   }, [
@@ -336,7 +232,6 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
   ]);
 
   useEffect(() => {
-    // Do not refresh after the user has accepted the intent (dialog open)
     if (!swapIntent || isDialogOpen) return;
     const id = setInterval(async () => {
       try {
@@ -357,13 +252,12 @@ const useExactIn = ({ nexusSDK, onComplete, prefill }: UseExactInProps) => {
     setIsDialogOpen,
     txError,
     setTxError,
-    timer,
+    timer: stopwatch.seconds,
     steps,
-    explorerUrl,
     sourceExplorerUrl,
     destinationExplorerUrl,
     handleSwap,
-    reset,
+    reset: resetLocal,
   };
 };
 

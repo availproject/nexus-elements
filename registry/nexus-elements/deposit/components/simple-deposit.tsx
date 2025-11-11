@@ -19,11 +19,11 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
+import { formatUnits } from "viem";
 import {
   CHAIN_METADATA,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
-import { formatUnits } from "viem";
 
 interface SimpleDepositProps extends BaseDepositProps {
   destinationLabel?: string;
@@ -44,6 +44,7 @@ const SimpleDeposit = ({
     unifiedBalance,
     allowance,
     setAllowance,
+    getFiatValue,
   } = useNexus();
 
   const {
@@ -103,24 +104,80 @@ const SimpleDeposit = ({
     return "Deposit";
   }, [isDialogOpen, refreshing, simulating]);
 
-  const renderTotalFeeBreakdown = useMemo(() => {
-    if (simulation?.bridgeSimulation) {
-      return `${
-        simulation.bridgeSimulation?.intent?.fees?.total ?? "0"
-      } ${token} + ${
-        formatUnits(
-          simulation.executeSimulation.gasFee,
-          CHAIN_METADATA[chain].nativeCurrency.decimals
-        ) ?? "0"
-      } ${CHAIN_METADATA[chain].nativeCurrency.symbol}`;
-    }
-    return ` ${
-      formatUnits(
+  const renderTotalFeeBreakdown: {
+    totalGasFee: number;
+    bridgeUsd?: string;
+    bridgeFormatted?: string;
+    gasUsd: string;
+    gasFormatted: string;
+  } = useMemo(() => {
+    if (!nexusSDK || !simulation)
+      return {
+        totalGasFee: 0,
+        bridgeUsd: "0",
+        bridgeFormatted: "0",
+        gasUsd: "0",
+        gasFormatted: "0",
+      };
+    const native = CHAIN_METADATA[chain]?.nativeCurrency;
+    const nativeSymbol = native.symbol;
+    const nativeDecimals = native.decimals;
+
+    const gasFormatted =
+      nexusSDK?.utils?.formatTokenBalance(
         simulation?.executeSimulation?.gasFee ?? BigInt(0),
-        CHAIN_METADATA[chain].nativeCurrency.decimals
-      ) ?? "0"
-    } ${CHAIN_METADATA[chain].nativeCurrency.symbol}`;
-  }, [simulation, chain, token]);
+        {
+          symbol: nativeSymbol,
+          decimals: nativeDecimals,
+        }
+      ) ?? "0";
+    const gasUnits = formatUnits(
+      simulation?.executeSimulation?.gasFee ?? BigInt(0),
+      nativeDecimals
+    );
+    const gasUsd = getFiatValue(Number.parseFloat(gasUnits), nativeSymbol);
+
+    if (simulation?.bridgeSimulation) {
+      const tokenDecimals =
+        simulation?.bridgeSimulation?.intent?.token?.decimals;
+      const bridgeFormatted =
+        nexusSDK?.utils?.formatTokenBalance(
+          simulation?.bridgeSimulation?.intent?.fees?.total ?? "0",
+          {
+            symbol: token,
+            decimals: tokenDecimals,
+          }
+        ) ?? "0";
+      const bridgeUsd = getFiatValue(
+        Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total),
+        token as string
+      );
+
+      console.log("bridgeFormatted", bridgeFormatted);
+      console.log("bridgeUsd", bridgeUsd);
+      console.log("gasFormatted", gasFormatted);
+      console.log("gasUsd", gasUsd);
+
+      const totalGasFee =
+        Number.parseFloat(bridgeUsd) + Number.parseFloat(gasUsd);
+
+      console.log("totalGasFee", totalGasFee);
+
+      return {
+        totalGasFee,
+        bridgeUsd,
+        bridgeFormatted,
+        gasUsd,
+        gasFormatted,
+      };
+    }
+
+    return {
+      totalGasFee: Number.parseFloat(gasFormatted),
+      gasUsd,
+      gasFormatted,
+    };
+  }, [nexusSDK, simulation, chain, token, getFiatValue]);
 
   return (
     <div className="flex flex-col items-center w-full gap-y-3 rounded-lg">
@@ -202,16 +259,9 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={renderTotalFeeBreakdown}
-            bridge={`${
-              simulation.bridgeSimulation?.intent?.fees?.total ?? "0"
-            } ${token}`}
-            execute={`${
-              formatUnits(
-                simulation.executeSimulation.gasFee,
-                CHAIN_METADATA[chain].nativeCurrency.decimals
-              ) ?? "0"
-            } ${CHAIN_METADATA[chain].nativeCurrency.symbol}`}
+            total={`$${renderTotalFeeBreakdown?.totalGasFee} USD`}
+            bridge={renderTotalFeeBreakdown?.bridgeFormatted ?? ""}
+            execute={renderTotalFeeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}
           />
           {!simulation.bridgeSimulation && (
