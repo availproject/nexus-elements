@@ -19,6 +19,8 @@ import useExactOut from "./hooks/useExactOut";
 
 interface SwapExactOutProps {
   onComplete?: (amount?: string) => void;
+  onStart?: () => void;
+  onError?: (message: string) => void;
   prefill?: {
     toChainID?: number;
     toToken?: string;
@@ -26,7 +28,12 @@ interface SwapExactOutProps {
   };
 }
 
-const SwapExactOut: FC<SwapExactOutProps> = ({ onComplete, prefill }) => {
+const SwapExactOut: FC<SwapExactOutProps> = ({
+  onComplete,
+  onStart,
+  onError,
+  prefill,
+}) => {
   const { nexusSDK, swapIntent, setSwapIntent } = useNexus();
   const {
     inputs,
@@ -41,7 +48,7 @@ const SwapExactOut: FC<SwapExactOutProps> = ({ onComplete, prefill }) => {
     destinationExplorerUrl,
     handleSwap,
     reset,
-  } = useExactOut({ nexusSDK, onComplete, prefill });
+  } = useExactOut({ nexusSDK, onComplete, onStart, onError, prefill });
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full">

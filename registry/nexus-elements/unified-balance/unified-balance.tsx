@@ -1,5 +1,5 @@
 "use client";
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { useNexus } from "../nexus/NexusProvider";
 import { Label } from "../ui/label";
 import { DollarSign } from "lucide-react";
@@ -13,12 +13,7 @@ import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
 
 const UnifiedBalance = ({ className }: { className?: string }) => {
-  const { unifiedBalance } = useNexus();
-
-  const formatBalance = useCallback((balance: string, decimals: number) => {
-    const num = Number.parseFloat(balance);
-    return num.toFixed(Math.min(6, decimals));
-  }, []);
+  const { unifiedBalance, nexusSDK } = useNexus();
 
   const totalFiat = useMemo(() => {
     if (!unifiedBalance) return "0.00";
@@ -95,7 +90,10 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
                   <div className="flex items-center gap-3">
                     <div className="flex flex-col items-end">
                       <p className="text-base font-medium">
-                        {formatBalance(token.balance, 6)}
+                        {nexusSDK?.utils?.formatTokenBalance(token.balance, {
+                          symbol: token.symbol,
+                          decimals: token.decimals,
+                        })}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         ${token.balanceInFiat.toFixed(2)}
@@ -126,7 +124,13 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">
-                            {formatBalance(chain.balance, chain.decimals)}
+                            {nexusSDK?.utils?.formatTokenBalance(
+                              chain.balance,
+                              {
+                                symbol: token.symbol,
+                                decimals: token.decimals,
+                              }
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             ${chain.balanceInFiat.toFixed(2)}

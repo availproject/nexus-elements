@@ -37,6 +37,16 @@ pnpm dlx shadcn@latest add http://localhost:3000/r/fast-bridge.json
 - The CLI will install the necessary UI primitives and utilities listed as `registryDependencies`.
 - If you prefer npm or yarn, replace the `pnpm dlx` command with the equivalent for your package manager.
 
+## API updates (performance-focused, no new deps)
+
+- Swaps (`Swaps`, `SwapExactIn`, `SwapExactOut`) and Fast Bridge now support:
+  - `onStart?(): void` — called when a transaction begins.
+  - `onError?(message: string): void` — called when a transaction fails.
+  - `onComplete?(amount?: string): void` — called on success (existing).
+- Internals now use reusable hooks to minimize `useEffect` and `useState`:
+  - `useStopwatch`, `useInterval`, `usePolling`, `useDebounced*`, and a shared `useTransactionSteps`.
+- Behavior is unchanged; no external packages were added.
+
 ## References
 
 - shadcn Registry Getting Started: https://ui.shadcn.com/docs/registry/getting-started.md

@@ -30,7 +30,9 @@ const DepositFeeBreakdown = ({
             {isLoading ? (
               <Skeleton className="h-5 w-24" />
             ) : (
-              <p className="font-semibold text-xs min-w-max">{total}</p>
+              <p className="font-semibold text-base min-w-max text-center">
+                {total}
+              </p>
             )}
             <AccordionTrigger
               containerClassName="w-fit"

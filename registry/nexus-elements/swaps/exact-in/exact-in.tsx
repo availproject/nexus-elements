@@ -21,6 +21,8 @@ import TransactionProgress from "../components/transaction-progress";
 
 interface SwapExactInProps {
   onComplete?: (amount?: string) => void;
+  onStart?: () => void;
+  onError?: (message: string) => void;
   prefill?: {
     fromChainID?: number;
     fromToken?: string;
@@ -30,7 +32,12 @@ interface SwapExactInProps {
   };
 }
 
-const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
+const SwapExactIn: FC<SwapExactInProps> = ({
+  onComplete,
+  onStart,
+  onError,
+  prefill,
+}) => {
   const { nexusSDK, swapIntent, setSwapIntent } = useNexus();
   const {
     inputs,
@@ -45,7 +52,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({ onComplete, prefill }) => {
     destinationExplorerUrl,
     handleSwap,
     reset,
-  } = useExactIn({ nexusSDK, onComplete, prefill });
+  } = useExactIn({ nexusSDK, onComplete, onStart, onError, prefill });
 
   return (
     <Card className="w-full max-w-xl">
