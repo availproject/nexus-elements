@@ -1,0 +1,40 @@
+---
+title: Fast Bridge
+description: Bridge assets across chains with source breakdown, fee details, progress steps, and allowance flow. Intent-based and optimized for UX.
+component: true
+links:
+  doc: https://elements.nexus.availproject.org/components/fast-bridge
+---
+
+<ComponentPreview
+  name="fast-bridge"
+  description="An intent-based fast bridge with allowance flow and progress."
+  align="center"
+/>
+
+## Installation
+
+<InstallPanel registryItemName="fast-bridge" />
+
+## Usage
+
+<CodeSnippet
+  code={`<FastBridge
+    connectedAddress={address}
+    onComplete={() => completeCurrent()}
+    prefill={{
+      token: "USDC",
+      chainId: SUPPORTED_CHAINS.BASE,
+    }}
+    onError={(error) => {
+      console.error(error);
+    }}
+    onStart={() => {
+      console.log("start");
+    }}
+/>`}
+  lang="tsx"
+  filename="app/experience/page.tsx"
+  variant="usage"
+  className="mt-4"
+/>

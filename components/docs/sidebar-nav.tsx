@@ -41,22 +41,22 @@ const NAV_ITEMS = [
       {
         id: "fast-bridge",
         label: "Fast Bridge",
-        href: "/components/fast-bridge",
+        href: "/docs/components/fast-bridge",
       },
       {
         id: "deposit",
         label: "Deposit",
-        href: "/components/deposit",
+        href: "/docs/components/deposit",
       },
       {
         id: "swaps",
         label: "Swaps",
-        href: "/components/swaps",
+        href: "/docs/components/swaps",
       },
       {
         id: "unified-balance",
         label: "Unified Balance",
-        href: "/components/unified-balance",
+        href: "/docs/components/unified-balance",
       },
     ],
   },

@@ -9,15 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/registry/nexus-elements/ui/card";
-import { Separator } from "@/registry/nexus-elements/ui/separator";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/registry/nexus-elements/ui/tabs";
-import Topbar from "@/components/docs/top-bar";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/registry/nexus-elements/ui/tabs";
 
 export default function Home() {
   return (
-    <>
-      <Topbar />
-      <main className="p-6 lg:p-8 max-w-7xl mx-auto space-y-12">
+    <main className="p-6 lg:p-8 max-w-7xl mx-auto space-y-12">
       {/* Hero Section */}
       <section className="flex flex-col gap-6 py-8">
         <div className="flex flex-col gap-4">
@@ -25,7 +26,9 @@ export default function Home() {
             The Foundation for your Design System
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            A set of beautifully designed components that you can customize, extend, and build on. Start here then make it your own. Open Source. Open Code.
+            A set of beautifully designed components that you can customize,
+            extend, and build on. Start here then make it your own. Open Source.
+            Open Code.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -33,7 +36,9 @@ export default function Home() {
             <Button size="lg">Get Started</Button>
           </Link>
           <Link href="/#components">
-            <Button size="lg" variant="outline">View Components</Button>
+            <Button size="lg" variant="outline">
+              View Components
+            </Button>
           </Link>
         </div>
       </section>
@@ -56,9 +61,9 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Bridge assets across chains with source breakdown, fee details,
-                    progress steps, and allowance flow. Intent-based and optimized for
-                    UX.
+                    Bridge assets across chains with source breakdown, fee
+                    details, progress steps, and allowance flow. Intent-based
+                    and optimized for UX.
                   </p>
                 </CardContent>
                 <CardFooter>
@@ -76,9 +81,9 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Deposit funds from anywhere in one flow. Simulates costs, supports
-                    execute only paths, and shows total/execute/bridge fees with clear
-                    confirmations.
+                    Deposit funds from anywhere in one flow. Simulates costs,
+                    supports execute only paths, and shows total/execute/bridge
+                    fees with clear confirmations.
                   </p>
                 </CardContent>
                 <CardFooter>
@@ -97,8 +102,8 @@ export default function Home() {
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
                     Fetch and display token balances across supported chains,
-                    normalized to USD, and ready for product surfaces. Compatible with
-                    any design system.
+                    normalized to USD, and ready for product surfaces.
+                    Compatible with any design system.
                   </p>
                 </CardContent>
                 <CardFooter>
@@ -112,16 +117,22 @@ export default function Home() {
             </div>
           </TabsContent>
           <TabsContent value="dashboard" className="mt-6">
-            <p className="text-muted-foreground">Dashboard examples coming soon...</p>
+            <p className="text-muted-foreground">
+              Dashboard examples coming soon...
+            </p>
           </TabsContent>
           <TabsContent value="tasks" className="mt-6">
-            <p className="text-muted-foreground">Tasks examples coming soon...</p>
+            <p className="text-muted-foreground">
+              Tasks examples coming soon...
+            </p>
           </TabsContent>
           <TabsContent value="playground" className="mt-6">
             <p className="text-muted-foreground">Playground coming soon...</p>
           </TabsContent>
           <TabsContent value="authentication" className="mt-6">
-            <p className="text-muted-foreground">Authentication examples coming soon...</p>
+            <p className="text-muted-foreground">
+              Authentication examples coming soon...
+            </p>
           </TabsContent>
         </Tabs>
       </section>
@@ -161,7 +172,8 @@ export default function Home() {
       <section id="components" className="space-y-4">
         <h2 className="text-2xl font-semibold">Components</h2>
         <p className="text-muted-foreground">
-          Browse our collection of production-ready components powered by Avail Nexus.
+          Browse our collection of production-ready components powered by Avail
+          Nexus.
         </p>
         <div className="grid md:grid-cols-3 gap-4 mt-6">
           <Card>
@@ -171,8 +183,8 @@ export default function Home() {
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Bridge assets across chains with source breakdown, fee details,
-                progress steps, and allowance flow. Intent-based and optimized for
-                UX.
+                progress steps, and allowance flow. Intent-based and optimized
+                for UX.
               </p>
             </CardContent>
             <CardFooter>
@@ -190,9 +202,9 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Deposit funds from anywhere in one flow. Simulates costs, supports
-                execute only paths, and shows total/execute/bridge fees with clear
-                confirmations.
+                Deposit funds from anywhere in one flow. Simulates costs,
+                supports execute only paths, and shows total/execute/bridge fees
+                with clear confirmations.
               </p>
             </CardContent>
             <CardFooter>
@@ -210,8 +222,9 @@ export default function Home() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Swap tokens across chains with support for exact input and exact output modes.
-                Includes fee breakdown and transaction progress tracking.
+                Swap tokens across chains with support for exact input and exact
+                output modes. Includes fee breakdown and transaction progress
+                tracking.
               </p>
             </CardContent>
             <CardFooter>
@@ -230,8 +243,8 @@ export default function Home() {
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Fetch and display token balances across supported chains,
-                normalized to USD, and ready for product surfaces. Compatible with
-                any design system.
+                normalized to USD, and ready for product surfaces. Compatible
+                with any design system.
               </p>
             </CardContent>
             <CardFooter>
@@ -244,7 +257,6 @@ export default function Home() {
           </Card>
         </div>
       </section>
-      </main>
-    </>
+    </main>
   );
 }

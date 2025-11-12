@@ -19,7 +19,10 @@ import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
-import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import {
+  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_TOKENS,
+} from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
@@ -27,8 +30,8 @@ import RecipientAddress from "./components/recipient-address";
 interface FastBridgeProps {
   connectedAddress: Address;
   prefill?: {
-    token: string;
-    chainId: number;
+    token: SUPPORTED_TOKENS;
+    chainId: SUPPORTED_CHAINS_IDS;
     amount?: string;
     recipient?: Address;
   };

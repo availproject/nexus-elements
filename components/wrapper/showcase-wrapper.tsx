@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { OpenInV0Button } from "../docs/open-in-v0-button";
 import {
   Tabs,
   TabsList,

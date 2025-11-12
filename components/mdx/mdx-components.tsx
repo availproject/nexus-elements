@@ -1,4 +1,8 @@
-import type { MDXComponents } from "mdx/types";
+import * as React from "react";
+import Image from "next/image";
+import Link from "next/link";
+type MDXComponentsMap = Record<string, React.ComponentType<any>>;
+import { cn } from "@/lib/utils";
 import { ComponentPreview } from "./component-preview";
 import {
   CodeTabs,
@@ -11,95 +15,139 @@ import { ComponentSource } from "./component-source";
 import { Steps, Step } from "./steps";
 import { CodeSnippet } from "../showcase/code-snippet";
 import { CliCommand } from "../showcase/cli-command";
+import { InstallPanel } from "@/components/showcase/install-panel";
 
-export function useMDXComponents(components: MDXComponents): MDXComponents {
-  return {
-    // Headings
-    h1: ({ children }: { children: React.ReactNode }) => (
-      <h1 className="text-4xl font-bold tracking-tight mt-8 mb-4">
-        {children}
-      </h1>
-    ),
-    h2: ({ children, id }: { children: React.ReactNode; id: string }) => (
+export const mdxComponents: MDXComponentsMap = {
+  // Headings
+  h1: ({ className, ...props }: React.ComponentProps<"h1">) => (
+    <h1
+      className={cn(
+        "font-heading mt-2 scroll-m-28 text-3xl font-bold tracking-tight",
+        className
+      )}
+      {...props}
+    />
+  ),
+  h2: ({ className, ...props }: React.ComponentProps<"h2">) => {
+    return (
       <h2
-        id={id}
-        className="text-2xl font-semibold tracking-tight mt-8 mb-4 scroll-m-20"
+        id={props.children
+          ?.toString()
+          .replace(/ /g, "-")
+          .replace(/'/g, "")
+          .replace(/\?/g, "")
+          .toLowerCase()}
+        className={cn(
+          "font-heading mt-10 scroll-m-28 text-xl font-semibold tracking-tight first:mt-0 lg:mt-16",
+          className
+        )}
+        {...props}
+      />
+    );
+  },
+  h3: ({ className, ...props }: React.ComponentProps<"h3">) => (
+    <h3
+      className={cn(
+        "font-heading mt-12 scroll-m-28 text-lg font-medium tracking-tight",
+        className
+      )}
+      {...props}
+    />
+  ),
+  h4: ({ className, ...props }: React.ComponentProps<"h4">) => (
+    <h4
+      className={cn(
+        "font-heading mt-8 scroll-m-28 text-base font-medium tracking-tight",
+        className
+      )}
+      {...props}
+    />
+  ),
+  // Text
+  p: ({ className, ...props }: React.ComponentProps<"p">) => (
+    <p className={cn("leading-relaxed not-first:mt-6", className)} {...props} />
+  ),
+  a: ({ className, ...props }: React.ComponentProps<"a">) => (
+    <a
+      className={cn("font-medium underline underline-offset-4", className)}
+      {...props}
+    />
+  ),
+  ul: ({ className, ...props }: React.ComponentProps<"ul">) => (
+    <ul className={cn("my-6 ml-6 list-disc", className)} {...props} />
+  ),
+  ol: ({ className, ...props }: React.ComponentProps<"ol">) => (
+    <ol className={cn("my-6 ml-6 list-decimal", className)} {...props} />
+  ),
+  li: ({ className, ...props }: React.ComponentProps<"li">) => (
+    <li className={cn("mt-2", className)} {...props} />
+  ),
+  blockquote: ({ className, ...props }: React.ComponentProps<"blockquote">) => (
+    <blockquote
+      className={cn("mt-6 border-l-2 pl-6 italic", className)}
+      {...props}
+    />
+  ),
+  img: ({ className, alt, ...props }: React.ComponentProps<"img">) => (
+    <img className={cn("rounded-md", className)} alt={alt} {...props} />
+  ),
+  hr: (props: React.ComponentProps<"hr">) => (
+    <hr className="my-4 md:my-8" {...props} />
+  ),
+  // Code
+  pre: ({ className, children, ...props }: React.ComponentProps<"pre">) => {
+    return (
+      <pre
+        className={cn(
+          "no-scrollbar min-w-0 overflow-x-auto px-4 py-3.5 outline-none has-data-highlighted-line:px-0 has-data-line-numbers:px-0 has-data-[slot=tabs]:p-0",
+          className
+        )}
+        {...props}
       >
         {children}
-      </h2>
-    ),
-    h3: ({ children }: { children: React.ReactNode }) => (
-      <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
-        {children}
-      </h3>
-    ),
-    // Paragraphs
-    p: ({ children }: { children: React.ReactNode }) => (
-      <p className="text-foreground/70 leading-7 mb-4">{children}</p>
-    ),
-    // Lists
-    ul: ({ children }: { children: React.ReactNode }) => (
-      <ul className="list-disc ml-6 mb-4 space-y-2">{children}</ul>
-    ),
-    ol: ({ children }: { children: React.ReactNode }) => (
-      <ol className="list-decimal ml-6 mb-4 space-y-2">{children}</ol>
-    ),
-    li: ({ children }: { children: React.ReactNode }) => (
-      <li className="text-foreground/70">{children}</li>
-    ),
-    // Code blocks
-    code: ({
-      children,
-      className,
-    }: {
-      children: React.ReactNode;
-      className: string;
-    }) => {
-      const isInline = !className;
-      if (isInline) {
-        return (
-          <code className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">
-            {children}
-          </code>
-        );
-      }
-      return <code className={className}>{children}</code>;
-    },
-    pre: ({ children }: { children: React.ReactNode }) => {
-      return <div className="my-4">{children}</div>;
-    },
-    // Blockquote
-    blockquote: ({ children }: { children: React.ReactNode }) => (
-      <blockquote className="border-l-4 border-primary pl-4 italic my-4">
-        {children}
-      </blockquote>
-    ),
-    // Links
-    a: ({ href, children }: { href: string; children: React.ReactNode }) => (
-      <a
-        href={href}
-        className="text-primary underline underline-offset-4 hover:text-primary/80"
-        target={href?.startsWith("http") ? "_blank" : undefined}
-        rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
-      >
-        {children}
-      </a>
-    ),
-    // Horizontal rule
-    hr: () => <hr className="my-8 border-border" />,
-    // Custom components
-    ComponentPreview,
-    CodeTabs,
-    TabsList,
-    TabsTrigger,
-    TabsContent,
-    ComponentSource,
-    Steps,
-    Step,
-    CodeSnippet,
-    CliCommand,
-    InstallCommand,
-    // Spread any additional components
-    ...components,
-  };
+      </pre>
+    );
+  },
+  Image: ({
+    src,
+    className,
+    width,
+    height,
+    alt,
+    ...props
+  }: React.ComponentProps<"img">) => (
+    <Image
+      className={cn("mt-6 rounded-md border", className)}
+      src={(src as string) || ""}
+      width={Number(width)}
+      height={Number(height)}
+      alt={alt || ""}
+      {...props}
+    />
+  ),
+  // Custom components used across docs
+  ComponentPreview,
+  ComponentSource,
+  CodeTabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Steps,
+  Step,
+  CodeSnippet,
+  CliCommand,
+  InstallCommand,
+  InstallPanel,
+  Link: ({ className, ...props }: React.ComponentProps<typeof Link>) => (
+    <Link
+      className={cn("font-medium underline underline-offset-4", className)}
+      {...props}
+    />
+  ),
+};
+
+export function useMDXComponents(
+  components: MDXComponentsMap
+): MDXComponentsMap {
+  return { ...mdxComponents, ...components };
 }

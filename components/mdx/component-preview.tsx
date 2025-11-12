@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import dynamic from "next/dynamic";
-import { PreviewPanel } from "../showcase/preview-panel";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +17,9 @@ const SHOWCASE_MAP: Record<
   string,
   () => Promise<{ default: React.ComponentType<any> }>
 > = {
-  "fast-bridge": () => import("@/components/wrapper/fast-bridge-showcase"),
+  // MDX-friendly previews (no page heading or extra chrome)
+  "fast-bridge": () =>
+    import("@/components/wrapper/mdx-previews/fast-bridge-mdx"),
   deposit: () => import("@/components/wrapper/deposit-showcase"),
   swaps: () => import("@/components/wrapper/swaps-showcase"),
   "unified-balance": () =>
@@ -42,13 +43,13 @@ export function ComponentPreview({
     : null;
 
   return (
-    <div className={cn("my-6", className)}>
+    <div className={cn("my-6 w-full", className)}>
       {description && (
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
       )}
       <div
         className={cn(
-          "flex",
+          "flex w-full",
           align === "center" && "justify-center",
           align === "end" && "justify-end"
         )}

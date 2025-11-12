@@ -61,5 +61,5 @@ export function InstallCommand({ name }: { name: string }) {
     process.env.NEXT_PUBLIC_BASE_URL || "https://nexus-elements.vercel.app";
   const url = `${baseUrl}/r/${name}.json`;
 
-  return <CliCommand url={url} />;
+  return <CliCommand url={url} className="mt-4" />;
 }

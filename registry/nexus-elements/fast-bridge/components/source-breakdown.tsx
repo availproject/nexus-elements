@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { Skeleton } from "../../ui/skeleton";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
@@ -21,6 +22,7 @@ const SourceBreakdown = ({
   tokenSymbol,
   isLoading = false,
 }: SourceBreakdownProps) => {
+  const { nexusSDK } = useNexus();
   return (
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="sources">
@@ -52,7 +54,10 @@ const SourceBreakdown = ({
 
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-semibold">
-                    {intent?.sourcesTotal} {tokenSymbol}
+                    {nexusSDK?.utils?.formatTokenBalance(intent?.sourcesTotal, {
+                      symbol: tokenSymbol,
+                      decimals: intent?.token?.decimals,
+                    })}
                   </p>
                   <AccordionTrigger
                     containerClassName="w-fit"
@@ -86,7 +91,10 @@ const SourceBreakdown = ({
                   </div>
 
                   <p className="text-sm font-semibold">
-                    {source.amount} {tokenSymbol}
+                    {nexusSDK?.utils?.formatTokenBalance(source.amount, {
+                      symbol: tokenSymbol,
+                      decimals: intent?.token?.decimals,
+                    })}
                   </p>
                 </div>
               ))}

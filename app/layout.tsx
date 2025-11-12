@@ -46,6 +46,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Web3Provider>
+            <Topbar />
             {children}
           </Web3Provider>
           <Toaster />
