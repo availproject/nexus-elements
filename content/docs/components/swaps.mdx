@@ -1,0 +1,73 @@
+---
+title: Swaps
+description: Swap assets with exact-in or exact-out across supported chains. Intent-based with prefill, callbacks, and progress UI.
+component: true
+links:
+  doc: https://elements.nexus.availproject.org/components/swaps
+---
+
+<ComponentPreview
+  name="swaps"
+  description="Cross-chain asset swaps supporting exact-in and exact-out modes."
+  align="center"
+/>
+
+## Installation
+
+<CodeTabs>
+  <TabsList>
+    <TabsTrigger value="cli">CLI</TabsTrigger>
+    <TabsTrigger value="manual">Manual</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cli">
+    <CliCommand url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/swaps.json`} />
+  </TabsContent>
+  <TabsContent value="manual">
+    <Steps>
+      <Step>Copy and paste the following code into your project.</Step>
+      <Step>Install these dependencies</Step>
+      <DepsInstall name="swaps" className="my-4" />
+      <div
+        data-slot="code"
+        className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+      >
+        <ComponentSource name="swaps" showAllFiles />
+      </div>
+      <Step>Update the import paths to match your project setup.</Step>
+    </Steps>
+  </TabsContent>
+</CodeTabs>
+
+## Usage (Exact In)
+
+```tsx showLineNumbers
+<Swaps
+  exactIn
+  onComplete={completeCurrent}
+  onError={handleError}
+  onStart={handleStart}
+  exactInprefill={{
+    fromToken: "USDC",
+    fromChainID: SUPPORTED_CHAINS.BASE,
+    fromAmount: "100",
+    toToken: "USDT",
+    toChainID: SUPPORTED_CHAINS.ARBITRUM,
+  }}
+/>
+```
+
+## Usage (Exact Out)
+
+```tsx showLineNumbers
+<Swaps
+  exactIn={false}
+  onComplete={completeCurrent}
+  onError={handleError}
+  onStart={handleStart}
+  exactOutprefill={{
+    toToken: "USDT",
+    toChainID: SUPPORTED_CHAINS.ARBITRUM,
+    toAmount: "100",
+  }}
+/>
+```

@@ -16,7 +16,7 @@ const FastBridgeShowcase = () => {
   const { address } = useAccount();
 
   return (
-    <ShowcaseWrapper registryItemName="fast-bridge">
+    <ShowcaseWrapper connectLabel="Connect wallet to use Nexus Fast Bridge">
       <FastBridge connectedAddress={address as `0x${string}`} />
     </ShowcaseWrapper>
   );

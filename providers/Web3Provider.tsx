@@ -112,9 +112,8 @@ const config = getDefaultConfig({
 function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;
-
   const nexusConfig = useMemo(
-    () => ({ network: urlNetwork, debug: true as const }),
+    () => ({ network: urlNetwork as NexusNetwork, debug: true as const }),
     [urlNetwork]
   );
   return <NexusProvider config={nexusConfig}>{children}</NexusProvider>;

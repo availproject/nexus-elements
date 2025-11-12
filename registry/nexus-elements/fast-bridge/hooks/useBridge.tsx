@@ -273,7 +273,7 @@ const useBridge = ({
     }
   };
 
-  usePolling(Boolean(intent) && !isDialogOpen, refreshIntent, 5000);
+  usePolling(Boolean(intent) && !isDialogOpen, refreshIntent, 15000);
 
   const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
 

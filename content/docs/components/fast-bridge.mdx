@@ -1,0 +1,58 @@
+---
+title: Fast Bridge
+description: Bridge assets across chains with source breakdown, fee details, progress steps, and allowance flow. Intent-based and optimized for UX.
+component: true
+links:
+  doc: https://elements.nexus.availproject.org/components/fast-bridge
+---
+
+<ComponentPreview
+  name="fast-bridge"
+  description="An intent-based fast bridge with allowance flow and progress."
+  align="center"
+/>
+
+## Installation
+
+<CodeTabs>
+  <TabsList>
+    <TabsTrigger value="cli">CLI</TabsTrigger>
+    <TabsTrigger value="manual">Manual</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cli">
+    <CliCommand
+      url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/fast-bridge.json`}
+    />
+  </TabsContent>
+  <TabsContent value="manual">
+    <Steps>
+      <Step>Copy and paste the following code into your project.</Step>
+      <Step>Install these dependencies</Step>
+      <DepsInstall name="fast-bridge" className="my-4" />
+      <div
+        data-slot="code"
+        className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+      >
+        <ComponentSource name="fast-bridge" showAllFiles />
+      </div>
+      <Step>Update the import paths to match your project setup.</Step>
+
+    </Steps>
+
+  </TabsContent>
+</CodeTabs>
+
+## Usage
+
+```tsx showLineNumbers
+<FastBridge
+  connectedAddress={address}
+  onComplete={completeCurrent}
+  prefill={{
+    token: "USDC",
+    chainId: SUPPORTED_CHAINS.BASE,
+  }}
+  onError={handleError}
+  onStart={handleStart}
+/>
+```

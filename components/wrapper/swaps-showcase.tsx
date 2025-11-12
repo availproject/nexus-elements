@@ -8,11 +8,7 @@ import { Check, X } from "lucide-react";
 const SwapsShowcase = () => {
   const [swapAs, setSwapAs] = useState<"exactIn" | "exactOut">("exactIn");
   return (
-    <ShowcaseWrapper
-      heading="Nexus Swaps"
-      connectLabel="Connect wallet to use Nexus Swaps"
-      registryItemName="swaps"
-    >
+    <ShowcaseWrapper connectLabel="Connect wallet to use Nexus Swaps">
       <Toggle
         variant={"outline"}
         size="sm"

@@ -19,7 +19,10 @@ import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
-import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import {
+  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_TOKENS,
+} from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
@@ -27,8 +30,8 @@ import RecipientAddress from "./components/recipient-address";
 interface FastBridgeProps {
   connectedAddress: Address;
   prefill?: {
-    token: string;
-    chainId: number;
+    token: SUPPORTED_TOKENS;
+    chainId: SUPPORTED_CHAINS_IDS;
     amount?: string;
     recipient?: Address;
   };
@@ -177,6 +180,7 @@ const FastBridge: FC<FastBridgeProps> = ({
             )}
           </Button>
         )}
+
         <Dialog
           open={isDialogOpen}
           onOpenChange={(open) => {
@@ -200,26 +204,28 @@ const FastBridge: FC<FastBridgeProps> = ({
               </DialogTrigger>
             </div>
           )}
+
           <DialogContent>
             <DialogHeader className="sr-only">
               <DialogTitle>Transaction Progress</DialogTitle>
             </DialogHeader>
-            <TransactionProgress
-              timer={timer}
-              steps={steps}
-              viewIntentUrl={lastExplorerUrl}
-              operationType={"bridge"}
-            />
+            {allowance ? (
+              <AllowanceModal
+                allowanceModal={allowance}
+                setAllowanceModal={setAllowance}
+                callback={startTransaction}
+                onCloseCallback={reset}
+              />
+            ) : (
+              <TransactionProgress
+                timer={timer}
+                steps={steps}
+                viewIntentUrl={lastExplorerUrl}
+                operationType={"bridge"}
+              />
+            )}
           </DialogContent>
         </Dialog>
-        {allowance && (
-          <AllowanceModal
-            allowanceModal={allowance}
-            setAllowanceModal={setAllowance}
-            callback={startTransaction}
-            onCloseCallback={reset}
-          />
-        )}
 
         {txError && (
           <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">

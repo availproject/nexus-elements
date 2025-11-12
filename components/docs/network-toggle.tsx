@@ -20,15 +20,20 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
   currentNetwork,
   disabled = false,
 }) => {
-  const router = useRouter();
   const pathname = usePathname();
+  const router = useRouter();
   const { nexusSDK, deinitializeNexus } = useNexus();
-
+  if (disabled) return;
   const handleNetworkChange = () => {
     if (disabled) return;
     if (nexusSDK) {
       deinitializeNexus();
     }
+    router.push(
+      `${pathname}?network=${
+        currentNetwork === "testnet" ? "devnet" : "testnet"
+      }`
+    );
     router.push(
       `${pathname}?network=${
         currentNetwork === "testnet" ? "devnet" : "testnet"
@@ -48,7 +53,7 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="testnet">Testnet</SelectItem>
-          <SelectItem value="devnet">Devnet</SelectItem>
+          <SelectItem value="devnet">Mainnet</SelectItem>
         </SelectContent>
       </Select>
     </div>
