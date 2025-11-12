@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { OpenInV0Button } from "../docs/open-in-v0-button";
 import {
@@ -11,6 +12,9 @@ import dynamic from "next/dynamic";
 import { InstallPanel } from "../showcase/install-panel";
 import { Skeleton } from "../ui/skeleton";
 import CodeBlock from "../ui/code-block";
+import NetworkToggle from "../docs/network-toggle";
+import { NexusNetwork } from "@avail-project/nexus-core";
+import { useSearchParams } from "next/navigation";
 
 const CodeViewer = dynamic(
   () => import("../showcase/code-viewer").then((m) => m.CodeViewer),
@@ -44,6 +48,8 @@ export function InitNexusOnConnect() {
   return null
 }`;
 
+const disabledTestnet = ["deposit", "swaps"];
+
 const ShowcaseWrapper = ({
   children,
   heading = "Nexus Fast Bridge",
@@ -55,11 +61,19 @@ const ShowcaseWrapper = ({
   connectLabel?: string;
   registryItemName?: string;
 }) => {
+  const searchParams = useSearchParams();
+  const network = (searchParams.get("network") || "devnet") as NexusNetwork;
   return (
     <div className="flex flex-col gap-4 rounded-lg py-4 min-h-[450px] relative">
       <div className="flex items-center justify-between">
         <h2 className="text-lg text-foreground font-semibold">{heading}</h2>
-        <OpenInV0Button name={registryItemName} className="w-fit" />
+        <div className="flex items-center gap-x-2">
+          <NetworkToggle
+            currentNetwork={network ?? "devnet"}
+            disabled={disabledTestnet.includes(registryItemName)}
+          />
+          <OpenInV0Button name={registryItemName} className="w-fit" />
+        </div>
       </div>
 
       <Tabs defaultValue="preview">
