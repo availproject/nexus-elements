@@ -1,4 +1,5 @@
 "use client";
+"use client";
 import React from "react";
 import { PreviewPanel } from "../showcase/preview-panel";
 import NetworkToggle from "../docs/network-toggle";

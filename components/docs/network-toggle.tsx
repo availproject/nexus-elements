@@ -25,9 +25,15 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
   const { nexusSDK, deinitializeNexus } = useNexus();
   if (disabled) return;
   const handleNetworkChange = () => {
+    if (disabled) return;
     if (nexusSDK) {
       deinitializeNexus();
     }
+    router.push(
+      `${pathname}?network=${
+        currentNetwork === "testnet" ? "devnet" : "testnet"
+      }`
+    );
     router.push(
       `${pathname}?network=${
         currentNetwork === "testnet" ? "devnet" : "testnet"
