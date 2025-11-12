@@ -25,8 +25,7 @@ type RegistryItem = {
 };
 
 export async function getRegistryItem(
-  name: string,
-  _styleName: Style["name"]
+  name: string
 ): Promise<RegistryItem | null> {
   try {
     const jsonPath = path.join(process.cwd(), "public", "r", `${name}.json`);
@@ -68,7 +67,7 @@ export async function ComponentSource({
   let filesFromRegistry: RegistryFile[] | undefined;
 
   if (name) {
-    const item = await getRegistryItem(name, styleName);
+    const item = await getRegistryItem(name);
     filesFromRegistry = item?.files;
     code = item?.files?.[0]?.content;
   }
@@ -82,7 +81,7 @@ export async function ComponentSource({
   if (showAllFiles && filesFromRegistry && filesFromRegistry.length > 0) {
     const processed: RegistryProcessedFile[] = await Promise.all(
       filesFromRegistry.map(async (f) => {
-        let fileCode = f.content
+        const fileCode = f.content
           .replaceAll(`@/registry/${styleName}/`, "@/components/")
           .replaceAll("export default", "export")
           .replaceAll("/* eslint-disable react/no-children-prop */\n", "");
@@ -93,11 +92,11 @@ export async function ComponentSource({
     );
 
     // Load provider files if available
-    const providerItem = await getRegistryItem("nexus-provider", styleName);
+    const providerItem = await getRegistryItem("nexus-provider");
     const providerFilesRaw = providerItem?.files ?? [];
     const providerProcessed: RegistryProcessedFile[] = await Promise.all(
       providerFilesRaw.map(async (f) => {
-        let fileCode = f.content
+        const fileCode = f.content
           .replaceAll(`@/registry/${styleName}/`, "@/components/")
           .replaceAll("export default", "export")
           .replaceAll("/* eslint-disable react/no-children-prop */\n", "");

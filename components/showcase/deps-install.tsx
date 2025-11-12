@@ -23,8 +23,10 @@ export function DepsInstall({
 
   // Gather dependencies from registry.json for the given component name
   const deps: string[] = React.useMemo(() => {
-    const items = Array.isArray((registry as any)?.items)
-      ? ((registry as any).items as Array<{
+    const items = Array.isArray(
+      (registry as unknown as { items: unknown[] })?.items
+    )
+      ? ((registry as unknown as { items: unknown[] }).items as Array<{
           name: string;
           dependencies?: string[];
         }>)

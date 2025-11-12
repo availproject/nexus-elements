@@ -8,9 +8,7 @@ type ComponentPreviewProps = React.ComponentProps<"div"> & {
   name: string;
   styleName?: "nexus-elements";
   align?: "center" | "start" | "end";
-  description?: string;
   hideCode?: boolean;
-  type?: "block" | "component" | "example";
   chromeLessOnMobile?: boolean;
   showAllFiles?: boolean;
 };
@@ -18,7 +16,7 @@ type ComponentPreviewProps = React.ComponentProps<"div"> & {
 // Map component names to their preview components
 const SHOWCASE_MAP: Record<
   string,
-  () => Promise<{ default: React.ComponentType<any> }>
+  () => Promise<{ default: React.ComponentType<unknown> }>
 > = {
   "fast-bridge": () => import("@/components/wrapper/fast-bridge-showcase"),
   deposit: () => import("@/components/wrapper/deposit-showcase"),
@@ -30,13 +28,11 @@ const SHOWCASE_MAP: Record<
 export function ComponentPreview({
   name,
   styleName = "nexus-elements",
-  type,
   className,
   align = "center",
   hideCode = false,
   chromeLessOnMobile = false,
   showAllFiles = true,
-  description,
   ...props
 }: ComponentPreviewProps) {
   const showcaseLoader = SHOWCASE_MAP[name];

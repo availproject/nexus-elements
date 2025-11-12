@@ -1,6 +1,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MDXComponentsMap = Record<string, React.ComponentType<any>>;
 import { cn } from "@/lib/utils";
 import { ComponentPreview } from "./component-preview";
@@ -136,9 +137,11 @@ export const mdxComponents: MDXComponentsMap = {
       </pre>
     );
   },
+
   code: ({
     className,
     __raw__,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     __src__,
     __npm__,
     __yarn__,

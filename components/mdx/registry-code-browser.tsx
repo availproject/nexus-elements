@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/registry/nexus-elements/ui/button";
 import {
   Tabs,
   TabsList,

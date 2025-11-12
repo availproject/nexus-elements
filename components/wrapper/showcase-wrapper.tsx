@@ -1,7 +1,5 @@
 import React from "react";
 import { PreviewPanel } from "../showcase/preview-panel";
-import dynamic from "next/dynamic";
-import { Skeleton } from "../ui/skeleton";
 
 const ShowcaseWrapper = ({
   children,
