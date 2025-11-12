@@ -24,7 +24,10 @@ const DepositShowcase = () => {
   const { address } = useAccount();
   const [viewAs, setViewAs] = useState<boolean>(true);
   return (
-    <ShowcaseWrapper connectLabel="Connect wallet to use Nexus Deposit">
+    <ShowcaseWrapper
+      connectLabel="Connect wallet to use Nexus Deposit"
+      type="deposit"
+    >
       <Toggle
         variant={"outline"}
         size="sm"

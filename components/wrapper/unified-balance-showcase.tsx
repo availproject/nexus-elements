@@ -11,7 +11,10 @@ const UnifiedBalance = dynamic(
 
 const UnifiedBalanceShowcase = () => {
   return (
-    <ShowcaseWrapper connectLabel="Connect wallet to use Nexus Unified Balance">
+    <ShowcaseWrapper
+      connectLabel="Connect wallet to use Nexus Unified Balance"
+      type="unified-balance"
+    >
       <UnifiedBalance />
     </ShowcaseWrapper>
   );
