@@ -1,65 +1,24 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
 } from "@/registry/nexus-elements/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
-
-type PmSelectorProps = Readonly<{
-  pm: PackageManager;
-  onChange: (value: PackageManager) => void;
-}>;
-
-function PmSelector({ pm, onChange }: PmSelectorProps) {
-  return (
-    <ToggleGroup
-      type="single"
-      value={pm}
-      onValueChange={(val) => val && onChange(val as PackageManager)}
-      variant="outline"
-      size="sm"
-      spacing={0}
-      aria-label="Select package manager"
-    >
-      <ToggleGroupItem value="pnpm">pnpm</ToggleGroupItem>
-      <ToggleGroupItem value="npm">npm</ToggleGroupItem>
-      <ToggleGroupItem value="yarn">yarn</ToggleGroupItem>
-      <ToggleGroupItem value="bun">bun</ToggleGroupItem>
-    </ToggleGroup>
-  );
-}
+import { CliCommand } from "./cli-command";
 
 export function InstallPanel({
   registryItemName,
 }: Readonly<{
   registryItemName: string;
 }>) {
-  const [pm, setPm] = useState<PackageManager>("pnpm");
   const [deps, setDeps] = useState<string[]>([]);
   const [depsLoading, setDepsLoading] = useState(false);
   const [depsError, setDepsError] = useState<string | null>(null);
 
   const buildUrl = (item: string) =>
     `${process.env.NEXT_PUBLIC_BASE_URL}/r/${item}.json`;
-
-  const computeUrlCmd = (item: string) => {
-    const url = buildUrl(item);
-    switch (pm) {
-      case "npm":
-        return `npx shadcn@latest add ${url}`;
-      case "yarn":
-        return `yarn dlx shadcn@latest add ${url}`;
-      case "bun":
-        return `bunx shadcn@latest add ${url}`;
-      default:
-        return `pnpm dlx shadcn@latest add ${url}`;
-    }
-  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -92,21 +51,6 @@ export function InstallPanel({
     };
   }, [registryItemName]);
 
-  const computeDepsInstallCmd = useMemo(() => {
-    if (!deps?.length) return "";
-    const list = deps.join(" ");
-    switch (pm) {
-      case "npm":
-        return `npm i ${list}`;
-      case "yarn":
-        return `yarn add ${list}`;
-      case "bun":
-        return `bun add ${list}`;
-      default:
-        return `pnpm add ${list}`;
-    }
-  }, [pm, deps]);
-
   const renderDependencies = () => {
     if (depsLoading) {
       return (
@@ -122,11 +66,10 @@ export function InstallPanel({
         </pre>
       );
     }
-    return (
-      <pre className="text-xs bg-muted rounded p-2 overflow-x-auto max-w-6xl no-scrollbar">
-        <code>{computeDepsInstallCmd ?? ""}</code>
-      </pre>
-    );
+    if (!deps?.length) {
+      return null;
+    }
+    return <CliCommand url={buildUrl(registryItemName)} />;
   };
 
   return (
@@ -140,10 +83,7 @@ export function InstallPanel({
 
         <TabsContent value="cli">
           <div className="space-y-2">
-            <PmSelector pm={pm} onChange={(val) => setPm(val)} />
-            <pre className="text-xs bg-muted rounded p-2 overflow-x-auto">
-              <code>{computeUrlCmd(registryItemName)}</code>
-            </pre>
+            <CliCommand url={buildUrl(registryItemName)} />
             <p className="text-xs text-muted-foreground">
               Dependencies (including provider) are installed automatically.
             </p>
@@ -152,8 +92,6 @@ export function InstallPanel({
 
         <TabsContent value="manual">
           <div className="space-y-2">
-            <PmSelector pm={pm} onChange={(val) => setPm(val)} />
-
             <p className="text-sm">Install required packages:</p>
             {renderDependencies()}
 

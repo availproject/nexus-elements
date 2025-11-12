@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/registry/nexus-elements/ui/button";
-import CodeBlock from "../ui/code-block";
+import { CodeSnippet } from "./code-snippet";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/registry/nexus-elements/ui/tabs";
 import {
@@ -77,11 +77,12 @@ export function CodeViewer({
     }
     if (file) {
       return (
-        <CodeBlock
+        <CodeSnippet
           code={file.content}
           filename={file.path}
           lang={file.path.endsWith(".ts") ? "ts" : "tsx"}
           className="overflow-y-scroll max-h-[600px]"
+          variant="default"
         />
       );
     }
