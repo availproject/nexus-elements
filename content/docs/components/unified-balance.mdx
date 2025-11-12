@@ -1,14 +1,14 @@
 ---
-title: Fast Bridge
-description: Bridge assets across chains with source breakdown, fee details, progress steps, and allowance flow. Intent-based and optimized for UX.
+title: Unified Balance
+description: View unified token balances across chains with per-chain breakdown and fiat totals.
 component: true
 links:
-  doc: https://elements.nexus.availproject.org/components/fast-bridge
+  doc: https://elements.nexus.availproject.org/components/unified-balance
 ---
 
 <ComponentPreview
-  name="fast-bridge"
-  description="An intent-based fast bridge with allowance flow and progress."
+  name="unified-balance"
+  description="Aggregate balances across chains with per-token breakdown."
   align="center"
 />
 
@@ -21,38 +21,27 @@ links:
   </TabsList>
   <TabsContent value="cli">
     <CliCommand
-      url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/fast-bridge.json`}
+      url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/unified-balance.json`}
     />
   </TabsContent>
   <TabsContent value="manual">
     <Steps>
       <Step>Copy and paste the following code into your project.</Step>
       <Step>Install these dependencies</Step>
-      <DepsInstall name="fast-bridge" className="my-4" />
+      <DepsInstall name="unified-balance" className="my-4" />
       <div
         data-slot="code"
         className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
       >
-        <ComponentSource name="fast-bridge" showAllFiles />
+        <ComponentSource name="unified-balance" showAllFiles />
       </div>
       <Step>Update the import paths to match your project setup.</Step>
-
     </Steps>
-
   </TabsContent>
 </CodeTabs>
 
 ## Usage
 
 ```tsx showLineNumbers
-<FastBridge
-  connectedAddress={address}
-  onComplete={completeCurrent}
-  prefill={{
-    token: "USDC",
-    chainId: SUPPORTED_CHAINS.BASE,
-  }}
-  onError={handleError}
-  onStart={handleStart}
-/>
+<UnifiedBalance />
 ```

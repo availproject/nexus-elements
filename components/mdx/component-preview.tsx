@@ -1,25 +1,26 @@
-"use client";
 import React from "react";
 import dynamic from "next/dynamic";
-import { Skeleton } from "../ui/skeleton";
-import { cn } from "@/lib/utils";
+import { ComponentSource } from "./component-source";
+import { ComponentPreviewTabs } from "./component-preview-tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type ComponentPreviewProps = {
+type ComponentPreviewProps = React.ComponentProps<"div"> & {
   name: string;
-  className?: string;
+  styleName?: "nexus-elements";
+  align?: "center" | "start" | "end";
   description?: string;
-  align?: "start" | "center" | "end";
-  children?: React.ReactNode;
+  hideCode?: boolean;
+  type?: "block" | "component" | "example";
+  chromeLessOnMobile?: boolean;
+  showAllFiles?: boolean;
 };
 
-// Map component names to their showcase components
+// Map component names to their preview components
 const SHOWCASE_MAP: Record<
   string,
   () => Promise<{ default: React.ComponentType<any> }>
 > = {
-  // MDX-friendly previews (no page heading or extra chrome)
-  "fast-bridge": () =>
-    import("@/components/wrapper/mdx-previews/fast-bridge-mdx"),
+  "fast-bridge": () => import("@/components/wrapper/fast-bridge-showcase"),
   deposit: () => import("@/components/wrapper/deposit-showcase"),
   swaps: () => import("@/components/wrapper/swaps-showcase"),
   "unified-balance": () =>
@@ -28,34 +29,51 @@ const SHOWCASE_MAP: Record<
 
 export function ComponentPreview({
   name,
+  styleName = "nexus-elements",
+  type,
   className,
+  align = "center",
+  hideCode = false,
+  chromeLessOnMobile = false,
+  showAllFiles = true,
   description,
-  align = "start",
-  children,
+  ...props
 }: ComponentPreviewProps) {
   const showcaseLoader = SHOWCASE_MAP[name];
 
-  const DynamicShowcase = showcaseLoader
-    ? dynamic(showcaseLoader, {
-        ssr: false,
-        loading: () => <Skeleton className="w-full h-full min-h-[450px]" />,
-      })
-    : null;
+  if (!showcaseLoader) {
+    return (
+      <p className="text-muted-foreground mt-6 text-sm">
+        Component{" "}
+        <code className="bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm">
+          {name}
+        </code>{" "}
+        not found in registry.
+      </p>
+    );
+  }
+
+  // Basic tabs container for MDX previews
+  const Showcase = dynamic(showcaseLoader, {
+    loading: () => <Skeleton className="w-full h-full" />,
+  });
 
   return (
-    <div className={cn("my-6 w-full", className)}>
-      {description && (
-        <p className="text-sm text-muted-foreground mb-4">{description}</p>
-      )}
-      <div
-        className={cn(
-          "flex w-full",
-          align === "center" && "justify-center",
-          align === "end" && "justify-end"
-        )}
-      >
-        {children || (DynamicShowcase && <DynamicShowcase />)}
-      </div>
-    </div>
+    <ComponentPreviewTabs
+      className={className}
+      align={align}
+      hideCode={hideCode}
+      component={<Showcase />}
+      source={
+        <ComponentSource
+          name={name}
+          collapsible={false}
+          styleName={styleName}
+          showAllFiles={showAllFiles}
+        />
+      }
+      chromeLessOnMobile={chromeLessOnMobile}
+      {...props}
+    />
   );
 }

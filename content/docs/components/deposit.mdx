@@ -1,0 +1,99 @@
+---
+title: Deposit
+description: Deposit tokens into a destination with source breakdown, allowance flow, and optional embedded card view. Intent-based and customizable execute builder.
+component: true
+links:
+  doc: https://elements.nexus.availproject.org/components/deposit
+---
+
+<ComponentPreview
+  name="deposit"
+  description="A deposit flow with source breakdown, allowance, and embedded/modal views."
+  align="center"
+/>
+
+## Installation
+
+<CodeTabs>
+  <TabsList>
+    <TabsTrigger value="cli">CLI</TabsTrigger>
+    <TabsTrigger value="manual">Manual</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cli">
+    <CliCommand url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/deposit.json`} />
+  </TabsContent>
+  <TabsContent value="manual">
+    <Steps>
+      <Step>Copy and paste the following code into your project.</Step>
+      <Step>Install these dependencies</Step>
+      <DepsInstall name="deposit" className="my-4" />
+      <div
+        data-slot="code"
+        className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+      >
+        <ComponentSource name="deposit" showAllFiles />
+      </div>
+      <Step>Update the import paths to match your project setup.</Step>
+    </Steps>
+  </TabsContent>
+</CodeTabs>
+
+## Usage
+
+```tsx showLineNumbers
+<NexusDeposit
+  address={address ?? `0x`}
+  token="USDT"
+  chain={SUPPORTED_CHAINS.ARBITRUM}
+  embed={viewAs}
+  destinationLabel="on Aave v3"
+  heading="Deposit USDT"
+  depositExecute={(token, amount, _chainId, user) => {
+    const contractAddress =
+      "0x794a61358D6845594F94dc1DB02A252b5b4814aD" as const;
+    const abi: Abi = [
+      {
+        name: "supply",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [
+          { name: "asset", type: "address" },
+          { name: "amount", type: "uint256" },
+          { name: "onBehalfOf", type: "address" },
+          { name: "referralCode", type: "uint16" },
+        ],
+        outputs: [],
+      },
+    ];
+    const decimals = TOKEN_METADATA[token].decimals;
+    const amountWei = parseUnits(amount, decimals);
+    if (token === "ETH") {
+      throw new Error(
+        "ETH is native and not supported for this execute builder"
+      );
+    }
+    const chainMap = TOKEN_CONTRACT_ADDRESSES[token];
+    if (!(_chainId in chainMap)) {
+      throw new Error("Selected chain is not supported for this token");
+    }
+    const tokenAddr = chainMap[_chainId as keyof typeof chainMap];
+    const encoded = encodeFunctionData({
+      abi: abi,
+      functionName: "supply",
+      args: [tokenAddr, amountWei, user, 0],
+    });
+    if (!encoded) {
+      throw new Error("Failed to encode contract call");
+    }
+    return {
+      to: contractAddress,
+      data: encoded,
+      tokenApproval: {
+        token,
+        amount: amountWei,
+        spender: contractAddress,
+      },
+    };
+  }}
+/>
+```

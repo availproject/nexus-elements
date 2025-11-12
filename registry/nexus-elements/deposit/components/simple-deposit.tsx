@@ -153,15 +153,8 @@ const SimpleDeposit = ({
         token as string
       );
 
-      console.log("bridgeFormatted", bridgeFormatted);
-      console.log("bridgeUsd", bridgeUsd);
-      console.log("gasFormatted", gasFormatted);
-      console.log("gasUsd", gasUsd);
-
       const totalGasFee =
         Number.parseFloat(bridgeUsd) + Number.parseFloat(gasUsd);
-
-      console.log("totalGasFee", totalGasFee);
 
       return {
         totalGasFee,
@@ -310,23 +303,25 @@ const SimpleDeposit = ({
           <DialogHeader className="sr-only">
             <DialogTitle>Transaction Progress</DialogTitle>
           </DialogHeader>
-          <BridgeExecuteProgress
-            timer={timer}
-            steps={steps}
-            intentUrl={lastResult ? lastResult.bridgeExplorerUrl : undefined}
-            executeUrl={lastResult ? lastResult.executeExplorerUrl : undefined}
-          />
+          {allowance ? (
+            <AllowanceModal
+              allowanceModal={allowance}
+              setAllowanceModal={setAllowance}
+              callback={startTransaction}
+              onCloseCallback={clearSimulation}
+            />
+          ) : (
+            <BridgeExecuteProgress
+              timer={timer}
+              steps={steps}
+              intentUrl={lastResult ? lastResult.bridgeExplorerUrl : undefined}
+              executeUrl={
+                lastResult ? lastResult.executeExplorerUrl : undefined
+              }
+            />
+          )}
         </DialogContent>
       </Dialog>
-
-      {allowance && (
-        <AllowanceModal
-          allowanceModal={allowance}
-          setAllowanceModal={setAllowance}
-          callback={startTransaction}
-          onCloseCallback={clearSimulation}
-        />
-      )}
 
       {txError && (
         <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">

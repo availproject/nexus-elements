@@ -2,12 +2,9 @@
 import dynamic from "next/dynamic";
 import React, { useEffect, useRef, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
-import { SidebarTrigger } from "../ui/sidebar";
 import { useTheme } from "next-themes";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { Monitor, Sun, Moon, Search, Menu } from "lucide-react";
-import { Button } from "../ui/button";
-import { usePathname } from "next/navigation";
+import { Sun, Moon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,9 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/registry/nexus-elements/ui/select";
-import { Input } from "../ui/input";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 const ConnectButton = dynamic(
   () => import("@rainbow-me/rainbowkit").then((m) => m.ConnectButton),
@@ -60,7 +58,9 @@ const PALETTES: Record<string, string> = {
 export default function Topbar() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
+  const pathname = usePathname();
+  const hasSidebar =
+    pathname?.startsWith("/docs") || pathname?.startsWith("/experience");
   const [palette, setPalette] = useState<string>("default");
   const prevPaletteClass = useRef<string | null>(null);
 
@@ -100,7 +100,10 @@ export default function Topbar() {
     <div className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60 border-b">
       <div className="h-(--header-height) px-4 py-4 flex items-center justify-between gap-4 ">
         <div className="flex items-center gap-x-6">
-          <Link href={"/"} className="cursor-pointer">
+          <Link
+            href={"/"}
+            className={cn("cursor-pointer", hasSidebar && "w-58")}
+          >
             <Image
               src="/avail-light-logo.svg"
               alt="Nexus Elements"
@@ -131,7 +134,7 @@ export default function Topbar() {
         </div>
 
         {/* Search bar */}
-        <div className="flex-1 max-w-md mx-4 hidden md:block">
+        {/* <div className="flex-1 max-w-md mx-4 hidden md:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -144,7 +147,7 @@ export default function Topbar() {
               <span className="text-xs">⌘</span>K
             </kbd>
           </div>
-        </div>
+        </div> */}
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">

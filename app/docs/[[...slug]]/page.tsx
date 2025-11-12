@@ -4,7 +4,8 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 import { source } from "@/lib/source";
 import { mdxComponents } from "@/components/mdx/mdx-components";
 import { Button } from "@/registry/nexus-elements/ui/button";
-import { DocsCopyPage } from "@/components/docs/docs-copy-page";
+import { CopyButton } from "@/components/docs/copy-button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export const revalidate = false;
 export const dynamic = "force-static";
@@ -72,8 +73,8 @@ export default async function Page(props: {
               <h1 className="scroll-m-20 text-4xl font-semibold tracking-tight sm:text-3xl xl:text-4xl">
                 {doc.title}
               </h1>
-              <div className="docs-nav bg-background/80 border-border/50 fixed inset-x-0 bottom-0 isolate z-50 flex items-center gap-2 border-t px-6 py-4 backdrop-blur-sm sm:static sm:z-0 sm:border-t-0 sm:bg-transparent sm:px-0 sm:pt-1.5 sm:backdrop-blur-none">
-                <DocsCopyPage page={raw} />
+              <div className="bg-background/80 border-border/50 flex items-center gap-2 border-t px-6 py-4 backdrop-blur-sm sm:static sm:z-0 sm:border-t-0 sm:bg-transparent sm:px-0 sm:pt-1.5 sm:backdrop-blur-none">
+                <CopyButton value={raw} customPosition="" />
                 {neighbours.previous && (
                   <Button
                     variant="secondary"
@@ -83,6 +84,7 @@ export default async function Page(props: {
                   >
                     <Link href={neighbours.previous.url}>
                       <span className="sr-only">Previous</span>
+                      <ChevronLeft className="size-4" />
                     </Link>
                   </Button>
                 )}
@@ -94,7 +96,8 @@ export default async function Page(props: {
                     asChild
                   >
                     <Link href={neighbours.next.url}>
-                      <span className="sr-only">Next</span> →
+                      <span className="sr-only">Next</span>
+                      <ChevronRight className="size-4" />
                     </Link>
                   </Button>
                 )}

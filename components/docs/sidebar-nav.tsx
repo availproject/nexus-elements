@@ -32,6 +32,11 @@ const NAV_ITEMS = [
         label: "Installation",
         href: "/docs/get-started",
       },
+      {
+        id: "components",
+        label: "Components",
+        href: "/docs/view-components",
+      },
     ],
   },
   {
@@ -39,15 +44,16 @@ const NAV_ITEMS = [
     section: "Components",
     children: [
       {
-        id: "fast-bridge",
-        label: "Fast Bridge",
-        href: "/docs/components/fast-bridge",
-      },
-      {
         id: "deposit",
         label: "Deposit",
         href: "/docs/components/deposit",
       },
+      {
+        id: "fast-bridge",
+        label: "Fast Bridge",
+        href: "/docs/components/fast-bridge",
+      },
+
       {
         id: "swaps",
         label: "Swaps",

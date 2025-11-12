@@ -1,47 +1,68 @@
 "use client";
 import * as React from "react";
+import registry from "@/registry.json";
 import { Button } from "@/registry/nexus-elements/ui/button";
-import { toast } from "sonner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
 
-type CliCommandProps = {
-  url: string;
+type DepsInstallProps = {
+  name: string;
   className?: string;
   defaultPm?: PackageManager;
 };
 
-export function CliCommand({
-  url,
+export function DepsInstall({
+  name,
   className,
   defaultPm = "pnpm",
-}: Readonly<CliCommandProps>) {
+}: Readonly<DepsInstallProps>) {
   const [pm, setPm] = React.useState<PackageManager>(defaultPm);
 
+  // Gather dependencies from registry.json for the given component name
+  const deps: string[] = React.useMemo(() => {
+    const items = Array.isArray((registry as any)?.items)
+      ? ((registry as any).items as Array<{
+          name: string;
+          dependencies?: string[];
+        }>)
+      : [];
+    const item = items.find((i) => i.name === name);
+    const unique = new Set<string>(item?.dependencies ?? []);
+    return Array.from(unique);
+  }, [name]);
+
   const getCommand = (): string => {
+    const pkgList = deps.join(" ");
+    if (!pkgList) return "";
     switch (pm) {
       case "npm":
-        return `npx shadcn@latest add ${url}`;
+        return `npm install ${pkgList}`;
       case "yarn":
-        return `yarn dlx shadcn@latest add ${url}`;
+        return `yarn add ${pkgList}`;
       case "bun":
-        return `bunx shadcn@latest add ${url}`;
+        return `bun add ${pkgList}`;
       default:
-        return `pnpm dlx shadcn@latest add ${url}`;
+        return `pnpm add ${pkgList}`;
     }
   };
 
   const onCopy = async () => {
+    const cmd = getCommand();
+    if (!cmd) return;
     try {
-      await navigator.clipboard.writeText(getCommand());
-      toast.success("Copied to clipboard");
+      await navigator.clipboard.writeText(cmd);
     } catch {
-      toast.error("Failed to copy");
+      // no-op
     }
   };
+
+  // If there are no dependencies, avoid rendering an empty box
+  if (deps.length === 0) {
+    return null;
+  }
 
   return (
     <div
@@ -50,7 +71,6 @@ export function CliCommand({
         className
       )}
     >
-      {/* Package Manager Tabs */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/50">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-5 h-5 rounded bg-muted/20 text-[10px] font-medium text-muted-foreground">
@@ -89,7 +109,6 @@ export function CliCommand({
         </Button>
       </div>
 
-      {/* Command Display */}
       <div className="px-4 py-3.5">
         <code className="text-sm">{getCommand()}</code>
       </div>

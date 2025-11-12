@@ -10,10 +10,7 @@ import SidebarNav from "@/components/docs/sidebar-nav";
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar
-        collapsible="none"
-        className="sticky top-[calc(var(--header-height)+1px)] z-30 h-[calc(100svh-var(--header-height))] border-none bg-background pt-2"
-      >
+      <Sidebar className="sticky top-[calc(var(--header-height)+1px)] z-30 h-[calc(100svh-var(--header-height))] border-none bg-background pt-2">
         <SidebarContent className="bg-background">
           <SidebarNav />
         </SidebarContent>

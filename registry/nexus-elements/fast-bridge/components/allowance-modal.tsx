@@ -1,13 +1,5 @@
 "use client";
 import React, { type FC, useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../ui/dialog";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
@@ -71,152 +63,146 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       setAllowanceModal(null);
       callback?.();
     } catch (error) {
-      console.error(error);
+      console.error("AllowanceModal onApprove error", error);
+      setAllowanceModal(null);
       onCloseCallback?.();
     }
   };
 
   return (
-    <Dialog
-      open={!!allowanceModal}
-      onOpenChange={(isOpen) => !isOpen && onClose()}
-    >
-      <DialogContent className="w-full sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Set Token Allowances</DialogTitle>
-          <DialogDescription>
-            Select minimum, maximum, or a custom allowance for each required
-            token.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
-          {sources?.map((source: AllowanceHookSource, index: number) => (
-            <div
-              key={`${source.token.symbol}-${index}`}
-              className="p-3 border rounded-lg"
-            >
-              <div className="flex items-center justify-between gap-x-2">
-                <div className="flex items-center gap-x-2">
-                  <img
-                    src={CHAIN_METADATA[source.chain.id]?.logo}
-                    alt={source.chain.name}
-                    width={20}
-                    height={20}
-                    className="rounded-full"
-                  />
-                  <p className="font-semibold">
-                    {source.token.symbol} on {source.chain.name}
-                  </p>
-                </div>
-                <div className="text-sm">
-                  <span className="mr-1 text-muted-foreground">Current:</span>
-                  <span className="font-semibold">
-                    {nexusSDK?.utils?.formatTokenBalance(
-                      source.allowance.current,
-                      {
-                        symbol: source.token.symbol,
-                        decimals: source.token.decimals,
-                      }
-                    )}
-                  </span>
-                </div>
+    <>
+      <div>
+        <p className="text-lg font-semibold">Set Token Allowances</p>
+        <p className="text-sm text-muted-foreground">
+          Select minimum, maximum, or a custom allowance for each required
+          token.
+        </p>
+      </div>
+      <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
+        {sources?.map((source: AllowanceHookSource, index: number) => (
+          <div
+            key={`${source.token.symbol}-${index}`}
+            className="p-3 border rounded-lg"
+          >
+            <div className="flex items-center justify-between gap-x-2">
+              <div className="flex items-center gap-x-2">
+                <img
+                  src={CHAIN_METADATA[source.chain.id]?.logo}
+                  alt={source.chain.name}
+                  width={20}
+                  height={20}
+                  className="rounded-full"
+                />
+                <p className="font-semibold">
+                  {source.token.symbol} on {source.chain.name}
+                </p>
               </div>
-
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                <Label className="flex items-center gap-x-2">
-                  <Input
-                    type="radio"
-                    name={`allowance-${index}`}
-                    value="min"
-                    checked={selectedOption[index] === "min"}
-                    onChange={() => {
-                      const next = [...selectedOption];
-                      next[index] = "min";
-                      setSelectedOption(next);
-                    }}
-                    className="w-10"
-                  />
-                  <span>
-                    Minimum (
-                    {nexusSDK?.utils?.formatTokenBalance(
-                      source.allowance.minimum,
-                      {
-                        symbol: source.token.symbol,
-                        decimals: source.token.decimals,
-                      }
-                    )}
-                    )
-                  </span>
-                </Label>
-
-                <Label className="flex items-center gap-x-2">
-                  <Input
-                    type="radio"
-                    name={`allowance-${index}`}
-                    value="max"
-                    checked={selectedOption[index] === "max"}
-                    onChange={() => {
-                      const next = [...selectedOption];
-                      next[index] = "max";
-                      setSelectedOption(next);
-                    }}
-                    className="w-10"
-                  />
-                  <span>Maximum (Unlimited)</span>
-                </Label>
-
-                <div className="flex items-center gap-x-2">
-                  <Input
-                    type="radio"
-                    name={`allowance-${index}`}
-                    value="custom"
-                    checked={selectedOption[index] === "custom"}
-                    onChange={() => {
-                      const next = [...selectedOption];
-                      next[index] = "custom";
-                      setSelectedOption(next);
-                    }}
-                    className="w-10"
-                  />
-                  <Label className="mr-2">Custom Amount</Label>
-                  <Input
-                    type="number"
-                    step="any"
-                    min="0"
-                    placeholder="Enter custom amount"
-                    value={
-                      selectedOption[index] === "custom"
-                        ? customValues[index]
-                        : ""
+              <div className="text-sm">
+                <span className="mr-1 text-muted-foreground">Current:</span>
+                <span className="font-semibold">
+                  {nexusSDK?.utils?.formatTokenBalance(
+                    source.allowance.current,
+                    {
+                      symbol: source.token.symbol,
+                      decimals: source.token.decimals,
                     }
-                    onChange={(e) => {
-                      const next = [...customValues];
-                      next[index] = e.target.value;
-                      setCustomValues(next);
-                    }}
-                    className="h-8 w-40"
-                  />
-                </div>
+                  )}
+                </span>
               </div>
             </div>
-          ))}
-        </div>
 
-        <DialogFooter className="gap-2 sm:justify-end mt-2">
-          <Button
-            variant="destructive"
-            onClick={onClose}
-            className="font-semibold"
-          >
-            Deny
-          </Button>
-          <Button onClick={onApprove} className="font-semibold">
-            Approve Selected
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              <Label className="flex items-center gap-x-2">
+                <Input
+                  type="radio"
+                  name={`allowance-${index}`}
+                  value="min"
+                  checked={selectedOption[index] === "min"}
+                  onChange={() => {
+                    const next = [...selectedOption];
+                    next[index] = "min";
+                    setSelectedOption(next);
+                  }}
+                  className="w-10"
+                />
+                <span>
+                  Minimum (
+                  {nexusSDK?.utils?.formatTokenBalance(
+                    source.allowance.minimum,
+                    {
+                      symbol: source.token.symbol,
+                      decimals: source.token.decimals,
+                    }
+                  )}
+                  )
+                </span>
+              </Label>
+
+              <Label className="flex items-center gap-x-2">
+                <Input
+                  type="radio"
+                  name={`allowance-${index}`}
+                  value="max"
+                  checked={selectedOption[index] === "max"}
+                  onChange={() => {
+                    const next = [...selectedOption];
+                    next[index] = "max";
+                    setSelectedOption(next);
+                  }}
+                  className="w-10"
+                />
+                <span>Maximum (Unlimited)</span>
+              </Label>
+
+              <div className="flex items-center gap-x-2">
+                <Input
+                  type="radio"
+                  name={`allowance-${index}`}
+                  value="custom"
+                  checked={selectedOption[index] === "custom"}
+                  onChange={() => {
+                    const next = [...selectedOption];
+                    next[index] = "custom";
+                    setSelectedOption(next);
+                  }}
+                  className="w-10"
+                />
+                <Label className="mr-2">Custom Amount</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="Enter custom amount"
+                  value={
+                    selectedOption[index] === "custom"
+                      ? customValues[index]
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const next = [...customValues];
+                    next[index] = e.target.value;
+                    setCustomValues(next);
+                  }}
+                  className="h-8 w-40"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="gap-2 sm:justify-end mt-2">
+        <Button
+          variant="destructive"
+          onClick={onClose}
+          className="font-semibold"
+        >
+          Deny
+        </Button>
+        <Button onClick={onApprove} className="font-semibold">
+          Approve Selected
+        </Button>
+      </div>
+    </>
   );
 };
 

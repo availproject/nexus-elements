@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Nexus Elements",
-  description: "Prebuilt React components built on top of Avail Nexus",
+  description: "Prebuilt React components powered by Avail Nexus",
   authors: [{ name: "decocereus", url: "https://github.com/decocereus" }],
   icons: {
     icon: "/avail-fav.svg",
