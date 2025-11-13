@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import { ComponentPreview } from "./component-preview";
 import { CodeTabs, InstallCommand } from "./code-tabs";
 import { ComponentSource } from "./component-source";
-import { CliCommand } from "../showcase/cli-command";
+import { CliCommand } from "../helpers/cli-command";
 import { DepsInstall } from "../showcase/deps-install";
-import { CopyButton } from "@/components/docs/copy-button";
+import { CopyButton } from "@/components/helpers/copy-button";
 import { CodeBlockCommand } from "./code-block-command";
 import { CodeCollapsibleWrapper } from "./code-collapsible-wrapper";
 import {

@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "@/components/docs/copy-button";
+import { CopyButton } from "@/components/helpers/copy-button";
 import { CodeCollapsibleWrapper } from "./code-collapsible-wrapper";
 import { highlightCode } from "@/lib/highlight-code";
 import { Code, File, FileText, Terminal } from "lucide-react";

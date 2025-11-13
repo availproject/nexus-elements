@@ -1,5 +1,5 @@
-import { OnThisPage } from "@/components/docs/on-this-page";
-import { SidebarLayout } from "@/components/docs/sidebar-layout";
+import { OnThisPage } from "@/components/helpers/on-this-page";
+import { SidebarLayout } from "@/components/layout/sidebar-layout";
 
 export default function DocsLayout({
   children,

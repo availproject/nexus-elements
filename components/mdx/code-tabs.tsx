@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CliCommand } from "../showcase/cli-command";
+import { CliCommand } from "../helpers/cli-command";
 import { Tabs } from "@/registry/nexus-elements/ui/tabs";
 
 export function CodeTabs({ children }: React.ComponentProps<typeof Tabs>) {

@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   type NexusSDK,
   NEXUS_EVENTS,
   type SwapStepType,
-  type BridgeStepType,
   parseUnits,
   SUPPORTED_CHAINS,
   type ExactOutSwapInput,
@@ -13,8 +12,9 @@ import {
 } from "@avail-project/nexus-core";
 import { formatUnits, type Address } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
-
-type ProgressStep = SwapStepType | BridgeStepType;
+import { useStopwatch } from "../../common/hooks/useStopwatch";
+import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
+import { SWAP_EXPECTED_STEPS } from "../../common/tx/steps";
 
 interface UseSwapExecuteExactOutProps {
   nexusSDK: NexusSDK | null;
@@ -74,47 +74,39 @@ const useSwapExecuteExactOut = ({
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
-  const [timer, setTimer] = useState(0);
-  const [steps, setSteps] = useState<
-    Array<{ id: number; completed: boolean; step: ProgressStep }>
-  >([]);
+  const {
+    steps,
+    onStepComplete,
+    seed,
+    reset: resetSteps,
+  } = useTransactionSteps<SwapStepType>();
   const [swapExplorerUrl, setSwapExplorerUrl] = useState<string>("");
   const [executeExplorerUrl, setExecuteExplorerUrl] = useState<string>("");
   const [executeSimGas, setExecuteSimGas] = useState<string | null>(null);
   const [executeCompleted, setExecuteCompleted] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   const areInputsValid = useMemo(() => {
     return inputs.amount !== undefined && Number(inputs.amount) > 0;
   }, [inputs]);
 
-  const startTimer = () => {
-    if (!timerRef.current) {
-      setTimer(0);
-      timerRef.current = setInterval(() => setTimer((prev) => prev + 0.1), 100);
-    }
-  };
-
-  const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
+  const swapCompleted = useMemo(
+    () =>
+      steps.some(
+        (s) => (s.step as any)?.type === "SWAP_COMPLETE" && s.completed
+      ),
+    [steps]
+  );
+  const stopwatch = useStopwatch({
+    running: isDialogOpen && !(swapCompleted && executeCompleted),
+    intervalMs: 100,
+  });
 
   const handleStart = async () => {
     if (!nexusSDK || !areInputsValid) return;
     setLoading(true);
     setTxError(null);
     setExecuteCompleted(false);
-    setSteps(
-      EXPECTED_SWAP_STEPS.map((st, idx) => ({
-        id: idx,
-        completed: false,
-        step: st,
-      }))
-    );
+    seed(SWAP_EXPECTED_STEPS);
     try {
       const toAmount = parseUnits(inputs.amount as string, 6);
       const input: ExactOutSwapInput = {
@@ -130,23 +122,13 @@ const useSwapExecuteExactOut = ({
         onEvent: (event) => {
           console.log("swap event", event);
           if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-            const step: any = event.args;
-            setSteps((prev) =>
-              prev.map((s) =>
-                s.step?.type === step?.type
-                  ? {
-                      ...s,
-                      completed: true,
-                      step: {
-                        ...(s.step as SwapStepType),
-                        ...step,
-                      },
-                    }
-                  : s
-              )
-            );
+            const step = event.args as SwapStepType & {
+              explorerURL?: string;
+              completed?: boolean;
+            };
+            onStepComplete(step);
             // Capture explorer URLs from source/destination hash events when available
-            const url: string | undefined = step?.explorerURL;
+            const url: string | undefined = (step as any)?.explorerURL;
             if (url && step?.type === "SOURCE_SWAP_HASH") {
               setSwapExplorerUrl(url);
             }
@@ -181,17 +163,15 @@ const useSwapExecuteExactOut = ({
       setLoading(false);
     } finally {
       setLoading(false);
-      stopTimer();
+      stopwatch.stop();
       setSwapIntent(null);
       setInputs({});
-      stopTimer();
     }
   };
 
   const acceptAndRun = async () => {
     if (!nexusSDK || !swapIntent) return;
     swapIntent.allow();
-    startTimer();
     setIsDialogOpen(true);
   };
 
@@ -220,20 +200,20 @@ const useSwapExecuteExactOut = ({
 
   const deny = () => {
     if (swapIntent) swapIntent.deny();
-    reset();
+    resetLocal();
   };
 
-  const reset = () => {
+  const resetLocal = () => {
     setSwapIntent(null);
     setInputs({});
     setTxError(null);
-    setSteps([]);
+    resetSteps();
     setSwapExplorerUrl("");
     setExecuteExplorerUrl("");
     setExecuteCompleted(false);
     setIsDialogOpen(false);
     setLoading(false);
-    stopTimer();
+    stopwatch.stop();
     setExecuteSimGas(null);
   };
 
@@ -270,7 +250,7 @@ const useSwapExecuteExactOut = ({
     setIsDialogOpen,
     txError,
     setTxError,
-    timer,
+    timer: stopwatch.seconds,
     steps,
     swapExplorerUrl,
     executeExplorerUrl,
@@ -281,7 +261,7 @@ const useSwapExecuteExactOut = ({
     acceptAndRun,
     simulateExecute,
     deny,
-    reset,
+    reset: resetLocal,
     refreshing,
   };
 };
