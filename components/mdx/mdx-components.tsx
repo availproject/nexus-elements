@@ -8,7 +8,6 @@ import { ComponentPreview } from "./component-preview";
 import { CodeTabs, InstallCommand } from "./code-tabs";
 import { ComponentSource } from "./component-source";
 import { CliCommand } from "../helpers/cli-command";
-import { DepsInstall } from "../showcase/deps-install";
 import { CopyButton } from "@/components/helpers/copy-button";
 import { CodeBlockCommand } from "./code-block-command";
 import { CodeCollapsibleWrapper } from "./code-collapsible-wrapper";
@@ -19,6 +18,7 @@ import {
   TabsContent,
 } from "@/registry/nexus-elements/ui/tabs";
 import { Code } from "lucide-react";
+import { DepsInstall } from "../helpers/deps-install";
 
 export const mdxComponents: MDXComponentsMap = {
   // Headings

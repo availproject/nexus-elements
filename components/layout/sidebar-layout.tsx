@@ -5,7 +5,7 @@ import {
   SidebarContent,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import SidebarNav from "@/components/docs/sidebar-nav";
+import SidebarNav from "./sidebar-nav";
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   return (
