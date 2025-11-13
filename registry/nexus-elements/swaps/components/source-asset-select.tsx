@@ -29,6 +29,7 @@ interface SourceAssetSelectProps {
   onSelect: (chainId: SUPPORTED_CHAINS_IDS, token: SourceTokenInfo) => void;
   disabled?: boolean;
   label?: string;
+  children: ReactNode;
 }
 
 const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
@@ -85,31 +86,35 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
         <DialogTrigger asChild>
           <Button
             variant="outline"
-            className="w-full justify-between"
+            className="w-full justify-between h-20"
             disabled={disabled}
           >
             {selectedChain && selectedToken ? (
-              <div className="flex items-center gap-x-3">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex flex-col items-start">
+                  <span className="text-lg font-semibold leading-tight">
+                    {selectedToken.symbol}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {CHAIN_METADATA[selectedChain].name}
+                  </span>
+                </div>
                 <div className="relative">
                   <img
                     src={TOKEN_IMAGES[selectedToken?.symbol]}
                     alt={selectedToken.symbol}
-                    width={24}
-                    height={24}
+                    width={28}
+                    height={28}
                     className="rounded-full"
                   />
                   <img
                     src={CHAIN_METADATA[selectedChain].logo}
                     alt={CHAIN_METADATA[selectedChain].name}
-                    width={16}
-                    height={16}
+                    width={18}
+                    height={18}
                     className="rounded-full absolute bottom-0 right-0 translate-x-1/3 translate-y-1/6"
                   />
                 </div>
-
-                <span className="text-sm font-medium">
-                  {selectedToken.symbol} on {CHAIN_METADATA[selectedChain].name}
-                </span>
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">
