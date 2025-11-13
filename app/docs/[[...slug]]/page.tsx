@@ -4,7 +4,7 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 import { source } from "@/lib/source";
 import { mdxComponents } from "@/components/mdx/mdx-components";
 import { Button } from "@/registry/nexus-elements/ui/button";
-import { CopyButton } from "@/components/docs/copy-button";
+import { CopyButton } from "@/components/helpers/copy-button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export const revalidate = false;

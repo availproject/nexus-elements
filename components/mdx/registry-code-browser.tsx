@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/registry/nexus-elements/ui/select";
-import { CopyButton } from "@/components/docs/copy-button";
+import { CopyButton } from "@/components/helpers/copy-button";
 import { Code, File, FileText, Terminal } from "lucide-react";
 
 export type RegistryProcessedFile = {

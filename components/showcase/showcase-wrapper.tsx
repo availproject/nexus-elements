@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { PreviewPanel } from "../showcase/preview-panel";
-import NetworkToggle from "../docs/network-toggle";
+import NetworkToggle from "../helpers/network-toggle";
 import { useSearchParams } from "next/navigation";
 import { NexusNetwork } from "@avail-project/nexus-core";
 
