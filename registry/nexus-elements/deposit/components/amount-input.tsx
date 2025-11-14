@@ -163,7 +163,7 @@ const AmountInput = ({
                             height="24"
                           />
                         </div>
-                        <span className="text-sm">
+                        <span className="text-sm sm:block hidden">
                           {SHORT_CHAIN_NAME[chain.chain.id]}
                         </span>
                       </div>

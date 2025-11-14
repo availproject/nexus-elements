@@ -34,7 +34,7 @@ export function PreviewPanel({
   };
   return (
     <div className="w-full">
-      <div className="flex w-full items-center justify-center min-h-[450px] relative">
+      <div className="flex flex-col w-full items-center justify-center min-h-[450px] relative">
         {(status === "connected" || status === "connecting") && nexusSDK && (
           <>{children}</>
         )}

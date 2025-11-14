@@ -31,8 +31,8 @@ export function ComponentPreviewTabs({
         <div
           data-align={align}
           className={cn(
-            "preview flex w-full justify-center data-[align=center]:items-center data-[align=end]:items-end data-[align=start]:items-start",
-            chromeLessOnMobile ? "sm:p-10" : "h-max p-10"
+            "preview flex w-full justify-center data-[align=center]:items-center data-[align=end]:items-end data-[align=start]:items-start sm:h-max sm:p-10 p-5",
+            chromeLessOnMobile ? "" : ""
           )}
         >
           {component}
@@ -40,7 +40,7 @@ export function ComponentPreviewTabs({
         {!hideCode && (
           <div
             data-slot="code"
-            className="overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+            className="overflow-y-hidden overflow-x-scroll **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
           >
             {source}
           </div>

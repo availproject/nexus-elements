@@ -21,7 +21,7 @@ const Container = ({
 }: ContainerProps) => {
   const { nexusSDK } = useNexus();
   return (
-    <Tabs defaultValue="simple" className="w-full min-w-sm">
+    <Tabs defaultValue="simple" className="sm:min-w-sm">
       <TabsList className="h-12 p-0 w-full">
         <TabsTrigger value="simple" className="px-2 py-1">
           <div className="flex items-center flex-col gap-y-1">

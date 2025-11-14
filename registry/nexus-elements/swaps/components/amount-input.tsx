@@ -46,7 +46,7 @@ const AmountInput: FC<AmountInputProps> = ({
   }, []);
 
   return (
-    <div className="w-full flex border border-border rounded-lg gap-y-2">
+    <div className="w-full flex sm:flex-row flex-col border border-border rounded-lg gap-y-2">
       <Input
         type="text"
         inputMode="decimal"

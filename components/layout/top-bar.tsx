@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 import { useTheme } from "next-themes";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Palette } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,6 +16,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/registry/nexus-elements/ui/dialog";
 
 const ConnectButton = dynamic(
   () => import("@rainbow-me/rainbowkit").then((m) => m.ConnectButton),
@@ -55,6 +61,90 @@ const PALETTES: Record<string, string> = {
 //   );
 // }
 
+type ThemeControlProps = {
+  mounted: boolean;
+  theme: string;
+  setTheme: React.Dispatch<React.SetStateAction<string>>;
+  palette: string;
+  setPalette: React.Dispatch<React.SetStateAction<string>>;
+};
+
+const ThemeControl = ({
+  mounted,
+  theme,
+  setTheme,
+  palette,
+  setPalette,
+}: ThemeControlProps) => {
+  return (
+    <div className="flex items-center gap-x-2">
+      {mounted ? (
+        <>
+          <ToggleGroup
+            type="single"
+            value={theme}
+            onValueChange={(v) => v && setTheme(v)}
+            variant="outline"
+            size="sm"
+            spacing={0}
+            aria-label="Toggle theme"
+          >
+            <ToggleGroupItem value="light" aria-label="Light theme">
+              <Sun className="size-3" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="dark" aria-label="Dark theme">
+              <Moon className="size-3" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Select
+            defaultValue={"default"}
+            value={palette}
+            onValueChange={(v) => setPalette(PALETTES[v])}
+          >
+            <SelectTrigger size="sm" aria-label="Choose color palette">
+              <SelectValue placeholder="Palette" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(PALETTES).map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      ) : (
+        <Skeleton className="w-[118px] h-9" />
+      )}
+    </div>
+  );
+};
+
+const MobileThemeControl = ({
+  mounted,
+  theme,
+  setTheme,
+  palette,
+  setPalette,
+}: ThemeControlProps) => {
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <Palette className="size-4" />
+      </DialogTrigger>
+      <DialogContent>
+        <ThemeControl
+          mounted={mounted}
+          theme={theme}
+          setTheme={setTheme}
+          palette={palette}
+          setPalette={setPalette}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function Topbar() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -63,6 +153,7 @@ export default function Topbar() {
     pathname?.startsWith("/docs") || pathname?.startsWith("/experience");
   const [palette, setPalette] = useState<string>("default");
   const prevPaletteClass = useRef<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -102,32 +193,32 @@ export default function Topbar() {
         <div className="flex items-center gap-x-6">
           <Link
             href={"/"}
-            className={cn("cursor-pointer", hasSidebar && "w-58")}
+            className={cn("cursor-pointer", hasSidebar && !isMobile && "w-58")}
           >
             <Image
               src="/avail-light-logo.svg"
               alt="Nexus Elements"
-              width={100}
-              height={100}
+              width={30}
+              height={30}
               className="hidden dark:block"
             />
             <Image
               src="/avail-logo.svg"
               alt="Nexus Elements"
-              width={100}
-              height={100}
+              width={30}
+              height={30}
               className="block dark:hidden"
             />
           </Link>
           <Link
             href="/docs/get-started"
-            className="text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
+            className="text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors"
           >
             Docs
           </Link>
           <Link
-            href="/#components"
-            className="text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
+            href="/docs/view-components"
+            className="text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors"
           >
             Components
           </Link>
@@ -151,50 +242,27 @@ export default function Topbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
-          {mounted ? (
-            <ToggleGroup
-              type="single"
-              value={theme}
-              onValueChange={(v) => v && setTheme(v)}
-              variant="outline"
-              size="sm"
-              spacing={0}
-              aria-label="Toggle theme"
-            >
-              <ToggleGroupItem value="light" aria-label="Light theme">
-                <Sun className="size-3" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="dark" aria-label="Dark theme">
-                <Moon className="size-3" />
-              </ToggleGroupItem>
-            </ToggleGroup>
+          {isMobile ? (
+            <MobileThemeControl
+              mounted={mounted}
+              theme={theme ?? ""}
+              setTheme={setTheme}
+              palette={palette}
+              setPalette={setPalette}
+            />
           ) : (
-            <Skeleton className="w-[118px] h-9" />
-          )}
-          {mounted ? (
-            <Select
-              defaultValue={"default"}
-              value={palette}
-              onValueChange={(v) => setPalette(PALETTES[v])}
-            >
-              <SelectTrigger size="sm" aria-label="Choose color palette">
-                <SelectValue placeholder="Palette" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(PALETTES).map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Skeleton className="w-[156px] h-9" />
+            <ThemeControl
+              mounted={mounted}
+              theme={theme ?? ""}
+              setTheme={setTheme}
+              palette={palette}
+              setPalette={setPalette}
+            />
           )}
 
           <ConnectButton
             showBalance={false}
-            chainStatus={"icon"}
+            chainStatus={isMobile ? "none" : "icon"}
             accountStatus={"avatar"}
           />
         </div>

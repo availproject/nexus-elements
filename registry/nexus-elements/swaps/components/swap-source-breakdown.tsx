@@ -1,5 +1,6 @@
 import React from "react";
 import { type OnSwapIntentHook } from "@avail-project/nexus-core";
+import { useNexus } from "../../nexus/NexusProvider";
 
 type SwapIntent = Parameters<OnSwapIntentHook>[0]["intent"];
 
@@ -10,8 +11,8 @@ interface SwapSourceBreakdownProps {
 
 const SwapSourceBreakdown: React.FC<SwapSourceBreakdownProps> = ({
   intent,
-  isLoading,
 }) => {
+  const { nexusSDK } = useNexus();
   if (!intent) return null;
   return (
     <div className="w-full border rounded-md p-3">
@@ -21,7 +22,10 @@ const SwapSourceBreakdown: React.FC<SwapSourceBreakdownProps> = ({
           <p className="text-sm font-medium">Destination</p>
           <div className="text-right">
             <p className="text-sm font-semibold">
-              {intent.destination.amount} {intent.destination.token.symbol}
+              {nexusSDK?.utils?.formatTokenBalance(intent.destination.amount, {
+                symbol: intent.destination.token.symbol,
+                decimals: intent.destination.token.decimals,
+              })}
             </p>
             <p className="text-xs text-muted-foreground">
               on {intent.destination.chain.name}
@@ -36,7 +40,10 @@ const SwapSourceBreakdown: React.FC<SwapSourceBreakdownProps> = ({
                 {s.chain.name}
               </span>
               <span className="text-sm font-medium">
-                {s.amount} {s.token.symbol}
+                {nexusSDK?.utils?.formatTokenBalance(s.amount, {
+                  symbol: s.token.symbol,
+                  decimals: s.token.decimals,
+                })}
               </span>
             </div>
           ))}

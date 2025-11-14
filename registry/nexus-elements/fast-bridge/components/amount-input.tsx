@@ -63,7 +63,7 @@ const AmountInput: FC<AmountInputProps> = ({
 
   return (
     <div className="flex flex-col gap-y-2 pb-2 w-full">
-      <div className="w-full flex border border-border rounded-lg gap-y-2">
+      <div className="w-full flex sm:flex-row flex-col border border-border rounded-lg gap-y-2">
         <Input
           type="text"
           inputMode="decimal"
@@ -91,8 +91,8 @@ const AmountInput: FC<AmountInputProps> = ({
           aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
           disabled={disabled}
         />
-        <div className="flex items-center justify-end-safe gap-x-4 w-fit px-2 border-l border-border">
-          <div className="flex items-center gap-x-3 min-w-max">
+        <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
+          <div className="flex items-center gap-x-1 sm:gap-x-3 min-w-max">
             {unifiedBalance && (
               <p className="text-base font-semibold">
                 {Number.parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
@@ -139,7 +139,7 @@ const AmountInput: FC<AmountInputProps> = ({
                             height="24"
                           />
                         </div>
-                        <span className="text-sm">
+                        <span className="text-sm sm:block hidden">
                           {SHORT_CHAIN_NAME[chain.chain.id]}
                         </span>
                       </div>

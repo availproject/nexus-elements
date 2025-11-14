@@ -98,7 +98,7 @@ const FastBridge: FC<FastBridgeProps> = ({
 
   return (
     <Card className="w-full max-w-xl">
-      <CardContent className="flex flex-col gap-y-4 w-full">
+      <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
         <ChainSelect
           selectedChain={inputs?.chain}
           handleSelect={(chain) =>

@@ -16,7 +16,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset className=" p-6 lg:px-8 lg:py-4 max-w-7xl mx-auto w-full">
+      <SidebarInset className="px-2 py-6 sm:p-6 lg:px-8 lg:py-4 max-w-7xl mx-auto w-full">
         {children}
       </SidebarInset>
     </SidebarProvider>

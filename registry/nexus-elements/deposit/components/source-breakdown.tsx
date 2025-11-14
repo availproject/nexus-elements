@@ -156,7 +156,9 @@ const SourceBreakdown = ({
                       height={20}
                       className="rounded-full"
                     />
-                    <p className="text-sm font-semibold">{source.chainName}</p>
+                    <p className="text-sm font-semibold sm:block hidden">
+                      {source.chainName}
+                    </p>
                   </div>
 
                   <p className="text-sm font-semibold">
