@@ -20,9 +20,9 @@ Nexus Elements internally uses shadcn/ui components as its foundation. While you
 
 <Steps>
   <Step>Install shadcn/ui</Step>
-  <p>
+  <div className="leading-relaxed not-first:mt-6">
     If you haven't already, set up shadcn/ui in your project first. Follow the official installation guide
-  </p>
+  </div>
   <Button
     asChild
     variant="secondary"
@@ -39,19 +39,19 @@ Nexus Elements internally uses shadcn/ui components as its foundation. While you
       <SquareArrowUpRight className="size-4" />
     </a>
   </Button>
-  <p>Once installed, come back to continue with Nexus Elements.</p>
+  <div className="leading-relaxed not-first:mt-6">Once installed, come back to continue with Nexus Elements.</div>
 
 <Step>Add a Nexus Elements component</Step>
-<p>
+<div className="leading-relaxed not-first:mt-6">
   You can now start adding Nexus Elements components to your project. The
   command below installs the <code>unified-balance</code> component. Replace it
   with any other component name as needed.
-</p>
+</div>
 <InstallCommand name="unified-balance" />
-<p className="mt-3!">
+<div className="mt-3! leading-relaxed not-first:mt-6">
   The command will add all required files and dependencies for the selected
   component.
-</p>
+</div>
 
 <Step>Wrap your app with the provider</Step>
 ```tsx showLineNumbers "use client"; import NexusProvider from "@/components/nexus/NexusProvider";

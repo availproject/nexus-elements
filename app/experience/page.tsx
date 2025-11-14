@@ -16,10 +16,10 @@ import {
   EthereumProvider,
 } from "@avail-project/nexus-core";
 import type { Abi } from "viem";
-import SwapExecuteExactOut from "@/registry/nexus-elements/execute/swap-execute-exact-out";
 import Swaps from "@/registry/nexus-elements/swaps/swaps";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { LoaderPinwheel } from "lucide-react";
+import SwapDeposit from "@/registry/nexus-elements/swap-deposit/swap-deposit";
 
 function Stepper() {
   const { steps, currentIndex, statusById, goTo } = useExperience();
@@ -139,10 +139,7 @@ function StepContent() {
     );
   }
   return (
-    <SwapExecuteExactOut
-      address={address ?? "0x"}
-      executeBuilder={executeBuilder}
-    />
+    <SwapDeposit address={address ?? "0x"} executeBuilder={executeBuilder} />
   );
 }
 

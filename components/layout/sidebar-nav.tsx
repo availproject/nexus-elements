@@ -49,6 +49,11 @@ const NAV_ITEMS = [
         href: "/docs/components/deposit",
       },
       {
+        id: "swap-deposit",
+        label: "Swap Deposit",
+        href: "/docs/components/swap-deposit",
+      },
+      {
         id: "fast-bridge",
         label: "Fast Bridge",
         href: "/docs/components/fast-bridge",
