@@ -20,9 +20,9 @@ Nexus Elements internally uses shadcn/ui components as its foundation. While you
 
 <Steps>
   <Step>Install shadcn/ui</Step>
-  <p>
+  <div className="leading-relaxed not-first:mt-6">
     If you haven't already, set up shadcn/ui in your project first. Follow the official installation guide
-  </p>
+  </div>
   <Button
     asChild
     variant="secondary"
@@ -39,14 +39,14 @@ Nexus Elements internally uses shadcn/ui components as its foundation. While you
       <SquareArrowUpRight className="size-4" />
     </a>
   </Button>
-  <p>Once installed, come back to continue with Nexus Elements.</p>
+  <div className="leading-relaxed not-first:mt-6">Once installed, come back to continue with Nexus Elements.</div>
 
 <Step>Add a Nexus Elements component</Step>
-<p>
+<div className="leading-relaxed not-first:mt-6">
   You can now start adding Nexus Elements components to your project. The
   command below installs the <code>unified-balance</code> component. Replace it
   with any other component name as needed.
-</p>
+</div>
 
 ```bash
 npx shadcn@latest add https://elements.nexus.availproject.org/r/unified-balance.json

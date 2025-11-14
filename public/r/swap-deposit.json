@@ -1,0 +1,27 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "swap-deposit",
+  "type": "registry:component",
+  "title": "Swap Deposit",
+  "description": "Deposit by selecting tokens across chains and auto-distributing amounts.",
+  "dependencies": [
+    "@avail-project/nexus-core",
+    "@radix-ui/react-checkbox",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "https://elements.nexus.availproject.org/r/button.json",
+    "https://elements.nexus.availproject.org/r/card.json",
+    "https://elements.nexus.availproject.org/r/nexus-provider.json",
+    "https://elements.nexus.availproject.org/r/utils.json"
+  ],
+  "files": [
+    {
+      "path": "registry/nexus-elements/swap-deposit/swap-deposit.tsx",
+      "content": "\"use client\";\n\nimport React, { type FC } from \"react\";\nimport { Card, CardContent } from \"../ui/card\";\nimport { Button } from \"../ui/button\";\nimport { useNexus } from \"../nexus/NexusProvider\";\nimport type { Address } from \"viem\";\nimport TokenMultiSelect from \"./components/token-multi-select\";\n\ninterface SwapDepositProps {\n  address: Address;\n  title?: string;\n}\n\nconst SwapDeposit: FC<SwapDepositProps> = ({ address, title = \"Deposit\" }) => {\n  const { nexusSDK } = useNexus();\n\n  return (\n    <Card className=\"w-full max-w-xl\">\n      <CardContent className=\"flex flex-col gap-y-4 w-full\">\n        <TokenMultiSelect title={title} />\n      </CardContent>\n    </Card>\n  );\n};\n\nexport default SwapDeposit;\n",
+      "type": "registry:component",
+      "target": "components/swap-deposit/swap-deposit.tsx"
+    }
+  ]
+}
+

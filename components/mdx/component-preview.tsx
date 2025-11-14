@@ -23,6 +23,7 @@ const SHOWCASE_MAP: Record<
   swaps: () => import("@/components/showcase/swaps-showcase"),
   "unified-balance": () =>
     import("@/components/showcase/unified-balance-showcase"),
+  "swap-deposit": () => import("@/components/showcase/swap-deposit-showcase"),
 };
 
 export function ComponentPreview({

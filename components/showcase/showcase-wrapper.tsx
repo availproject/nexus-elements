@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { NexusNetwork } from "@avail-project/nexus-core";
 import { PreviewPanel } from "../helpers/preview-panel";
 
-const disabledTestnet = ["deposit", "swaps"];
+const disabledTestnet = ["deposit", "swaps", "swap-deposit"];
 
 const ShowcaseWrapper = ({
   children,
@@ -14,7 +14,12 @@ const ShowcaseWrapper = ({
 }: {
   children: React.ReactNode;
   connectLabel?: string;
-  type: "deposit" | "swaps" | "fast-bridge" | "unified-balance";
+  type:
+    | "deposit"
+    | "swaps"
+    | "fast-bridge"
+    | "unified-balance"
+    | "swap-deposit";
 }) => {
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;
