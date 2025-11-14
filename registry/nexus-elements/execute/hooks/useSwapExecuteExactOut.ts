@@ -3,7 +3,6 @@ import {
   type NexusSDK,
   NEXUS_EVENTS,
   type SwapStepType,
-  parseUnits,
   SUPPORTED_CHAINS,
   type ExactOutSwapInput,
   type ExecuteResult,
@@ -108,7 +107,7 @@ const useSwapExecuteExactOut = ({
     setExecuteCompleted(false);
     seed(SWAP_EXPECTED_STEPS);
     try {
-      const toAmount = parseUnits(inputs.amount as string, 6);
+      const toAmount = nexusSDK?.utils?.parseUnits(inputs.amount as string, 6);
       const input: ExactOutSwapInput = {
         toChainId: SUPPORTED_CHAINS.ARBITRUM,
         toTokenAddress: TOKEN_CONTRACT_ADDRESSES.USDT[

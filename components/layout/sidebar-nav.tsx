@@ -68,7 +68,6 @@ export default function SidebarNav({
           </SidebarGroupContent>
         </SidebarGroup>
         {tree.children.map((item: any) => {
-          console.log(item);
           if (EXCLUDED_SECTIONS.includes(item.$id ?? "")) {
             return null;
           }

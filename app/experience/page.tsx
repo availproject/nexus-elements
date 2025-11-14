@@ -6,16 +6,14 @@ import ExperienceProvider, {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import FastBridge from "@/registry/nexus-elements/fast-bridge/fast-bridge";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import {
   SUPPORTED_CHAINS,
-  encodeContractCall,
   TOKEN_CONTRACT_ADDRESSES,
-  parseUnits,
   type ExecuteParams,
   EthereumProvider,
 } from "@avail-project/nexus-core";
-import type { Abi } from "viem";
+import { encodeFunctionData, parseUnits, type Abi } from "viem";
 import SwapExecuteExactOut from "@/registry/nexus-elements/execute/swap-execute-exact-out";
 import Swaps from "@/registry/nexus-elements/swaps/swaps";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
@@ -82,16 +80,15 @@ const executeBuilder = (
   const tokenAddr = TOKEN_CONTRACT_ADDRESSES.USDT[
     SUPPORTED_CHAINS.ARBITRUM
   ] as `0x${string}`;
-  const encoded = encodeContractCall({
-    contractAbi: abi,
+  const encoded = encodeFunctionData({
+    abi: abi,
     functionName: "supply",
-    functionParams: [tokenAddr, amountWei, user, 0],
+    args: [tokenAddr, amountWei, user, 0],
   });
-  if (!encoded.success || !encoded.data)
-    throw new Error("Failed to encode contract call");
+  if (!encoded) throw new Error("Failed to encode contract call");
   return {
     to: contractAddress,
-    data: encoded.data,
+    data: encoded,
     tokenApproval: {
       token: "USDT",
       amount: amountWei,
@@ -149,9 +146,17 @@ function StepContent() {
 export default function NexusExperience() {
   const { nexusSDK, handleInit, loading } = useNexus();
   const { connector } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const nexusInit = async () => {
     try {
-      const provider = (await connector?.getProvider()) as EthereumProvider;
+      const wcProvider =
+        walletClient &&
+        ({
+          request: (args: unknown) => walletClient.request(args as any),
+        } as unknown as EthereumProvider);
+      const provider =
+        wcProvider ||
+        ((await connector?.getProvider()) as EthereumProvider | undefined);
       if (!provider) throw new Error("No provider found");
       await handleInit(provider);
     } catch (error) {

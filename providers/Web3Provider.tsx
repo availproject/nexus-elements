@@ -103,11 +103,11 @@ const config = createConfig(
   })
 );
 
-function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
+function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;
   const nexusConfig = useMemo(
-    () => ({ network: urlNetwork as NexusNetwork, debug: true as const }),
+    () => ({ network: urlNetwork, debug: true }),
     [urlNetwork]
   );
   return <NexusProvider config={nexusConfig}>{children}</NexusProvider>;
@@ -122,7 +122,7 @@ const Web3Provider = ({
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
           <ConnectKitProvider>
-            <NexusProviders>{children}</NexusProviders>
+            <NexusContainer>{children}</NexusContainer>
           </ConnectKitProvider>
         </QueryClientProvider>
       </WagmiProvider>

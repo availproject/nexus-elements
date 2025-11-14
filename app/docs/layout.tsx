@@ -4,9 +4,9 @@ import { source } from "@/lib/source";
 
 export default function DocsLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="container-wrapper flex flex-1 flex-col px-2">
       <SidebarProvider

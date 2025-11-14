@@ -6,7 +6,6 @@ import {
   type ExactInSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
-  parseUnits,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { useNexus } from "../../../nexus/NexusProvider";
@@ -127,7 +126,7 @@ const useExactIn = ({
       setLoading(true);
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
-      const amountWei = parseUnits(
+      const amountWei = nexusSDK?.utils?.parseUnits(
         inputs.fromAmount,
         inputs.fromToken.decimals
       );
