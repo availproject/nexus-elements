@@ -252,7 +252,7 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={`$${renderTotalFeeBreakdown?.totalGasFee} USD`}
+            total={`$${renderTotalFeeBreakdown?.totalGasFee.toFixed(4)} USD`}
             bridge={renderTotalFeeBreakdown?.bridgeFormatted ?? ""}
             execute={renderTotalFeeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}
@@ -324,7 +324,7 @@ const SimpleDeposit = ({
       </Dialog>
 
       {txError && (
-        <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
+        <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-sm">
           <span className="flex-1 max-w-md truncate">{txError}</span>
           <Button
             type="button"

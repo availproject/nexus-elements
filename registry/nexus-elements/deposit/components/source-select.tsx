@@ -39,7 +39,7 @@ const SourceSelect = ({
         Customise source chains
         <ChevronDown className="size-4 text-primary data-[state=open]:rotate-180 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </PopoverTrigger>
-      <PopoverContent className="grid grid-cols-2 w-max">
+      <PopoverContent className="grid grid-cols-1 sm:grid-cols-2 w-max overflow-y-scroll max-h-[300px]">
         {chainOptions ? (
           chainOptions?.map((chain) => {
             return (

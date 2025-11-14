@@ -125,7 +125,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
               <p className="text-xs font-medium mb-2">Chains</p>
-              <div className="flex flex-col items-start gap-y-1 w-full">
+              <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
                 {chains.map((c: any) => (
                   <Button
                     key={c.id}
@@ -149,7 +149,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
             </div>
             <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
               <p className="text-xs font-medium mb-2">Tokens</p>
-              <div className="flex flex-col items-start gap-y-1 w-full">
+              <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
                 {tempChain && tokensForTempChain ? (
                   tokensForTempChain?.map((t) => (
                     <Button

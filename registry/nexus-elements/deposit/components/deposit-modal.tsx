@@ -29,7 +29,7 @@ const DepositModal = ({
       <DialogTrigger asChild>
         <Button>Deposit</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="py-4 px-1 sm:p-6">
         <DialogHeader>
           <DialogTitle>{heading}</DialogTitle>
         </DialogHeader>
