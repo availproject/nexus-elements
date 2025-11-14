@@ -71,10 +71,10 @@ const FastBridge: FC<FastBridgeProps> = ({
     filteredUnifiedBalance,
     startTransaction,
     setIsDialogOpen,
-    stopTimer,
     commitAmount,
     lastExplorerUrl,
     steps,
+    status,
   } = useBridge({
     prefill,
     network: network ?? "mainnet",
@@ -88,14 +88,6 @@ const FastBridge: FC<FastBridgeProps> = ({
     onStart,
     onError,
   });
-
-  const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
-  React.useEffect(() => {
-    if (allCompleted) {
-      stopTimer();
-    }
-  }, [allCompleted, stopTimer]);
-
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
@@ -188,7 +180,7 @@ const FastBridge: FC<FastBridgeProps> = ({
             setIsDialogOpen(open);
           }}
         >
-          {intent && (
+          {intent && !isDialogOpen && (
             <div className="w-full flex items-center gap-x-2 justify-between">
               <Button variant={"destructive"} onClick={reset} className="w-1/2">
                 Deny
@@ -222,14 +214,15 @@ const FastBridge: FC<FastBridgeProps> = ({
                 steps={steps}
                 viewIntentUrl={lastExplorerUrl}
                 operationType={"bridge"}
+                completed={status === "success"}
               />
             )}
           </DialogContent>
         </Dialog>
 
         {txError && (
-          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
-            <span className="flex-1 w-md truncate">{txError}</span>
+          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-md">
+            <span className="flex-1 w-full truncate">{txError}</span>
             <Button
               type="button"
               size={"icon"}

@@ -149,6 +149,7 @@ const useBridge = ({
       return;
     }
     setLoading(true);
+    dispatch({ type: "setStatus", payload: "executing" });
     setTxError(null);
     onStart?.();
     try {
@@ -219,6 +220,7 @@ const useBridge = ({
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
+      dispatch({ type: "setStatus", payload: "error" });
     } finally {
       setLoading(false);
     }
@@ -227,6 +229,7 @@ const useBridge = ({
   const onSuccess = async () => {
     // Close dialog and stop timer on success
     stopwatch.stop();
+    dispatch({ type: "setStatus", payload: "success" });
     onComplete?.();
     setIntent(null);
     setAllowance(null);
@@ -255,6 +258,7 @@ const useBridge = ({
     setIntent(null);
     setAllowance(null);
     dispatch({ type: "resetInputs" });
+    dispatch({ type: "setStatus", payload: "idle" });
     setLoading(false);
     setRefreshing(false);
     stopwatch.stop();
@@ -304,10 +308,6 @@ const useBridge = ({
     }
   }, [inputs]);
 
-  const stopTimer = () => {
-    stopwatch.stop();
-  };
-
   return {
     inputs,
     setInputs,
@@ -322,10 +322,10 @@ const useBridge = ({
     reset,
     filteredUnifiedBalance,
     startTransaction,
-    stopTimer,
     commitAmount,
     lastExplorerUrl,
     steps,
+    status: state.status,
   };
 };
 

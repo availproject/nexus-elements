@@ -1,8 +1,6 @@
 "use client";
-
-import React from "react";
-import { CliCommand } from "../helpers/cli-command";
 import { Tabs } from "@/registry/nexus-elements/ui/tabs";
+import * as React from "react";
 
 export function CodeTabs({ children }: React.ComponentProps<typeof Tabs>) {
   const [config, setConfig] = React.useState<{
@@ -11,13 +9,9 @@ export function CodeTabs({ children }: React.ComponentProps<typeof Tabs>) {
     installationType: "cli",
   });
 
-  const installationType = React.useMemo(() => {
-    return config.installationType || "cli";
-  }, [config]);
-
   return (
     <Tabs
-      value={installationType}
+      value={config.installationType}
       onValueChange={(value) =>
         setConfig({ ...config, installationType: value as "cli" | "manual" })
       }
@@ -26,12 +20,4 @@ export function CodeTabs({ children }: React.ComponentProps<typeof Tabs>) {
       {children}
     </Tabs>
   );
-}
-
-export function InstallCommand({ name }: { name: string }) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://nexus-elements.vercel.app";
-  const url = `${baseUrl}/r/${name}.json`;
-
-  return <CliCommand url={url} className="mt-4" />;
 }

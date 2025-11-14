@@ -2,7 +2,7 @@
 import * as React from "react";
 import { LoaderPinwheel } from "lucide-react";
 import { type EthereumProvider } from "@avail-project/nexus-core";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";
 import { Button } from "@/registry/nexus-elements/ui/button";
@@ -17,14 +17,23 @@ export function PreviewPanel({
   connectLabel,
 }: Readonly<PreviewPanelProps>) {
   const [loading, setLoading] = React.useState(false);
-  const { status, connector } = useAccount();
+  const { status } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const { nexusSDK, handleInit } = useNexus();
 
   const initializeNexus = async () => {
     setLoading(true);
     try {
-      const provider = (await connector?.getProvider()) as EthereumProvider;
-      await handleInit(provider);
+      const wcProvider =
+        walletClient &&
+        ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          request: (args: unknown) => walletClient.request(args as any),
+        } as unknown as EthereumProvider);
+      if (!wcProvider) {
+        throw new Error("No EIP-1193 provider available");
+      }
+      await handleInit(wcProvider);
     } catch (error) {
       console.error(error);
       toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
@@ -38,7 +47,7 @@ export function PreviewPanel({
         {(status === "connected" || status === "connecting") && nexusSDK && (
           <>{children}</>
         )}
-        {(status === "connected" || status === "connecting") && !nexusSDK && (
+        {status === "connected" && !nexusSDK && (
           <Button onClick={initializeNexus}>
             {loading ? (
               <LoaderPinwheel className="size-6 animate-spin" />

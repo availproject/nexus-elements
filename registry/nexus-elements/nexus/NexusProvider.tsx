@@ -49,7 +49,7 @@ interface NexusContextType {
     context?: string;
     details?: Record<string, unknown>;
   };
-  getFiatValue: (amount: string | number | bigint, token: string) => string;
+  getFiatValue: (amount: number, token: string) => string;
 }
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
@@ -100,10 +100,8 @@ const NexusProvider = ({
     try {
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
-      console.log("Nexus initialized with Provider:", provider);
       setNexusSDK(sdk);
       const unifiedBalance = await sdk?.getUnifiedBalances(true);
-      console.log("unifiedBalance", unifiedBalance);
       setUnifiedBalance(unifiedBalance);
       // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
       // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
@@ -120,7 +118,6 @@ const NexusProvider = ({
       for (const token of ["ETH", "USDC", "USDT"]) {
         usdPerUnit[token] ??= 1;
       }
-      console.log("exchangeRate (USD per unit)", usdPerUnit);
       setExchangeRate(usdPerUnit);
       initChainsAndTokens();
     } catch (error) {
@@ -135,13 +132,20 @@ const NexusProvider = ({
       if (!sdk.isInitialized()) throw new Error("Nexus is not initialized");
       await sdk.deinit();
       setNexusSDK(null);
+      setSupportedChainsAndTokens(null);
+      setSwapSupportedChainsAndTokens(null);
+      setUnifiedBalance(null);
+      setExchangeRate(null);
+      setIntent(null);
+      setSwapIntent(null);
+      setAllowance(null);
+      setLoading(false);
     } catch (error) {
       console.error("Error deinitializing Nexus:", error);
     }
   };
 
   const attachEventHooks = () => {
-    console.log("attachEventHooks");
     sdk.setOnAllowanceHook((data: OnAllowanceHookData) => {
       setAllowance(data);
     });
@@ -151,22 +155,26 @@ const NexusProvider = ({
     });
 
     sdk.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
-      console.log("swapIntent", data);
       setSwapIntent(data);
     });
   };
 
   const handleInit = useCallback(
     async (provider: EthereumProvider) => {
+      if (loading) {
+        return;
+      }
       if (sdk.isInitialized()) {
         console.log("Nexus already initialized");
         return;
       }
+      if (!provider || typeof (provider as any).request !== "function") {
+        throw new Error("Invalid EIP-1193 provider");
+      }
       await initializeNexus(provider);
-      console.log("handleInit attachEventHooks");
       attachEventHooks();
     },
-    [sdk]
+    [sdk, loading, initializeNexus]
   );
 
   const fetchUnifiedBalance = async () => {
@@ -178,18 +186,11 @@ const NexusProvider = ({
     }
   };
 
-  function getFiatValue(amount: string | number | bigint, token: string) {
-    const key = (token || "").toUpperCase();
+  function getFiatValue(amount: number, token: string) {
+    const key = token.toUpperCase();
     const rate = Number.parseFloat(String(exchangeRate?.[key] ?? "0"));
-    const amountNum =
-      typeof amount === "number"
-        ? amount
-        : Number.parseFloat(
-            (typeof amount === "bigint" ? amount.toString() : amount) || "0"
-          );
-
-    const isValid = Number.isFinite(amountNum) && Number.isFinite(rate);
-    const approx = isValid ? rate * amountNum : 0;
+    const isValid = Number.isFinite(amount) && Number.isFinite(rate);
+    const approx = isValid ? rate * amount : 0;
 
     return approx.toFixed(3);
   }

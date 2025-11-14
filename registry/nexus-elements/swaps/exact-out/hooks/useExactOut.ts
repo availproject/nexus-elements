@@ -3,7 +3,6 @@ import {
   NexusSDK,
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
-  parseUnits,
   type ExactOutSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
@@ -103,7 +102,11 @@ const useExactOut = ({
       setLoading(true);
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
-      const amountWei = parseUnits(inputs.toAmount, inputs.toToken.decimals);
+
+      const amountWei = nexusSDK?.utils?.parseUnits?.(
+        inputs.toAmount,
+        inputs.toToken.decimals
+      );
       const swapInput: ExactOutSwapInput = {
         toAmount: amountWei,
         toChainId: inputs.toChainID,

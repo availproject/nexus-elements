@@ -111,7 +111,7 @@ const SimpleDeposit = ({
     gasUsd: string;
     gasFormatted: string;
   } = useMemo(() => {
-    if (!nexusSDK || !simulation)
+    if (!nexusSDK || !simulation || !token)
       return {
         totalGasFee: 0,
         bridgeUsd: "0",
@@ -131,11 +131,13 @@ const SimpleDeposit = ({
           decimals: nativeDecimals,
         }
       ) ?? "0";
-    const gasUnits = formatUnits(
-      simulation?.executeSimulation?.gasFee ?? BigInt(0),
-      nativeDecimals
+    const gasUnits = Number.parseFloat(
+      formatUnits(
+        simulation?.executeSimulation?.gasFee ?? BigInt(0),
+        nativeDecimals
+      )
     );
-    const gasUsd = getFiatValue(Number.parseFloat(gasUnits), nativeSymbol);
+    const gasUsd = getFiatValue(gasUnits, nativeSymbol);
 
     if (simulation?.bridgeSimulation) {
       const tokenDecimals =
@@ -150,7 +152,7 @@ const SimpleDeposit = ({
         ) ?? "0";
       const bridgeUsd = getFiatValue(
         Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total),
-        token as string
+        token
       );
 
       const totalGasFee =

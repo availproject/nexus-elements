@@ -1,13 +1,6 @@
 "use client";
-import "@rainbow-me/rainbowkit/styles.css";
-import {
-  Chain,
-  getDefaultConfig,
-  RainbowKitProvider,
-  darkTheme,
-  lightTheme,
-} from "@rainbow-me/rainbowkit";
-import { WagmiProvider } from "wagmi";
+import { createConfig, WagmiProvider } from "wagmi";
+import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import {
   mainnet,
   scroll,
@@ -26,12 +19,11 @@ import {
   monadTestnet,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { defineChain } from "viem";
+import { Chain, defineChain } from "viem";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import { useSearchParams } from "next/navigation";
 import { type NexusNetwork } from "@avail-project/nexus-core";
 import { Suspense, useMemo } from "react";
-import { useTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const hyperEVM = defineChain({
@@ -69,51 +61,53 @@ const sophon = defineChain({
 });
 
 // Add chain icons for RainbowKit
-type RainbowKitChain = Chain & { iconUrl?: string; iconBackground?: string };
+type ConnectKitChain = Chain & { iconUrl?: string; iconBackground?: string };
 
-const hyperEVMWithIcon: RainbowKitChain = {
+const hyperEVMWithIcon: ConnectKitChain = {
   ...hyperEVM,
   iconUrl:
     "https://assets.coingecko.com/coins/images/50882/standard/hyperliquid.jpg?1729431300",
   iconBackground: "#0a3cff",
 };
 
-const sophonWithIcon: RainbowKitChain = {
+const sophonWithIcon: ConnectKitChain = {
   ...sophon,
   iconUrl:
     "https://assets.coingecko.com/coins/images/38680/standard/sophon_logo_200.png?1747898236",
   iconBackground: "#6b5cff",
 };
 
-const config = getDefaultConfig({
-  appName: "Nexus Elements",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_ID!,
-  chains: [
-    mainnet,
-    base,
-    sophonWithIcon,
-    hyperEVMWithIcon,
-    bsc,
-    kaia,
-    arbitrum,
-    avalanche,
-    optimism,
-    polygon,
-    scroll,
-    sepolia,
-    baseSepolia,
-    arbitrumSepolia,
-    optimismSepolia,
-    polygonAmoy,
-    monadTestnet,
-  ],
-});
+const config = createConfig(
+  getDefaultConfig({
+    appName: "Nexus Elements",
+    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
+    chains: [
+      mainnet,
+      base,
+      sophon,
+      hyperEVM,
+      bsc,
+      kaia,
+      arbitrum,
+      avalanche,
+      optimism,
+      polygon,
+      scroll,
+      sepolia,
+      baseSepolia,
+      arbitrumSepolia,
+      optimismSepolia,
+      polygonAmoy,
+      monadTestnet,
+    ],
+  })
+);
 
-function NexusProviders({ children }: Readonly<{ children: React.ReactNode }>) {
+function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;
   const nexusConfig = useMemo(
-    () => ({ network: urlNetwork as NexusNetwork, debug: true as const }),
+    () => ({ network: urlNetwork, debug: true }),
     [urlNetwork]
   );
   return <NexusProvider config={nexusConfig}>{children}</NexusProvider>;
@@ -123,33 +117,13 @@ const Web3Provider = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
   const queryClient = useMemo(() => new QueryClient(), []);
-  const { resolvedTheme } = useTheme();
-  const rkTheme = useMemo(
-    () =>
-      resolvedTheme === "dark"
-        ? darkTheme({
-            accentColor: "#0ea5e9",
-            accentColorForeground: "#ffffff",
-            borderRadius: "small",
-            fontStack: "system",
-            overlayBlur: "small",
-          })
-        : lightTheme({
-            accentColor: "#0ea5e9",
-            accentColorForeground: "#ffffff",
-            borderRadius: "small",
-            fontStack: "system",
-            overlayBlur: "small",
-          }),
-    [resolvedTheme]
-  );
   return (
     <Suspense fallback={<Skeleton className="w-full h-full" />}>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider modalSize="compact" theme={rkTheme}>
-            <NexusProviders>{children}</NexusProviders>
-          </RainbowKitProvider>
+          <ConnectKitProvider>
+            <NexusContainer>{children}</NexusContainer>
+          </ConnectKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </Suspense>

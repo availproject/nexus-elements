@@ -5,9 +5,8 @@ import Link from "next/link";
 type MDXComponentsMap = Record<string, React.ComponentType<any>>;
 import { cn } from "@/lib/utils";
 import { ComponentPreview } from "./component-preview";
-import { CodeTabs, InstallCommand } from "./code-tabs";
+import { CodeTabs } from "./code-tabs";
 import { ComponentSource } from "./component-source";
-import { CliCommand } from "../helpers/cli-command";
 import { CopyButton } from "@/components/helpers/copy-button";
 import { CodeBlockCommand } from "./code-block-command";
 import { CodeCollapsibleWrapper } from "./code-collapsible-wrapper";
@@ -68,7 +67,10 @@ export const mdxComponents: MDXComponentsMap = {
   ),
   // Text
   p: ({ className, ...props }: React.ComponentProps<"p">) => (
-    <p className={cn("leading-relaxed not-first:mt-6", className)} {...props} />
+    <span
+      className={cn("leading-relaxed not-first:mt-6", className)}
+      {...props}
+    />
   ),
   a: ({ className, ...props }: React.ComponentProps<"a">) => (
     <a
@@ -227,9 +229,7 @@ export const mdxComponents: MDXComponentsMap = {
   ComponentSource,
   CodeCollapsibleWrapper,
   CodeTabs,
-  CliCommand,
   DepsInstall,
-  InstallCommand,
   CopyButton,
   CodeBlockCommand,
   Link: ({ className, ...props }: React.ComponentProps<typeof Link>) => (

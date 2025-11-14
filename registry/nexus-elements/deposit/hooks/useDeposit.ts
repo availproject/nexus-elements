@@ -17,7 +17,7 @@ import {
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState, useReducer } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
-import { parseUnits, type Address } from "viem";
+import { type Address } from "viem";
 import { useStopwatch } from "../../common/hooks/useStopwatch";
 import { usePolling } from "../../common/hooks/usePolling";
 import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
@@ -151,7 +151,7 @@ const useDeposit = ({
     try {
       if (!nexusSDK) throw new Error("Nexus SDK not initialized");
       const decimals = TOKEN_METADATA[token].decimals;
-      const amountBigInt = parseUnits(inputs.amount, decimals);
+      const amountBigInt = nexusSDK?.utils?.parseUnits(inputs.amount, decimals);
       const executeParams: ExecuteConfig | undefined = executeBuilder
         ? executeBuilder(token, inputs.amount, inputs.chain, address)
         : executeConfig;
@@ -222,7 +222,7 @@ const useDeposit = ({
     setSimulating(true);
     try {
       const decimals = TOKEN_METADATA[token].decimals;
-      const amountBigInt = parseUnits(amountToUse, decimals);
+      const amountBigInt = nexusSDK?.utils?.parseUnits(amountToUse, decimals);
       const executeParams: ExecuteConfig | undefined = executeBuilder
         ? executeBuilder(token, amountToUse, inputs.chain, address)
         : executeConfig;

@@ -46,27 +46,35 @@ Nexus Elements internally uses shadcn/ui components as its foundation. While you
   You can now start adding Nexus Elements components to your project. The
   command below installs the <code>unified-balance</code> component. Replace it
   with any other component name as needed.
-</div>
-<InstallCommand name="unified-balance" />
-<div className="mt-3! leading-relaxed not-first:mt-6">
+</p>
+
+```bash
+npx shadcn@latest add https://elements.nexus.availproject.org/r/unified-balance.json
+```
+
+<p className="mt-3!">
   The command will add all required files and dependencies for the selected
   component.
 </div>
 
+<span id="usage" className="block -mt-24 pt-24" />
 <Step>Wrap your app with the provider</Step>
-```tsx showLineNumbers "use client"; import NexusProvider from "@/components/nexus/NexusProvider";
+
+```tsx showLineNumbers
+"use client";
+import NexusProvider from "@/components/nexus/NexusProvider";
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode,
+  children: React.ReactNode;
 }) {
   return <NexusProvider>{children}</NexusProvider>;
 }
-
-````
+```
 
 <Step>Initialize on wallet connect</Step>
+
 ```tsx showLineNumbers
 "use client";
 import { useEffect } from "react";
@@ -86,8 +94,9 @@ export function InitNexusOnConnect() {
 
   return null;
 }
-````
+```
 
+  <span id="usage-without-shadcn/ui" className="block -mt-24 pt-24" />
   <Step>No shadcn/ui? Copy & Paste instead of CLI</Step>
   <Card className="mt-4">
     <CardHeader>
@@ -108,3 +117,4 @@ export function InitNexusOnConnect() {
     </CardContent>
   </Card>
 </Steps>
+```

@@ -6,16 +6,14 @@ import ExperienceProvider, {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import FastBridge from "@/registry/nexus-elements/fast-bridge/fast-bridge";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import {
   SUPPORTED_CHAINS,
-  encodeContractCall,
   TOKEN_CONTRACT_ADDRESSES,
-  parseUnits,
   type ExecuteParams,
   EthereumProvider,
 } from "@avail-project/nexus-core";
-import type { Abi } from "viem";
+import { encodeFunctionData, parseUnits, type Abi } from "viem";
 import Swaps from "@/registry/nexus-elements/swaps/swaps";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { LoaderPinwheel } from "lucide-react";
@@ -82,16 +80,15 @@ const executeBuilder = (
   const tokenAddr = TOKEN_CONTRACT_ADDRESSES.USDT[
     SUPPORTED_CHAINS.ARBITRUM
   ] as `0x${string}`;
-  const encoded = encodeContractCall({
-    contractAbi: abi,
+  const encoded = encodeFunctionData({
+    abi: abi,
     functionName: "supply",
-    functionParams: [tokenAddr, amountWei, user, 0],
+    args: [tokenAddr, amountWei, user, 0],
   });
-  if (!encoded.success || !encoded.data)
-    throw new Error("Failed to encode contract call");
+  if (!encoded) throw new Error("Failed to encode contract call");
   return {
     to: contractAddress,
-    data: encoded.data,
+    data: encoded,
     tokenApproval: {
       token: "USDT",
       amount: amountWei,
@@ -145,19 +142,24 @@ function StepContent() {
 
 export default function NexusExperience() {
   const { nexusSDK, handleInit, loading } = useNexus();
-  const { connector } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const nexusInit = async () => {
     try {
-      const provider = (await connector?.getProvider()) as EthereumProvider;
-      if (!provider) throw new Error("No provider found");
-      await handleInit(provider);
+      const wcProvider =
+        walletClient &&
+        ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          request: (args: unknown) => walletClient.request(args as any),
+        } as unknown as EthereumProvider);
+      if (!wcProvider) throw new Error("No EIP-1193 provider available");
+      await handleInit(wcProvider);
     } catch (error) {
       console.error(error);
     }
   };
   return (
     <ExperienceProvider>
-      <div className="w-full flex flex-col items-center  gap-y-4">
+      <div className="w-full flex flex-col items-center gap-y-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Guided Experience</h2>
