@@ -8,10 +8,11 @@ import {
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
+  TOKEN_METADATA,
   type UserAsset,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState, useReducer } from "react";
-import { type Address, isAddress } from "viem";
+import { type Address, isAddress, parseUnits } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useStopwatch } from "../../common/hooks/useStopwatch";
 import { usePolling } from "../../common/hooks/usePolling";
@@ -156,7 +157,10 @@ const useBridge = ({
         const transferTxn = await nexusSDK?.bridgeAndTransfer(
           {
             token: inputs?.token,
-            amount: inputs?.amount,
+            amount: parseUnits(
+              inputs?.amount,
+              TOKEN_METADATA[inputs?.token].decimals
+            ),
             toChainId: inputs?.chain,
             recipient: inputs?.recipient,
           },
@@ -185,7 +189,10 @@ const useBridge = ({
       const bridgeTxn = await nexusSDK?.bridge(
         {
           token: inputs?.token,
-          amount: inputs?.amount,
+          amount: parseUnits(
+            inputs?.amount,
+            TOKEN_METADATA[inputs?.token].decimals
+          ),
           toChainId: inputs?.chain,
         },
         {
