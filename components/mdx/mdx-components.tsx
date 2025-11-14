@@ -17,7 +17,6 @@ import {
   TabsContent,
 } from "@/registry/nexus-elements/ui/tabs";
 import { Code } from "lucide-react";
-import { DepsInstall } from "../helpers/deps-install";
 
 export const mdxComponents: MDXComponentsMap = {
   // Headings
@@ -229,7 +228,6 @@ export const mdxComponents: MDXComponentsMap = {
   ComponentSource,
   CodeCollapsibleWrapper,
   CodeTabs,
-  DepsInstall,
   CopyButton,
   CodeBlockCommand,
   Link: ({ className, ...props }: React.ComponentProps<typeof Link>) => (

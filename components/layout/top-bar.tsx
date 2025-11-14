@@ -96,7 +96,7 @@ function MobileLink({
     <Link
       href={href}
       onClick={() => {
-        router.push(href.toString());
+        router.push(href as string);
         onOpenChange?.(false);
       }}
       className={cn("text-2xl font-medium", className)}
@@ -111,11 +111,11 @@ function MobileNav({
   items,
   componentItems,
   className,
-}: {
+}: Readonly<{
   items: { href: string; label: string }[];
   componentItems: { href: string; label: string }[];
   className?: string;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -168,8 +168,12 @@ function MobileNav({
               <MobileLink href="/" onOpenChange={setOpen}>
                 Home
               </MobileLink>
-              {items.map((item, index) => (
-                <MobileLink key={index} href={item.href} onOpenChange={setOpen}>
+              {items.map((item) => (
+                <MobileLink
+                  key={item.label}
+                  href={item.href}
+                  onOpenChange={setOpen}
+                >
                   {item.label}
                 </MobileLink>
               ))}
@@ -303,9 +307,7 @@ export default function Topbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
-          {!mounted ? (
-            <Skeleton className="w-[118px] h-9" />
-          ) : (
+          {mounted ? (
             <ThemeControl
               theme={theme ?? ""}
               setTheme={setTheme}
@@ -313,6 +315,8 @@ export default function Topbar() {
               setPalette={setPalette}
               isMobile={isMobile}
             />
+          ) : (
+            <Skeleton className="w-[118px] h-9" />
           )}
 
           <ConnectWalletButton />

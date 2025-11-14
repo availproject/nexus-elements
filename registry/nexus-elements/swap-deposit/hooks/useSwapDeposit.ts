@@ -3,7 +3,6 @@ import {
   type NexusSDK,
   NEXUS_EVENTS,
   type SwapStepType,
-  parseUnits,
   type ExecuteResult,
   type ExecuteParams,
   type ExactInSwapInput,
@@ -152,6 +151,9 @@ const useSwapDeposit = ({
   onComplete,
   onError,
 }: UseSwapDepositProps) => {
+  if (!nexusSDK) {
+    throw new Error("Nexus SDK not initialized");
+  }
   const {
     handleNexusError,
     swapIntent,
@@ -267,14 +269,16 @@ const useSwapDeposit = ({
             b.decimals ?? asset.decimals ?? src.decimals ?? 18
           );
           try {
-            const balWei = parseUnits(String(b.balance ?? "0"), decimals);
+            const balWei =
+              nexusSDK?.utils?.parseUnits(String(b.balance ?? "0"), decimals) ??
+              BigInt(0);
             return { balanceWei: balWei, decimals };
           } catch {
-            return { balanceWei: parseUnits("0", 6), decimals };
+            return { balanceWei: BigInt(0), decimals };
           }
         }
       }
-      return { balanceWei: parseUnits("0", 6), decimals: src.decimals ?? 18 };
+      return { balanceWei: BigInt(0), decimals: src.decimals ?? 18 };
     },
     [unifiedBalance]
   );
@@ -381,11 +385,11 @@ const useSwapDeposit = ({
         if (!price || price <= 0) continue;
         const tokens = usd / price;
         // Convert tokens to wei using decimals; floor to avoid exceeding balance
-        const amountWei = parseUnits(
+        const amountWei = nexusSDK?.utils.parseUnits(
           tokens.toFixed(src.decimals),
           src.decimals
         );
-        if (amountWei <= parseUnits("0", 6)) continue;
+        if (amountWei <= BigInt(0)) continue;
         from.push({
           chainId: src.chainId,
           amount: amountWei,
@@ -465,6 +469,9 @@ const useSwapDeposit = ({
       });
       dispatch({ type: "SET_SIM_GAS", gas: sim?.gasFee ?? null });
     } catch (error) {
+      const { message } = handleNexusError(error);
+      dispatch({ type: "SET_ERROR", message });
+      onError?.(message);
       dispatch({ type: "SET_SIM_GAS", gas: null });
     }
   }, [nexusSDK, swapIntent, executeBuilder, address, destinationChainId]);
