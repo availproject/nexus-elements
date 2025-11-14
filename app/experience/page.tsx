@@ -160,7 +160,7 @@ export default function NexusExperience() {
   };
   return (
     <ExperienceProvider>
-      <div className="w-full flex flex-col items-center  gap-y-4">
+      <div className="w-full flex flex-col items-center gap-y-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Guided Experience</h2>

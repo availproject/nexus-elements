@@ -3,25 +3,18 @@ import dynamic from "next/dynamic";
 import React, { useEffect, useRef, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 import { useTheme } from "next-themes";
-import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { Sun, Moon, Palette } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/registry/nexus-elements/ui/select";
-import Link from "next/link";
+import Link, { type LinkProps } from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/registry/nexus-elements/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/registry/nexus-elements/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/registry/nexus-elements/ui/popover";
+import ThemeControl from "./theme-control";
 
 const ConnectButton = dynamic(
   () => import("@rainbow-me/rainbowkit").then((m) => m.ConnectButton),
@@ -30,127 +23,184 @@ const ConnectButton = dynamic(
   }
 );
 
-const PALETTES: Record<string, string> = {
-  default: "default",
-  blue: "blue",
-  cyber: "cyber",
-  mono: "mono",
-  neo: "neo",
-};
+const NAV_ITEMS = [
+  // {
+  //   sectionId: "experience-nexus",
+  //   section: "Experience Nexus",
+  //   children: [
+  //     {
+  //       id: "experience",
+  //       label: "Build Once, Scale Everywhere",
+  //       href: "/experience",
+  //     },
+  //   ],
+  // },
+  {
+    sectionId: "get-started",
+    section: "Get Started",
+    children: [
+      {
+        id: "installation",
+        label: "Installation",
+        href: "/docs/get-started",
+      },
+      {
+        id: "components",
+        label: "Components",
+        href: "/docs/view-components",
+      },
+    ],
+  },
+  {
+    sectionId: "components",
+    section: "Components",
+    children: [
+      {
+        id: "deposit",
+        label: "Deposit",
+        href: "/docs/components/deposit",
+      },
+      {
+        id: "fast-bridge",
+        label: "Fast Bridge",
+        href: "/docs/components/fast-bridge",
+      },
 
-// function ConditionalSidebarTrigger() {
-//   const pathname = usePathname();
-//   // Only show sidebar trigger on pages that have sidebar (components and experience)
-//   const hasSidebar =
-//     pathname?.startsWith("/components") || pathname === "/experience";
+      {
+        id: "swaps",
+        label: "Swaps",
+        href: "/docs/components/swaps",
+      },
+      {
+        id: "unified-balance",
+        label: "Unified Balance",
+        href: "/docs/components/unified-balance",
+      },
+    ],
+  },
+];
 
-//   if (hasSidebar) {
-//     return <SidebarTrigger className="block md:hidden" />;
-//   }
-
-//   // Fallback: render a menu button that doesn't require sidebar context
-//   return (
-//     <Button
-//       variant="ghost"
-//       size="sm"
-//       className="block md:hidden"
-//       aria-label="Menu"
-//     >
-//       <Menu className="h-4 w-4" />
-//     </Button>
-//   );
-// }
-
-type ThemeControlProps = {
-  mounted: boolean;
-  theme: string;
-  setTheme: React.Dispatch<React.SetStateAction<string>>;
-  palette: string;
-  setPalette: React.Dispatch<React.SetStateAction<string>>;
-};
-
-const ThemeControl = ({
-  mounted,
-  theme,
-  setTheme,
-  palette,
-  setPalette,
-}: ThemeControlProps) => {
+function MobileLink({
+  href,
+  onOpenChange,
+  className,
+  children,
+  ...props
+}: LinkProps & {
+  onOpenChange?: (open: boolean) => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const router = useRouter();
   return (
-    <div className="flex items-center gap-x-2">
-      {mounted ? (
-        <>
-          <ToggleGroup
-            type="single"
-            value={theme}
-            onValueChange={(v) => v && setTheme(v)}
-            variant="outline"
-            size="sm"
-            spacing={0}
-            aria-label="Toggle theme"
-          >
-            <ToggleGroupItem value="light" aria-label="Light theme">
-              <Sun className="size-3" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="dark" aria-label="Dark theme">
-              <Moon className="size-3" />
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <Select
-            defaultValue={"default"}
-            value={palette}
-            onValueChange={(v) => setPalette(PALETTES[v])}
-          >
-            <SelectTrigger size="sm" aria-label="Choose color palette">
-              <SelectValue placeholder="Palette" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(PALETTES).map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
-                </SelectItem>
+    <Link
+      href={href}
+      onClick={() => {
+        router.push(href.toString());
+        onOpenChange?.(false);
+      }}
+      className={cn("text-2xl font-medium", className)}
+      {...props}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MobileNav({
+  items,
+  componentItems,
+  className,
+}: {
+  items: { href: string; label: string }[];
+  componentItems: { href: string; label: string }[];
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(
+            "extend-touch-target h-8  touch-manipulation items-center justify-start gap-2.5 p-0 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 active:bg-transparent dark:hover:bg-transparent",
+            className
+          )}
+        >
+          <div className="flex items-center gap-x-2">
+            <div className="relative flex h-8 w-4 items-center justify-center">
+              <div className="relative size-4">
+                <span
+                  className={cn(
+                    "bg-foreground absolute left-0 block h-0.5 w-4 transition-all duration-100",
+                    open ? "top-[0.4rem] -rotate-45" : "top-1"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "bg-foreground absolute left-0 block h-0.5 w-4 transition-all duration-100",
+                    open ? "top-[0.4rem] rotate-45" : "top-2.5"
+                  )}
+                />
+              </div>
+              <span className="sr-only">Toggle Menu</span>
+            </div>
+            <span className="flex h-8 items-center text-lg leading-none font-medium">
+              Menu
+            </span>
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="bg-background/90 no-scrollbar h-(--radix-popper-available-height) w-(--radix-popper-available-width) overflow-y-auto rounded-none border-none p-0 shadow-none backdrop-blur duration-100"
+        align="start"
+        side="bottom"
+        alignOffset={-16}
+        sideOffset={14}
+      >
+        <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
+          <div className="flex flex-col gap-4">
+            <div className="text-muted-foreground text-sm font-medium">
+              Menu
+            </div>
+            <div className="flex flex-col gap-3">
+              <MobileLink href="/" onOpenChange={setOpen}>
+                Home
+              </MobileLink>
+              {items.map((item, index) => (
+                <MobileLink key={index} href={item.href} onOpenChange={setOpen}>
+                  {item.label}
+                </MobileLink>
               ))}
-            </SelectContent>
-          </Select>
-        </>
-      ) : (
-        <Skeleton className="w-[118px] h-9" />
-      )}
-    </div>
-  );
-};
+            </div>
+          </div>
 
-const MobileThemeControl = ({
-  mounted,
-  theme,
-  setTheme,
-  palette,
-  setPalette,
-}: ThemeControlProps) => {
-  return (
-    <Dialog>
-      <DialogTrigger>
-        <Palette className="size-4" />
-      </DialogTrigger>
-      <DialogContent>
-        <ThemeControl
-          mounted={mounted}
-          theme={theme}
-          setTheme={setTheme}
-          palette={palette}
-          setPalette={setPalette}
-        />
-      </DialogContent>
-    </Dialog>
+          <div className="flex flex-col gap-4">
+            <div className="text-muted-foreground text-sm font-medium">
+              Components
+            </div>
+            <div className="flex flex-col gap-3">
+              {componentItems.map((item, idx) => (
+                <MobileLink
+                  key={`${item.href}-${idx}`}
+                  href={item.href}
+                  onOpenChange={setOpen}
+                >
+                  {item.label}
+                </MobileLink>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
-};
+}
 
 export default function Topbar() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
-  const hasSidebar =
-    pathname?.startsWith("/docs") || pathname?.startsWith("/experience");
   const [palette, setPalette] = useState<string>("default");
   const prevPaletteClass = useRef<string | null>(null);
   const isMobile = useIsMobile();
@@ -187,14 +237,20 @@ export default function Topbar() {
     }
   }, [palette, resolvedTheme, mounted]);
 
+  const componentsGroup = NAV_ITEMS.find((g) => g.sectionId === "components");
+  const componentItems =
+    componentsGroup?.children?.map((c) => ({ href: c.href, label: c.label })) ??
+    [];
+  const topItems: { href: string; label: string }[] = [
+    { href: "/docs/get-started", label: "Docs" },
+    { href: "/docs/view-components", label: "Components" },
+  ];
+
   return (
-    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60 border-b">
+    <div className="sticky top-0 z-40 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="h-(--header-height) px-4 py-4 flex items-center justify-between gap-4 ">
         <div className="flex items-center gap-x-6">
-          <Link
-            href={"/"}
-            className={cn("cursor-pointer", hasSidebar && !isMobile && "w-58")}
-          >
+          <Link href={"/"} className={cn("cursor-pointer")}>
             <Image
               src="/avail-light-logo.svg"
               alt="Nexus Elements"
@@ -210,15 +266,20 @@ export default function Topbar() {
               className="block dark:hidden"
             />
           </Link>
+          <MobileNav
+            items={topItems}
+            componentItems={componentItems}
+            className="block lg:hidden"
+          />
           <Link
             href="/docs/get-started"
-            className="text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors"
+            className="text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors hidden lg:inline-block"
           >
             Docs
           </Link>
           <Link
             href="/docs/view-components"
-            className="text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors"
+            className="text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors hidden lg:inline-block"
           >
             Components
           </Link>
@@ -242,21 +303,15 @@ export default function Topbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
-          {isMobile ? (
-            <MobileThemeControl
-              mounted={mounted}
-              theme={theme ?? ""}
-              setTheme={setTheme}
-              palette={palette}
-              setPalette={setPalette}
-            />
+          {!mounted ? (
+            <Skeleton className="w-[118px] h-9" />
           ) : (
             <ThemeControl
-              mounted={mounted}
               theme={theme ?? ""}
               setTheme={setTheme}
               palette={palette}
               setPalette={setPalette}
+              isMobile={isMobile}
             />
           )}
 

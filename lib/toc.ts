@@ -9,6 +9,15 @@ export type TocItem = {
 export const TOC_BY_PATH: Record<string, TocItem[]> = {
   "/docs/get-started": [
     { id: "important-note", text: "Important Note", level: 2 },
+    { id: "usage", text: "Usage", level: 2 },
+    {
+      id: "usage-without-shadcn/ui",
+      text: "Usage without shadcn/ui",
+      level: 2,
+    },
+  ],
+  "/docs/view-components": [
+    { id: "view-components", text: "View Components", level: 2 },
   ],
   "/docs/components/fast-bridge": [
     { id: "installation", text: "Installation", level: 2 },
@@ -28,5 +37,3 @@ export const TOC_BY_PATH: Record<string, TocItem[]> = {
     { id: "usage", text: "Usage", level: 2 },
   ],
 };
-
-

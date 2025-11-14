@@ -20,13 +20,20 @@ links:
     <TabsTrigger value="manual">Manual</TabsTrigger>
   </TabsList>
   <TabsContent value="cli">
-    <CliCommand url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/swaps.json`} />
+
+    ```bash
+    npx shadcn@latest add https://elements.nexus.availproject.org/r/swaps.json
+    ```
+
   </TabsContent>
   <TabsContent value="manual">
     <Steps>
-      <Step>Copy and paste the following code into your project.</Step>
       <Step>Install these dependencies</Step>
-      <DepsInstall name="swaps" className="my-4" />
+```bash
+npm install @avail-project/nexus-core@1.0.0-beta.22 @radix-ui/react-dialog @radix-ui/react-label @radix-ui/react-select @radix-ui/react-slot class-variance-authority clsx tailwind-merge
+```
+      <Step>Copy and paste the following code into your project.</Step>
+
       <div
         data-slot="code"
         className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
@@ -35,6 +42,7 @@ links:
       </div>
       <Step>Update the import paths to match your project setup.</Step>
     </Steps>
+
   </TabsContent>
 </CodeTabs>
 
@@ -71,3 +79,36 @@ links:
   }}
 />
 ```
+
+## API Reference
+
+### Swaps
+
+The `Swaps` component provides cross-chain swaps in either exact-in or exact-out mode with optional prefill and lifecycle callbacks.
+
+<CodeCollapsibleWrapper className="mt-4">
+
+```ts title="SwapsProps"
+interface SwapsProps {
+  exactIn?: boolean; // swap mode: exact-in (default: true) or exact-out
+  onComplete?: (amount?: string) => void; // called when the swap completes
+  onStart?: () => void; // called when the swap starts
+  onError?: (message: string) => void; // called on error
+  exactInprefill?: {
+    // optional prefill for exact-in mode
+    fromChainID?: number;
+    fromToken?: string;
+    fromAmount?: string;
+    toChainID?: number;
+    toToken?: string;
+  };
+  exactOutprefill?: {
+    // optional prefill for exact-out mode
+    toAmount?: string;
+    toChainID?: number;
+    toToken?: string;
+  };
+}
+```
+
+</CodeCollapsibleWrapper>

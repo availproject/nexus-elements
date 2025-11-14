@@ -87,7 +87,7 @@ const sophonWithIcon: RainbowKitChain = {
 
 const config = getDefaultConfig({
   appName: "Nexus Elements",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_ID!,
+  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
   chains: [
     mainnet,
     base,

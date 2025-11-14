@@ -20,15 +20,20 @@ links:
     <TabsTrigger value="manual">Manual</TabsTrigger>
   </TabsList>
   <TabsContent value="cli">
-    <CliCommand
-      url={`${process.env.NEXT_PUBLIC_BASE_URL}/r/unified-balance.json`}
-    />
+
+    ```bash
+    npx shadcn@latest add https://elements.nexus.availproject.org/r/unified-balance.json
+    ```
+
   </TabsContent>
   <TabsContent value="manual">
     <Steps>
-      <Step>Copy and paste the following code into your project.</Step>
       <Step>Install these dependencies</Step>
-      <DepsInstall name="unified-balance" className="my-4" />
+```bash
+npm install @avail-project/nexus-core@1.0.0-beta.22 lucide-react @radix-ui/react-accordion @radix-ui/react-label @radix-ui/react-slot
+```
+      <Step>Copy and paste the following code into your project.</Step>
+
       <div
         data-slot="code"
         className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
@@ -37,6 +42,7 @@ links:
       </div>
       <Step>Update the import paths to match your project setup.</Step>
     </Steps>
+
   </TabsContent>
 </CodeTabs>
 
@@ -45,3 +51,19 @@ links:
 ```tsx showLineNumbers
 <UnifiedBalance />
 ```
+
+## API Reference
+
+### UnifiedBalance
+
+The `UnifiedBalance` component displays your cross-chain liquidity ready to use with `Avail Nexus`.
+
+<CodeCollapsibleWrapper className="mt-4">
+
+```ts title="UnifiedBalanceProps"
+interface UnifiedBalanceProps {
+  className?: string; // optional container className
+}
+```
+
+</CodeCollapsibleWrapper>
