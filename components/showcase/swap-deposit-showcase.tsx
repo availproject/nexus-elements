@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
-import SwapExecuteExactOut from "@/registry/nexus-elements/swap-deposit/swap-deposit";
 import { useAccount } from "wagmi";
 import {
   ExecuteParams,
