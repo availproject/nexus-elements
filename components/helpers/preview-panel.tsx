@@ -17,7 +17,7 @@ export function PreviewPanel({
   connectLabel,
 }: Readonly<PreviewPanelProps>) {
   const [loading, setLoading] = React.useState(false);
-  const { status, connector } = useAccount();
+  const { status } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { nexusSDK, handleInit } = useNexus();
 
@@ -27,15 +27,13 @@ export function PreviewPanel({
       const wcProvider =
         walletClient &&
         ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           request: (args: unknown) => walletClient.request(args as any),
         } as unknown as EthereumProvider);
-      const provider =
-        wcProvider ||
-        ((await connector?.getProvider()) as EthereumProvider | undefined);
-      if (!provider) {
+      if (!wcProvider) {
         throw new Error("No EIP-1193 provider available");
       }
-      await handleInit(provider);
+      await handleInit(wcProvider);
     } catch (error) {
       console.error(error);
       toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);

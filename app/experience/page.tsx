@@ -145,20 +145,17 @@ function StepContent() {
 
 export default function NexusExperience() {
   const { nexusSDK, handleInit, loading } = useNexus();
-  const { connector } = useAccount();
   const { data: walletClient } = useWalletClient();
   const nexusInit = async () => {
     try {
       const wcProvider =
         walletClient &&
         ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           request: (args: unknown) => walletClient.request(args as any),
         } as unknown as EthereumProvider);
-      const provider =
-        wcProvider ||
-        ((await connector?.getProvider()) as EthereumProvider | undefined);
-      if (!provider) throw new Error("No provider found");
-      await handleInit(provider);
+      if (!wcProvider) throw new Error("No EIP-1193 provider available");
+      await handleInit(wcProvider);
     } catch (error) {
       console.error(error);
     }
