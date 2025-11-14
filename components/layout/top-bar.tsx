@@ -15,9 +15,9 @@ import {
   PopoverTrigger,
 } from "@/registry/nexus-elements/ui/popover";
 import ThemeControl from "./theme-control";
-
-const ConnectButton = dynamic(
-  () => import("@rainbow-me/rainbowkit").then((m) => m.ConnectButton),
+const ConnectWalletButton = dynamic(
+  () =>
+    import("@/components/helpers/wallet-connect-button").then((m) => m.default),
   {
     loading: () => <Skeleton className="w-24 h-9" />,
   }
@@ -315,11 +315,7 @@ export default function Topbar() {
             />
           )}
 
-          <ConnectButton
-            showBalance={false}
-            chainStatus={isMobile ? "none" : "icon"}
-            accountStatus={"avatar"}
-          />
+          <ConnectWalletButton />
         </div>
       </div>
     </div>

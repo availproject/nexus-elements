@@ -67,7 +67,10 @@ export const mdxComponents: MDXComponentsMap = {
   ),
   // Text
   p: ({ className, ...props }: React.ComponentProps<"p">) => (
-    <p className={cn("leading-relaxed not-first:mt-6", className)} {...props} />
+    <span
+      className={cn("leading-relaxed not-first:mt-6", className)}
+      {...props}
+    />
   ),
   a: ({ className, ...props }: React.ComponentProps<"a">) => (
     <a
