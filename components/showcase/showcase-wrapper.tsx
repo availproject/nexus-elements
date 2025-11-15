@@ -14,7 +14,12 @@ const ShowcaseWrapper = ({
 }: {
   children: React.ReactNode;
   connectLabel?: string;
-  type: "deposit" | "swaps" | "fast-bridge" | "unified-balance";
+  type:
+    | "deposit"
+    | "swaps"
+    | "fast-bridge"
+    | "unified-balance"
+    | "fast-transfer";
 }) => {
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;

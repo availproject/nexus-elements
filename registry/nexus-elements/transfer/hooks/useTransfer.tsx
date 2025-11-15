@@ -19,16 +19,15 @@ import { usePolling } from "../../common/hooks/usePolling";
 import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
 import type { TransactionStatus } from "../../common/tx/types";
 
-export interface FastBridgeState {
+export interface FastTransferState {
   chain: SUPPORTED_CHAINS_IDS;
   token: SUPPORTED_TOKENS;
   amount?: string;
-  recipient?: `0x${string}`;
+  recipient: `0x${string}`;
 }
 
-interface UseBridgeProps {
+interface UseTransferProps {
   network: NexusNetwork;
-  connectedAddress: Address;
   nexusSDK: NexusSDK | null;
   intent: OnIntentHookData | null;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
@@ -47,25 +46,24 @@ interface UseBridgeProps {
   onError?: (message: string) => void;
 }
 
-interface BridgeState {
-  inputs: FastBridgeState;
+interface TransferState {
+  inputs: FastTransferState;
   status: TransactionStatus;
 }
 type Action =
-  | { type: "setInputs"; payload: Partial<FastBridgeState> }
+  | { type: "setInputs"; payload: Partial<FastTransferState> }
   | { type: "resetInputs" }
   | { type: "setStatus"; payload: TransactionStatus };
 
 const buildInitialInputs = (
   network: NexusNetwork,
-  connectedAddress: Address,
   prefill?: {
     token: string;
     chainId: number;
     amount?: string;
     recipient?: Address;
   }
-): FastBridgeState => {
+): FastTransferState => {
   return {
     chain:
       (prefill?.chainId as SUPPORTED_CHAINS_IDS) ??
@@ -74,13 +72,12 @@ const buildInitialInputs = (
         : SUPPORTED_CHAINS.ETHEREUM),
     token: (prefill?.token as SUPPORTED_TOKENS) ?? "USDC",
     amount: prefill?.amount ?? undefined,
-    recipient: (prefill?.recipient as `0x${string}`) ?? connectedAddress,
+    recipient: (prefill?.recipient as `0x${string}`) ?? undefined,
   };
 };
 
-const useBridge = ({
+const useTransfer = ({
   network,
-  connectedAddress,
   nexusSDK,
   intent,
   setIntent,
@@ -90,21 +87,20 @@ const useBridge = ({
   onComplete,
   onStart,
   onError,
-}: UseBridgeProps) => {
+}: UseTransferProps) => {
   const { fetchUnifiedBalance, handleNexusError } = useNexus();
-
-  const initialState: BridgeState = {
-    inputs: buildInitialInputs(network, connectedAddress, prefill),
+  const initialState: TransferState = {
+    inputs: buildInitialInputs(network, prefill),
     status: "idle",
   };
-  function reducer(state: BridgeState, action: Action): BridgeState {
+  function reducer(state: TransferState, action: Action): TransferState {
     switch (action.type) {
       case "setInputs":
         return { ...state, inputs: { ...state.inputs, ...action.payload } };
       case "resetInputs":
         return {
           ...state,
-          inputs: buildInitialInputs(network, connectedAddress, prefill),
+          inputs: buildInitialInputs(network, prefill),
         };
       case "setStatus":
         return { ...state, status: action.payload };
@@ -114,8 +110,11 @@ const useBridge = ({
   }
   const [state, dispatch] = useReducer(reducer, initialState);
   const inputs = state.inputs;
-  const setInputs = (next: FastBridgeState | Partial<FastBridgeState>) => {
-    dispatch({ type: "setInputs", payload: next as Partial<FastBridgeState> });
+  const setInputs = (next: FastTransferState | Partial<FastTransferState>) => {
+    dispatch({
+      type: "setInputs",
+      payload: next as Partial<FastTransferState>,
+    });
   };
 
   const [loading, setLoading] = useState(false);
@@ -155,41 +154,7 @@ const useBridge = ({
     setTxError(null);
     onStart?.();
     try {
-      if (inputs?.recipient !== connectedAddress) {
-        // Transfer
-        const transferTxn = await nexusSDK?.bridgeAndTransfer(
-          {
-            token: inputs?.token,
-            amount: parseUnits(
-              inputs?.amount,
-              TOKEN_METADATA[inputs?.token].decimals
-            ),
-            toChainId: inputs?.chain,
-            recipient: inputs?.recipient,
-          },
-          {
-            onEvent: (event) => {
-              if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-                const list = Array.isArray(event.args) ? event.args : [];
-                onStepsList(list);
-              }
-              if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
-                onStepComplete(event.args);
-              }
-            },
-          }
-        );
-        if (!transferTxn) {
-          throw new Error("Transaction rejected by user");
-        }
-        if (transferTxn) {
-          setLastExplorerUrl(transferTxn.explorerUrl);
-          await onSuccess();
-        }
-        return;
-      }
-      // Bridge
-      const bridgeTxn = await nexusSDK?.bridge(
+      const transferTxn = await nexusSDK?.bridgeAndTransfer(
         {
           token: inputs?.token,
           amount: parseUnits(
@@ -197,6 +162,7 @@ const useBridge = ({
             TOKEN_METADATA[inputs?.token].decimals
           ),
           toChainId: inputs?.chain,
+          recipient: inputs?.recipient,
         },
         {
           onEvent: (event) => {
@@ -210,11 +176,11 @@ const useBridge = ({
           },
         }
       );
-      if (!bridgeTxn) {
+      if (!transferTxn) {
         throw new Error("Transaction rejected by user");
       }
-      if (bridgeTxn) {
-        setLastExplorerUrl(bridgeTxn.explorerUrl);
+      if (transferTxn) {
+        setLastExplorerUrl(transferTxn.explorerUrl);
         await onSuccess();
       }
     } catch (error) {
@@ -331,4 +297,4 @@ const useBridge = ({
   };
 };
 
-export default useBridge;
+export default useTransfer;

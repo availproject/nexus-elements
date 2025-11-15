@@ -65,7 +65,11 @@ const NAV_ITEMS = [
         label: "Fast Bridge",
         href: "/docs/components/fast-bridge",
       },
-
+      {
+        id: "transfer",
+        label: "Transfer",
+        href: "/docs/components/transfer",
+      },
       {
         id: "swaps",
         label: "Swaps",
@@ -111,11 +115,11 @@ function MobileNav({
   items,
   componentItems,
   className,
-}: {
+}: Readonly<{
   items: { href: string; label: string }[];
   componentItems: { href: string; label: string }[];
   className?: string;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
 
   return (

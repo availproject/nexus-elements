@@ -105,7 +105,7 @@ const SimpleDeposit = ({
   }, [isDialogOpen, refreshing, simulating]);
 
   const renderTotalFeeBreakdown: {
-    totalGasFee: number;
+    totalGasFee: string | number;
     bridgeUsd?: string;
     bridgeFormatted?: string;
     gasUsd: string;
@@ -125,17 +125,14 @@ const SimpleDeposit = ({
 
     const gasFormatted =
       nexusSDK?.utils?.formatTokenBalance(
-        simulation?.executeSimulation?.gasFee ?? BigInt(0),
+        simulation?.executeSimulation?.gasFee,
         {
           symbol: nativeSymbol,
           decimals: nativeDecimals,
         }
       ) ?? "0";
     const gasUnits = Number.parseFloat(
-      formatUnits(
-        simulation?.executeSimulation?.gasFee ?? BigInt(0),
-        nativeDecimals
-      )
+      formatUnits(simulation?.executeSimulation?.gasFee, nativeDecimals)
     );
     const gasUsd = getFiatValue(gasUnits, nativeSymbol);
 
@@ -144,7 +141,7 @@ const SimpleDeposit = ({
         simulation?.bridgeSimulation?.intent?.token?.decimals;
       const bridgeFormatted =
         nexusSDK?.utils?.formatTokenBalance(
-          simulation?.bridgeSimulation?.intent?.fees?.total ?? "0",
+          simulation?.bridgeSimulation?.intent?.fees?.total,
           {
             symbol: token,
             decimals: tokenDecimals,
@@ -166,9 +163,13 @@ const SimpleDeposit = ({
         gasFormatted,
       };
     }
-
+    console.log("renderTotalFeeBreakdown", {
+      totalGasFee: gasFormatted,
+      gasUsd,
+      gasFormatted,
+    });
     return {
-      totalGasFee: Number.parseFloat(gasFormatted),
+      totalGasFee: gasFormatted,
       gasUsd,
       gasFormatted,
     };
@@ -254,7 +255,13 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={`$${renderTotalFeeBreakdown?.totalGasFee.toFixed(4)} USD`}
+            total={
+              simulation?.bridgeSimulation
+                ? `$${(renderTotalFeeBreakdown?.totalGasFee as number).toFixed(
+                    4
+                  )} USD`
+                : (renderTotalFeeBreakdown?.totalGasFee as string)
+            }
             bridge={renderTotalFeeBreakdown?.bridgeFormatted ?? ""}
             execute={renderTotalFeeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}

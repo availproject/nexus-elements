@@ -124,7 +124,9 @@ const AmountInput = ({
                   onClick={() => {
                     if (!unifiedBalance?.balance) return;
                     const max = Number(unifiedBalance?.balance);
-                    const next = (max * option.value).toString();
+                    const next = (max * option.value).toFixed(
+                      unifiedBalance?.decimals
+                    );
                     onChange(next);
                     onCommit?.(next);
                   }}

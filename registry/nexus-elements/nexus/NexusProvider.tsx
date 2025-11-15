@@ -101,25 +101,34 @@ const NexusProvider = ({
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
       setNexusSDK(sdk);
-      const unifiedBalance = await sdk?.getUnifiedBalances(true);
-      setUnifiedBalance(unifiedBalance);
-      // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
-      // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
-      const rates = await sdk?.utils?.getCoinbaseRates();
-      const usdPerUnit: Record<string, number> = {};
-
-      for (const [symbol, value] of Object.entries(rates ?? {})) {
-        const unitsPerUsd = Number.parseFloat(String(value));
-        if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
-          usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
-        }
-      }
-
-      for (const token of ["ETH", "USDC", "USDT"]) {
-        usdPerUnit[token] ??= 1;
-      }
-      setExchangeRate(usdPerUnit);
       initChainsAndTokens();
+      const [unifiedBalance, rates] = await Promise.allSettled([
+        sdk?.getUnifiedBalances(true),
+        sdk?.utils?.getCoinbaseRates(),
+      ]);
+
+      if (unifiedBalance.status === "fulfilled") {
+        setUnifiedBalance(unifiedBalance.value);
+      }
+
+      if (rates?.status === "fulfilled") {
+        // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
+        // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
+
+        const usdPerUnit: Record<string, number> = {};
+
+        for (const [symbol, value] of Object.entries(rates ?? {})) {
+          const unitsPerUsd = Number.parseFloat(String(value));
+          if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
+            usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
+          }
+        }
+
+        for (const token of ["ETH", "USDC", "USDT"]) {
+          usdPerUnit[token] ??= 1;
+        }
+        setExchangeRate(usdPerUnit);
+      }
     } catch (error) {
       console.error("Error initializing Nexus:", error);
     } finally {
