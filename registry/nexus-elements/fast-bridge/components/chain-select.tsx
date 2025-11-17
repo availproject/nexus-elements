@@ -71,7 +71,7 @@ const ChainSelect: FC<ChainSelectProps> = ({
       </div>
 
       <SelectContent>
-        <SelectGroup>
+        <SelectGroup className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-scroll no-scrollbar">
           {supportedChainsAndTokens?.map((chain) => {
             return (
               <SelectItem key={chain.id} value={String(chain.id)}>

@@ -140,8 +140,8 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.tsx",
-          "target": "components/fast-bridge/hooks/useBridge.tsx",
+          "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.ts",
+          "target": "components/fast-bridge/hooks/useBridge.ts",
           "type": "registry:component"
         }
       ]
@@ -277,8 +277,8 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/transfer/hooks/useTransfer.tsx",
-          "target": "components/transfer/hooks/useTransfer.tsx",
+          "path": "registry/nexus-elements/transfer/hooks/useTransfer.ts",
+          "target": "components/transfer/hooks/useTransfer.ts",
           "type": "registry:component"
         }
       ]

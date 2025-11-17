@@ -29,7 +29,6 @@ const isErrorCode = (value: unknown): value is NexusErrorCode =>
   typeof value === "string" && ERROR_CODE_SET.has(value);
 
 const isNexusErrorData = (value: unknown): value is NexusErrorData => {
-  if (!isRecord(value)) return false;
   const { context, details } = value as NexusErrorData;
   const hasValidContext = typeof context === "string" || context === undefined;
   const hasValidDetails = details === undefined || isRecord(details);
@@ -58,6 +57,12 @@ const normalizeNexusError = ({
   const details =
     data?.details ??
     (data?.cause === undefined ? undefined : { cause: data.cause });
+  console.log("normalized nexus error", {
+    code,
+    message,
+    context,
+    details,
+  });
   return {
     code,
     message,

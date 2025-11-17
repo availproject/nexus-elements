@@ -223,8 +223,14 @@ const useBridge = ({
         await onSuccess();
       }
     } catch (error) {
-      console.error("Fast Bridge Error:", error);
-      const { message } = handleNexusError(error);
+      console.log("Fast Bridge Error:", error);
+      const { message, code, context, details } = handleNexusError(error);
+      console.log("Fast Bridge Error:", {
+        message,
+        code,
+        context,
+        details,
+      });
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
