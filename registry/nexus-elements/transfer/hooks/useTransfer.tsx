@@ -12,12 +12,15 @@ import {
   type UserAsset,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState, useReducer } from "react";
-import { type Address, isAddress, parseUnits } from "viem";
+import { type Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
-import { useStopwatch } from "../../common/hooks/useStopwatch";
-import { usePolling } from "../../common/hooks/usePolling";
-import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
-import type { TransactionStatus } from "../../common/tx/types";
+import {
+  useStopwatch,
+  usePolling,
+  useTransactionSteps,
+  type TransactionStatus,
+  useNexusError,
+} from "../../common";
 
 export interface FastTransferState {
   chain: SUPPORTED_CHAINS_IDS;
@@ -88,7 +91,8 @@ const useTransfer = ({
   onStart,
   onError,
 }: UseTransferProps) => {
-  const { fetchUnifiedBalance, handleNexusError } = useNexus();
+  const { fetchUnifiedBalance } = useNexus();
+  const handleNexusError = useNexusError();
   const initialState: TransferState = {
     inputs: buildInitialInputs(network, prefill),
     status: "idle",
@@ -117,7 +121,7 @@ const useTransfer = ({
     });
   };
 
-  const [loading, setLoading] = useState(false);
+  const loading = state.status === "executing";
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
@@ -149,15 +153,17 @@ const useTransfer = ({
       console.error("Missing required inputs");
       return;
     }
-    setLoading(true);
     dispatch({ type: "setStatus", payload: "executing" });
     setTxError(null);
     onStart?.();
     try {
-      const transferTxn = await nexusSDK?.bridgeAndTransfer(
+      if (!nexusSDK) {
+        throw new Error("Nexus SDK not initialized");
+      }
+      const transferTxn = await nexusSDK.bridgeAndTransfer(
         {
           token: inputs?.token,
-          amount: parseUnits(
+          amount: nexusSDK.utils.parseUnits(
             inputs?.amount,
             TOKEN_METADATA[inputs?.token].decimals
           ),
@@ -189,8 +195,6 @@ const useTransfer = ({
       onError?.(message);
       setIsDialogOpen(false);
       dispatch({ type: "setStatus", payload: "error" });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -227,7 +231,6 @@ const useTransfer = ({
     setAllowance(null);
     dispatch({ type: "resetInputs" });
     dispatch({ type: "setStatus", payload: "idle" });
-    setLoading(false);
     setRefreshing(false);
     stopwatch.stop();
     stopwatch.reset();

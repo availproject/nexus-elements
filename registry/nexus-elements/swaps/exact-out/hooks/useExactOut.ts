@@ -10,9 +10,12 @@ import {
 import { type Address } from "viem";
 import { useNexus } from "../../../nexus/NexusProvider";
 import { resolveDestinationFromPrefill } from "../../utils/prefill";
-import { useStopwatch } from "../../../common/hooks/useStopwatch";
-import { useTransactionSteps } from "../../../common/tx/useTransactionSteps";
-import { SWAP_EXPECTED_STEPS } from "../../../common/tx/steps";
+import {
+  useStopwatch,
+  useTransactionSteps,
+  SWAP_EXPECTED_STEPS,
+  useNexusError,
+} from "../../../common";
 
 type DestinationTokenInfo = {
   tokenAddress: `0x${string}`;
@@ -48,13 +51,9 @@ const useExactOut = ({
   onError,
   prefill,
 }: UseExactOutProps) => {
-  const {
-    handleNexusError,
-    swapIntent,
-    setSwapIntent,
-    fetchUnifiedBalance,
-    unifiedBalance,
-  } = useNexus();
+  const { swapIntent, setSwapIntent, fetchUnifiedBalance, unifiedBalance } =
+    useNexus();
+  const handleNexusError = useNexusError();
 
   const [inputs, setInputs] = useState<SwapInputs>({
     toChainID:

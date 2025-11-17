@@ -4,14 +4,11 @@ import { useAccount } from "wagmi";
 import {
   SUPPORTED_CHAINS,
   TOKEN_CONTRACT_ADDRESSES,
-  TOKEN_METADATA,
 } from "@avail-project/nexus-core";
 import { encodeFunctionData, parseUnits, type Abi } from "viem";
 import dynamic from "next/dynamic";
 import { Skeleton } from "../ui/skeleton";
 import { useState } from "react";
-import { Toggle } from "../ui/toggle";
-import { Check, X } from "lucide-react";
 const NexusDeposit = dynamic(
   () => import("@/registry/nexus-elements/deposit/deposit"),
   {
@@ -27,17 +24,11 @@ const DepositShowcase = () => {
     <ShowcaseWrapper
       connectLabel="Connect wallet to use Nexus Deposit"
       type="deposit"
+      toggle={true}
+      toggleLabel="View as Modal"
+      pressed={viewAs}
+      onPressedChange={(value) => setViewAs(value)}
     >
-      <Toggle
-        variant={"outline"}
-        size="sm"
-        pressed={viewAs}
-        onPressedChange={(value) => setViewAs(value)}
-        className="absolute top-0 left-2 cursor-pointer"
-      >
-        <p className="text-sm font-medium">View as Modal</p>
-        {viewAs ? <X className="size-4" /> : <Check className="size-4" />}
-      </Toggle>
       <NexusDeposit
         address={address ?? `0x`}
         token="USDT"
@@ -62,8 +53,7 @@ const DepositShowcase = () => {
               outputs: [],
             },
           ];
-          const decimals = TOKEN_METADATA[token].decimals;
-          const amountWei = parseUnits(amount, decimals);
+          const amountWei = parseUnits(amount, 6);
           if (token === "ETH") {
             throw new Error(
               "ETH is native and not supported for this execute builder"

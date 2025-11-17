@@ -33,6 +33,7 @@ export function PreviewPanel({
       if (!wcProvider) {
         throw new Error("No EIP-1193 provider available");
       }
+      console.log("wcProvider", wcProvider);
       await handleInit(wcProvider);
     } catch (error) {
       console.error(error);

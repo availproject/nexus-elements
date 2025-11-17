@@ -21,6 +21,7 @@ type SourceTokenInfo = {
   logo: string;
   name: string;
   symbol: string;
+  balance?: string;
 };
 
 interface SourceAssetSelectProps {
@@ -38,18 +39,17 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   disabled,
   label = "From",
 }) => {
-  const { swapSupportedChainsAndTokens, unifiedBalance } = useNexus();
+  const { swapSupportedChainsAndTokens, unifiedBalance, nexusSDK } = useNexus();
   const [open, setOpen] = useState(false);
   const [tempChain, setTempChain] = useState<number | null>(null);
 
   const chains = swapSupportedChainsAndTokens ?? [];
 
   const tokensForTempChain: SourceTokenInfo[] = useMemo(() => {
-    if (!tempChain) return [] as SourceTokenInfo[];
-    const balances = unifiedBalance ?? [];
+    if (!tempChain || !unifiedBalance) return [] as SourceTokenInfo[];
     const tokens: SourceTokenInfo[] = [];
 
-    for (const asset of balances) {
+    for (const asset of unifiedBalance) {
       if (!asset?.breakdown?.length) continue;
       const breakdownForChain = asset.breakdown.find(
         (b) => b.chain?.id === tempChain && Number.parseFloat(b.balance) > 0
@@ -62,6 +62,13 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
         logo: TOKEN_IMAGES[asset.symbol] ?? "",
         name: asset.symbol,
         symbol: asset.symbol,
+        balance: nexusSDK?.utils?.formatTokenBalance(
+          breakdownForChain?.balance,
+          {
+            symbol: asset.symbol,
+            decimals: asset.decimals,
+          }
+        ),
       });
     }
 
@@ -156,7 +163,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
                       key={t.symbol}
                       variant={"ghost"}
                       onClick={() => handlePick(t)}
-                      className="flex items-center justify-start w-full gap-x-2 p-2 rounded hover:bg-muted"
+                      className="flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full"
                     >
                       {t.symbol ? (
                         <img
@@ -167,7 +174,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
                           className="rounded-full"
                         />
                       ) : null}
-                      <span className="text-sm">{t.symbol}</span>
+                      <p className="text-sm text-foreground">{t.balance}</p>
                     </Button>
                   ))
                 ) : (

@@ -1,5 +1,4 @@
-import React, { type FC, useEffect, useMemo, useRef } from "react";
-import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
+import React, { type FC, useEffect, useRef } from "react";
 import { Input } from "../../ui/input";
 
 interface AmountInputProps {
@@ -9,6 +8,7 @@ interface AmountInputProps {
   disabled?: boolean;
   symbol?: string;
   hideBalance?: boolean;
+  balance?: string;
 }
 
 const AmountInput: FC<AmountInputProps> = ({
@@ -18,10 +18,9 @@ const AmountInput: FC<AmountInputProps> = ({
   disabled,
   symbol,
   hideBalance = false,
+  balance,
 }) => {
-  const { unifiedBalance } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   const scheduleCommit = (val: string) => {
     if (!onCommit || disabled) return;
     if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
@@ -29,12 +28,6 @@ const AmountInput: FC<AmountInputProps> = ({
       onCommit(val);
     }, 600);
   };
-
-  const tokenBalance = useMemo(() => {
-    const token = unifiedBalance?.find((u) => u.symbol === symbol);
-    if (!token) return "";
-    return Number.parseFloat(token.balance).toFixed(6);
-  }, [unifiedBalance, symbol]);
 
   useEffect(() => {
     return () => {
@@ -73,10 +66,9 @@ const AmountInput: FC<AmountInputProps> = ({
         aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
         disabled={disabled}
       />
-      {!hideBalance && symbol && (
+      {!hideBalance && balance && (
         <div className="flex items-center justify-end-safe gap-x-4 w-max px-2 border-l border-border">
-          <p className="text-sm font-semibold w-max">{tokenBalance}</p>
-          <p className="text-sm font-semibold">{symbol}</p>
+          <p className="text-sm font-semibold w-max">{balance}</p>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { GenericStep } from "./types";
+import { getStepKey } from "./types";
 import {
   computeAllCompleted,
   mergeStepComplete,
@@ -22,16 +23,15 @@ export function useTransactionSteps<
   const [steps, setSteps] = useState<Array<GenericStep<T>>>(() =>
     expected ? seedSteps(expected) : []
   );
-  const lastListRef = useRef<number>(0);
+  const lastSignatureRef = useRef<string>("");
 
   const onStepsList = (list: T[]) => {
-    // ignore identical lists received repeatedly
-    const lengthHash = list.length;
-    if (lastListRef.current === lengthHash) {
+    const signature = list.map((step) => getStepKey(step)).join("|");
+    if (lastSignatureRef.current === signature) {
       setSteps((prev) => mergeStepsList(prev, list));
       return;
     }
-    lastListRef.current = lengthHash;
+    lastSignatureRef.current = signature;
     setSteps((prev) => mergeStepsList(prev, list));
   };
 
@@ -45,7 +45,7 @@ export function useTransactionSteps<
 
   const reset = () => {
     setSteps(expected ? seedSteps(expected) : []);
-    lastListRef.current = 0;
+    lastSignatureRef.current = "";
   };
 
   const allCompleted = useMemo(() => computeAllCompleted(steps), [steps]);

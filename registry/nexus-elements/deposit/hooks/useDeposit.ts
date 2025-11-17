@@ -14,14 +14,19 @@ import {
   TOKEN_METADATA,
   NEXUS_EVENTS,
   type BridgeStepType,
+  CHAIN_METADATA,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState, useReducer } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
-import { useStopwatch } from "../../common/hooks/useStopwatch";
-import { usePolling } from "../../common/hooks/usePolling";
-import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
-import type { TransactionStatus } from "../../common/tx/types";
+import {
+  TransactionStatus,
+  useDebouncedValue,
+  useNexusError,
+  usePolling,
+  useStopwatch,
+  useTransactionSteps,
+} from "../../common";
 
 interface DepositInputs {
   chain: SUPPORTED_CHAINS_IDS;
@@ -29,15 +34,12 @@ interface DepositInputs {
   selectedSources: number[];
 }
 
-type ExecuteConfig = Omit<ExecuteParams, "toChainId">;
-
 interface UseDepositProps {
   token: SUPPORTED_TOKENS;
   chain: SUPPORTED_CHAINS_IDS;
   nexusSDK: NexusSDK | null;
   intent: OnIntentHookData | null;
   setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
-  allowance: OnAllowanceHookData | null;
   setAllowance: React.Dispatch<
     React.SetStateAction<OnAllowanceHookData | null>
   >;
@@ -49,9 +51,18 @@ interface UseDepositProps {
     amount: string,
     chainId: SUPPORTED_CHAINS_IDS,
     userAddress: `0x${string}`
-  ) => ExecuteConfig;
-  executeConfig?: ExecuteConfig;
+  ) => Omit<ExecuteParams, "toChainId">;
+  executeConfig?: Omit<ExecuteParams, "toChainId">;
 }
+
+type DepositState = {
+  inputs: DepositInputs;
+  status: TransactionStatus;
+};
+type Action =
+  | { type: "setInputs"; payload: Partial<DepositInputs> }
+  | { type: "resetInputs" }
+  | { type: "setStatus"; payload: TransactionStatus };
 
 const useDeposit = ({
   token,
@@ -59,7 +70,6 @@ const useDeposit = ({
   nexusSDK,
   intent,
   setIntent,
-  allowance,
   setAllowance,
   unifiedBalance,
   chainOptions,
@@ -67,21 +77,13 @@ const useDeposit = ({
   executeBuilder,
   executeConfig,
 }: UseDepositProps) => {
-  const { fetchUnifiedBalance, handleNexusError } = useNexus();
+  const { fetchUnifiedBalance, getFiatValue } = useNexus();
+  const handleNexusError = useNexusError();
+
   const allSourceIds = useMemo(
     () => chainOptions?.map((c) => c.id) ?? [],
     [chainOptions]
   );
-
-  interface DepositState {
-    inputs: DepositInputs;
-    status: TransactionStatus;
-  }
-  type Action =
-    | { type: "setInputs"; payload: Partial<DepositInputs> }
-    | { type: "resetInputs" }
-    | { type: "setStatus"; payload: TransactionStatus };
-
   const initialState: DepositState = {
     inputs: {
       chain,
@@ -113,11 +115,7 @@ const useDeposit = ({
     dispatch({ type: "setInputs", payload: next });
   };
 
-  useEffect(() => {
-    dispatch({ type: "setInputs", payload: { selectedSources: allSourceIds } });
-  }, [allSourceIds]);
-
-  const [loading, setLoading] = useState(false);
+  const loading = state.status === "executing";
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
@@ -142,19 +140,98 @@ const useDeposit = ({
     return unifiedBalance?.find((bal) => bal?.symbol === token);
   }, [unifiedBalance, token]);
 
-  const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
+  const allCompleted = useMemo(
+    () => (steps?.length ?? 0) > 0 && steps.every((s) => s.completed),
+    [steps]
+  );
+  const stopwatch = useStopwatch({
+    running: isDialogOpen && !allCompleted,
+    intervalMs: 100,
+  });
+  // Debounce amount input for auto-simulation UX
+  const debouncedAmount = useDebouncedValue(inputs?.amount ?? "", 800);
+
+  const feeBreakdown: {
+    totalGasFee: string | number;
+    bridgeUsd?: string;
+    bridgeFormatted?: string;
+    gasUsd: string;
+    gasFormatted: string;
+  } = useMemo(() => {
+    if (!nexusSDK || !simulation || !token)
+      return {
+        totalGasFee: 0,
+        bridgeUsd: "0",
+        bridgeFormatted: "0",
+        gasUsd: "0",
+        gasFormatted: "0",
+      };
+    const native = CHAIN_METADATA[chain]?.nativeCurrency;
+    const nativeSymbol = native.symbol;
+    const nativeDecimals = native.decimals;
+
+    const gasFormatted =
+      nexusSDK?.utils?.formatTokenBalance(
+        simulation?.executeSimulation?.gasFee,
+        {
+          symbol: nativeSymbol,
+          decimals: nativeDecimals,
+        }
+      ) ?? "0";
+    const gasUnits = Number.parseFloat(
+      nexusSDK?.utils?.formatUnits(
+        simulation?.executeSimulation?.gasFee,
+        nativeDecimals
+      )
+    );
+    const gasUsd = getFiatValue(gasUnits, nativeSymbol);
+
+    if (simulation?.bridgeSimulation) {
+      const tokenDecimals =
+        simulation?.bridgeSimulation?.intent?.token?.decimals;
+      const bridgeFormatted =
+        nexusSDK?.utils?.formatTokenBalance(
+          simulation?.bridgeSimulation?.intent?.fees?.total,
+          {
+            symbol: token,
+            decimals: tokenDecimals,
+          }
+        ) ?? "0";
+      const bridgeUsd = getFiatValue(
+        Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total),
+        token
+      );
+
+      const totalGasFee =
+        Number.parseFloat(bridgeUsd) + Number.parseFloat(gasUsd);
+
+      return {
+        totalGasFee,
+        bridgeUsd,
+        bridgeFormatted,
+        gasUsd,
+        gasFormatted,
+      };
+    }
+    return {
+      totalGasFee: gasFormatted,
+      gasUsd,
+      gasFormatted,
+    };
+  }, [nexusSDK, simulation, chain, token, getFiatValue]);
 
   const handleTransaction = async () => {
     if (!inputs?.amount || !inputs?.chain) return;
-    setLoading(true);
+    dispatch({ type: "setStatus", payload: "executing" });
     setTxError(null);
     try {
       if (!nexusSDK) throw new Error("Nexus SDK not initialized");
       const decimals = TOKEN_METADATA[token].decimals;
       const amountBigInt = nexusSDK?.utils?.parseUnits(inputs.amount, decimals);
-      const executeParams: ExecuteConfig | undefined = executeBuilder
-        ? executeBuilder(token, inputs.amount, inputs.chain, address)
-        : executeConfig;
+      const executeParams: Omit<ExecuteParams, "toChainId"> | undefined =
+        executeBuilder
+          ? executeBuilder(token, inputs.amount, inputs.chain, address)
+          : executeConfig;
       const params: BridgeAndExecuteParams = {
         token,
         amount: amountBigInt,
@@ -162,7 +239,7 @@ const useDeposit = ({
         sourceChains: inputs.selectedSources?.length
           ? inputs.selectedSources
           : allSourceIds,
-        execute: executeParams as ExecuteConfig,
+        execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: true,
       };
 
@@ -193,6 +270,7 @@ const useDeposit = ({
       const { message } = handleNexusError(error);
       setTxError(message);
       setIsDialogOpen(false);
+      dispatch({ type: "setStatus", payload: "error" });
     } finally {
       resetState();
     }
@@ -223,9 +301,10 @@ const useDeposit = ({
     try {
       const decimals = TOKEN_METADATA[token].decimals;
       const amountBigInt = nexusSDK?.utils?.parseUnits(amountToUse, decimals);
-      const executeParams: ExecuteConfig | undefined = executeBuilder
-        ? executeBuilder(token, amountToUse, inputs.chain, address)
-        : executeConfig;
+      const executeParams: Omit<ExecuteParams, "toChainId"> | undefined =
+        executeBuilder
+          ? executeBuilder(token, amountToUse, inputs.chain, address)
+          : executeConfig;
       const params: BridgeAndExecuteParams = {
         token,
         amount: amountBigInt,
@@ -233,11 +312,10 @@ const useDeposit = ({
         sourceChains: inputs.selectedSources?.length
           ? inputs.selectedSources
           : allSourceIds,
-        execute: executeParams as ExecuteConfig,
+        execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: false,
       };
       const sim = await nexusSDK.simulateBridgeAndExecute(params);
-      console.log("sim", sim);
       if (activeSimulationIdRef.current !== requestId) {
         return;
       }
@@ -273,6 +351,7 @@ const useDeposit = ({
 
   const onSuccess = async () => {
     stopwatch.stop();
+    dispatch({ type: "setStatus", payload: "success" });
     await fetchUnifiedBalance();
   };
 
@@ -283,7 +362,6 @@ const useDeposit = ({
       amount: undefined,
       selectedSources: allSourceIds,
     });
-    setLoading(false);
     setRefreshing(false);
     setSimulation(null);
     setIntent(null);
@@ -292,6 +370,7 @@ const useDeposit = ({
     resetSteps();
     stopwatch.stop();
     stopwatch.reset();
+    dispatch({ type: "setStatus", payload: "idle" });
   };
 
   const reset = () => {
@@ -305,6 +384,15 @@ const useDeposit = ({
     setAutoAllow(true);
     void handleTransaction();
   };
+
+  // Automatically simulate once required inputs are present and user stops typing
+  useEffect(() => {
+    const hasRequiredInputs =
+      Boolean(debouncedAmount) && Boolean(inputs?.chain) && Boolean(token);
+    if (!hasRequiredInputs) return;
+    void simulate(debouncedAmount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedAmount, inputs?.chain, token]);
 
   useEffect(() => {
     if (autoAllow && intent) {
@@ -329,10 +417,6 @@ const useDeposit = ({
     15000
   );
 
-  const stopTimer = () => {
-    stopwatch.stop();
-  };
-
   return {
     inputs,
     setInputs,
@@ -351,8 +435,8 @@ const useDeposit = ({
     handleTransaction,
     startTransaction,
     reset,
-    stopTimer,
     simulate,
+    feeBreakdown,
     clearSimulation: () => reset(),
     cancelSimulation: () => {
       activeSimulationIdRef.current = null;

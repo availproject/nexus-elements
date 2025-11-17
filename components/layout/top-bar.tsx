@@ -3,18 +3,22 @@ import dynamic from "next/dynamic";
 import React, { useEffect, useRef, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 import { useTheme } from "next-themes";
-import Link, { type LinkProps } from "next/link";
+import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@/registry/nexus-elements/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/registry/nexus-elements/ui/popover";
-import ThemeControl from "./theme-control";
+
+const ThemeControl = dynamic(
+  () => import("./theme-control").then((m) => m.default),
+  {
+    loading: () => <Skeleton className="w-24 h-9" />,
+  }
+);
+
+const MobileNav = dynamic(() => import("./mobile-nav").then((m) => m.default), {
+  loading: () => <Skeleton className="w-24 h-9" />,
+});
+
 const ConnectWalletButton = dynamic(
   () =>
     import("@/components/helpers/wallet-connect-button").then((m) => m.default),
@@ -84,132 +88,12 @@ const NAV_ITEMS = [
   },
 ];
 
-function MobileLink({
-  href,
-  onOpenChange,
-  className,
-  children,
-  ...props
-}: LinkProps & {
-  onOpenChange?: (open: boolean) => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const router = useRouter();
-  return (
-    <Link
-      href={href}
-      onClick={() => {
-        router.push(href.toString());
-        onOpenChange?.(false);
-      }}
-      className={cn("text-2xl font-medium", className)}
-      {...props}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function MobileNav({
-  items,
-  componentItems,
-  className,
-}: Readonly<{
-  items: { href: string; label: string }[];
-  componentItems: { href: string; label: string }[];
-  className?: string;
-}>) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          className={cn(
-            "extend-touch-target h-8  touch-manipulation items-center justify-start gap-2.5 p-0 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 active:bg-transparent dark:hover:bg-transparent",
-            className
-          )}
-        >
-          <div className="flex items-center gap-x-2">
-            <div className="relative flex h-8 w-4 items-center justify-center">
-              <div className="relative size-4">
-                <span
-                  className={cn(
-                    "bg-foreground absolute left-0 block h-0.5 w-4 transition-all duration-100",
-                    open ? "top-[0.4rem] -rotate-45" : "top-1"
-                  )}
-                />
-                <span
-                  className={cn(
-                    "bg-foreground absolute left-0 block h-0.5 w-4 transition-all duration-100",
-                    open ? "top-[0.4rem] rotate-45" : "top-2.5"
-                  )}
-                />
-              </div>
-              <span className="sr-only">Toggle Menu</span>
-            </div>
-            <span className="flex h-8 items-center text-lg leading-none font-medium">
-              Menu
-            </span>
-          </div>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="bg-background/90 no-scrollbar h-(--radix-popper-available-height) w-(--radix-popper-available-width) overflow-y-auto rounded-none border-none p-0 shadow-none backdrop-blur duration-100"
-        align="start"
-        side="bottom"
-        alignOffset={-16}
-        sideOffset={14}
-      >
-        <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
-          <div className="flex flex-col gap-4">
-            <div className="text-muted-foreground text-sm font-medium">
-              Menu
-            </div>
-            <div className="flex flex-col gap-3">
-              <MobileLink href="/" onOpenChange={setOpen}>
-                Home
-              </MobileLink>
-              {items.map((item, index) => (
-                <MobileLink key={index} href={item.href} onOpenChange={setOpen}>
-                  {item.label}
-                </MobileLink>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="text-muted-foreground text-sm font-medium">
-              Components
-            </div>
-            <div className="flex flex-col gap-3">
-              {componentItems.map((item, idx) => (
-                <MobileLink
-                  key={`${item.href}-${idx}`}
-                  href={item.href}
-                  onOpenChange={setOpen}
-                >
-                  {item.label}
-                </MobileLink>
-              ))}
-            </div>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 export default function Topbar() {
   const { theme, resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [palette, setPalette] = useState<string>("default");
   const prevPaletteClass = useRef<string | null>(null);
   const isMobile = useIsMobile();
 
-  useEffect(() => setMounted(true), []);
   useEffect(() => {
     try {
       const saved = (localStorage.getItem("palette") as string) || "default";
@@ -224,7 +108,6 @@ export default function Topbar() {
   }, [palette]);
 
   useEffect(() => {
-    if (!mounted) return;
     const root = document.documentElement;
     if (prevPaletteClass.current) {
       root.classList.remove(prevPaletteClass.current);
@@ -239,7 +122,7 @@ export default function Topbar() {
       root.classList.add(cls);
       prevPaletteClass.current = cls;
     }
-  }, [palette, resolvedTheme, mounted]);
+  }, [palette, resolvedTheme]);
 
   const componentsGroup = NAV_ITEMS.find((g) => g.sectionId === "components");
   const componentItems =
@@ -256,18 +139,11 @@ export default function Topbar() {
         <div className="flex items-center gap-x-6">
           <Link href={"/"} className={cn("cursor-pointer")}>
             <Image
-              src="/avail-light-logo.svg"
-              alt="Nexus Elements"
-              width={30}
-              height={30}
-              className="hidden dark:block"
-            />
-            <Image
               src="/avail-logo.svg"
               alt="Nexus Elements"
-              width={30}
-              height={30}
-              className="block dark:hidden"
+              width={100}
+              height={100}
+              className="w-[100px] h-[100px]"
             />
           </Link>
           <MobileNav
@@ -307,17 +183,13 @@ export default function Topbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
-          {!mounted ? (
-            <Skeleton className="w-[118px] h-9" />
-          ) : (
-            <ThemeControl
-              theme={theme ?? ""}
-              setTheme={setTheme}
-              palette={palette}
-              setPalette={setPalette}
-              isMobile={isMobile}
-            />
-          )}
+          <ThemeControl
+            theme={theme ?? ""}
+            setTheme={setTheme}
+            palette={palette}
+            setPalette={setPalette}
+            isMobile={isMobile}
+          />
 
           <ConnectWalletButton />
         </div>

@@ -18,6 +18,8 @@ export function usePolling(
     try {
       inFlightRef.current = true;
       await fn();
+    } catch (error) {
+      console.error(error);
     } finally {
       inFlightRef.current = false;
     }

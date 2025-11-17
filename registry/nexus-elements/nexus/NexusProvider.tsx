@@ -9,9 +9,9 @@ import {
   type SupportedChainsResult,
   type UserAsset,
   type OnSwapIntentHookData,
-  NexusError,
-  ERROR_CODES,
+  type SupportedChainsAndTokensResult,
 } from "@avail-project/nexus-core";
+
 import {
   createContext,
   useCallback,
@@ -38,21 +38,16 @@ interface NexusContextType {
     React.SetStateAction<OnAllowanceHookData | null>
   >;
   handleInit: (provider: EthereumProvider) => Promise<void>;
-  supportedChainsAndTokens: SupportedChainsResult | null;
+  supportedChainsAndTokens: SupportedChainsAndTokensResult | null;
   swapSupportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
   fetchUnifiedBalance: () => Promise<void>;
-  handleNexusError: (err: unknown) => {
-    code?: (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
-    message: string;
-    context?: string;
-    details?: Record<string, unknown>;
-  };
   getFiatValue: (amount: number, token: string) => string;
 }
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
+
 const NexusProvider = ({
   children,
   config = {
@@ -69,7 +64,7 @@ const NexusProvider = ({
   const sdk = useMemo(() => new NexusSDK(config), [config]);
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
-    useState<SupportedChainsResult | null>(null);
+    useState<SupportedChainsAndTokensResult | null>(null);
   const [swapSupportedChainsAndTokens, setSwapSupportedChainsAndTokens] =
     useState<SupportedChainsResult | null>(null);
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
@@ -90,6 +85,7 @@ const NexusProvider = ({
     const list = sdk?.utils?.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
+    console.log("supportedChainsAndTokens", list);
     setSupportedChainsAndTokens(list ?? null);
     const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
     setSwapSupportedChainsAndTokens(swapList ?? null);
@@ -204,19 +200,6 @@ const NexusProvider = ({
     return approx.toFixed(3);
   }
 
-  const handleNexusError: NexusContextType["handleNexusError"] = (err) => {
-    if (err instanceof NexusError) {
-      const { code, message, data } = err;
-      return {
-        code,
-        message,
-        context: data?.context,
-        details: data?.details ?? undefined,
-      };
-    }
-    return { message: (err as Error)?.message || "Unexpected error" };
-  };
-
   const value = useMemo(
     () => ({
       nexusSDK,
@@ -236,7 +219,6 @@ const NexusProvider = ({
       fetchUnifiedBalance,
       swapIntent,
       setSwapIntent,
-      handleNexusError,
       exchangeRate,
       getFiatValue,
     }),
@@ -258,7 +240,6 @@ const NexusProvider = ({
       fetchUnifiedBalance,
       swapIntent,
       setSwapIntent,
-      handleNexusError,
       exchangeRate,
       getFiatValue,
     ]

@@ -19,7 +19,7 @@ export interface BaseDepositProps {
     name: string;
     logo: string;
   }[];
-  depositExecute?: (
+  depositExecute: (
     token: SUPPORTED_TOKENS,
     amount: string,
     chainId: SUPPORTED_CHAINS_IDS,

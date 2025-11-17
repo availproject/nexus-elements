@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC } from "react";
+import React, { useMemo, type FC } from "react";
 import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
@@ -38,7 +38,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, swapIntent, setSwapIntent } = useNexus();
+  const { nexusSDK, swapIntent, setSwapIntent, unifiedBalance } = useNexus();
   const {
     inputs,
     setInputs,
@@ -53,6 +53,26 @@ const SwapExactIn: FC<SwapExactInProps> = ({
     handleSwap,
     reset,
   } = useExactIn({ nexusSDK, onComplete, onStart, onError, prefill });
+
+  const availableBalance = useMemo(() => {
+    if (
+      !nexusSDK ||
+      !unifiedBalance ||
+      !inputs?.fromToken ||
+      !inputs?.fromChainID
+    )
+      return undefined;
+    const filteredToken = unifiedBalance
+      ?.find((token) => token.symbol === inputs?.fromToken?.symbol)
+      ?.breakdown?.find((chain) => chain.chain?.id === inputs?.fromChainID);
+
+    if (!filteredToken) return undefined;
+
+    return nexusSDK?.utils?.formatTokenBalance(filteredToken?.balance, {
+      symbol: inputs?.fromToken?.symbol,
+      decimals: filteredToken?.decimals,
+    });
+  }, [inputs?.fromToken, inputs?.fromChainID, unifiedBalance, nexusSDK]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -79,6 +99,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
             onChange={(val) => setInputs({ ...inputs, fromAmount: val })}
             symbol={inputs.fromToken?.symbol}
             disabled={Boolean(prefill?.fromAmount)}
+            balance={availableBalance}
           />
         </div>
 

@@ -33,7 +33,7 @@ export function useDebouncedCallback<T extends AnyFn>(
       clearTimeout(timerRef.current);
       timerRef.current = null;
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      latest(...lastArgsRef.current!);
+      latest(...lastArgsRef.current);
       lastArgsRef.current = null;
     }
   };

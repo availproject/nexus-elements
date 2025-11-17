@@ -11,9 +11,12 @@ import {
 } from "@avail-project/nexus-core";
 import { formatUnits, type Address } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
-import { useStopwatch } from "../../common/hooks/useStopwatch";
-import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
-import { SWAP_EXPECTED_STEPS } from "../../common/tx/steps";
+import {
+  useStopwatch,
+  useTransactionSteps,
+  SWAP_EXPECTED_STEPS,
+  useNexusError,
+} from "../../common";
 
 interface UseSwapExecuteExactOutProps {
   nexusSDK: NexusSDK | null;
@@ -66,7 +69,8 @@ const useSwapExecuteExactOut = ({
   address,
   executeBuilder,
 }: UseSwapExecuteExactOutProps) => {
-  const { handleNexusError, swapIntent, setSwapIntent } = useNexus();
+  const { swapIntent, setSwapIntent } = useNexus();
+  const handleNexusError = useNexusError();
 
   const [inputs, setInputs] = useState<InputsState>({});
   const [loading, setLoading] = useState(false);

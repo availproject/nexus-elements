@@ -12,12 +12,15 @@ import {
   type UserAsset,
 } from "@avail-project/nexus-core";
 import { useEffect, useMemo, useRef, useState, useReducer } from "react";
-import { type Address, isAddress, parseUnits } from "viem";
+import { type Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
-import { useStopwatch } from "../../common/hooks/useStopwatch";
-import { usePolling } from "../../common/hooks/usePolling";
-import { useTransactionSteps } from "../../common/tx/useTransactionSteps";
-import type { TransactionStatus } from "../../common/tx/types";
+import {
+  useStopwatch,
+  usePolling,
+  useNexusError,
+  useTransactionSteps,
+  type TransactionStatus,
+} from "../../common";
 
 export interface FastBridgeState {
   chain: SUPPORTED_CHAINS_IDS;
@@ -47,10 +50,10 @@ interface UseBridgeProps {
   onError?: (message: string) => void;
 }
 
-interface BridgeState {
+type BridgeState = {
   inputs: FastBridgeState;
   status: TransactionStatus;
-}
+};
 type Action =
   | { type: "setInputs"; payload: Partial<FastBridgeState> }
   | { type: "resetInputs" }
@@ -91,8 +94,8 @@ const useBridge = ({
   onStart,
   onError,
 }: UseBridgeProps) => {
-  const { fetchUnifiedBalance, handleNexusError } = useNexus();
-
+  const { fetchUnifiedBalance } = useNexus();
+  const handleNexusError = useNexusError();
   const initialState: BridgeState = {
     inputs: buildInitialInputs(network, connectedAddress, prefill),
     status: "idle",
@@ -118,7 +121,7 @@ const useBridge = ({
     dispatch({ type: "setInputs", payload: next as Partial<FastBridgeState> });
   };
 
-  const [loading, setLoading] = useState(false);
+  const loading = state.status === "executing";
   const [refreshing, setRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
@@ -150,17 +153,19 @@ const useBridge = ({
       console.error("Missing required inputs");
       return;
     }
-    setLoading(true);
     dispatch({ type: "setStatus", payload: "executing" });
     setTxError(null);
     onStart?.();
     try {
+      if (!nexusSDK) {
+        throw new Error("Nexus SDK not initialized");
+      }
       if (inputs?.recipient !== connectedAddress) {
         // Transfer
-        const transferTxn = await nexusSDK?.bridgeAndTransfer(
+        const transferTxn = await nexusSDK.bridgeAndTransfer(
           {
             token: inputs?.token,
-            amount: parseUnits(
+            amount: nexusSDK.utils.parseUnits(
               inputs?.amount,
               TOKEN_METADATA[inputs?.token].decimals
             ),
@@ -189,10 +194,10 @@ const useBridge = ({
         return;
       }
       // Bridge
-      const bridgeTxn = await nexusSDK?.bridge(
+      const bridgeTxn = await nexusSDK.bridge(
         {
           token: inputs?.token,
-          amount: parseUnits(
+          amount: nexusSDK.utils.parseUnits(
             inputs?.amount,
             TOKEN_METADATA[inputs?.token].decimals
           ),
@@ -218,13 +223,12 @@ const useBridge = ({
         await onSuccess();
       }
     } catch (error) {
+      console.error("Fast Bridge Error:", error);
       const { message } = handleNexusError(error);
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
       dispatch({ type: "setStatus", payload: "error" });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -261,7 +265,6 @@ const useBridge = ({
     setAllowance(null);
     dispatch({ type: "resetInputs" });
     dispatch({ type: "setStatus", payload: "idle" });
-    setLoading(false);
     setRefreshing(false);
     stopwatch.stop();
     stopwatch.reset();
