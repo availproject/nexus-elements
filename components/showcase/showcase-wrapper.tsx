@@ -35,7 +35,6 @@ const ShowcaseWrapper = ({
   type,
   toggle,
   toggleLabel,
-  className: toggleClassName,
   variant = "outline",
   size = "sm",
   pressed,
