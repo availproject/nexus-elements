@@ -40,7 +40,7 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
   return (
     <div className="flex items-center space-x-2">
       <Select
-        value={currentNetwork}
+        value={currentNetwork as string}
         onValueChange={handleNetworkChange}
         disabled={disabled}
       >
