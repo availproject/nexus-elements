@@ -45,6 +45,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
           "target": "components/common/hooks/useStableCallback.ts",
           "type": "registry:component"
@@ -179,6 +184,11 @@
         {
           "path": "registry/nexus-elements/transfer/transfer.tsx",
           "target": "components/transfer/transfer.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
           "type": "registry:component"
         },
         {
@@ -562,6 +572,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
           "type": "registry:component"
@@ -708,6 +723,11 @@
         {
           "path": "registry/nexus-elements/swaps/swaps.tsx",
           "target": "components/swaps/swaps.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
           "type": "registry:component"
         },
         {

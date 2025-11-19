@@ -42,6 +42,12 @@
       "target": "components/common/utils/constant.ts"
     },
     {
+      "path": "registry/nexus-elements/common/index.ts",
+      "content": "export * from \"./hooks/useStopwatch\";\nexport * from \"./hooks/usePolling\";\nexport * from \"./hooks/useInterval\";\nexport * from \"./hooks/useStableCallback\";\nexport * from \"./hooks/useDebouncedValue\";\nexport * from \"./hooks/useDebouncedCallback\";\nexport * from \"./hooks/useNexusError\";\nexport * from \"./tx/types\";\nexport * from \"./tx/steps\";\nexport * from \"./tx/useTransactionSteps\";\nexport * from \"./utils/constant\";\n",
+      "type": "registry:component",
+      "target": "components/common/index.ts"
+    },
+    {
       "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
       "content": "import { useCallback, useRef } from \"react\";\n\n/**\n * Returns a stable function identity that always calls the latest implementation.\n * Useful when passing callbacks to memoized children without re-creating handlers.\n */\nexport function useStableCallback<T extends (...args: any[]) => any>(fn: T): T {\n  const fnRef = useRef<T>(fn);\n  fnRef.current = fn;\n\n  // eslint-disable-next-line react-hooks/exhaustive-deps\n  const stable = useCallback(\n    ((...args: any[]) => {\n      return fnRef.current(...args);\n    }) as T,\n    []\n  );\n\n  return stable;\n}\n",
       "type": "registry:component",
