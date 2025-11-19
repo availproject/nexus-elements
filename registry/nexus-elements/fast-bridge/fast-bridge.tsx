@@ -20,7 +20,7 @@ import AllowanceModal from "./components/allowance-modal";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import {
-  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";

@@ -25,7 +25,6 @@ import { useAccountEffect } from "wagmi";
 interface NexusContextType {
   nexusSDK: NexusSDK | null;
   unifiedBalance: UserAsset[] | null;
-
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
@@ -126,8 +125,9 @@ const NexusProvider = ({
 
   const deinitializeNexus = async () => {
     try {
-      if (!sdk.isInitialized()) throw new Error("Nexus is not initialized");
-      await sdk.deinit();
+      if (!nexusSDK?.isInitialized())
+        throw new Error("Nexus is not initialized");
+      await nexusSDK?.deinit();
       setNexusSDK(null);
       supportedChainsAndTokens.current = null;
       swapSupportedChainsAndTokens.current = null;
