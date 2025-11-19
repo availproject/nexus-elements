@@ -16,8 +16,6 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
-import AllowanceModal from "./components/allowance-modal";
-import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import {
   SUPPORTED_CHAINS_IDS,
@@ -26,10 +24,10 @@ import {
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
-import TransferSourceBreakdown from "./components/transfer-source-breakdown";
+import useTransfer from "./hooks/useTransfer";
+import AllowanceModal from "./components/allowance-modal";
 
-interface FastBridgeProps {
-  connectedAddress: Address;
+interface FastTransferProps {
   prefill?: {
     token: SUPPORTED_TOKENS;
     chainId: SUPPORTED_CHAINS_IDS;
@@ -41,8 +39,7 @@ interface FastBridgeProps {
   onError?: (message: string) => void;
 }
 
-const FastBridge: FC<FastBridgeProps> = ({
-  connectedAddress,
+const FastTransfer: FC<FastTransferProps> = ({
   onComplete,
   onStart,
   onError,
@@ -76,10 +73,9 @@ const FastBridge: FC<FastBridgeProps> = ({
     lastExplorerUrl,
     steps,
     status,
-  } = useBridge({
+  } = useTransfer({
     prefill,
     network: network ?? "mainnet",
-    connectedAddress,
     nexusSDK,
     intent,
     setIntent,
@@ -89,6 +85,8 @@ const FastBridge: FC<FastBridgeProps> = ({
     onStart,
     onError,
   });
+
+  console.log("transfer intent", intent);
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
@@ -126,35 +124,22 @@ const FastBridge: FC<FastBridgeProps> = ({
         />
         {intent?.intent && (
           <>
-            {inputs?.recipient === connectedAddress ? (
-              <SourceBreakdown
-                intent={intent?.intent}
-                tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-                isLoading={refreshing}
-              />
-            ) : (
-              <TransferSourceBreakdown
-                intent={intent?.intent}
-                tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-                isLoading={refreshing}
-                chain={inputs?.chain}
-                unifiedBalance={filteredUnifiedBalance}
-                requiredAmount={inputs?.amount}
-              />
-            )}
-
+            <SourceBreakdown
+              intent={intent?.intent}
+              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
+              chain={inputs?.chain}
+              unifiedBalance={filteredUnifiedBalance}
+              requiredAmount={inputs?.amount}
+            />
             <div className="w-full flex items-start justify-between gap-x-4">
-              <p className="text-base font-semibold">You receive</p>
+              <p className="text-base font-semibold">Receipient Receives</p>
               <div className="flex flex-col gap-y-1 min-w-fit">
                 {refreshing ? (
                   <Skeleton className="h-5 w-28" />
                 ) : (
                   <p className="text-base font-semibold text-right">
-                    {`${
-                      connectedAddress === inputs?.recipient
-                        ? intent?.intent?.destination?.amount
-                        : inputs.amount
-                    } ${filteredUnifiedBalance?.symbol}`}
+                    {inputs?.amount} {filteredUnifiedBalance?.symbol}
                   </p>
                 )}
                 {refreshing ? (
@@ -184,7 +169,7 @@ const FastBridge: FC<FastBridgeProps> = ({
             {loading ? (
               <LoaderPinwheel className="animate-spin size-5" />
             ) : (
-              "Bridge"
+              "Transfer to recipient"
             )}
           </Button>
         )}
@@ -229,7 +214,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                 timer={timer}
                 steps={steps}
                 viewIntentUrl={lastExplorerUrl}
-                operationType={"bridge"}
+                operationType={"transfer"}
                 completed={status === "success"}
               />
             )}
@@ -259,4 +244,4 @@ const FastBridge: FC<FastBridgeProps> = ({
   );
 };
 
-export default FastBridge;
+export default FastTransfer;

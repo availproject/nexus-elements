@@ -9,9 +9,9 @@ import {
   type SupportedChainsResult,
   type UserAsset,
   type OnSwapIntentHookData,
-  NexusError,
-  ERROR_CODES,
+  type SupportedChainsAndTokensResult,
 } from "@avail-project/nexus-core";
+
 import {
   createContext,
   useCallback,
@@ -19,6 +19,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useAccountEffect } from "wagmi";
 
 interface NexusContextType {
   nexusSDK: NexusSDK | null;
@@ -38,21 +39,16 @@ interface NexusContextType {
     React.SetStateAction<OnAllowanceHookData | null>
   >;
   handleInit: (provider: EthereumProvider) => Promise<void>;
-  supportedChainsAndTokens: SupportedChainsResult | null;
+  supportedChainsAndTokens: SupportedChainsAndTokensResult | null;
   swapSupportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
   fetchUnifiedBalance: () => Promise<void>;
-  handleNexusError: (err: unknown) => {
-    code?: (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
-    message: string;
-    context?: string;
-    details?: Record<string, unknown>;
-  };
   getFiatValue: (amount: number, token: string) => string;
 }
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
+
 const NexusProvider = ({
   children,
   config = {
@@ -69,7 +65,7 @@ const NexusProvider = ({
   const sdk = useMemo(() => new NexusSDK(config), [config]);
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
-    useState<SupportedChainsResult | null>(null);
+    useState<SupportedChainsAndTokensResult | null>(null);
   const [swapSupportedChainsAndTokens, setSwapSupportedChainsAndTokens] =
     useState<SupportedChainsResult | null>(null);
   const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
@@ -90,6 +86,7 @@ const NexusProvider = ({
     const list = sdk?.utils?.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
+    console.log("supportedChainsAndTokens", list);
     setSupportedChainsAndTokens(list ?? null);
     const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
     setSwapSupportedChainsAndTokens(swapList ?? null);
@@ -101,25 +98,34 @@ const NexusProvider = ({
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
       setNexusSDK(sdk);
-      const unifiedBalance = await sdk?.getUnifiedBalances(true);
-      setUnifiedBalance(unifiedBalance);
-      // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
-      // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
-      const rates = await sdk?.utils?.getCoinbaseRates();
-      const usdPerUnit: Record<string, number> = {};
-
-      for (const [symbol, value] of Object.entries(rates ?? {})) {
-        const unitsPerUsd = Number.parseFloat(String(value));
-        if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
-          usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
-        }
-      }
-
-      for (const token of ["ETH", "USDC", "USDT"]) {
-        usdPerUnit[token] ??= 1;
-      }
-      setExchangeRate(usdPerUnit);
       initChainsAndTokens();
+      const [unifiedBalance, rates] = await Promise.allSettled([
+        sdk?.getUnifiedBalances(true),
+        sdk?.utils?.getCoinbaseRates(),
+      ]);
+
+      if (unifiedBalance.status === "fulfilled") {
+        setUnifiedBalance(unifiedBalance.value);
+      }
+
+      if (rates?.status === "fulfilled") {
+        // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
+        // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
+
+        const usdPerUnit: Record<string, number> = {};
+
+        for (const [symbol, value] of Object.entries(rates ?? {})) {
+          const unitsPerUsd = Number.parseFloat(String(value));
+          if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
+            usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
+          }
+        }
+
+        for (const token of ["ETH", "USDC", "USDT"]) {
+          usdPerUnit[token] ??= 1;
+        }
+        setExchangeRate(usdPerUnit);
+      }
     } catch (error) {
       console.error("Error initializing Nexus:", error);
     } finally {
@@ -195,18 +201,11 @@ const NexusProvider = ({
     return approx.toFixed(3);
   }
 
-  const handleNexusError: NexusContextType["handleNexusError"] = (err) => {
-    if (err instanceof NexusError) {
-      const { code, message, data } = err;
-      return {
-        code,
-        message,
-        context: data?.context,
-        details: data?.details ?? undefined,
-      };
-    }
-    return { message: (err as Error)?.message || "Unexpected error" };
-  };
+  useAccountEffect({
+    onDisconnect() {
+      deinitializeNexus();
+    },
+  });
 
   const value = useMemo(
     () => ({
@@ -227,7 +226,6 @@ const NexusProvider = ({
       fetchUnifiedBalance,
       swapIntent,
       setSwapIntent,
-      handleNexusError,
       exchangeRate,
       getFiatValue,
     }),
@@ -249,7 +247,6 @@ const NexusProvider = ({
       fetchUnifiedBalance,
       swapIntent,
       setSwapIntent,
-      handleNexusError,
       exchangeRate,
       getFiatValue,
     ]

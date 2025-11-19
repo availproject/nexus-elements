@@ -1,14 +1,13 @@
 "use client";
-import * as React from "react";
+import React, { ReactNode } from "react";
 import { LoaderPinwheel } from "lucide-react";
 import { type EthereumProvider } from "@avail-project/nexus-core";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useConnectorClient } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";
 import { Button } from "@/registry/nexus-elements/ui/button";
-
 interface PreviewPanelProps {
-  children: React.ReactNode;
+  children: ReactNode;
   connectLabel: string;
 }
 
@@ -16,29 +15,24 @@ export function PreviewPanel({
   children,
   connectLabel,
 }: Readonly<PreviewPanelProps>) {
-  const [loading, setLoading] = React.useState(false);
   const { status } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const { nexusSDK, handleInit } = useNexus();
+  const { data: walletClient } = useConnectorClient();
+  const { nexusSDK, handleInit, loading } = useNexus();
 
   const initializeNexus = async () => {
-    setLoading(true);
     try {
-      const wcProvider =
-        walletClient &&
-        ({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          request: (args: unknown) => walletClient.request(args as any),
-        } as unknown as EthereumProvider);
-      if (!wcProvider) {
-        throw new Error("No EIP-1193 provider available");
+      const wcProvider = walletClient && {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        request: (args: unknown) => walletClient.request(args as any),
+      };
+      console.log("wcProvider", wcProvider);
+      await handleInit(wcProvider as unknown as EthereumProvider);
+      if (nexusSDK) {
+        toast.success("Nexus initialized successfully");
       }
-      await handleInit(wcProvider);
     } catch (error) {
       console.error(error);
       toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
-    } finally {
-      setLoading(false);
     }
   };
   return (

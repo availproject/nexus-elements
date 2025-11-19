@@ -13,9 +13,12 @@ import {
   resolveDestinationFromPrefill,
   resolveSourceFromPrefill,
 } from "../../utils/prefill";
-import { useStopwatch } from "../../../common/hooks/useStopwatch";
-import { useTransactionSteps } from "../../../common/tx/useTransactionSteps";
-import { SWAP_EXPECTED_STEPS } from "../../../common/tx/steps";
+import {
+  useStopwatch,
+  useTransactionSteps,
+  SWAP_EXPECTED_STEPS,
+  useNexusError,
+} from "../../../common";
 
 type SourceTokenInfo = {
   contractAddress: `0x${string}`;
@@ -62,13 +65,9 @@ const useExactIn = ({
   onError,
   prefill,
 }: UseExactInProps) => {
-  const {
-    handleNexusError,
-    swapIntent,
-    setSwapIntent,
-    fetchUnifiedBalance,
-    unifiedBalance,
-  } = useNexus();
+  const { swapIntent, setSwapIntent, fetchUnifiedBalance, unifiedBalance } =
+    useNexus();
+  const handleNexusError = useNexusError();
 
   const [inputs, setInputs] = useState<SwapInputs>({
     fromChainID:

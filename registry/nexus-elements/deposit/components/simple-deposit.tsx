@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback } from "react";
 import { BaseDepositProps } from "../deposit";
 import AmountInput from "./amount-input";
 import SourceSelect from "./source-select";
@@ -19,11 +19,7 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
-import { formatUnits } from "viem";
-import {
-  CHAIN_METADATA,
-  type SUPPORTED_TOKENS,
-} from "@avail-project/nexus-core";
+import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
 interface SimpleDepositProps extends BaseDepositProps {
   destinationLabel?: string;
@@ -44,7 +40,6 @@ const SimpleDeposit = ({
     unifiedBalance,
     allowance,
     setAllowance,
-    getFiatValue,
   } = useNexus();
 
   const {
@@ -62,11 +57,10 @@ const SimpleDeposit = ({
     filteredUnifiedBalance,
     simulation,
     startTransaction,
-    stopTimer,
     clearSimulation,
-    simulate,
     cancelSimulation,
     steps,
+    feeBreakdown,
   } = useDeposit({
     token: token ?? "USDC",
     chain,
@@ -74,17 +68,11 @@ const SimpleDeposit = ({
     intent,
     setIntent,
     unifiedBalance,
-    allowance,
     setAllowance,
     chainOptions,
     address,
     executeBuilder: depositExecute,
   });
-  const allCompleted = steps?.length > 0 && steps.every((s) => s.completed);
-  useEffect(() => {
-    if (allCompleted) stopTimer();
-  }, [allCompleted, stopTimer]);
-
   const renderDepositButtonContent = useCallback(() => {
     if (isDialogOpen) return "Deposit";
     if (refreshing)
@@ -103,76 +91,6 @@ const SimpleDeposit = ({
       );
     return "Deposit";
   }, [isDialogOpen, refreshing, simulating]);
-
-  const renderTotalFeeBreakdown: {
-    totalGasFee: number;
-    bridgeUsd?: string;
-    bridgeFormatted?: string;
-    gasUsd: string;
-    gasFormatted: string;
-  } = useMemo(() => {
-    if (!nexusSDK || !simulation || !token)
-      return {
-        totalGasFee: 0,
-        bridgeUsd: "0",
-        bridgeFormatted: "0",
-        gasUsd: "0",
-        gasFormatted: "0",
-      };
-    const native = CHAIN_METADATA[chain]?.nativeCurrency;
-    const nativeSymbol = native.symbol;
-    const nativeDecimals = native.decimals;
-
-    const gasFormatted =
-      nexusSDK?.utils?.formatTokenBalance(
-        simulation?.executeSimulation?.gasFee ?? BigInt(0),
-        {
-          symbol: nativeSymbol,
-          decimals: nativeDecimals,
-        }
-      ) ?? "0";
-    const gasUnits = Number.parseFloat(
-      formatUnits(
-        simulation?.executeSimulation?.gasFee ?? BigInt(0),
-        nativeDecimals
-      )
-    );
-    const gasUsd = getFiatValue(gasUnits, nativeSymbol);
-
-    if (simulation?.bridgeSimulation) {
-      const tokenDecimals =
-        simulation?.bridgeSimulation?.intent?.token?.decimals;
-      const bridgeFormatted =
-        nexusSDK?.utils?.formatTokenBalance(
-          simulation?.bridgeSimulation?.intent?.fees?.total ?? "0",
-          {
-            symbol: token,
-            decimals: tokenDecimals,
-          }
-        ) ?? "0";
-      const bridgeUsd = getFiatValue(
-        Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total),
-        token
-      );
-
-      const totalGasFee =
-        Number.parseFloat(bridgeUsd) + Number.parseFloat(gasUsd);
-
-      return {
-        totalGasFee,
-        bridgeUsd,
-        bridgeFormatted,
-        gasUsd,
-        gasFormatted,
-      };
-    }
-
-    return {
-      totalGasFee: Number.parseFloat(gasFormatted),
-      gasUsd,
-      gasFormatted,
-    };
-  }, [nexusSDK, simulation, chain, token, getFiatValue]);
 
   return (
     <div className="flex flex-col items-center w-full gap-y-3 rounded-lg">
@@ -196,10 +114,7 @@ const SimpleDeposit = ({
         }}
         unifiedBalance={filteredUnifiedBalance}
         disabled={loading || simulating}
-        onCommit={(value) => {
-          setInputs({ ...inputs, amount: value });
-          void simulate(value);
-        }}
+        maxLength={filteredUnifiedBalance?.decimals}
       />
 
       {/* Shimmer while simulating */}
@@ -254,9 +169,13 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={`$${renderTotalFeeBreakdown?.totalGasFee.toFixed(4)} USD`}
-            bridge={renderTotalFeeBreakdown?.bridgeFormatted ?? ""}
-            execute={renderTotalFeeBreakdown?.gasFormatted ?? ""}
+            total={
+              simulation?.bridgeSimulation
+                ? `$${(feeBreakdown?.totalGasFee as number).toFixed(4)} USD`
+                : (feeBreakdown?.totalGasFee as string)
+            }
+            bridge={feeBreakdown?.bridgeFormatted ?? ""}
+            execute={feeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}
           />
           {!simulation.bridgeSimulation && (

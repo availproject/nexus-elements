@@ -1,14 +1,14 @@
 ---
-title: Fast Bridge
-description: Bridge assets across chains with source breakdown, fee details, progress steps, and allowance flow. Intent-based and optimized for UX.
+title: Fast Transfer
+description: Transfer assets across chains with source breakdown, fee details, progress steps, and allowance flow. Intent-based and optimized for UX.
 component: true
 links:
-  doc: https://elements.nexus.availproject.org/components/fast-bridge
+  doc: https://elements.nexus.availproject.org/components/fast-transfer
 ---
 
 <ComponentPreview
-  name="fast-bridge"
-  description="An intent-based fast bridge with allowance flow and progress."
+  name="fast-transfer"
+  description="An intent-based fast transfer with allowance flow and progress."
   align="center"
 />
 
@@ -21,7 +21,7 @@ links:
   </TabsList>
   <TabsContent value="cli">
     ```bash
-    npx shadcn@latest add https://develop.elements.nexus.availproject.org/r/fast-bridge.json
+    npx shadcn@latest add https://develop.elements.nexus.availproject.org/r/fast-transfer.json
     ```
   </TabsContent>
   <TabsContent value="manual">
@@ -36,7 +36,7 @@ npm install @avail-project/nexus-core@1.0.0-beta.32 @radix-ui/react-accordion @r
         data-slot="code"
         className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
       >
-        <ComponentSource name="fast-bridge" showAllFiles />
+        <ComponentSource name="fast-transfer" showAllFiles />
       </div>
       <Step>Update the import paths to match your project setup.</Step>
 
@@ -48,8 +48,7 @@ npm install @avail-project/nexus-core@1.0.0-beta.32 @radix-ui/react-accordion @r
 ## Usage
 
 ```tsx showLineNumbers
-<FastBridge
-  connectedAddress={address}
+<FastTransfer
   onComplete={completeCurrent}
   prefill={{
     token: "USDC",
@@ -62,20 +61,19 @@ npm install @avail-project/nexus-core@1.0.0-beta.32 @radix-ui/react-accordion @r
 
 ## API Reference
 
-### FastBridge
+### FastTransfer
 
-The `FastBridge` component uses the `bridge` function from `@avail-project/nexus-core`. It can be fully customized and styled.
+The `FastTransfer` component uses the `transfer` function from `@avail-project/nexus-core`. It can be fully customized and styled.
 
 <CodeCollapsibleWrapper className="mt-4">
 
-```ts title="FastBridgeProps"
-interface FastBridgeProps {
-  connectedAddress: Address; // connected address to the wallet
+```ts title="FastTransferProps"
+interface FastTransferProps {
   prefill?: {
     token: SUPPORTED_TOKENS; // token to bridge
     chainId: SUPPORTED_CHAINS_IDS; // chain to bridge to
     amount?: string; // amount to bridge
-    recipient?: Address; // recipient address to receive the bridged assets
+    recipient?: Address; // recipient address to receive the transferred assets
   };
   onComplete?: () => void; // callback when the bridge is complete
   onStart?: () => void; // callback when the bridge starts

@@ -3,14 +3,14 @@
 import { type UserAsset } from "@avail-project/nexus-core";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
-import { Fragment, useCallback, useEffect, useRef } from "react";
+import { Fragment } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import { SHORT_CHAIN_NAME } from "../../common/utils/constant";
+import { SHORT_CHAIN_NAME } from "../../common";
 import { useNexus } from "../../nexus/NexusProvider";
 
 const RANGE_OPTIONS = [
@@ -32,12 +32,14 @@ const RANGE_OPTIONS = [
   },
 ];
 
-interface AmountInputProps {
+interface AmountInputProps
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    "onChange" | "value"
+  > {
   value?: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   unifiedBalance?: UserAsset;
-  disabled?: boolean;
-  onCommit?: (value: string) => void;
 }
 
 const AmountInput = ({
@@ -45,30 +47,9 @@ const AmountInput = ({
   onChange,
   unifiedBalance,
   disabled,
-  onCommit,
+  ...props
 }: AmountInputProps) => {
-  const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { nexusSDK } = useNexus();
-
-  const scheduleCommit = useCallback(
-    (val: string) => {
-      if (!onCommit || disabled) return;
-      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
-      commitTimerRef.current = setTimeout(() => {
-        onCommit(val);
-      }, 800);
-    },
-    [onCommit, disabled]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (commitTimerRef.current) {
-        clearTimeout(commitTimerRef.current);
-        commitTimerRef.current = null;
-      }
-    };
-  }, []);
 
   return (
     <div className="flex flex-col items-start gap-y-1 w-full py-2">
@@ -76,32 +57,14 @@ const AmountInput = ({
         <AccordionItem value="balance-breakdown">
           <div className="flex items-center justify-between gap-x-3 w-full">
             <Input
+              {...props}
               type="number"
               inputMode="decimal"
               step="any"
               min="0"
               placeholder="1.002..."
               value={value ?? ""}
-              onChange={(e) => {
-                onChange(e.target.value);
-                scheduleCommit(e.target.value);
-              }}
-              onBlur={(e) => {
-                if (commitTimerRef.current) {
-                  clearTimeout(commitTimerRef.current);
-                  commitTimerRef.current = null;
-                }
-                onCommit?.(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (commitTimerRef.current) {
-                    clearTimeout(commitTimerRef.current);
-                    commitTimerRef.current = null;
-                  }
-                  onCommit?.(value ?? "");
-                }
-              }}
+              onChange={(e) => onChange?.(e.target.value)}
               className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
               disabled={disabled}
             />
@@ -124,9 +87,10 @@ const AmountInput = ({
                   onClick={() => {
                     if (!unifiedBalance?.balance) return;
                     const max = Number(unifiedBalance?.balance);
-                    const next = (max * option.value).toString();
-                    onChange(next);
-                    onCommit?.(next);
+                    const next = (max * option.value).toFixed(
+                      unifiedBalance?.decimals
+                    );
+                    onChange?.(next);
                   }}
                 >
                   {option.label}

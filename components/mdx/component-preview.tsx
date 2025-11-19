@@ -23,7 +23,7 @@ const SHOWCASE_MAP: Record<
   swaps: () => import("@/components/showcase/swaps-showcase"),
   "unified-balance": () =>
     import("@/components/showcase/unified-balance-showcase"),
-  "swap-deposit": () => import("@/components/showcase/swap-deposit-showcase"),
+  "fast-transfer": () => import("@/components/showcase/transfer-showcase"),
 };
 
 export function ComponentPreview({
@@ -37,6 +37,9 @@ export function ComponentPreview({
   ...props
 }: ComponentPreviewProps) {
   const showcaseLoader = SHOWCASE_MAP[name];
+  const Showcase = dynamic(showcaseLoader, {
+    loading: () => <Skeleton className="w-full h-full" />,
+  });
 
   if (!showcaseLoader) {
     return (
@@ -49,11 +52,6 @@ export function ComponentPreview({
       </p>
     );
   }
-
-  // Basic tabs container for MDX previews
-  const Showcase = dynamic(showcaseLoader, {
-    loading: () => <Skeleton className="w-full h-full" />,
-  });
 
   return (
     <ComponentPreviewTabs

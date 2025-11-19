@@ -49,7 +49,7 @@ export default function RootLayout({
             <Topbar />
             {children}
           </Web3Provider>
-          <Toaster />
+          <Toaster position="top-right" />
         </ThemeProvider>
       </body>
     </html>

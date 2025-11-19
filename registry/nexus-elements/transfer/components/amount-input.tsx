@@ -3,7 +3,7 @@ import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { type UserAsset } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
-import { type FastBridgeState } from "../hooks/useBridge";
+import { type FastTransferState } from "../hooks/useTransfer";
 import {
   Accordion,
   AccordionContent,
@@ -18,7 +18,7 @@ interface AmountInputProps {
   unifiedBalance?: UserAsset;
   onCommit?: (value: string) => void;
   disabled?: boolean;
-  inputs: FastBridgeState;
+  inputs: FastTransferState;
 }
 
 const AmountInput: FC<AmountInputProps> = ({
