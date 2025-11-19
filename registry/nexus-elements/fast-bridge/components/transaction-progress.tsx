@@ -1,12 +1,18 @@
 import { Check, Circle, LoaderPinwheel } from "lucide-react";
-import * as React from "react";
-import { type ProgressStep } from "@avail-project/nexus-core";
+import React, { type FC, memo, useMemo } from "react";
+import {
+  type BridgeStepType,
+  type SwapStepType,
+} from "@avail-project/nexus-core";
+
+type ProgressStep = BridgeStepType | SwapStepType;
 
 interface TransactionProgressProps {
   timer: number;
   steps: Array<{ id: number; completed: boolean; step: ProgressStep }>;
   viewIntentUrl?: string;
   operationType?: string;
+  completed?: boolean;
 }
 
 export const getOperationText = (type: string) => {
@@ -24,52 +30,10 @@ export const getOperationText = (type: string) => {
   }
 };
 
-export const getStatusText = (type: string, operationType: string) => {
-  const opText = getOperationText(operationType);
-
-  switch (type) {
-    case "INTENT_ACCEPTED":
-      return "Intent Accepted";
-    case "INTENT_HASH_SIGNED":
-      return "Signing Transaction";
-    case "INTENT_SUBMITTED":
-      return "Submitting Transaction";
-    case "INTENT_COLLECTION":
-      return "Collecting Confirmations";
-    case "INTENT_COLLECTION_COMPLETE":
-      return "Confirmations Complete";
-    case "APPROVAL":
-      return "Approving";
-    case "TRANSACTION_SENT":
-      return "Sending Transaction";
-    case "RECEIPT_RECEIVED":
-      return "Receipt Received";
-    case "TRANSACTION_CONFIRMED":
-    case "INTENT_FULFILLED":
-      return `${opText} Complete`;
-    default:
-      return `Processing ${opText}`;
-  }
-};
-
-// Known step types emitted by the SDK (stable `type` values)
-const KNOWN_TYPES = new Set<string>([
-  "INTENT_ACCEPTED",
-  "INTENT_HASH_SIGNED",
-  "INTENT_SUBMITTED",
-  "INTENT_COLLECTION",
-  "INTENT_COLLECTION_COMPLETE",
-  "APPROVAL",
-  "TRANSACTION_SENT",
-  "RECEIPT_RECEIVED",
-  "TRANSACTION_CONFIRMED",
-  "INTENT_FULFILLED",
-]);
-
 type DisplayStep = { id: string; label: string; completed: boolean };
 
-const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> =
-  React.memo(({ steps, currentIndex }) => {
+const StepList: FC<{ steps: DisplayStep[]; currentIndex: number }> = memo(
+  ({ steps, currentIndex }) => {
     return (
       <div className="w-full mt-6 space-y-6">
         {steps.map((s, idx) => {
@@ -99,27 +63,30 @@ const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> =
         })}
       </div>
     );
-  });
+  }
+);
 
-const TransactionProgress: React.FC<TransactionProgressProps> = ({
+const TransactionProgress: FC<TransactionProgressProps> = ({
   timer,
   steps,
   viewIntentUrl,
   operationType = "bridge",
+  completed = false,
 }) => {
   const totalSteps = Array.isArray(steps) ? steps.length : 0;
   const completedSteps = Array.isArray(steps)
     ? steps.reduce((acc, s) => acc + (s?.completed ? 1 : 0), 0)
     : 0;
-  const percent = totalSteps > 0 ? completedSteps / totalSteps : 0;
-  const allCompleted = percent >= 1;
+  const rawPercent = totalSteps > 0 ? completedSteps / totalSteps : 0;
+  const percent = completed ? 1 : rawPercent;
+  const allCompleted = completed || percent >= 1;
   const opText = getOperationText(operationType);
   const headerText = allCompleted
     ? `${opText} Completed`
     : `${opText} In Progress...`;
   const ctaText = allCompleted ? `View Explorer` : "View Intent";
 
-  const { effectiveSteps, currentIndex } = React.useMemo(() => {
+  const { effectiveSteps, currentIndex } = useMemo(() => {
     const milestones = [
       "Intent verified",
       "Collected on sources",
@@ -135,7 +102,7 @@ const TransactionProgress: React.FC<TransactionProgressProps> = ({
     }));
     const current = displaySteps.findIndex((st) => !st.completed);
     return { effectiveSteps: displaySteps, currentIndex: current };
-  }, [percent, opText]);
+  }, [percent, opText, completed]);
 
   return (
     <div className="w-full flex flex-col items-center">

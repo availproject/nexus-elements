@@ -1,0 +1,67 @@
+---
+title: Unified Balance
+description: View unified token balances across chains with per-chain breakdown and fiat totals.
+component: true
+---
+
+<ComponentPreview
+  name="unified-balance"
+  description="Aggregate balances across chains with per-token breakdown."
+  align="center"
+/>
+
+## Installation
+
+<CodeTabs>
+  <TabsList>
+    <TabsTrigger value="cli">CLI</TabsTrigger>
+    <TabsTrigger value="manual">Manual</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cli">
+
+    ```bash
+    npx shadcn@latest add https://elements.nexus.availproject.org/r/unified-balance.json
+    ```
+
+  </TabsContent>
+  <TabsContent value="manual">
+    <Steps>
+      <Step>Install these dependencies</Step>
+```bash
+npm install @avail-project/nexus-core@1.0.0-rc.3 lucide-react @radix-ui/react-accordion @radix-ui/react-label @radix-ui/react-slot
+```
+      <Step>Copy and paste the following code into your project.</Step>
+
+      <div
+        data-slot="code"
+        className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+      >
+        <ComponentSource name="unified-balance" showAllFiles />
+      </div>
+      <Step>Update the import paths to match your project setup.</Step>
+    </Steps>
+
+  </TabsContent>
+</CodeTabs>
+
+## Usage
+
+```tsx showLineNumbers
+<UnifiedBalance />
+```
+
+## API Reference
+
+### UnifiedBalance
+
+The `UnifiedBalance` component displays your cross-chain liquidity ready to use with `Avail Nexus`.
+
+<CodeCollapsibleWrapper className="mt-4">
+
+```ts title="UnifiedBalanceProps"
+interface UnifiedBalanceProps {
+  className?: string; // optional container className
+}
+```
+
+</CodeCollapsibleWrapper>

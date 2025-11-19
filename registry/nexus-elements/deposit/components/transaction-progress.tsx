@@ -1,6 +1,11 @@
 import { Check, LoaderPinwheel, Circle, Link as LinkIcon } from "lucide-react";
-import React from "react";
-import { type ProgressStep } from "@avail-project/nexus-core";
+import React, { type FC, useMemo } from "react";
+import {
+  type BridgeStepType,
+  type SwapStepType,
+} from "@avail-project/nexus-core";
+
+type ProgressStep = BridgeStepType | SwapStepType;
 
 interface BridgeExecuteProgressProps {
   timer: number;
@@ -11,7 +16,7 @@ interface BridgeExecuteProgressProps {
 
 type DisplayStep = { id: string; label: string; completed: boolean };
 
-const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> = ({
+const StepList: FC<{ steps: DisplayStep[]; currentIndex: number }> = ({
   steps,
   currentIndex,
 }) => {
@@ -43,7 +48,7 @@ const StepList: React.FC<{ steps: DisplayStep[]; currentIndex: number }> = ({
   );
 };
 
-const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
+const BridgeExecuteProgress: FC<BridgeExecuteProgressProps> = ({
   timer,
   steps,
   intentUrl,
@@ -57,7 +62,7 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
   const allCompleted = percent >= 1;
 
   // Custom milestone copy for deposit flow
-  const milestones = React.useMemo(
+  const milestones = useMemo(
     () => [
       "Intent verified",
       "Collected on sources",
@@ -66,7 +71,7 @@ const BridgeExecuteProgress: React.FC<BridgeExecuteProgressProps> = ({
     ],
     []
   );
-  const thresholds = React.useMemo(
+  const thresholds = useMemo(
     () => milestones.map((_, idx) => (idx + 1) / milestones.length),
     [milestones]
   );

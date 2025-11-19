@@ -1,4 +1,7 @@
 import {
+  CHAIN_METADATA,
+  type SUPPORTED_CHAINS_IDS,
+  type UserAsset,
   type ReadableIntent,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
@@ -9,18 +12,95 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { Skeleton } from "../../ui/skeleton";
+import { useMemo } from "react";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
   tokenSymbol: SUPPORTED_TOKENS;
   isLoading?: boolean;
+  chain: SUPPORTED_CHAINS_IDS;
+  unifiedBalance?: UserAsset;
+  requiredAmount?: string;
 }
+
+type ReadableIntentSource = {
+  amount: string;
+  chainID: number;
+  chainLogo: string | undefined;
+  chainName: string;
+  contractAddress: `0x${string}`;
+};
 
 const SourceBreakdown = ({
   intent,
   tokenSymbol,
   isLoading = false,
+  chain,
+  unifiedBalance,
+  requiredAmount,
 }: SourceBreakdownProps) => {
+  const { nexusSDK } = useNexus();
+  const fundsOnDestination = useMemo(() => {
+    return Number.parseFloat(
+      unifiedBalance?.breakdown?.find((b) => b.chain?.id === chain)?.balance ??
+        "0"
+    );
+  }, [unifiedBalance, chain]);
+
+  const amountSpend = useMemo(() => {
+    const amountToFormat = intent
+      ? Number.parseFloat(requiredAmount ?? "0") +
+        Number.parseFloat(intent?.fees?.total ?? "0")
+      : requiredAmount ?? "0";
+    return nexusSDK?.utils?.formatTokenBalance(amountToFormat, {
+      symbol: tokenSymbol,
+      decimals: intent?.token?.decimals,
+    });
+  }, [requiredAmount, intent, tokenSymbol]);
+
+  const displaySources = useMemo(() => {
+    if (!intent)
+      return [
+        {
+          chainID: chain,
+          chainLogo: CHAIN_METADATA[chain]?.logo,
+          chainName: CHAIN_METADATA[chain]?.name ?? "Destination",
+          amount: requiredAmount ?? "0",
+          contractAddress: "",
+        },
+      ];
+    const baseSources: ReadableIntentSource[] = intent?.sources ?? [];
+    const requiredAmountNumber = Number(requiredAmount ?? "0");
+    const destUsed = Math.max(
+      Math.min(requiredAmountNumber, fundsOnDestination),
+      0
+    );
+    if (destUsed <= 0) {
+      return baseSources;
+    }
+    const allSources = intent?.allSources ?? [];
+    const destDetails = allSources?.find?.(
+      (s: ReadableIntentSource) => s?.chainID === chain
+    );
+    const hasDest = baseSources?.some?.(
+      (s: ReadableIntentSource) => s?.chainID === chain
+    );
+    const destSource = {
+      chainID: chain,
+      chainLogo: destDetails?.chainLogo,
+      chainName: destDetails?.chainName ?? "Destination",
+      amount: destUsed.toString(),
+      contractAddress: destDetails?.contractAddress ?? "",
+    };
+    if (hasDest) {
+      return baseSources.map((s: ReadableIntentSource) =>
+        s?.chainID === chain ? { ...s, amount: destSource.amount } : s
+      );
+    }
+    return [...baseSources, destSource];
+  }, [intent, requiredAmount, fundsOnDestination, chain]);
+
   return (
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="sources">
@@ -39,37 +119,33 @@ const SourceBreakdown = ({
               </div>
             </>
           ) : (
-            intent?.sources && (
-              <>
-                <div className="flex flex-col items-start gap-y-1 min-w-fit">
-                  <p className="text-base font-semibold">You Spend</p>
-                  <p className="text-sm font-medium">
-                    {intent?.sources?.length > 1
-                      ? `${intent?.sources?.length} Assets on ${intent?.sources?.length} chains`
-                      : `${intent?.sources?.length} asset on ${intent?.sources?.length} chain`}
-                  </p>
-                </div>
+            <>
+              <div className="flex flex-col items-start gap-y-1 min-w-fit">
+                <p className="text-base font-semibold">You Spend</p>
+                <p className="text-sm font-medium">
+                  {displaySources?.length < 2
+                    ? "1 Asset on 1 Chain"
+                    : `1 Asset on ${displaySources?.length} Chains`}
+                </p>
+              </div>
 
-                <div className="flex flex-col items-end gap-y-1 min-w-fit">
-                  <p className="text-base font-semibold">
-                    {intent?.sourcesTotal} {tokenSymbol}
-                  </p>
-                  <AccordionTrigger
-                    containerClassName="w-fit"
-                    className="py-0 items-center gap-x-1"
-                    hideChevron={false}
-                  >
-                    <p className="text-sm font-medium">View Sources</p>
-                  </AccordionTrigger>
-                </div>
-              </>
-            )
+              <div className="flex flex-col items-end gap-y-1 min-w-fit">
+                <p className="text-base font-semibold">{amountSpend}</p>
+                <AccordionTrigger
+                  containerClassName="w-fit"
+                  className="py-0 items-center gap-x-1"
+                  hideChevron={false}
+                >
+                  <p className="text-sm font-medium">View Sources</p>
+                </AccordionTrigger>
+              </div>
+            </>
           )}
         </div>
-        {!isLoading && intent?.sources && (
+        {!isLoading && displaySources?.length > 0 && (
           <AccordionContent className="my-4 bg-muted pb-0 px-4 py-2 rounded-lg w-full">
             <div className="flex flex-col items-center gap-y-3">
-              {intent?.sources?.map((source) => (
+              {displaySources?.map((source) => (
                 <div
                   key={source.chainID}
                   className="flex items-center justify-between w-full gap-x-2"
@@ -82,7 +158,9 @@ const SourceBreakdown = ({
                       height={20}
                       className="rounded-full"
                     />
-                    <p className="text-sm font-semibold">{source.chainName}</p>
+                    <p className="text-sm font-semibold sm:block hidden">
+                      {source.chainName}
+                    </p>
                   </div>
 
                   <p className="text-sm font-semibold">

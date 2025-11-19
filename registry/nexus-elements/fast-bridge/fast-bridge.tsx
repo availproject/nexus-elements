@@ -1,12 +1,11 @@
 "use client";
-import React, { FC } from "react";
+import React, { type FC } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
 import { Button } from "../ui/button";
 import { LoaderPinwheel, X } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
-import ReceipientAddress from "./components/receipient-address";
 import AmountInput from "./components/amount-input";
 import FeeBreakdown from "./components/fee-breakdown";
 import {
@@ -18,26 +17,44 @@ import {
 } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
 import AllowanceModal from "./components/allowance-modal";
-import useListenTransaction from "./hooks/useListenTransaction";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
-import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+import {
+  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_TOKENS,
+} from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
+import RecipientAddress from "./components/recipient-address";
+import TransferSourceBreakdown from "./components/transfer-source-breakdown";
 
 interface FastBridgeProps {
   connectedAddress: Address;
+  prefill?: {
+    token: SUPPORTED_TOKENS;
+    chainId: SUPPORTED_CHAINS_IDS;
+    amount?: string;
+    recipient?: Address;
+  };
+  onComplete?: () => void;
+  onStart?: () => void;
+  onError?: (message: string) => void;
 }
 
-const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
+const FastBridge: FC<FastBridgeProps> = ({
+  connectedAddress,
+  onComplete,
+  onStart,
+  onError,
+  prefill,
+}) => {
   const {
     nexusSDK,
     intent,
-    setIntent,
     unifiedBalance,
     allowance,
-    setAllowance,
     network,
+    fetchUnifiedBalance,
   } = useNexus();
 
   const {
@@ -54,32 +71,26 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
     filteredUnifiedBalance,
     startTransaction,
     setIsDialogOpen,
-    stopTimer,
     commitAmount,
+    lastExplorerUrl,
+    steps,
+    status,
   } = useBridge({
+    prefill,
     network: network ?? "mainnet",
     connectedAddress,
     nexusSDK,
     intent,
-    setIntent,
     unifiedBalance,
-    setAllowance,
+    allowance,
+    onComplete,
+    onStart,
+    onError,
+    fetchBalance: fetchUnifiedBalance,
   });
-
-  const { processing, explorerUrl } = useListenTransaction(nexusSDK);
-
-  // Stop the timer when all steps are complete
-  const allCompleted =
-    processing?.length > 0 && processing.every((s) => s.completed);
-  React.useEffect(() => {
-    if (allCompleted) {
-      stopTimer();
-    }
-  }, [allCompleted, stopTimer]);
-
   return (
     <Card className="w-full max-w-xl">
-      <CardContent className="flex flex-col gap-y-4 w-full">
+      <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
         <ChainSelect
           selectedChain={inputs?.chain}
           handleSelect={(chain) =>
@@ -89,32 +100,48 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             })
           }
           label="To"
+          disabled={!!prefill?.chainId}
         />
         <TokenSelect
           selectedChain={inputs?.chain}
           selectedToken={inputs?.token}
           handleTokenSelect={(token) => setInputs({ ...inputs, token })}
+          disabled={!!prefill?.token}
         />
         <AmountInput
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
           unifiedBalance={filteredUnifiedBalance}
           onCommit={() => void commitAmount()}
-          disabled={refreshing}
+          disabled={refreshing || !!prefill?.amount}
+          inputs={inputs}
         />
-        <ReceipientAddress
+        <RecipientAddress
           address={inputs?.recipient}
           onChange={(address) =>
             setInputs({ ...inputs, recipient: address as `0x${string}` })
           }
+          disabled={!!prefill?.recipient}
         />
-        {intent?.intent && (
+        {intent?.current?.intent && (
           <>
-            <SourceBreakdown
-              intent={intent?.intent}
-              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
-              isLoading={refreshing}
-            />
+            {inputs?.recipient === connectedAddress ? (
+              <SourceBreakdown
+                intent={intent?.current?.intent}
+                tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+                isLoading={refreshing}
+              />
+            ) : (
+              <TransferSourceBreakdown
+                intent={intent?.current?.intent}
+                tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+                isLoading={refreshing}
+                chain={inputs?.chain}
+                unifiedBalance={filteredUnifiedBalance}
+                requiredAmount={inputs?.amount}
+              />
+            )}
+
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">You receive</p>
               <div className="flex flex-col gap-y-1 min-w-fit">
@@ -122,24 +149,30 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
                   <Skeleton className="h-5 w-28" />
                 ) : (
                   <p className="text-base font-semibold text-right">
-                    {intent?.intent?.destination?.amount}{" "}
-                    {filteredUnifiedBalance?.symbol}
+                    {`${
+                      connectedAddress === inputs?.recipient
+                        ? intent?.current?.intent?.destination?.amount
+                        : inputs.amount
+                    } ${filteredUnifiedBalance?.symbol}`}
                   </p>
                 )}
                 {refreshing ? (
                   <Skeleton className="h-4 w-36" />
                 ) : (
                   <p className="text-sm font-medium text-right">
-                    on {intent?.intent?.destination?.chainName}
+                    on {intent?.current?.intent?.destination?.chainName}
                   </p>
                 )}
               </div>
             </div>
-            <FeeBreakdown intent={intent?.intent} isLoading={refreshing} />
+            <FeeBreakdown
+              intent={intent?.current?.intent}
+              isLoading={refreshing}
+            />
           </>
         )}
 
-        {!intent && (
+        {!intent.current && (
           <Button
             onClick={handleTransaction}
             disabled={
@@ -157,6 +190,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             )}
           </Button>
         )}
+
         <Dialog
           open={isDialogOpen}
           onOpenChange={(open) => {
@@ -164,7 +198,7 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
             setIsDialogOpen(open);
           }}
         >
-          {intent && (
+          {intent.current && !isDialogOpen && (
             <div className="w-full flex items-center gap-x-2 justify-between">
               <Button variant={"destructive"} onClick={reset} className="w-1/2">
                 Deny
@@ -180,30 +214,32 @@ const FastBridge: FC<FastBridgeProps> = ({ connectedAddress }) => {
               </DialogTrigger>
             </div>
           )}
+
           <DialogContent>
             <DialogHeader className="sr-only">
               <DialogTitle>Transaction Progress</DialogTitle>
             </DialogHeader>
-            <TransactionProgress
-              timer={timer}
-              steps={processing}
-              viewIntentUrl={explorerUrl}
-              operationType={"bridge"}
-            />
+            {allowance.current ? (
+              <AllowanceModal
+                allowance={allowance}
+                callback={startTransaction}
+                onCloseCallback={reset}
+              />
+            ) : (
+              <TransactionProgress
+                timer={timer}
+                steps={steps}
+                viewIntentUrl={lastExplorerUrl}
+                operationType={"bridge"}
+                completed={status === "success"}
+              />
+            )}
           </DialogContent>
         </Dialog>
-        {allowance && (
-          <AllowanceModal
-            allowanceModal={allowance}
-            setAllowanceModal={setAllowance}
-            callback={startTransaction}
-            onCloseCallback={reset}
-          />
-        )}
 
         {txError && (
-          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-lg">
-            <span className="flex-1 max-w-">{txError}</span>
+          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-md">
+            <span className="flex-1 w-full truncate">{txError}</span>
             <Button
               type="button"
               size={"icon"}

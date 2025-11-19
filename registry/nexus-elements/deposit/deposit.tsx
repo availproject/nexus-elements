@@ -1,10 +1,11 @@
 import {
-  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
+  type ExecuteParams,
 } from "@avail-project/nexus-core";
 import React from "react";
 import DepositModal from "./components/deposit-modal";
-import { Abi, Address } from "viem";
+import { type Address } from "viem";
 import Container from "./components/container";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useNexus } from "../nexus/NexusProvider";
@@ -18,21 +19,12 @@ export interface BaseDepositProps {
     name: string;
     logo: string;
   }[];
-  depositExecute?: {
-    contractAddress: string;
-    contractAbi: Abi;
-    functionName: string;
-    buildFunctionParams: (
-      token: SUPPORTED_TOKENS,
-      amount: string,
-      chainId: SUPPORTED_CHAINS_IDS,
-      userAddress: `0x${string}`
-    ) => { functionParams: unknown[] };
-    tokenApproval?: {
-      token: SUPPORTED_TOKENS;
-      amount: string;
-    };
-  };
+  depositExecute: (
+    token: SUPPORTED_TOKENS,
+    amount: string,
+    chainId: SUPPORTED_CHAINS_IDS,
+    userAddress: `0x${string}`
+  ) => Omit<ExecuteParams, "toChainId">;
 }
 
 interface NexusDepositProps extends BaseDepositProps {
@@ -45,7 +37,7 @@ const NexusDeposit = ({
   address,
   token = "USDC",
   chain,
-  chainOptions,
+  chainOptions, // pass to customise sources displayed, if not provided, all sources will be shown
   heading = "Deposit USDC",
   embed = false,
   destinationLabel,

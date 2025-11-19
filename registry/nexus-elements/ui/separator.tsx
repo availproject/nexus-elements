@@ -9,7 +9,7 @@ function Separator({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="separator"
       role="separator"
-      className={cn("bg-border my-2 h-[1px] w-full", className)}
+      className={cn("bg-border my-2 h-px w-full", className)}
       {...props}
     />
   );

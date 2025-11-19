@@ -1,0 +1,58 @@
+"use client";
+import React, { ReactNode } from "react";
+import { LoaderPinwheel } from "lucide-react";
+import { type EthereumProvider } from "@avail-project/nexus-core";
+import { useAccount, useConnectorClient } from "wagmi";
+import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
+import { toast } from "sonner";
+import { Button } from "@/registry/nexus-elements/ui/button";
+interface PreviewPanelProps {
+  children: ReactNode;
+  connectLabel: string;
+}
+
+export function PreviewPanel({
+  children,
+  connectLabel,
+}: Readonly<PreviewPanelProps>) {
+  const { status } = useAccount();
+  const { data: walletClient } = useConnectorClient();
+  const { nexusSDK, handleInit, loading } = useNexus();
+
+  const initializeNexus = async () => {
+    try {
+      const wcProvider = walletClient && {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        request: (args: unknown) => walletClient.request(args as any),
+      };
+      await handleInit(wcProvider as unknown as EthereumProvider);
+      if (nexusSDK) {
+        toast.success("Nexus initialized successfully");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
+    }
+  };
+  return (
+    <div className="w-full">
+      <div className="flex flex-col w-full items-center justify-center min-h-[450px] relative">
+        {(status === "connected" || status === "connecting") && nexusSDK && (
+          <>{children}</>
+        )}
+        {status === "connected" && !nexusSDK && (
+          <Button onClick={initializeNexus}>
+            {loading ? (
+              <LoaderPinwheel className="size-6 animate-spin" />
+            ) : (
+              "Initialize Nexus"
+            )}
+          </Button>
+        )}
+        {status !== "connected" && (
+          <p className="text-lg font-semibold">{connectLabel}</p>
+        )}
+      </div>
+    </div>
+  );
+}

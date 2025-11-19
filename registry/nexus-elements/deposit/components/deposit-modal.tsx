@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "../../ui/dialog";
 import Container from "./container";
-import { BaseDepositProps } from "../deposit";
+import { type BaseDepositProps } from "../deposit";
 import { Button } from "../../ui/button";
 
 interface DepositModalProps extends BaseDepositProps {
@@ -29,7 +29,7 @@ const DepositModal = ({
       <DialogTrigger asChild>
         <Button>Deposit</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="py-4 px-1 sm:p-6">
         <DialogHeader>
           <DialogTitle>{heading}</DialogTitle>
         </DialogHeader>

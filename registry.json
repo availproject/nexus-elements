@@ -10,7 +10,7 @@
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
       "dependencies": [
-        "@avail-project/nexus-core@latest",
+        "@avail-project/nexus-core@1.0.0-rc.3",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -40,6 +40,61 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/fast-bridge/components/allowance-modal.tsx",
           "target": "components/fast-bridge/components/allowance-modal.tsx",
           "type": "registry:component"
@@ -47,6 +102,11 @@
         {
           "path": "registry/nexus-elements/fast-bridge/components/amount-input.tsx",
           "target": "components/fast-bridge/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/transfer-source-breakdown.tsx",
+          "target": "components/fast-bridge/components/transfer-source-breakdown.tsx",
           "type": "registry:component"
         },
         {
@@ -65,8 +125,8 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/components/receipient-address.tsx",
-          "target": "components/fast-bridge/components/receipient-address.tsx",
+          "path": "registry/nexus-elements/fast-bridge/components/recipient-address.tsx",
+          "target": "components/fast-bridge/components/recipient-address.tsx",
           "type": "registry:component"
         },
         {
@@ -80,13 +140,145 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/hooks/useListenTransaction.ts",
-          "target": "components/fast-bridge/hooks/useListenTransaction.ts",
+          "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.ts",
+          "target": "components/fast-bridge/hooks/useBridge.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "fast-transfer",
+      "type": "registry:component",
+      "title": "Fast Transfer",
+      "description": "A simple component built with Nexus to enable cross chain transfer",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "lucide-react",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/transfer/transfer.tsx",
+          "target": "components/transfer/transfer.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.tsx",
-          "target": "components/fast-bridge/hooks/useBridge.tsx",
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/allowance-modal.tsx",
+          "target": "components/transfer/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/amount-input.tsx",
+          "target": "components/transfer/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/source-breakdown.tsx",
+          "target": "components/transfer/components/source-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/chain-select.tsx",
+          "target": "components/transfer/components/chain-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/fee-breakdown.tsx",
+          "target": "components/transfer/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/recipient-address.tsx",
+          "target": "components/transfer/components/recipient-address.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/token-select.tsx",
+          "target": "components/transfer/components/token-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/transaction-progress.tsx",
+          "target": "components/transfer/components/transaction-progress.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/hooks/useTransfer.ts",
+          "target": "components/transfer/hooks/useTransfer.ts",
           "type": "registry:component"
         }
       ]
@@ -96,7 +288,7 @@
       "type": "registry:component",
       "title": "Nexus Provider",
       "description": "Shared Nexus SDK provider and types for Nexus Elements",
-      "dependencies": ["@avail-project/nexus-core@latest"],
+      "dependencies": ["@avail-project/nexus-core@1.0.0-rc.3"],
       "files": [
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
@@ -266,6 +458,38 @@
       ]
     },
     {
+      "name": "checkbox",
+      "type": "registry:component",
+      "title": "Checkbox",
+      "description": "UI primitive: Checkbox",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/checkbox.tsx",
+          "target": "components/ui/checkbox.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:component",
+      "title": "Popover",
+      "description": "UI primitive: Popover",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/popover.tsx",
+          "target": "components/ui/popover.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "utils",
       "type": "registry:component",
       "title": "Utils (cn)",
@@ -338,6 +562,61 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/deposit/components/container.tsx",
           "target": "components/deposit/components/container.tsx",
           "type": "registry:component"
@@ -388,11 +667,6 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/deposit/hooks/useListenTransaction.ts",
-          "target": "components/deposit/hooks/useListenTransaction.ts",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/nexus-elements/deposit/components/allowance-modal.tsx",
           "target": "components/deposit/components/allowance-modal.tsx",
           "type": "registry:component"
@@ -400,6 +674,151 @@
         {
           "path": "registry/nexus-elements/deposit/components/source-breakdown.tsx",
           "target": "components/deposit/components/source-breakdown.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "swaps",
+      "type": "registry:component",
+      "title": "Swaps",
+      "description": "Swap tokens across chains (Exact In)",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-popover",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/swaps/swaps.tsx",
+          "target": "components/swaps/swaps.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/exact-in/exact-in.tsx",
+          "target": "components/swaps/exact-in/exact-in.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/exact-out/exact-out.tsx",
+          "target": "components/swaps/exact-out/exact-out.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/source-asset-select.tsx",
+          "target": "components/swaps/components/source-asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/destination-asset-select.tsx",
+          "target": "components/swaps/components/destination-asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/amount-input.tsx",
+          "target": "components/swaps/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/swap-source-breakdown.tsx",
+          "target": "components/swaps/components/swap-source-breakdown.tsx",
+          "type": "registry:component"
+        },
+
+        {
+          "path": "registry/nexus-elements/swaps/exact-in/hooks/useExactIn.ts",
+          "target": "components/swaps/exact-in/hooks/useExactIn.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/exact-out/hooks/useExactOut.ts",
+          "target": "components/swaps/exact-out/hooks/useExactOut.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/config/destination.ts",
+          "target": "components/swaps/config/destination.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/transaction-progress.tsx",
+          "target": "components/swaps/components/transaction-progress.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/utils/prefill.ts",
+          "target": "components/swaps/utils/prefill.ts",
           "type": "registry:component"
         }
       ]

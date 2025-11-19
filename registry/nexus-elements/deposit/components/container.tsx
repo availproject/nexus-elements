@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import SimpleDeposit from "./simple-deposit";
 import { useNexus } from "../../nexus/NexusProvider";
-import { BaseDepositProps } from "../deposit";
+import { type BaseDepositProps } from "../deposit";
 
 interface ContainerProps extends BaseDepositProps {
   fiatSubheading?: string;
@@ -21,7 +21,7 @@ const Container = ({
 }: ContainerProps) => {
   const { nexusSDK } = useNexus();
   return (
-    <Tabs defaultValue="simple" className="w-full min-w-sm">
+    <Tabs defaultValue="simple" className="sm:min-w-sm">
       <TabsList className="h-12 p-0 w-full">
         <TabsTrigger value="simple" className="px-2 py-1">
           <div className="flex items-center flex-col gap-y-1">
@@ -46,6 +46,7 @@ const Container = ({
       </TabsList>
       <TabsContent value="simple">
         <SimpleDeposit
+          address={address}
           token={token}
           chain={chain}
           chainOptions={chainOptions}

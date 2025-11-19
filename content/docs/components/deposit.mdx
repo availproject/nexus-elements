@@ -1,0 +1,132 @@
+---
+title: Deposit
+description: Deposit tokens into a destination with source breakdown, allowance flow, and optional embedded card view. Intent-based and customizable execute builder.
+component: true
+---
+
+<ComponentPreview
+  name="deposit"
+  description="A deposit flow with source breakdown, allowance, and embedded/modal views."
+  align="center"
+  className="[&_.preview>[data-orientation=vertical]]:sm:max-w-[80%] **:[.preview]:min-h-[400px]"
+  chromeLessOnMobile={true}
+/>
+
+## Installation
+
+<CodeTabs>
+  <TabsList>
+    <TabsTrigger value="cli">CLI</TabsTrigger>
+    <TabsTrigger value="manual">Manual</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cli">
+```bash
+npx shadcn@latest add https://elements.nexus.availproject.org/r/deposit.json
+```
+
+  </TabsContent>
+  <TabsContent value="manual">
+    <Steps>
+      <Step>Install these dependencies</Step>
+```bash
+npm install @avail-project/nexus-core@1.0.0-rc.3 lucide-react @radix-ui/react-tabs @radix-ui/react-dialog @radix-ui/react-accordion @radix-ui/react-label @radix-ui/react-popover @radix-ui/react-checkbox @radix-ui/react-slot
+```
+      <Step>Copy and paste the following code into your project.</Step>
+      <div
+        data-slot="code"
+        className="my-4 overflow-y-hidden overflow-x-scroll sm:overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+      >
+        <ComponentSource name="deposit" showAllFiles />
+      </div>
+      <Step>Update the import paths to match your project setup.</Step>
+    </Steps>
+  </TabsContent>
+</CodeTabs>
+
+## Usage
+
+```tsx showLineNumbers
+<NexusDeposit
+  address={address ?? `0x`}
+  token="USDT"
+  chain={SUPPORTED_CHAINS.ARBITRUM}
+  embed={viewAs}
+  destinationLabel="on Aave v3"
+  heading="Deposit USDT"
+  depositExecute={(token, amount, _chainId, user) => {
+    const contractAddress =
+      "0x794a61358D6845594F94dc1DB02A252b5b4814aD" as const;
+    const abi: Abi = [
+      {
+        name: "supply",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [
+          { name: "asset", type: "address" },
+          { name: "amount", type: "uint256" },
+          { name: "onBehalfOf", type: "address" },
+          { name: "referralCode", type: "uint16" },
+        ],
+        outputs: [],
+      },
+    ];
+
+    const amountWei = parseUnits(amount, 6);
+    if (token === "ETH") {
+      throw new Error(
+        "ETH is native and not supported for this execute builder"
+      );
+    }
+    const chainMap = TOKEN_CONTRACT_ADDRESSES[token];
+    if (!(_chainId in chainMap)) {
+      throw new Error("Selected chain is not supported for this token");
+    }
+    const tokenAddr = chainMap[_chainId as keyof typeof chainMap];
+    const encoded = encodeFunctionData({
+      abi: abi,
+      functionName: "supply",
+      args: [tokenAddr, amountWei, user, 0],
+    });
+    if (!encoded) {
+      throw new Error("Failed to encode contract call");
+    }
+    return {
+      to: contractAddress,
+      data: encoded,
+      tokenApproval: {
+        token,
+        amount: amountWei,
+        spender: contractAddress,
+      },
+    };
+  }}
+/>
+```
+
+## API Reference
+
+### NexusDeposit
+
+The `NexusDeposit` component orchestrates a deposit flow with allowance handling and an optional execute builder for custom protocol interactions.
+
+<CodeCollapsibleWrapper className="mt-4">
+
+```ts title="NexusDepositProps"
+interface NexusDepositProps {
+  address: Address; // user wallet address (required)
+  token?: SUPPORTED_TOKENS; // token to deposit (default: "USDC")
+  chain: SUPPORTED_CHAINS_IDS; // destination chain (required)
+  chainOptions?: { id: number; name: string; logo: string }[]; // limit or label chains shown
+  heading?: string; // heading text (default: "Deposit USDC")
+  embed?: boolean; // render as embedded card instead of modal (default: false)
+  destinationLabel?: string; // extra label (e.g., "on Aave v3")
+  depositExecute: (
+    token: SUPPORTED_TOKENS,
+    amount: string,
+    chainId: SUPPORTED_CHAINS_IDS,
+    userAddress: `0x${string}`
+  ) => Omit<ExecuteParams, "toChainId">;
+}
+```
+
+</CodeCollapsibleWrapper>

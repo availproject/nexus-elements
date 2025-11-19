@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from "react";
+import React, { type FC, useMemo } from "react";
 import { Label } from "../../ui/label";
 import {
   Select,
@@ -42,7 +42,7 @@ const ChainSelect: FC<ChainSelectProps> = ({
       value={selectedChain?.toString() ?? ""}
       onValueChange={(value) => {
         if (!disabled) {
-          handleSelect(parseInt(value) as SUPPORTED_CHAINS_IDS);
+          handleSelect(Number.parseInt(value) as SUPPORTED_CHAINS_IDS);
         }
       }}
     >
@@ -71,24 +71,23 @@ const ChainSelect: FC<ChainSelectProps> = ({
       </div>
 
       <SelectContent>
-        <SelectGroup>
-          {supportedChainsAndTokens &&
-            supportedChainsAndTokens.map((chain) => {
-              return (
-                <SelectItem key={chain.id} value={String(chain.id)}>
-                  <div className="flex items-center gap-x-2 my-1">
-                    <img
-                      src={chain.logo}
-                      alt={chain?.name}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                    <p className="text-primary test-sm">{chain.name}</p>
-                  </div>
-                </SelectItem>
-              );
-            })}
+        <SelectGroup className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-scroll no-scrollbar">
+          {supportedChainsAndTokens?.map((chain) => {
+            return (
+              <SelectItem key={chain.id} value={String(chain.id)}>
+                <div className="flex items-center gap-x-2 my-1">
+                  <img
+                    src={chain.logo}
+                    alt={chain?.name}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  <p className="text-primary test-sm">{chain.name}</p>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectGroup>
       </SelectContent>
     </Select>
