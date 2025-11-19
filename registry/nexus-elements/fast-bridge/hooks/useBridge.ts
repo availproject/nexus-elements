@@ -3,7 +3,7 @@ import {
   NEXUS_EVENTS,
   type NexusNetwork,
   NexusSDK,
-  OnAllowanceHookData,
+  type OnAllowanceHookData,
   type OnIntentHookData,
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
@@ -17,7 +17,7 @@ import {
   useRef,
   useState,
   useReducer,
-  RefObject,
+  type RefObject,
 } from "react";
 import { type Address, isAddress } from "viem";
 import {

@@ -13,7 +13,7 @@ import {
 
 import {
   createContext,
-  RefObject,
+  type RefObject,
   useCallback,
   useContext,
   useMemo,

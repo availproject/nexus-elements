@@ -22,7 +22,7 @@ import {
   useRef,
   useState,
   useReducer,
-  RefObject,
+  type RefObject,
 } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";

@@ -2,7 +2,7 @@
 import React, {
   type FC,
   memo,
-  RefObject,
+  type RefObject,
   useEffect,
   useMemo,
   useState,

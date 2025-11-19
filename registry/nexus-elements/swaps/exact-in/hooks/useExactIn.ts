@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useMemo, useState } from "react";
+import { type RefObject, useEffect, useMemo, useState } from "react";
 import {
   NexusSDK,
   SUPPORTED_CHAINS,
@@ -6,8 +6,8 @@ import {
   type ExactInSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
-  OnSwapIntentHookData,
-  UserAsset,
+  type OnSwapIntentHookData,
+  type UserAsset,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import {
@@ -96,7 +96,7 @@ const useExactIn = ({
   const swapCompleted = useMemo(
     () =>
       steps.some(
-        (s) => (s.step as any)?.type === "SWAP_COMPLETE" && s.completed
+        (s) => (s.step as SwapStepType)?.type === "SWAP_COMPLETE" && s.completed
       ),
     [steps]
   );

@@ -17,7 +17,7 @@ import {
   useRef,
   useState,
   useReducer,
-  RefObject,
+  type RefObject,
 } from "react";
 import { type Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
