@@ -10,7 +10,7 @@
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.32",
+        "@avail-project/nexus-core@1.0.0-rc.3",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -152,7 +152,7 @@
       "title": "Fast Transfer",
       "description": "A simple component built with Nexus to enable cross chain transfer",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.32",
+        "@avail-project/nexus-core@1.0.0-rc.3",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -288,7 +288,7 @@
       "type": "registry:component",
       "title": "Nexus Provider",
       "description": "Shared Nexus SDK provider and types for Nexus Elements",
-      "dependencies": ["@avail-project/nexus-core@1.0.0-beta.32"],
+      "dependencies": ["@avail-project/nexus-core@1.0.0-rc.3"],
       "files": [
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
@@ -453,6 +453,38 @@
         {
           "path": "registry/nexus-elements/ui/tabs.tsx",
           "target": "components/ui/tabs.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:component",
+      "title": "Checkbox",
+      "description": "UI primitive: Checkbox",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/checkbox.tsx",
+          "target": "components/ui/checkbox.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:component",
+      "title": "Popover",
+      "description": "UI primitive: Popover",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/popover.tsx",
+          "target": "components/ui/popover.tsx",
           "type": "registry:component"
         }
       ]
@@ -652,11 +684,12 @@
       "title": "Swaps",
       "description": "Swap tokens across chains (Exact In)",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.32",
+        "@avail-project/nexus-core@1.0.0-rc.3",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
+        "@radix-ui/react-popover",
         "class-variance-authority",
         "clsx",
         "tailwind-merge"

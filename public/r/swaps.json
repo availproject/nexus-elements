@@ -5,11 +5,12 @@
   "title": "Swaps",
   "description": "Swap tokens across chains (Exact In)",
   "dependencies": [
-    "@avail-project/nexus-core@1.0.0-beta.32",
+    "@avail-project/nexus-core@1.0.0-rc.3",
     "@radix-ui/react-dialog",
     "@radix-ui/react-label",
     "@radix-ui/react-select",
     "@radix-ui/react-slot",
+    "@radix-ui/react-popover",
     "class-variance-authority",
     "clsx",
     "tailwind-merge"
