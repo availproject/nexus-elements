@@ -31,7 +31,7 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
     }
     router.push(
       `${pathname}?network=${
-        currentNetwork === "testnet" ? "devnet" : "testnet"
+        currentNetwork === "testnet" ? "mainnet" : "testnet"
       }`
     );
     router.refresh();
@@ -49,7 +49,7 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="testnet">Testnet</SelectItem>
-          <SelectItem value="devnet">Mainnet</SelectItem>
+          <SelectItem value="mainnet">Mainnet</SelectItem>
         </SelectContent>
       </Select>
     </div>
