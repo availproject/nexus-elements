@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { SHORT_CHAIN_NAME } from "../../common";
+import { LoaderCircle } from "lucide-react";
 
 interface AmountInputProps {
   amount?: string;
@@ -29,7 +30,7 @@ const AmountInput: FC<AmountInputProps> = ({
   disabled,
   inputs,
 }) => {
-  const { nexusSDK } = useNexus();
+  const { nexusSDK, loading } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const scheduleCommit = (val: string) => {
@@ -89,26 +90,29 @@ const AmountInput: FC<AmountInputProps> = ({
           }}
           className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
           aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
-          disabled={disabled}
+          disabled={disabled || loading}
         />
         <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
-          <div className="flex items-center gap-x-1 sm:gap-x-3 min-w-max">
-            {unifiedBalance && (
-              <p className="text-base font-semibold">
-                {Number.parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
-                {unifiedBalance?.symbol}
-              </p>
-            )}
-            <Button
-              size={"sm"}
-              variant={"ghost"}
-              onClick={onMaxClick}
-              className="px-0"
-              disabled={disabled}
-            >
-              Max
-            </Button>
-          </div>
+          {unifiedBalance && (
+            <p className="text-base font-semibold min-w-max">
+              {nexusSDK?.utils?.formatTokenBalance(unifiedBalance?.balance, {
+                symbol: unifiedBalance?.symbol,
+                decimals: unifiedBalance?.decimals,
+              })}
+            </p>
+          )}
+          {loading && !unifiedBalance && (
+            <LoaderCircle className="size-4 animate-spin" />
+          )}
+          <Button
+            size={"sm"}
+            variant={"ghost"}
+            onClick={onMaxClick}
+            className="px-0"
+            disabled={disabled}
+          >
+            Max
+          </Button>
         </div>
       </div>
       <Accordion type="single" collapsible className="w-full">

@@ -30,7 +30,6 @@ const ChainSelect: FC<ChainSelectProps> = ({
   handleSelect,
 }) => {
   const { supportedChainsAndTokens } = useNexus();
-
   const selectedChainData = useMemo(() => {
     if (!supportedChainsAndTokens) return null;
     return supportedChainsAndTokens.find((c) => c.id === selectedChain);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { RefObject, useEffect, useMemo, useState } from "react";
 import {
   NexusSDK,
   SUPPORTED_CHAINS,
@@ -6,9 +6,10 @@ import {
   type ExactOutSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
+  UserAsset,
+  OnSwapIntentHookData,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
-import { useNexus } from "../../../nexus/NexusProvider";
 import { resolveDestinationFromPrefill } from "../../utils/prefill";
 import {
   useStopwatch,
@@ -34,6 +35,9 @@ interface SwapInputs {
 interface UseExactOutProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
+  swapIntent: RefObject<OnSwapIntentHookData | null>;
+  unifiedBalance: UserAsset[] | null;
+  fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
@@ -46,13 +50,14 @@ interface UseExactOutProps {
 
 const useExactOut = ({
   nexusSDK,
+  swapIntent,
+  unifiedBalance,
+  fetchBalance,
   onComplete,
   onStart,
   onError,
   prefill,
 }: UseExactOutProps) => {
-  const { swapIntent, setSwapIntent, fetchUnifiedBalance, unifiedBalance } =
-    useNexus();
   const handleNexusError = useNexusError();
 
   const [inputs, setInputs] = useState<SwapInputs>({
@@ -131,14 +136,15 @@ const useExactOut = ({
       if (!result?.success) {
         throw new Error(result?.error || "Swap failed");
       }
-      setSwapIntent(null);
-      onComplete?.(swapIntent?.intent?.destination?.amount);
-      await fetchUnifiedBalance();
+      onComplete?.(swapIntent.current?.intent?.destination?.amount);
+      swapIntent.current = null;
+
+      await fetchBalance();
     } catch (error) {
       const { message } = handleNexusError(error);
       setTxError(message);
       onError?.(message);
-      setSwapIntent(null);
+      swapIntent.current = null;
       setIsDialogOpen(false);
     } finally {
       setLoading(false);
@@ -157,7 +163,7 @@ const useExactOut = ({
     setIsDialogOpen(false);
     setTxError(null);
     resetSteps();
-    setSwapIntent(null);
+    swapIntent.current = null;
     setSourceExplorerUrl("");
     setDestinationExplorerUrl("");
     setLoading(false);
@@ -183,14 +189,16 @@ const useExactOut = ({
     if (!swapIntent || isDialogOpen) return;
     const id = setInterval(async () => {
       try {
-        const updated = await swapIntent.refresh();
-        setSwapIntent({ ...swapIntent, intent: updated });
+        const updated = await swapIntent.current?.refresh();
+        if (updated) {
+          swapIntent.current!.intent = updated;
+        }
       } catch (e) {
         console.error(e);
       }
     }, 15000);
     return () => clearInterval(id);
-  }, [swapIntent, setSwapIntent, isDialogOpen]);
+  }, [swapIntent.current, isDialogOpen]);
 
   return {
     inputs,

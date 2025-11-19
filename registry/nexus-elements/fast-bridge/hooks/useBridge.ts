@@ -3,7 +3,7 @@ import {
   NEXUS_EVENTS,
   type NexusNetwork,
   NexusSDK,
-  type OnAllowanceHookData,
+  OnAllowanceHookData,
   type OnIntentHookData,
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
@@ -11,9 +11,15 @@ import {
   TOKEN_METADATA,
   type UserAsset,
 } from "@avail-project/nexus-core";
-import { useEffect, useMemo, useRef, useState, useReducer } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useReducer,
+  RefObject,
+} from "react";
 import { type Address, isAddress } from "viem";
-import { useNexus } from "../../nexus/NexusProvider";
 import {
   useStopwatch,
   usePolling,
@@ -33,11 +39,8 @@ interface UseBridgeProps {
   network: NexusNetwork;
   connectedAddress: Address;
   nexusSDK: NexusSDK | null;
-  intent: OnIntentHookData | null;
-  setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
-  setAllowance: React.Dispatch<
-    React.SetStateAction<OnAllowanceHookData | null>
-  >;
+  intent: RefObject<OnIntentHookData | null>;
+  allowance: RefObject<OnAllowanceHookData | null>;
   unifiedBalance: UserAsset[] | null;
   prefill?: {
     token: string;
@@ -48,6 +51,7 @@ interface UseBridgeProps {
   onComplete?: () => void;
   onStart?: () => void;
   onError?: (message: string) => void;
+  fetchBalance: () => Promise<void>;
 }
 
 type BridgeState = {
@@ -86,15 +90,14 @@ const useBridge = ({
   connectedAddress,
   nexusSDK,
   intent,
-  setIntent,
-  setAllowance,
   unifiedBalance,
   prefill,
   onComplete,
   onStart,
   onError,
+  fetchBalance,
+  allowance,
 }: UseBridgeProps) => {
-  const { fetchUnifiedBalance } = useNexus();
   const handleNexusError = useNexusError();
   const initialState: BridgeState = {
     inputs: buildInitialInputs(network, connectedAddress, prefill),
@@ -223,14 +226,7 @@ const useBridge = ({
         await onSuccess();
       }
     } catch (error) {
-      console.log("Fast Bridge Error:", error);
-      const { message, code, context, details } = handleNexusError(error);
-      console.log("Fast Bridge Error:", {
-        message,
-        code,
-        context,
-        details,
-      });
+      const { message } = handleNexusError(error);
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
@@ -243,11 +239,11 @@ const useBridge = ({
     stopwatch.stop();
     dispatch({ type: "setStatus", payload: "success" });
     onComplete?.();
-    setIntent(null);
-    setAllowance(null);
+    intent.current = null;
+    allowance.current = null;
     dispatch({ type: "resetInputs" });
     setRefreshing(false);
-    await fetchUnifiedBalance();
+    await fetchBalance();
   };
 
   const filteredUnifiedBalance = useMemo(() => {
@@ -257,7 +253,7 @@ const useBridge = ({
   const refreshIntent = async () => {
     setRefreshing(true);
     try {
-      await intent?.refresh([]);
+      await intent.current?.refresh([]);
     } catch (error) {
       console.error("Transaction failed:", error);
     } finally {
@@ -266,9 +262,9 @@ const useBridge = ({
   };
 
   const reset = () => {
-    intent?.deny();
-    setIntent(null);
-    setAllowance(null);
+    intent.current?.deny();
+    intent.current = null;
+    allowance.current = null;
     dispatch({ type: "resetInputs" });
     dispatch({ type: "setStatus", payload: "idle" });
     setRefreshing(false);
@@ -279,14 +275,14 @@ const useBridge = ({
 
   const startTransaction = () => {
     // Reset timer for a fresh run
-    intent?.allow();
+    intent.current?.allow();
     setIsDialogOpen(true);
     setTxError(null);
   };
 
   const commitAmount = async () => {
     if (commitLockRef.current) return;
-    if (intent || loading || txError || !areInputsValid) return;
+    if (!intent.current || loading || txError || !areInputsValid) return;
     commitLockRef.current = true;
     try {
       await handleTransaction();
@@ -295,14 +291,14 @@ const useBridge = ({
     }
   };
 
-  usePolling(Boolean(intent) && !isDialogOpen, refreshIntent, 15000);
+  usePolling(Boolean(intent.current) && !isDialogOpen, refreshIntent, 15000);
 
   const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
 
   useEffect(() => {
-    if (intent) {
-      intent.deny();
-      setIntent(null);
+    if (intent.current) {
+      intent.current.deny();
+      intent.current = null;
     }
   }, [inputs]);
 

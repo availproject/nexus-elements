@@ -34,7 +34,8 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, swapIntent, setSwapIntent } = useNexus();
+  const { nexusSDK, swapIntent, unifiedBalance, fetchUnifiedBalance } =
+    useNexus();
   const {
     inputs,
     setInputs,
@@ -48,7 +49,16 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
     destinationExplorerUrl,
     handleSwap,
     reset,
-  } = useExactOut({ nexusSDK, onComplete, onStart, onError, prefill });
+  } = useExactOut({
+    nexusSDK,
+    swapIntent,
+    unifiedBalance,
+    fetchBalance: fetchUnifiedBalance,
+    onComplete,
+    onStart,
+    onError,
+    prefill,
+  });
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full">
@@ -78,7 +88,7 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
           disabled={Boolean(prefill?.toChainID && prefill?.toToken)}
         />
 
-        {!swapIntent && (
+        {!swapIntent.current && (
           <Button onClick={handleSwap} disabled={loading}>
             {loading ? (
               <LoaderPinwheel className="animate-spin size-5" />
@@ -88,7 +98,7 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
           </Button>
         )}
 
-        {swapIntent && (
+        {swapIntent.current && (
           <>
             <div className="flex flex-col gap-y-2">
               <Label className="text-sm font-medium" htmlFor="swap-receive">
@@ -98,7 +108,9 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
                 id="swap-receive"
                 disabled
                 className="w-full border rounded px-3 py-2 text-sm bg-muted cursor-not-allowed"
-                value={`${swapIntent.intent.destination.amount}`}
+                value={`${
+                  swapIntent.current?.intent?.destination?.amount ?? ""
+                }`}
                 placeholder="—"
                 readOnly
               />
@@ -107,8 +119,8 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
               <Button
                 variant={"destructive"}
                 onClick={() => {
-                  swapIntent.deny();
-                  setSwapIntent(null);
+                  swapIntent.current?.deny();
+                  swapIntent.current = null;
                   reset();
                 }}
                 className="w-1/2"
@@ -117,7 +129,7 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
               </Button>
               <Button
                 onClick={() => {
-                  swapIntent.allow();
+                  swapIntent.current?.allow();
                   setIsDialogOpen(true);
                 }}
                 className="w-1/2"
@@ -125,7 +137,9 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
                 Accept
               </Button>
             </div>
-            <SwapSourceBreakdown intent={swapIntent.intent} />
+            {swapIntent.current?.intent && (
+              <SwapSourceBreakdown intent={swapIntent.current?.intent} />
+            )}
           </>
         )}
 

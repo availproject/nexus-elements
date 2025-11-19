@@ -25,7 +25,6 @@ export function PreviewPanel({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         request: (args: unknown) => walletClient.request(args as any),
       };
-      console.log("wcProvider", wcProvider);
       await handleInit(wcProvider as unknown as EthereumProvider);
       if (nexusSDK) {
         toast.success("Nexus initialized successfully");

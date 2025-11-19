@@ -51,11 +51,10 @@ const FastBridge: FC<FastBridgeProps> = ({
   const {
     nexusSDK,
     intent,
-    setIntent,
     unifiedBalance,
     allowance,
-    setAllowance,
     network,
+    fetchUnifiedBalance,
   } = useNexus();
 
   const {
@@ -82,12 +81,12 @@ const FastBridge: FC<FastBridgeProps> = ({
     connectedAddress,
     nexusSDK,
     intent,
-    setIntent,
     unifiedBalance,
-    setAllowance,
+    allowance,
     onComplete,
     onStart,
     onError,
+    fetchBalance: fetchUnifiedBalance,
   });
   return (
     <Card className="w-full max-w-xl">
@@ -124,17 +123,17 @@ const FastBridge: FC<FastBridgeProps> = ({
           }
           disabled={!!prefill?.recipient}
         />
-        {intent?.intent && (
+        {intent?.current?.intent && (
           <>
             {inputs?.recipient === connectedAddress ? (
               <SourceBreakdown
-                intent={intent?.intent}
+                intent={intent?.current?.intent}
                 tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
                 isLoading={refreshing}
               />
             ) : (
               <TransferSourceBreakdown
-                intent={intent?.intent}
+                intent={intent?.current?.intent}
                 tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
                 isLoading={refreshing}
                 chain={inputs?.chain}
@@ -152,7 +151,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                   <p className="text-base font-semibold text-right">
                     {`${
                       connectedAddress === inputs?.recipient
-                        ? intent?.intent?.destination?.amount
+                        ? intent?.current?.intent?.destination?.amount
                         : inputs.amount
                     } ${filteredUnifiedBalance?.symbol}`}
                   </p>
@@ -161,16 +160,19 @@ const FastBridge: FC<FastBridgeProps> = ({
                   <Skeleton className="h-4 w-36" />
                 ) : (
                   <p className="text-sm font-medium text-right">
-                    on {intent?.intent?.destination?.chainName}
+                    on {intent?.current?.intent?.destination?.chainName}
                   </p>
                 )}
               </div>
             </div>
-            <FeeBreakdown intent={intent?.intent} isLoading={refreshing} />
+            <FeeBreakdown
+              intent={intent?.current?.intent}
+              isLoading={refreshing}
+            />
           </>
         )}
 
-        {!intent && (
+        {!intent.current && (
           <Button
             onClick={handleTransaction}
             disabled={
@@ -196,7 +198,7 @@ const FastBridge: FC<FastBridgeProps> = ({
             setIsDialogOpen(open);
           }}
         >
-          {intent && !isDialogOpen && (
+          {intent.current && !isDialogOpen && (
             <div className="w-full flex items-center gap-x-2 justify-between">
               <Button variant={"destructive"} onClick={reset} className="w-1/2">
                 Deny
@@ -217,10 +219,9 @@ const FastBridge: FC<FastBridgeProps> = ({
             <DialogHeader className="sr-only">
               <DialogTitle>Transaction Progress</DialogTitle>
             </DialogHeader>
-            {allowance ? (
+            {allowance.current ? (
               <AllowanceModal
-                allowanceModal={allowance}
-                setAllowanceModal={setAllowance}
+                allowance={allowance}
                 callback={startTransaction}
                 onCloseCallback={reset}
               />

@@ -1,6 +1,9 @@
 "use client";
 
-import { type UserAsset } from "@avail-project/nexus-core";
+import {
+  type SUPPORTED_CHAINS_IDS,
+  type UserAsset,
+} from "@avail-project/nexus-core";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Fragment } from "react";
@@ -10,8 +13,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import { SHORT_CHAIN_NAME } from "../../common";
+import { computeAmountFromFraction, SHORT_CHAIN_NAME } from "../../common";
 import { useNexus } from "../../nexus/NexusProvider";
+import { LoaderCircle } from "lucide-react";
 
 const RANGE_OPTIONS = [
   {
@@ -32,6 +36,8 @@ const RANGE_OPTIONS = [
   },
 ];
 
+const SAFETY_MARGIN = 0.05;
+
 interface AmountInputProps
   extends Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
@@ -40,6 +46,7 @@ interface AmountInputProps
   value?: string;
   onChange?: (value: string) => void;
   unifiedBalance?: UserAsset;
+  destinationChain: SUPPORTED_CHAINS_IDS;
 }
 
 const AmountInput = ({
@@ -47,9 +54,10 @@ const AmountInput = ({
   onChange,
   unifiedBalance,
   disabled,
+  destinationChain,
   ...props
 }: AmountInputProps) => {
-  const { nexusSDK } = useNexus();
+  const { nexusSDK, loading } = useNexus();
 
   return (
     <div className="flex flex-col items-start gap-y-1 w-full py-2">
@@ -62,17 +70,22 @@ const AmountInput = ({
               inputMode="decimal"
               step="any"
               min="0"
-              placeholder="1.002..."
+              placeholder="0.00"
               value={value ?? ""}
               onChange={(e) => onChange?.(e.target.value)}
               className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
-              disabled={disabled}
+              disabled={disabled || loading}
             />
             {unifiedBalance && (
               <p className="text-base font-semibold min-w-max">
-                {Number.parseFloat(unifiedBalance?.balance)?.toFixed(6)}{" "}
-                {unifiedBalance?.symbol}
+                {nexusSDK?.utils?.formatTokenBalance(unifiedBalance?.balance, {
+                  symbol: unifiedBalance?.symbol,
+                  decimals: unifiedBalance?.decimals,
+                })}
               </p>
+            )}
+            {loading && !unifiedBalance && (
+              <LoaderCircle className="size-4 animate-spin" />
             )}
           </div>
           <div className="flex w-full items-center justify-between">
@@ -86,11 +99,16 @@ const AmountInput = ({
                   disabled={disabled}
                   onClick={() => {
                     if (!unifiedBalance?.balance) return;
-                    const max = Number(unifiedBalance?.balance);
-                    const next = (max * option.value).toFixed(
-                      unifiedBalance?.decimals
+
+                    const amount = computeAmountFromFraction(
+                      unifiedBalance.balance,
+                      option.value,
+                      unifiedBalance?.breakdown.find(
+                        (chain) => chain?.chain?.id === destinationChain
+                      )?.decimals ?? unifiedBalance?.decimals,
+                      SAFETY_MARGIN
                     );
-                    onChange?.(next);
+                    onChange?.(amount);
                   }}
                 >
                   {option.label}

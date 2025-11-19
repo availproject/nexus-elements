@@ -5,7 +5,6 @@ import {
   NexusSDK,
   type OnAllowanceHookData,
   type OnIntentHookData,
-  type OnSwapIntentHook,
   type SupportedChainsResult,
   type UserAsset,
   type OnSwapIntentHookData,
@@ -14,9 +13,11 @@ import {
 
 import {
   createContext,
+  RefObject,
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useAccountEffect } from "wagmi";
@@ -24,30 +25,32 @@ import { useAccountEffect } from "wagmi";
 interface NexusContextType {
   nexusSDK: NexusSDK | null;
   unifiedBalance: UserAsset[] | null;
-  initializeNexus: (provider: EthereumProvider) => Promise<void>;
-  deinitializeNexus: () => Promise<void>;
-  attachEventHooks: () => void;
-  intent: OnIntentHookData | null;
+
+  intent: RefObject<OnIntentHookData | null>;
+  allowance: RefObject<OnAllowanceHookData | null>;
+  swapIntent: RefObject<OnSwapIntentHookData | null>;
   exchangeRate: Record<string, number> | null;
-  swapIntent: OnSwapIntentHookData | null;
-  setSwapIntent: React.Dispatch<
-    React.SetStateAction<OnSwapIntentHookData | null>
-  >;
-  setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
-  allowance: OnAllowanceHookData | null;
-  setAllowance: React.Dispatch<
-    React.SetStateAction<OnAllowanceHookData | null>
-  >;
-  handleInit: (provider: EthereumProvider) => Promise<void>;
   supportedChainsAndTokens: SupportedChainsAndTokensResult | null;
   swapSupportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
+  handleInit: (provider: EthereumProvider) => Promise<void>;
   fetchUnifiedBalance: () => Promise<void>;
-  getFiatValue: (amount: number, token: string) => string;
+  getFiatValue: (amount: number, token: string) => number;
+  initializeNexus: (provider: EthereumProvider) => Promise<void>;
+  deinitializeNexus: () => Promise<void>;
+  attachEventHooks: () => void;
 }
 
 const NexusContext = createContext<NexusContextType | undefined>(undefined);
+
+type NexusProviderProps = {
+  children: React.ReactNode;
+  config?: {
+    network?: NexusNetwork;
+    debug?: boolean;
+  };
+};
 
 const NexusProvider = ({
   children,
@@ -55,41 +58,29 @@ const NexusProvider = ({
     network: "mainnet",
     debug: true,
   },
-}: {
-  children: React.ReactNode;
-  config?: {
-    network?: NexusNetwork;
-    debug?: boolean;
-  };
-}) => {
+}: NexusProviderProps) => {
   const sdk = useMemo(() => new NexusSDK(config), [config]);
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
-  const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
-    useState<SupportedChainsAndTokensResult | null>(null);
-  const [swapSupportedChainsAndTokens, setSwapSupportedChainsAndTokens] =
-    useState<SupportedChainsResult | null>(null);
-  const [unifiedBalance, setUnifiedBalance] = useState<UserAsset[] | null>(
+  const [loading, setLoading] = useState<boolean>(false);
+  const supportedChainsAndTokens =
+    useRef<SupportedChainsAndTokensResult | null>(null);
+  const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
     null
   );
-  const [exchangeRate, setExchangeRate] = useState<Record<
-    string,
-    number
-  > | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [intent, setIntent] = useState<OnIntentHookData | null>(null);
-  const [swapIntent, setSwapIntent] = useState<
-    Parameters<OnSwapIntentHook>[0] | null
-  >(null);
-  const [allowance, setAllowance] = useState<OnAllowanceHookData | null>(null);
+  const unifiedBalance = useRef<UserAsset[] | null>(null);
+  const exchangeRate = useRef<Record<string, number> | null>(null);
+
+  const intent = useRef<OnIntentHookData | null>(null);
+  const allowance = useRef<OnAllowanceHookData | null>(null);
+  const swapIntent = useRef<OnSwapIntentHookData | null>(null);
 
   const initChainsAndTokens = useCallback(() => {
     const list = sdk?.utils?.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
-    console.log("supportedChainsAndTokens", list);
-    setSupportedChainsAndTokens(list ?? null);
+    supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
-    setSwapSupportedChainsAndTokens(swapList ?? null);
+    swapSupportedChainsAndTokens.current = swapList ?? null;
   }, [sdk, config?.network]);
 
   const initializeNexus = async (provider: EthereumProvider) => {
@@ -99,13 +90,13 @@ const NexusProvider = ({
       await sdk.initialize(provider);
       setNexusSDK(sdk);
       initChainsAndTokens();
-      const [unifiedBalance, rates] = await Promise.allSettled([
+      const [unifiedBalanceResult, rates] = await Promise.allSettled([
         sdk?.getUnifiedBalances(true),
         sdk?.utils?.getCoinbaseRates(),
       ]);
 
-      if (unifiedBalance.status === "fulfilled") {
-        setUnifiedBalance(unifiedBalance.value);
+      if (unifiedBalanceResult.status === "fulfilled") {
+        unifiedBalance.current = unifiedBalanceResult.value;
       }
 
       if (rates?.status === "fulfilled") {
@@ -124,7 +115,7 @@ const NexusProvider = ({
         for (const token of ["ETH", "USDC", "USDT"]) {
           usdPerUnit[token] ??= 1;
         }
-        setExchangeRate(usdPerUnit);
+        exchangeRate.current = usdPerUnit;
       }
     } catch (error) {
       console.error("Error initializing Nexus:", error);
@@ -138,13 +129,13 @@ const NexusProvider = ({
       if (!sdk.isInitialized()) throw new Error("Nexus is not initialized");
       await sdk.deinit();
       setNexusSDK(null);
-      setSupportedChainsAndTokens(null);
-      setSwapSupportedChainsAndTokens(null);
-      setUnifiedBalance(null);
-      setExchangeRate(null);
-      setIntent(null);
-      setSwapIntent(null);
-      setAllowance(null);
+      supportedChainsAndTokens.current = null;
+      swapSupportedChainsAndTokens.current = null;
+      unifiedBalance.current = null;
+      exchangeRate.current = null;
+      intent.current = null;
+      swapIntent.current = null;
+      allowance.current = null;
       setLoading(false);
     } catch (error) {
       console.error("Error deinitializing Nexus:", error);
@@ -153,15 +144,15 @@ const NexusProvider = ({
 
   const attachEventHooks = () => {
     sdk.setOnAllowanceHook((data: OnAllowanceHookData) => {
-      setAllowance(data);
+      allowance.current = data;
     });
 
     sdk.setOnIntentHook((data: OnIntentHookData) => {
-      setIntent(data);
+      intent.current = data;
     });
 
     sdk.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
-      setSwapIntent(data);
+      swapIntent.current = data;
     });
   };
 
@@ -185,8 +176,8 @@ const NexusProvider = ({
 
   const fetchUnifiedBalance = async () => {
     try {
-      const unifiedBalance = await sdk?.getUnifiedBalances(true);
-      setUnifiedBalance(unifiedBalance);
+      const updatedBalance = await sdk?.getUnifiedBalances(true);
+      unifiedBalance.current = updatedBalance;
     } catch (error) {
       console.error("Error fetching unified balance:", error);
     }
@@ -194,11 +185,11 @@ const NexusProvider = ({
 
   function getFiatValue(amount: number, token: string) {
     const key = token.toUpperCase();
-    const rate = Number.parseFloat(String(exchangeRate?.[key] ?? "0"));
+    const rate = Number.parseFloat(String(exchangeRate.current?.[key] ?? "0"));
     const isValid = Number.isFinite(amount) && Number.isFinite(rate);
     const approx = isValid ? rate * amount : 0;
 
-    return approx.toFixed(3);
+    return approx;
   }
 
   useAccountEffect({
@@ -214,19 +205,16 @@ const NexusProvider = ({
       deinitializeNexus,
       attachEventHooks,
       intent,
-      setIntent,
       allowance,
-      setAllowance,
       handleInit,
-      supportedChainsAndTokens,
-      swapSupportedChainsAndTokens,
-      unifiedBalance,
+      supportedChainsAndTokens: supportedChainsAndTokens.current,
+      swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
+      unifiedBalance: unifiedBalance.current,
       network: config?.network,
       loading,
       fetchUnifiedBalance,
       swapIntent,
-      setSwapIntent,
-      exchangeRate,
+      exchangeRate: exchangeRate.current,
       getFiatValue,
     }),
     [
@@ -234,20 +222,17 @@ const NexusProvider = ({
       initializeNexus,
       deinitializeNexus,
       attachEventHooks,
-      intent,
-      setIntent,
-      allowance,
-      setAllowance,
+      intent.current,
+      allowance.current,
       handleInit,
-      supportedChainsAndTokens,
-      swapSupportedChainsAndTokens,
-      unifiedBalance,
+      supportedChainsAndTokens.current,
+      swapSupportedChainsAndTokens.current,
+      unifiedBalance.current,
       config,
       loading,
       fetchUnifiedBalance,
-      swapIntent,
-      setSwapIntent,
-      exchangeRate,
+      swapIntent.current,
+      exchangeRate.current,
       getFiatValue,
     ]
   );

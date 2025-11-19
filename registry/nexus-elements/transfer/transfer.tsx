@@ -45,15 +45,7 @@ const FastTransfer: FC<FastTransferProps> = ({
   onError,
   prefill,
 }) => {
-  const {
-    nexusSDK,
-    intent,
-    setIntent,
-    unifiedBalance,
-    allowance,
-    setAllowance,
-    network,
-  } = useNexus();
+  const { nexusSDK, intent, unifiedBalance, allowance, network } = useNexus();
 
   const {
     inputs,
@@ -78,15 +70,12 @@ const FastTransfer: FC<FastTransferProps> = ({
     network: network ?? "mainnet",
     nexusSDK,
     intent,
-    setIntent,
     unifiedBalance,
-    setAllowance,
     onComplete,
     onStart,
     onError,
+    allowance,
   });
-
-  console.log("transfer intent", intent);
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
@@ -122,10 +111,10 @@ const FastTransfer: FC<FastTransferProps> = ({
           }
           disabled={!!prefill?.recipient}
         />
-        {intent?.intent && (
+        {intent?.current?.intent && (
           <>
             <SourceBreakdown
-              intent={intent?.intent}
+              intent={intent?.current?.intent}
               tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
               chain={inputs?.chain}
@@ -146,16 +135,19 @@ const FastTransfer: FC<FastTransferProps> = ({
                   <Skeleton className="h-4 w-36" />
                 ) : (
                   <p className="text-sm font-medium text-right">
-                    on {intent?.intent?.destination?.chainName}
+                    on {intent?.current?.intent?.destination?.chainName}
                   </p>
                 )}
               </div>
             </div>
-            <FeeBreakdown intent={intent?.intent} isLoading={refreshing} />
+            <FeeBreakdown
+              intent={intent?.current?.intent}
+              isLoading={refreshing}
+            />
           </>
         )}
 
-        {!intent && (
+        {!intent.current && (
           <Button
             onClick={handleTransaction}
             disabled={
@@ -181,7 +173,7 @@ const FastTransfer: FC<FastTransferProps> = ({
             setIsDialogOpen(open);
           }}
         >
-          {intent && !isDialogOpen && (
+          {intent.current && !isDialogOpen && (
             <div className="w-full flex items-center gap-x-2 justify-between">
               <Button variant={"destructive"} onClick={reset} className="w-1/2">
                 Deny
@@ -202,10 +194,9 @@ const FastTransfer: FC<FastTransferProps> = ({
             <DialogHeader className="sr-only">
               <DialogTitle>Transaction Progress</DialogTitle>
             </DialogHeader>
-            {allowance ? (
+            {allowance.current ? (
               <AllowanceModal
-                allowanceModal={allowance}
-                setAllowanceModal={setAllowance}
+                allowance={allowance}
                 callback={startTransaction}
                 onCloseCallback={reset}
               />

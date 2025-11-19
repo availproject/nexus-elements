@@ -16,7 +16,14 @@ import {
   type BridgeStepType,
   CHAIN_METADATA,
 } from "@avail-project/nexus-core";
-import { useEffect, useMemo, useRef, useState, useReducer } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useReducer,
+  RefObject,
+} from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
 import {
@@ -38,11 +45,8 @@ interface UseDepositProps {
   token: SUPPORTED_TOKENS;
   chain: SUPPORTED_CHAINS_IDS;
   nexusSDK: NexusSDK | null;
-  intent: OnIntentHookData | null;
-  setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
-  setAllowance: React.Dispatch<
-    React.SetStateAction<OnAllowanceHookData | null>
-  >;
+  intent: RefObject<OnIntentHookData | null>;
+  allowance: RefObject<OnAllowanceHookData | null>;
   unifiedBalance: UserAsset[] | null;
   chainOptions?: { id: number; name: string; logo: string }[];
   address: Address;
@@ -69,13 +73,12 @@ const useDeposit = ({
   chain,
   nexusSDK,
   intent,
-  setIntent,
-  setAllowance,
   unifiedBalance,
   chainOptions,
   address,
   executeBuilder,
   executeConfig,
+  allowance,
 }: UseDepositProps) => {
   const { fetchUnifiedBalance, getFiatValue } = useNexus();
   const handleNexusError = useNexusError();
@@ -149,21 +152,21 @@ const useDeposit = ({
     intervalMs: 100,
   });
   // Debounce amount input for auto-simulation UX
-  const debouncedAmount = useDebouncedValue(inputs?.amount ?? "", 800);
+  const debouncedAmount = useDebouncedValue(inputs?.amount ?? "", 1200);
 
   const feeBreakdown: {
     totalGasFee: string | number;
-    bridgeUsd?: string;
+    bridgeUsd?: number;
     bridgeFormatted?: string;
-    gasUsd: string;
+    gasUsd: number;
     gasFormatted: string;
   } = useMemo(() => {
     if (!nexusSDK || !simulation || !token)
       return {
         totalGasFee: 0,
-        bridgeUsd: "0",
+        bridgeUsd: 0,
         bridgeFormatted: "0",
-        gasUsd: "0",
+        gasUsd: 0,
         gasFormatted: "0",
       };
     const native = CHAIN_METADATA[chain]?.nativeCurrency;
@@ -184,8 +187,8 @@ const useDeposit = ({
         nativeDecimals
       )
     );
-    const gasUsd = getFiatValue(gasUnits, nativeSymbol);
 
+    const gasUsd = getFiatValue(gasUnits, nativeSymbol);
     if (simulation?.bridgeSimulation) {
       const tokenDecimals =
         simulation?.bridgeSimulation?.intent?.token?.decimals;
@@ -202,11 +205,10 @@ const useDeposit = ({
         token
       );
 
-      const totalGasFee =
-        Number.parseFloat(bridgeUsd) + Number.parseFloat(gasUsd);
+      const totalGasFee = bridgeUsd + gasUsd;
 
       return {
-        totalGasFee,
+        totalGasFee: totalGasFee.toFixed(4),
         bridgeUsd,
         bridgeFormatted,
         gasUsd,
@@ -214,7 +216,7 @@ const useDeposit = ({
       };
     }
     return {
-      totalGasFee: gasFormatted,
+      totalGasFee: gasUsd,
       gasUsd,
       gasFormatted,
     };
@@ -356,7 +358,7 @@ const useDeposit = ({
   };
 
   const resetState = () => {
-    setAllowance(null);
+    allowance.current = null;
     setInputs({
       chain,
       amount: undefined,
@@ -364,7 +366,7 @@ const useDeposit = ({
     });
     setRefreshing(false);
     setSimulation(null);
-    setIntent(null);
+    intent.current = null;
     activeSimulationIdRef.current = null;
     setSimulating(false);
     resetSteps();
@@ -374,7 +376,7 @@ const useDeposit = ({
   };
 
   const reset = () => {
-    intent?.deny();
+    intent.current?.deny();
     resetState();
   };
 
@@ -395,11 +397,11 @@ const useDeposit = ({
   }, [debouncedAmount, inputs?.chain, token]);
 
   useEffect(() => {
-    if (autoAllow && intent) {
-      intent.allow();
+    if (autoAllow && intent.current) {
+      intent.current.allow();
       setAutoAllow(false);
     }
-  }, [autoAllow, intent]);
+  }, [autoAllow, intent.current]);
 
   useEffect(() => {
     if (!isDialogOpen) {
@@ -437,7 +439,6 @@ const useDeposit = ({
     reset,
     simulate,
     feeBreakdown,
-    clearSimulation: () => reset(),
     cancelSimulation: () => {
       activeSimulationIdRef.current = null;
       setSimulating(false);

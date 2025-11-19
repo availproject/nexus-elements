@@ -13,6 +13,7 @@ import {
 } from "../../ui/accordion";
 import { Skeleton } from "../../ui/skeleton";
 import { useMemo } from "react";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
@@ -39,6 +40,7 @@ const SourceBreakdown = ({
   unifiedBalance,
   requiredAmount,
 }: SourceBreakdownProps) => {
+  const { nexusSDK } = useNexus();
   const fundsOnDestination = useMemo(() => {
     return Number.parseFloat(
       unifiedBalance?.breakdown?.find((b) => b.chain?.id === chain)?.balance ??
@@ -46,18 +48,16 @@ const SourceBreakdown = ({
     );
   }, [unifiedBalance, chain]);
 
-  const spendOnSources = useMemo(() => {
-    if (!intent || intent?.sources?.length < 2) return `1 asset on 1 chain`; // bridge skipped
-    return `${intent?.sources?.length} Assets on ${intent?.sources?.length} chains`;
-  }, [intent]);
-
-  const amountSpend = useMemo(
-    () =>
-      intent
-        ? Number(requiredAmount) + Number.parseFloat(intent?.fees?.total ?? "0")
-        : requiredAmount,
-    [requiredAmount, intent]
-  );
+  const amountSpend = useMemo(() => {
+    const amountToFormat = intent
+      ? Number.parseFloat(requiredAmount ?? "0") +
+        Number.parseFloat(intent?.fees?.total ?? "0")
+      : requiredAmount ?? "0";
+    return nexusSDK?.utils?.formatTokenBalance(amountToFormat, {
+      symbol: tokenSymbol,
+      decimals: intent?.token?.decimals,
+    });
+  }, [requiredAmount, intent, tokenSymbol]);
 
   const displaySources = useMemo(() => {
     if (!intent)
@@ -122,13 +122,15 @@ const SourceBreakdown = ({
             <>
               <div className="flex flex-col items-start gap-y-1 min-w-fit">
                 <p className="text-base font-semibold">You Spend</p>
-                <p className="text-sm font-medium">{spendOnSources}</p>
+                <p className="text-sm font-medium">
+                  {displaySources?.length < 2
+                    ? "1 Asset on 1 Chain"
+                    : `1 Asset on ${displaySources?.length} Chains`}
+                </p>
               </div>
 
               <div className="flex flex-col items-end gap-y-1 min-w-fit">
-                <p className="text-base font-semibold">
-                  {amountSpend} {tokenSymbol}
-                </p>
+                <p className="text-base font-semibold">{amountSpend}</p>
                 <AccordionTrigger
                   containerClassName="w-fit"
                   className="py-0 items-center gap-x-1"

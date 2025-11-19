@@ -33,14 +33,7 @@ const SimpleDeposit = ({
   destinationLabel = "on Hyperliquid Perps",
   depositExecute,
 }: SimpleDepositProps) => {
-  const {
-    nexusSDK,
-    intent,
-    setIntent,
-    unifiedBalance,
-    allowance,
-    setAllowance,
-  } = useNexus();
+  const { nexusSDK, intent, unifiedBalance, allowance } = useNexus();
 
   const {
     inputs,
@@ -57,18 +50,17 @@ const SimpleDeposit = ({
     filteredUnifiedBalance,
     simulation,
     startTransaction,
-    clearSimulation,
     cancelSimulation,
     steps,
     feeBreakdown,
+    reset,
   } = useDeposit({
     token: token ?? "USDC",
     chain,
     nexusSDK,
     intent,
-    setIntent,
     unifiedBalance,
-    setAllowance,
+    allowance,
     chainOptions,
     address,
     executeBuilder: depositExecute,
@@ -112,6 +104,7 @@ const SimpleDeposit = ({
             setTxError(null);
           }
         }}
+        destinationChain={inputs?.chain}
         unifiedBalance={filteredUnifiedBalance}
         disabled={loading || simulating}
         maxLength={filteredUnifiedBalance?.decimals}
@@ -169,11 +162,7 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={
-              simulation?.bridgeSimulation
-                ? `$${(feeBreakdown?.totalGasFee as number).toFixed(4)} USD`
-                : (feeBreakdown?.totalGasFee as string)
-            }
+            total={`$${feeBreakdown?.totalGasFee} USD`}
             bridge={feeBreakdown?.bridgeFormatted ?? ""}
             execute={feeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}
@@ -186,13 +175,13 @@ const SimpleDeposit = ({
         </>
       )}
 
-      {!intent &&
+      {!intent.current &&
         (simulation ? (
           <div className="w-full flex items-center justify-center gap-x-2 px-1">
             <Button
               variant={"destructive"}
               onClick={() => {
-                clearSimulation();
+                reset();
                 setTxError(null);
               }}
               className="w-1/2"
@@ -224,12 +213,11 @@ const SimpleDeposit = ({
           <DialogHeader className="sr-only">
             <DialogTitle>Transaction Progress</DialogTitle>
           </DialogHeader>
-          {allowance ? (
+          {allowance.current ? (
             <AllowanceModal
-              allowanceModal={allowance}
-              setAllowanceModal={setAllowance}
+              allowance={allowance}
               callback={startTransaction}
-              onCloseCallback={clearSimulation}
+              onCloseCallback={reset}
             />
           ) : (
             <BridgeExecuteProgress
@@ -252,7 +240,7 @@ const SimpleDeposit = ({
             size={"icon"}
             variant={"ghost"}
             onClick={() => {
-              clearSimulation();
+              reset();
               setTxError(null);
             }}
             className="text-destructive-foreground/80 hover:text-destructive-foreground focus:outline-none"

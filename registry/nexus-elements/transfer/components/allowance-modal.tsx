@@ -1,5 +1,12 @@
 "use client";
-import React, { type FC, memo, useEffect, useMemo, useState } from "react";
+import React, {
+  type FC,
+  memo,
+  RefObject,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
@@ -11,10 +18,7 @@ import {
 import { useNexus } from "../../nexus/NexusProvider";
 
 interface AllowanceModalProps {
-  allowanceModal: OnAllowanceHookData;
-  setAllowanceModal: React.Dispatch<
-    React.SetStateAction<OnAllowanceHookData | null>
-  >;
+  allowance: RefObject<OnAllowanceHookData | null>;
   callback?: () => void;
   onCloseCallback?: () => void;
 }
@@ -100,8 +104,7 @@ const AllowanceOption: FC<AllowanceOptionProps> = ({
 };
 
 const AllowanceModal: FC<AllowanceModalProps> = ({
-  allowanceModal,
-  setAllowanceModal,
+  allowance,
   callback,
   onCloseCallback,
 }) => {
@@ -109,7 +112,11 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   const [selectedOption, setSelectedOption] = useState<AllowanceChoice[]>([]);
   const [customValues, setCustomValues] = useState<string[]>([]);
 
-  const { sources, allow, deny } = allowanceModal;
+  const { sources, allow, deny } = allowance.current ?? {
+    sources: [],
+    allow: () => {},
+    deny: () => {},
+  };
 
   const defaultChoices = useMemo<AllowanceChoice[]>(
     () => Array.from({ length: sources.length }, () => "min"),
@@ -118,7 +125,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
 
   const onClose = () => {
     deny();
-    setAllowanceModal(null);
+    allowance.current = null;
     onCloseCallback?.();
   };
 
@@ -134,11 +141,11 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
     });
     try {
       allow(processed);
-      setAllowanceModal(null);
+      allowance.current = null;
       callback?.();
     } catch (error) {
       console.error("AllowanceModal onApprove error", error);
-      setAllowanceModal(null);
+      allowance.current = null;
       onCloseCallback?.();
     }
   };
@@ -164,8 +171,6 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   useEffect(() => {
     setCustomValues(Array.from({ length: sources.length }, () => ""));
   }, [sources.length]);
-
-  if (!allowanceModal) return null;
 
   return (
     <>

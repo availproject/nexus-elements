@@ -38,7 +38,8 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, swapIntent, setSwapIntent, unifiedBalance } = useNexus();
+  const { nexusSDK, swapIntent, unifiedBalance, fetchUnifiedBalance } =
+    useNexus();
   const {
     inputs,
     setInputs,
@@ -52,7 +53,17 @@ const SwapExactIn: FC<SwapExactInProps> = ({
     destinationExplorerUrl,
     handleSwap,
     reset,
-  } = useExactIn({ nexusSDK, onComplete, onStart, onError, prefill });
+    areInputsValid,
+  } = useExactIn({
+    nexusSDK,
+    swapIntent,
+    unifiedBalance,
+    fetchBalance: fetchUnifiedBalance,
+    onComplete,
+    onStart,
+    onError,
+    prefill,
+  });
 
   const availableBalance = useMemo(() => {
     if (
@@ -112,8 +123,8 @@ const SwapExactIn: FC<SwapExactInProps> = ({
           disabled={Boolean(prefill?.toChainID && prefill?.toToken)}
         />
 
-        {!swapIntent && (
-          <Button onClick={handleSwap} disabled={loading}>
+        {!swapIntent.current && (
+          <Button onClick={handleSwap} disabled={loading || !areInputsValid}>
             {loading ? (
               <LoaderPinwheel className="animate-spin size-5" />
             ) : (
@@ -122,7 +133,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
           </Button>
         )}
 
-        {swapIntent && (
+        {swapIntent.current && (
           <>
             <div className="flex flex-col gap-y-2">
               <Label className="text-sm font-medium" htmlFor="swap-receive">
@@ -132,7 +143,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
                 id="swap-receive"
                 disabled
                 className="w-full border rounded px-3 py-2 text-sm bg-muted cursor-not-allowed"
-                value={`${swapIntent.intent.destination.amount}`}
+                value={`${swapIntent.current?.intent?.destination?.amount}`}
                 placeholder="—"
                 readOnly
               />
@@ -141,8 +152,8 @@ const SwapExactIn: FC<SwapExactInProps> = ({
               <Button
                 variant={"destructive"}
                 onClick={() => {
-                  swapIntent.deny();
-                  setSwapIntent(null);
+                  swapIntent.current?.deny();
+                  swapIntent.current = null;
                   reset();
                 }}
                 className="w-1/2"
@@ -151,7 +162,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
               </Button>
               <Button
                 onClick={() => {
-                  swapIntent.allow();
+                  swapIntent.current?.allow();
                   setIsDialogOpen(true);
                 }}
                 className="w-1/2"
@@ -159,7 +170,9 @@ const SwapExactIn: FC<SwapExactInProps> = ({
                 Accept
               </Button>
             </div>
-            <SwapSourceBreakdown intent={swapIntent.intent} />
+            {swapIntent.current?.intent && (
+              <SwapSourceBreakdown intent={swapIntent.current?.intent} />
+            )}
           </>
         )}
 

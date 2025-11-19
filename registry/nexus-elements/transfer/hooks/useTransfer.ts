@@ -11,7 +11,14 @@ import {
   TOKEN_METADATA,
   type UserAsset,
 } from "@avail-project/nexus-core";
-import { useEffect, useMemo, useRef, useState, useReducer } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useReducer,
+  RefObject,
+} from "react";
 import { type Address, isAddress } from "viem";
 import { useNexus } from "../../nexus/NexusProvider";
 import {
@@ -32,11 +39,8 @@ export interface FastTransferState {
 interface UseTransferProps {
   network: NexusNetwork;
   nexusSDK: NexusSDK | null;
-  intent: OnIntentHookData | null;
-  setIntent: React.Dispatch<React.SetStateAction<OnIntentHookData | null>>;
-  setAllowance: React.Dispatch<
-    React.SetStateAction<OnAllowanceHookData | null>
-  >;
+  intent: RefObject<OnIntentHookData | null>;
+  allowance: RefObject<OnAllowanceHookData | null>;
   unifiedBalance: UserAsset[] | null;
   prefill?: {
     token: string;
@@ -83,13 +87,12 @@ const useTransfer = ({
   network,
   nexusSDK,
   intent,
-  setIntent,
-  setAllowance,
   unifiedBalance,
   prefill,
   onComplete,
   onStart,
   onError,
+  allowance,
 }: UseTransferProps) => {
   const { fetchUnifiedBalance } = useNexus();
   const handleNexusError = useNexusError();
@@ -203,8 +206,8 @@ const useTransfer = ({
     stopwatch.stop();
     dispatch({ type: "setStatus", payload: "success" });
     onComplete?.();
-    setIntent(null);
-    setAllowance(null);
+    intent.current = null;
+    allowance.current = null;
     dispatch({ type: "resetInputs" });
     setRefreshing(false);
     await fetchUnifiedBalance();
@@ -217,7 +220,7 @@ const useTransfer = ({
   const refreshIntent = async () => {
     setRefreshing(true);
     try {
-      await intent?.refresh([]);
+      await intent.current?.refresh([]);
     } catch (error) {
       console.error("Transaction failed:", error);
     } finally {
@@ -226,9 +229,9 @@ const useTransfer = ({
   };
 
   const reset = () => {
-    intent?.deny();
-    setIntent(null);
-    setAllowance(null);
+    intent.current?.deny();
+    intent.current = null;
+    allowance.current = null;
     dispatch({ type: "resetInputs" });
     dispatch({ type: "setStatus", payload: "idle" });
     setRefreshing(false);
@@ -239,14 +242,14 @@ const useTransfer = ({
 
   const startTransaction = () => {
     // Reset timer for a fresh run
-    intent?.allow();
+    intent.current?.allow();
     setIsDialogOpen(true);
     setTxError(null);
   };
 
   const commitAmount = async () => {
     if (commitLockRef.current) return;
-    if (intent || loading || txError || !areInputsValid) return;
+    if (intent.current || loading || txError || !areInputsValid) return;
     commitLockRef.current = true;
     try {
       await handleTransaction();
@@ -255,14 +258,14 @@ const useTransfer = ({
     }
   };
 
-  usePolling(Boolean(intent) && !isDialogOpen, refreshIntent, 15000);
+  usePolling(Boolean(intent.current) && !isDialogOpen, refreshIntent, 15000);
 
   const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
 
   useEffect(() => {
-    if (intent) {
-      intent.deny();
-      setIntent(null);
+    if (intent.current) {
+      intent.current.deny();
+      intent.current = null;
     }
   }, [inputs]);
 
