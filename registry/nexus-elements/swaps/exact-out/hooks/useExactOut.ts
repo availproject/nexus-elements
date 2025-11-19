@@ -6,8 +6,8 @@ import {
   type ExactOutSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
-  UserAsset,
-  OnSwapIntentHookData,
+  type OnSwapIntentHookData,
+  type UserAsset,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { resolveDestinationFromPrefill } from "../../utils/prefill";
@@ -36,7 +36,7 @@ interface UseExactOutProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  swapBalances: UserAsset[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
@@ -51,7 +51,7 @@ interface UseExactOutProps {
 const useExactOut = ({
   nexusSDK,
   swapIntent,
-  unifiedBalance,
+  swapBalances,
   fetchBalance,
   onComplete,
   onStart,
@@ -78,10 +78,7 @@ const useExactOut = ({
     reset: resetSteps,
   } = useTransactionSteps<SwapStepType>();
   const swapCompleted = useMemo(
-    () =>
-      steps.some(
-        (s) => (s.step as any)?.type === "SWAP_COMPLETE" && s.completed
-      ),
+    () => steps.some((s) => s.step?.type === "SWAP_COMPLETE" && s.completed),
     [steps]
   );
   const stopwatch = useStopwatch({
@@ -183,7 +180,7 @@ const useExactOut = ({
         }));
       }
     }
-  }, [prefill, unifiedBalance, inputs.toChainID, inputs.toToken]);
+  }, [prefill, swapBalances, inputs.toChainID, inputs.toToken]);
 
   useEffect(() => {
     if (!swapIntent || isDialogOpen) return;

@@ -38,8 +38,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, swapIntent, unifiedBalance, fetchUnifiedBalance } =
-    useNexus();
+  const { nexusSDK, swapIntent, swapBalances, fetchSwapBalances } = useNexus();
   const {
     inputs,
     setInputs,
@@ -57,8 +56,8 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   } = useExactIn({
     nexusSDK,
     swapIntent,
-    unifiedBalance,
-    fetchBalance: fetchUnifiedBalance,
+    swapBalances,
+    fetchBalance: fetchSwapBalances,
     onComplete,
     onStart,
     onError,
@@ -68,14 +67,14 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   const availableBalance = useMemo(() => {
     if (
       !nexusSDK ||
-      !unifiedBalance ||
+      !swapBalances ||
       !inputs?.fromToken ||
       !inputs?.fromChainID
     )
       return undefined;
-    const filteredToken = unifiedBalance
-      ?.find((token) => token.symbol === inputs?.fromToken?.symbol)
-      ?.breakdown?.find((chain) => chain.chain?.id === inputs?.fromChainID);
+    const filteredToken = swapBalances?.find(
+      (token) => token.symbol === inputs?.fromToken?.symbol
+    );
 
     if (!filteredToken) return undefined;
 
@@ -83,7 +82,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
       symbol: inputs?.fromToken?.symbol,
       decimals: filteredToken?.decimals,
     });
-  }, [inputs?.fromToken, inputs?.fromChainID, unifiedBalance, nexusSDK]);
+  }, [inputs?.fromToken, inputs?.fromChainID, swapBalances, nexusSDK]);
 
   return (
     <Card className="w-full max-w-xl">

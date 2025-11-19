@@ -33,7 +33,7 @@ const SimpleDeposit = ({
   destinationLabel = "on Hyperliquid Perps",
   depositExecute,
 }: SimpleDepositProps) => {
-  const { nexusSDK, intent, unifiedBalance, allowance } = useNexus();
+  const { nexusSDK, intent, bridgableBalance, allowance } = useNexus();
 
   const {
     inputs,
@@ -47,7 +47,7 @@ const SimpleDeposit = ({
     txError,
     setTxError,
     timer,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     simulation,
     startTransaction,
     cancelSimulation,
@@ -59,7 +59,7 @@ const SimpleDeposit = ({
     chain,
     nexusSDK,
     intent,
-    unifiedBalance,
+    bridgableBalance,
     allowance,
     chainOptions,
     address,
@@ -105,9 +105,9 @@ const SimpleDeposit = ({
           }
         }}
         destinationChain={inputs?.chain}
-        unifiedBalance={filteredUnifiedBalance}
+        bridgableBalance={filteredBridgableBalance}
         disabled={loading || simulating}
-        maxLength={filteredUnifiedBalance?.decimals}
+        maxLength={filteredBridgableBalance?.decimals}
       />
 
       {/* Shimmer while simulating */}
@@ -115,7 +115,7 @@ const SimpleDeposit = ({
         <>
           <SourceBreakdown
             isLoading
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
             chain={chain}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
@@ -138,10 +138,10 @@ const SimpleDeposit = ({
         <>
           <SourceBreakdown
             intent={simulation?.bridgeSimulation?.intent}
-            tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+            tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
             isLoading={refreshing}
             chain={chain}
-            unifiedBalance={filteredUnifiedBalance}
+            bridgableBalance={filteredBridgableBalance}
             requiredAmount={inputs?.amount}
           />
 
@@ -152,7 +152,7 @@ const SimpleDeposit = ({
                 <Skeleton className="h-5 w-28" />
               ) : (
                 <p className="text-base font-semibold text-right">
-                  {inputs?.amount} {filteredUnifiedBalance?.symbol}
+                  {inputs?.amount} {filteredBridgableBalance?.symbol}
                 </p>
               )}
               <p className="text-sm font-medium text-right">

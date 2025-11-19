@@ -24,18 +24,19 @@ import { useAccountEffect } from "wagmi";
 
 interface NexusContextType {
   nexusSDK: NexusSDK | null;
-  unifiedBalance: UserAsset[] | null;
-
+  bridgableBalance: UserAsset[] | null;
+  swapBalances: UserAsset[] | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   exchangeRate: Record<string, number> | null;
   supportedChainsAndTokens: SupportedChainsAndTokensResult | null;
-  swapSupportedChainsAndTokens: SupportedChainsResult | null;
+  swapSupportedChains: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
   handleInit: (provider: EthereumProvider) => Promise<void>;
-  fetchUnifiedBalance: () => Promise<void>;
+  fetchBridgableBalance: () => Promise<void>;
+  fetchSwapBalances: () => Promise<void>;
   getFiatValue: (amount: number, token: string) => number;
   initializeNexus: (provider: EthereumProvider) => Promise<void>;
   deinitializeNexus: () => Promise<void>;
@@ -64,10 +65,9 @@ const NexusProvider = ({
   const [loading, setLoading] = useState<boolean>(false);
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
-  const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null
-  );
-  const unifiedBalance = useRef<UserAsset[] | null>(null);
+  const swapSupportedChains = useRef<SupportedChainsResult | null>(null);
+  const bridgableBalance = useRef<UserAsset[] | null>(null);
+  const swapBalances = useRef<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
 
   const intent = useRef<OnIntentHookData | null>(null);
@@ -80,7 +80,7 @@ const NexusProvider = ({
     );
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
-    swapSupportedChainsAndTokens.current = swapList ?? null;
+    swapSupportedChains.current = swapList ?? null;
   }, [sdk, config?.network]);
 
   const initializeNexus = async (provider: EthereumProvider) => {
@@ -90,13 +90,13 @@ const NexusProvider = ({
       await sdk.initialize(provider);
       setNexusSDK(sdk);
       initChainsAndTokens();
-      const [unifiedBalanceResult, rates] = await Promise.allSettled([
-        sdk?.getUnifiedBalances(true),
+      const [bridgableBalanceResult, rates] = await Promise.allSettled([
+        sdk?.getBalancesForBridge(),
         sdk?.utils?.getCoinbaseRates(),
       ]);
 
-      if (unifiedBalanceResult.status === "fulfilled") {
-        unifiedBalance.current = unifiedBalanceResult.value;
+      if (bridgableBalanceResult.status === "fulfilled") {
+        bridgableBalance.current = bridgableBalanceResult.value;
       }
 
       if (rates?.status === "fulfilled") {
@@ -130,8 +130,8 @@ const NexusProvider = ({
       await sdk.deinit();
       setNexusSDK(null);
       supportedChainsAndTokens.current = null;
-      swapSupportedChainsAndTokens.current = null;
-      unifiedBalance.current = null;
+      swapSupportedChains.current = null;
+      bridgableBalance.current = null;
       exchangeRate.current = null;
       intent.current = null;
       swapIntent.current = null;
@@ -174,12 +174,21 @@ const NexusProvider = ({
     [sdk, loading, initializeNexus]
   );
 
-  const fetchUnifiedBalance = async () => {
+  const fetchBridgableBalance = async () => {
     try {
-      const updatedBalance = await sdk?.getUnifiedBalances(true);
-      unifiedBalance.current = updatedBalance;
+      const updatedBalance = await sdk?.getBalancesForBridge();
+      bridgableBalance.current = updatedBalance;
     } catch (error) {
-      console.error("Error fetching unified balance:", error);
+      console.error("Error fetching bridgable balance:", error);
+    }
+  };
+
+  const fetchSwapBalances = async () => {
+    try {
+      const updatedBalance = await sdk?.getBalancesForSwap();
+      swapBalances.current = updatedBalance;
+    } catch (error) {
+      console.error("Error fetching bridgable balance:", error);
     }
   };
 
@@ -208,11 +217,13 @@ const NexusProvider = ({
       allowance,
       handleInit,
       supportedChainsAndTokens: supportedChainsAndTokens.current,
-      swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
-      unifiedBalance: unifiedBalance.current,
+      swapSupportedChains: swapSupportedChains.current,
+      bridgableBalance: bridgableBalance.current,
+      swapBalances: swapBalances.current,
       network: config?.network,
       loading,
-      fetchUnifiedBalance,
+      fetchBridgableBalance,
+      fetchSwapBalances,
       swapIntent,
       exchangeRate: exchangeRate.current,
       getFiatValue,
@@ -226,11 +237,13 @@ const NexusProvider = ({
       allowance.current,
       handleInit,
       supportedChainsAndTokens.current,
-      swapSupportedChainsAndTokens.current,
-      unifiedBalance.current,
+      swapSupportedChains.current,
+      bridgableBalance.current,
+      swapBalances.current,
       config,
       loading,
-      fetchUnifiedBalance,
+      fetchBridgableBalance,
+      fetchSwapBalances,
       swapIntent.current,
       exchangeRate.current,
       getFiatValue,

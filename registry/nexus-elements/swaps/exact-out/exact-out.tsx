@@ -34,8 +34,7 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, swapIntent, unifiedBalance, fetchUnifiedBalance } =
-    useNexus();
+  const { nexusSDK, swapIntent, swapBalances, fetchSwapBalances } = useNexus();
   const {
     inputs,
     setInputs,
@@ -52,8 +51,8 @@ const SwapExactOut: FC<SwapExactOutProps> = ({
   } = useExactOut({
     nexusSDK,
     swapIntent,
-    unifiedBalance,
-    fetchBalance: fetchUnifiedBalance,
+    swapBalances,
+    fetchBalance: fetchSwapBalances,
     onComplete,
     onStart,
     onError,

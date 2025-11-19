@@ -48,7 +48,7 @@ interface UseExactInProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  swapBalances: UserAsset[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
@@ -65,7 +65,7 @@ interface UseExactInProps {
 const useExactIn = ({
   nexusSDK,
   swapIntent,
-  unifiedBalance,
+  swapBalances,
   fetchBalance,
   onComplete,
   onStart,
@@ -94,10 +94,7 @@ const useExactIn = ({
     reset: resetSteps,
   } = useTransactionSteps<SwapStepType>();
   const swapCompleted = useMemo(
-    () =>
-      steps.some(
-        (s) => (s.step as any)?.type === "SWAP_COMPLETE" && s.completed
-      ),
+    () => steps.some((s) => s.step?.type === "SWAP_COMPLETE" && s.completed),
     [steps]
   );
   const stopwatch = useStopwatch({
@@ -208,7 +205,7 @@ const useExactIn = ({
       !inputs.fromToken
     ) {
       const src = resolveSourceFromPrefill(
-        unifiedBalance,
+        swapBalances,
         inputs.fromChainID,
         prefill.fromToken
       );
@@ -227,7 +224,7 @@ const useExactIn = ({
     }
   }, [
     prefill,
-    unifiedBalance,
+    swapBalances,
     inputs.fromChainID,
     inputs.toChainID,
     inputs.fromToken,

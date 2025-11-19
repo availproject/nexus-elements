@@ -20,7 +20,7 @@ import AllowanceModal from "./components/allowance-modal";
 import useBridge from "./hooks/useBridge";
 import SourceBreakdown from "./components/source-breakdown";
 import {
-  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
@@ -51,10 +51,10 @@ const FastBridge: FC<FastBridgeProps> = ({
   const {
     nexusSDK,
     intent,
-    unifiedBalance,
+    bridgableBalance,
     allowance,
     network,
-    fetchUnifiedBalance,
+    fetchBridgableBalance,
   } = useNexus();
 
   const {
@@ -68,7 +68,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     setTxError,
     handleTransaction,
     reset,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     startTransaction,
     setIsDialogOpen,
     commitAmount,
@@ -81,12 +81,12 @@ const FastBridge: FC<FastBridgeProps> = ({
     connectedAddress,
     nexusSDK,
     intent,
-    unifiedBalance,
+    bridgableBalance,
     allowance,
     onComplete,
     onStart,
     onError,
-    fetchBalance: fetchUnifiedBalance,
+    fetchBalance: fetchBridgableBalance,
   });
   return (
     <Card className="w-full max-w-xl">
@@ -111,7 +111,7 @@ const FastBridge: FC<FastBridgeProps> = ({
         <AmountInput
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
-          unifiedBalance={filteredUnifiedBalance}
+          bridgableBalance={filteredBridgableBalance}
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
@@ -128,16 +128,20 @@ const FastBridge: FC<FastBridgeProps> = ({
             {inputs?.recipient === connectedAddress ? (
               <SourceBreakdown
                 intent={intent?.current?.intent}
-                tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+                tokenSymbol={
+                  filteredBridgableBalance?.symbol as SUPPORTED_TOKENS
+                }
                 isLoading={refreshing}
               />
             ) : (
               <TransferSourceBreakdown
                 intent={intent?.current?.intent}
-                tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+                tokenSymbol={
+                  filteredBridgableBalance?.symbol as SUPPORTED_TOKENS
+                }
                 isLoading={refreshing}
                 chain={inputs?.chain}
-                unifiedBalance={filteredUnifiedBalance}
+                bridgableBalance={filteredBridgableBalance}
                 requiredAmount={inputs?.amount}
               />
             )}
@@ -153,7 +157,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                       connectedAddress === inputs?.recipient
                         ? intent?.current?.intent?.destination?.amount
                         : inputs.amount
-                    } ${filteredUnifiedBalance?.symbol}`}
+                    } ${filteredBridgableBalance?.symbol}`}
                   </p>
                 )}
                 {refreshing ? (

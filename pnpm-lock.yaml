@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: 1.0.0-rc.3
-        version: 1.0.0-rc.3(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)
+        specifier: 1.0.0-beta.38
+        version: 1.0.0-beta.38(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -183,8 +183,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@1.0.0-rc.3':
-    resolution: {integrity: sha512-vujllNqeXfJTxyZVIBLIAiTOb3XCCJO/wRsbIT2Dflkn32mFp3IhGDsOIt78jRo8RXx+jmZYf3PHV7x0ROSBXA==}
+  '@avail-project/nexus-core@1.0.0-beta.38':
+    resolution: {integrity: sha512-FJ1PE6LgDdBFllloQHWZnNUEF0FXIhtdu9ljxmgJ+QEP1Nbk/9evhd/sQ3JqOkYArlSciDczBK8QlHe1xkSeMg==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -7086,7 +7086,7 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@1.0.0-rc.3(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)':
+  '@avail-project/nexus-core@1.0.0-beta.38(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)':
     dependencies:
       '@avail-project/ca-common': 1.0.0-dev.3(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.1

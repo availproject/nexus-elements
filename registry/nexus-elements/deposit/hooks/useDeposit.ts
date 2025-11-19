@@ -47,7 +47,7 @@ interface UseDepositProps {
   nexusSDK: NexusSDK | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  bridgableBalance: UserAsset[] | null;
   chainOptions?: { id: number; name: string; logo: string }[];
   address: Address;
   executeBuilder?: (
@@ -73,7 +73,7 @@ const useDeposit = ({
   chain,
   nexusSDK,
   intent,
-  unifiedBalance,
+  bridgableBalance,
   chainOptions,
   address,
   executeBuilder,
@@ -139,9 +139,9 @@ const useDeposit = ({
   const simulationRequestIdRef = useRef(0);
   const activeSimulationIdRef = useRef<number | null>(null);
 
-  const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.find((bal) => bal?.symbol === token);
-  }, [unifiedBalance, token]);
+  const filteredBridgableBalance = useMemo(() => {
+    return bridgableBalance?.find((bal) => bal?.symbol === token);
+  }, [bridgableBalance, token]);
 
   const allCompleted = useMemo(
     () => (steps?.length ?? 0) > 0 && steps.every((s) => s.completed),
@@ -290,7 +290,7 @@ const useDeposit = ({
     }
     if (
       Number.parseFloat(amountToUse) >
-      Number.parseFloat(filteredUnifiedBalance?.balance ?? "0")
+      Number.parseFloat(filteredBridgableBalance?.balance ?? "0")
     ) {
       activeSimulationIdRef.current = null;
       setTxError("Insufficient balance");
@@ -430,7 +430,7 @@ const useDeposit = ({
     txError,
     setTxError,
     timer: stopwatch.seconds,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     simulation,
     lastResult,
     steps,

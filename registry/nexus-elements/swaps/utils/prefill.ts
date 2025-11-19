@@ -5,7 +5,7 @@ import type {
 import { DESTINATION_SWAP_TOKENS, TOKEN_IMAGES } from "../config/destination";
 
 export function resolveSourceFromPrefill(
-  unifiedBalance: UserAsset[] | null | undefined,
+  swapBalances: UserAsset[] | null | undefined,
   fromChainID: SUPPORTED_CHAINS_IDS | undefined,
   prefillTokenAddress: string | undefined
 ):
@@ -17,9 +17,9 @@ export function resolveSourceFromPrefill(
       symbol: string;
     }
   | undefined {
-  if (!unifiedBalance || !fromChainID || !prefillTokenAddress) return undefined;
+  if (!swapBalances || !fromChainID || !prefillTokenAddress) return undefined;
   const targetAddr = prefillTokenAddress.toLowerCase();
-  for (const a of unifiedBalance) {
+  for (const a of swapBalances) {
     const candidate = a.breakdown?.find(
       (b) =>
         b.contractAddress?.toLowerCase() === targetAddr &&

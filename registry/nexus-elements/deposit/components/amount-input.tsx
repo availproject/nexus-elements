@@ -45,14 +45,14 @@ interface AmountInputProps
   > {
   value?: string;
   onChange?: (value: string) => void;
-  unifiedBalance?: UserAsset;
+  bridgableBalance?: UserAsset;
   destinationChain: SUPPORTED_CHAINS_IDS;
 }
 
 const AmountInput = ({
   value,
   onChange,
-  unifiedBalance,
+  bridgableBalance,
   disabled,
   destinationChain,
   ...props
@@ -76,15 +76,18 @@ const AmountInput = ({
               className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
               disabled={disabled || loading}
             />
-            {unifiedBalance && (
+            {bridgableBalance && (
               <p className="text-base font-semibold min-w-max">
-                {nexusSDK?.utils?.formatTokenBalance(unifiedBalance?.balance, {
-                  symbol: unifiedBalance?.symbol,
-                  decimals: unifiedBalance?.decimals,
-                })}
+                {nexusSDK?.utils?.formatTokenBalance(
+                  bridgableBalance?.balance,
+                  {
+                    symbol: bridgableBalance?.symbol,
+                    decimals: bridgableBalance?.decimals,
+                  }
+                )}
               </p>
             )}
-            {loading && !unifiedBalance && (
+            {loading && !bridgableBalance && (
               <LoaderCircle className="size-4 animate-spin" />
             )}
           </div>
@@ -98,14 +101,14 @@ const AmountInput = ({
                   className="text-xs py-0.5 px-0 size-max"
                   disabled={disabled}
                   onClick={() => {
-                    if (!unifiedBalance?.balance) return;
+                    if (!bridgableBalance?.balance) return;
 
                     const amount = computeAmountFromFraction(
-                      unifiedBalance.balance,
+                      bridgableBalance.balance,
                       option.value,
-                      unifiedBalance?.breakdown.find(
+                      bridgableBalance?.breakdown.find(
                         (chain) => chain?.chain?.id === destinationChain
-                      )?.decimals ?? unifiedBalance?.decimals,
+                      )?.decimals ?? bridgableBalance?.decimals,
                       SAFETY_MARGIN
                     );
                     onChange?.(amount);
@@ -115,7 +118,7 @@ const AmountInput = ({
                 </Button>
               ))}
             </div>
-            {unifiedBalance && (
+            {bridgableBalance && (
               <AccordionTrigger
                 className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"
                 hideChevron={false}
@@ -127,7 +130,7 @@ const AmountInput = ({
 
           <AccordionContent className="pb-0">
             <div className="space-y-3 py-2">
-              {unifiedBalance?.breakdown.map((chain, index) => {
+              {bridgableBalance?.breakdown.map((chain, index) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 return (
                   <Fragment key={chain.chain.id}>
@@ -152,8 +155,8 @@ const AmountInput = ({
                       <div className="text-right">
                         <p className="text-sm font-medium">
                           {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
-                            symbol: unifiedBalance?.symbol,
-                            decimals: unifiedBalance?.decimals,
+                            symbol: bridgableBalance?.symbol,
+                            decimals: bridgableBalance?.decimals,
                           })}
                         </p>
                         <p className="text-xs text-muted-foreground">

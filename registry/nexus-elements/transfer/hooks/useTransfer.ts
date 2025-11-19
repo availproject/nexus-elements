@@ -41,7 +41,7 @@ interface UseTransferProps {
   nexusSDK: NexusSDK | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  bridgableBalance: UserAsset[] | null;
   prefill?: {
     token: string;
     chainId: number;
@@ -87,14 +87,14 @@ const useTransfer = ({
   network,
   nexusSDK,
   intent,
-  unifiedBalance,
+  bridgableBalance,
   prefill,
   onComplete,
   onStart,
   onError,
   allowance,
 }: UseTransferProps) => {
-  const { fetchUnifiedBalance } = useNexus();
+  const { fetchBridgableBalance } = useNexus();
   const handleNexusError = useNexusError();
   const initialState: TransferState = {
     inputs: buildInitialInputs(network, prefill),
@@ -210,12 +210,12 @@ const useTransfer = ({
     allowance.current = null;
     dispatch({ type: "resetInputs" });
     setRefreshing(false);
-    await fetchUnifiedBalance();
+    await fetchBridgableBalance();
   };
 
-  const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.find((bal) => bal?.symbol === inputs?.token);
-  }, [unifiedBalance, inputs?.token]);
+  const filteredBridgableBalance = useMemo(() => {
+    return bridgableBalance?.find((bal) => bal?.symbol === inputs?.token);
+  }, [bridgableBalance, inputs?.token]);
 
   const refreshIntent = async () => {
     setRefreshing(true);
@@ -294,7 +294,7 @@ const useTransfer = ({
     txError,
     handleTransaction,
     reset,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     startTransaction,
     commitAmount,
     lastExplorerUrl,

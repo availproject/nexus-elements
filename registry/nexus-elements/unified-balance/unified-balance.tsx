@@ -13,22 +13,22 @@ import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
 
 const UnifiedBalance = ({ className }: { className?: string }) => {
-  const { unifiedBalance, nexusSDK } = useNexus();
+  const { bridgableBalance, nexusSDK } = useNexus();
 
   const totalFiat = useMemo(() => {
-    if (!unifiedBalance) return "0.00";
-    const total = unifiedBalance.reduce(
+    if (!bridgableBalance) return "0.00";
+    const total = bridgableBalance.reduce(
       (acc, fiat) => acc + fiat.balanceInFiat,
       0
     );
     return total.toFixed(2);
-  }, [unifiedBalance]);
+  }, [bridgableBalance]);
 
   const tokens = useMemo(() => {
-    return (unifiedBalance ?? []).filter(
+    return (bridgableBalance ?? []).filter(
       (token) => Number.parseFloat(token.balance) > 0
     );
-  }, [unifiedBalance]);
+  }, [bridgableBalance]);
 
   return (
     <div

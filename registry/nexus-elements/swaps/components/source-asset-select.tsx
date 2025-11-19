@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC, useMemo, useState } from "react";
+import React, { type FC, useEffect, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   type SUPPORTED_CHAINS_IDS,
 } from "@avail-project/nexus-core";
 import { TOKEN_IMAGES } from "../config/destination";
+import { LoaderCircle } from "lucide-react";
 
 type SourceTokenInfo = {
   contractAddress: `0x${string}`;
@@ -39,23 +40,21 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   disabled,
   label = "From",
 }) => {
-  const { swapSupportedChainsAndTokens, unifiedBalance, nexusSDK } = useNexus();
+  const { swapSupportedChains, swapBalances, fetchSwapBalances, nexusSDK } =
+    useNexus();
   const [open, setOpen] = useState(false);
   const [tempChain, setTempChain] = useState<number | null>(null);
 
-  const chains = swapSupportedChainsAndTokens ?? [];
-
   const tokensForTempChain: SourceTokenInfo[] = useMemo(() => {
-    if (!tempChain || !unifiedBalance) return [] as SourceTokenInfo[];
+    if (!tempChain || !swapBalances) return [] as SourceTokenInfo[];
     const tokens: SourceTokenInfo[] = [];
 
-    for (const asset of unifiedBalance) {
+    for (const asset of swapBalances) {
       if (!asset?.breakdown?.length) continue;
       const breakdownForChain = asset.breakdown.find(
         (b) => b.chain?.id === tempChain && Number.parseFloat(b.balance) > 0
       );
       if (!breakdownForChain) continue;
-
       tokens.push({
         contractAddress: breakdownForChain.contractAddress,
         decimals: breakdownForChain.decimals ?? asset.decimals,
@@ -77,13 +76,23 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
       unique.set(t.contractAddress.toLowerCase(), t);
     }
     return Array.from(unique.values());
-  }, [tempChain, unifiedBalance]);
+  }, [tempChain, swapBalances]);
 
   const handlePick = (tok: SourceTokenInfo) => {
     if (!tempChain) return;
     onSelect(tempChain as SUPPORTED_CHAINS_IDS, tok);
     setOpen(false);
   };
+
+  const handleFetchSwapBalances = async () => {
+    await fetchSwapBalances();
+  };
+
+  useEffect(() => {
+    if (!swapBalances) {
+      handleFetchSwapBalances();
+    }
+  }, []);
 
   return (
     <div className="w-full">
@@ -129,62 +138,72 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           <DialogHeader>
             <DialogTitle>Select source asset</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
-              <p className="text-xs font-medium mb-2">Chains</p>
-              <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
-                {chains.map((c: any) => (
-                  <Button
-                    key={c.id}
-                    variant={"ghost"}
-                    onClick={() => setTempChain(c.id)}
-                    className={`flex items-center justify-start w-full gap-x-2 p-2 rounded hover:bg-muted ${
-                      tempChain === c.id ? "bg-muted" : ""
-                    }`}
-                  >
-                    <img
-                      src={c.logo}
-                      alt={c.name}
-                      width={18}
-                      height={18}
-                      className="rounded-full"
-                    />
-                    <span className="text-sm">{c.name}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
-              <p className="text-xs font-medium mb-2">Tokens</p>
-              <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
-                {tempChain && tokensForTempChain ? (
-                  tokensForTempChain?.map((t) => (
+          {swapBalances && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border rounded-md p-2 max-h-80 overflow-y-auto no-scrollbar">
+                <p className="text-xs font-medium mb-2">Chains</p>
+                <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
+                  {swapSupportedChains?.map((c) => (
                     <Button
-                      key={t.symbol}
+                      key={c.id}
                       variant={"ghost"}
-                      onClick={() => handlePick(t)}
-                      className="flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full"
+                      onClick={() => setTempChain(c.id)}
+                      className={`flex items-center justify-start w-full gap-x-2 p-2 rounded hover:bg-muted ${
+                        tempChain === c.id ? "bg-muted" : ""
+                      }`}
                     >
-                      {t.symbol ? (
-                        <img
-                          src={TOKEN_IMAGES[t.symbol]}
-                          alt={t.symbol}
-                          width={18}
-                          height={18}
-                          className="rounded-full"
-                        />
-                      ) : null}
-                      <p className="text-sm text-foreground">{t.balance}</p>
+                      <img
+                        src={c.logo}
+                        alt={c.name}
+                        width={18}
+                        height={18}
+                        className="rounded-full"
+                      />
+                      <span className="text-sm">{c.name}</span>
                     </Button>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Select a chain
-                  </p>
-                )}
+                  ))}
+                </div>
+              </div>
+              <div className="border rounded-md p-2 max-h-80 overflow-y-auto no-scrollbar">
+                <p className="text-xs font-medium mb-2">Tokens</p>
+                <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
+                  {tempChain && tokensForTempChain ? (
+                    tokensForTempChain?.map((t) => (
+                      <Button
+                        key={t.symbol}
+                        variant={"ghost"}
+                        onClick={() => handlePick(t)}
+                        className="flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full"
+                      >
+                        {t.symbol ? (
+                          <img
+                            src={TOKEN_IMAGES[t.symbol]}
+                            alt={t.symbol}
+                            width={18}
+                            height={18}
+                            className="rounded-full"
+                          />
+                        ) : null}
+                        <p className="text-sm text-foreground">{t.balance}</p>
+                      </Button>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Select a chain
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
+          {!swapBalances && (
+            <div className="w-full flex flex-col items-center justify-center">
+              <LoaderCircle className="size-4 animate-spin" />
+              <p className="text-sm text-muted-foreground">
+                Fetching Swappable Assets
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
