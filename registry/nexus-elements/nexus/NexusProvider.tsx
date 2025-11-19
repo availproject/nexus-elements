@@ -125,8 +125,7 @@ const NexusProvider = ({
 
   const deinitializeNexus = async () => {
     try {
-      if (!nexusSDK?.isInitialized())
-        throw new Error("Nexus is not initialized");
+      if (!nexusSDK) throw new Error("Nexus is not initialized");
       await nexusSDK?.deinit();
       setNexusSDK(null);
       supportedChainsAndTokens.current = null;
