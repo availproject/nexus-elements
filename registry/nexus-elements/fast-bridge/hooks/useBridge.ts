@@ -8,7 +8,6 @@ import {
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
-  TOKEN_METADATA,
   type UserAsset,
 } from "@avail-project/nexus-core";
 import {
@@ -163,15 +162,17 @@ const useBridge = ({
       if (!nexusSDK) {
         throw new Error("Nexus SDK not initialized");
       }
+      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
+        inputs.amount,
+        inputs.token,
+        inputs.chain
+      );
       if (inputs?.recipient !== connectedAddress) {
         // Transfer
         const transferTxn = await nexusSDK.bridgeAndTransfer(
           {
             token: inputs?.token,
-            amount: nexusSDK.utils.parseUnits(
-              inputs?.amount,
-              TOKEN_METADATA[inputs?.token].decimals
-            ),
+            amount: amountBigInt,
             toChainId: inputs?.chain,
             recipient: inputs?.recipient,
           },
@@ -200,10 +201,7 @@ const useBridge = ({
       const bridgeTxn = await nexusSDK.bridge(
         {
           token: inputs?.token,
-          amount: nexusSDK.utils.parseUnits(
-            inputs?.amount,
-            TOKEN_METADATA[inputs?.token].decimals
-          ),
+          amount: amountBigInt,
           toChainId: inputs?.chain,
         },
         {

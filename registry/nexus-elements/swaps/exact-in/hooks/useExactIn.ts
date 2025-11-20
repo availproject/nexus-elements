@@ -127,15 +127,16 @@ const useExactIn = ({
       setLoading(true);
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
-      const amountWei = nexusSDK?.utils?.parseUnits(
+      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs.fromAmount,
-        inputs.fromToken.decimals
+        inputs.fromToken.symbol,
+        inputs.fromChainID
       );
       const swapInput: ExactInSwapInput = {
         from: [
           {
             chainId: inputs.fromChainID,
-            amount: amountWei,
+            amount: amountBigInt,
             tokenAddress: inputs.fromToken.contractAddress,
           },
         ],
