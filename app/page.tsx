@@ -23,19 +23,10 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href={"/docs/get-started"}>
-                <Button
-                  size="lg"
-                  className="h-12 px-8 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-medium"
-                >
-                  Get Started
-                </Button>
+                <Button size="lg">Get Started</Button>
               </Link>
               <Link href={"/docs/view-components"}>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 px-8 border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground text-base font-medium"
-                >
+                <Button size="lg" variant="outline" className="text-foreground">
                   View Components
                 </Button>
               </Link>
@@ -73,8 +64,8 @@ export default function Home() {
                   TypeScript
                 </div>
                 <div className="flex-1 overflow-auto p-8">
-                  <pre className="text-sm font-mono text-muted-foreground leading-relaxed">
-                    <code>{`import { FastBridge } from '@nexus/elements'
+                  <pre className="text-sm font-mono text-chart-2 leading-relaxed">
+                    <code className="text-chart-2">{`import { FastBridge } from '@nexus/elements'
 import { useAccount } from 'wagmi'
 
 export function BridgeInterface() {
@@ -104,9 +95,9 @@ export function BridgeInterface() {
         </section>
 
         {/* Features Grid */}
-        <section className="container mx-auto px-6 py-32 border-t border-zinc-900 mt-32">
+        <section className="container mx-auto px-6 py-32 border-t border-border mt-32">
           <div className="mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">
               What&apos;s in Nexus?
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl">
