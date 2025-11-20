@@ -88,13 +88,14 @@ export default function MockBridgeUI() {
   return (
     <Card className="w-full max-w-md mx-auto bg-[#1a1a1a] border-zinc-800 p-8">
       <div className="space-y-6">
-        <Link href={"/docs/components/fast-bridge"}>
-          <div className="space-y-3">
+        <div className="space-y-3">
+          <Link href={"/docs/components/fast-bridge"}>
             <Label className="text-white text-lg font-medium">To</Label>
-
-            {/* Chain Selector */}
-            <Select value={"10"}>
-              <div className="flex flex-col items-start gap-y-1 w-full">
+          </Link>
+          {/* Chain Selector */}
+          <Select value={"10"}>
+            <div className="flex flex-col items-start gap-y-1 w-full">
+              <Link href={"/docs/components/fast-bridge"} className="w-full">
                 <SelectTrigger className=" w-full">
                   <SelectValue>
                     <div className="flex items-center gap-x-2 w-full">
@@ -111,12 +112,14 @@ export default function MockBridgeUI() {
                     </div>
                   </SelectValue>
                 </SelectTrigger>
-              </div>
-            </Select>
+              </Link>
+            </div>
+          </Select>
 
-            {/* Token Selector */}
-            <Select value={"10"}>
-              <div className="flex flex-col items-start gap-y-1 w-full">
+          {/* Token Selector */}
+          <Select value={"10"}>
+            <div className="flex flex-col items-start gap-y-1 w-full">
+              <Link href={"/docs/components/fast-bridge"} className="w-full">
                 <SelectTrigger className=" w-full">
                   <SelectValue>
                     <div className="flex items-center gap-x-2 w-full">
@@ -133,83 +136,85 @@ export default function MockBridgeUI() {
                     </div>
                   </SelectValue>
                 </SelectTrigger>
-              </div>
-            </Select>
-
-            {/* Amount Input */}
-            <div className="flex flex-col gap-y-2 pb-2 w-full">
-              <div className="w-full flex sm:flex-row flex-col border border-border rounded-lg gap-y-2">
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={"100"}
-                  placeholder="Enter Amount"
-                  className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
-                />
-                <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
-                  <p className="text-base font-semibold min-w-max">200 USDC</p>
-
-                  <Button size={"sm"} variant={"ghost"} className="px-0">
-                    Max
-                  </Button>
-                </div>
-              </div>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="balance-breakdown">
-                  <AccordionTrigger
-                    className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"
-                    hideChevron={false}
-                  >
-                    View Assets
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-0">
-                    <div className="space-y-3 py-2">
-                      {MOCK_BALANCE?.breakdown.map((chain) => {
-                        if (Number.parseFloat(chain.balance) === 0) return null;
-                        return (
-                          <Fragment key={chain.chain.id}>
-                            <div className="flex items-center justify-between px-2 py-1 rounded-md">
-                              <div className="flex items-center gap-2">
-                                <div className="relative h-6 w-6">
-                                  <img
-                                    src={chain?.chain?.logo}
-                                    alt={chain.chain.name}
-                                    sizes="100%"
-                                    className="rounded-full"
-                                    loading="lazy"
-                                    decoding="async"
-                                    width="24"
-                                    height="24"
-                                  />
-                                </div>
-                                <span className="text-sm sm:block hidden">
-                                  {SHORT_CHAIN_NAME[chain.chain.id]}
-                                </span>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium">
-                                  {chain.balance}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  ${chain.balanceInFiat.toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
-                          </Fragment>
-                        );
-                      })}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              </Link>
             </div>
-          </div>
-        </Link>
+          </Select>
+        </div>
+
+        {/* Amount Input */}
+        <div className="flex flex-col gap-y-2 pb-2 w-full">
+          <Link href={"/docs/components/fast-bridge"} className="w-full">
+            <div className="w-full flex sm:flex-row flex-col border border-border rounded-lg gap-y-2">
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={"100"}
+                placeholder="Enter Amount"
+                className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
+              />
+              <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
+                <p className="text-base font-semibold min-w-max">200 USDC</p>
+
+                <Button size={"sm"} variant={"ghost"} className="px-0">
+                  Max
+                </Button>
+              </div>
+            </div>
+          </Link>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="balance-breakdown">
+              <AccordionTrigger
+                className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"
+                hideChevron={false}
+              >
+                View Assets
+              </AccordionTrigger>
+              <AccordionContent className="pb-0">
+                <div className="space-y-3 py-2">
+                  {MOCK_BALANCE?.breakdown.map((chain) => {
+                    if (Number.parseFloat(chain.balance) === 0) return null;
+                    return (
+                      <Fragment key={chain.chain.id}>
+                        <div className="flex items-center justify-between px-2 py-1 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <div className="relative h-6 w-6">
+                              <img
+                                src={chain?.chain?.logo}
+                                alt={chain.chain.name}
+                                sizes="100%"
+                                className="rounded-full"
+                                loading="lazy"
+                                decoding="async"
+                                width="24"
+                                height="24"
+                              />
+                            </div>
+                            <span className="text-sm sm:block hidden">
+                              {SHORT_CHAIN_NAME[chain.chain.id]}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {chain.balance}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              ${chain.balanceInFiat.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
 
         {/* Recipient Address */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center w-full justify-between">
-          <p className="font-semibold">Recipient Address</p>
-          <div className="flex items-center gap-x-3 ">
+          <p className="font-semibold w-full">Recipient Address</p>
+          <div className="flex items-center gap-x-3 w-full">
             <p className="font-semibold">{"0x12312...456789"}</p>
 
             <Button variant={"ghost"} size={"icon"} className="px-0 size-6">
@@ -217,7 +222,6 @@ export default function MockBridgeUI() {
             </Button>
           </div>
         </div>
-
         {/* Bridge Button */}
         <Link href={"/docs/components/fast-bridge"}>
           <Button className="w-full">Bridge</Button>

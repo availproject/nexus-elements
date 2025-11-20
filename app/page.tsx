@@ -13,19 +13,13 @@ export default function Home() {
         {/* Hero Section */}
         <section className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-8 text-foreground">
-              Componenets <br />
-              you need to
-              <br />
-              scale your dapps
+            <h1 className="text-7xl  font-bold tracking-tighter mb-8 text-foreground">
+              Plug n Play components <br /> to{" "}
+              <span className="text-chart-1">10x</span> your UX
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
-              Used by some of the world&apos;s largest protocols, Nexus enables
-              you to create{" "}
-              <span className="text-foreground font-medium">
-                high-quality financial applications
-              </span>{" "}
-              with the power of React components.
+              Ready-made React components for almost any use case. Use as is or
+              customise and go to market fast
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href={"/docs/get-started"}>
@@ -46,7 +40,7 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            <div className="mt-12 flex items-center justify-center gap-2 text-sm text-muted-foreground font-mono">
+            <div className="mt-12 flex items-center justify-center gap-2 text-sm text-foreground font-mono border border-border rounded-md p-4 w-full overflow-x-scroll lg:w-max bg-background mx-auto">
               <span>~</span>
               <span>
                 npx shadcn@latest add
@@ -69,7 +63,7 @@ export default function Home() {
               <div className="w-16" /> {/* Spacer for centering */}
             </div>
             <div className="grid lg:grid-cols-2">
-              <div className="p-12 border-r border-border bg-card flex items-center justify-center min-h-[500px]">
+              <div className="p-3 md:p-12 border-r border-border bg-card flex items-center justify-center min-h-[500px]">
                 <div className="w-full max-w-md">
                   <MockBridgeUI />
                 </div>
