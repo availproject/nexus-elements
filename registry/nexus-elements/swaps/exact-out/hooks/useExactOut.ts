@@ -78,10 +78,7 @@ const useExactOut = ({
     reset: resetSteps,
   } = useTransactionSteps<SwapStepType>();
   const swapCompleted = useMemo(
-    () =>
-      steps.some(
-        (s) => (s.step as SwapStepType)?.type === "SWAP_COMPLETE" && s.completed
-      ),
+    () => steps.some((s) => s.step?.type === "SWAP_COMPLETE" && s.completed),
     [steps]
   );
   const stopwatch = useStopwatch({
@@ -107,12 +104,13 @@ const useExactOut = ({
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
 
-      const amountWei = nexusSDK?.utils?.parseUnits?.(
+      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs.toAmount,
-        inputs.toToken.decimals
+        inputs.toToken.symbol,
+        inputs.toChainID
       );
       const swapInput: ExactOutSwapInput = {
-        toAmount: amountWei,
+        toAmount: amountBigInt,
         toChainId: inputs.toChainID,
         toTokenAddress: inputs.toToken.tokenAddress,
       };

@@ -11,7 +11,6 @@ import {
   type BridgeAndExecuteParams,
   type BridgeAndExecuteResult,
   type BridgeAndExecuteSimulationResult,
-  TOKEN_METADATA,
   NEXUS_EVENTS,
   type BridgeStepType,
   CHAIN_METADATA,
@@ -228,8 +227,11 @@ const useDeposit = ({
     setTxError(null);
     try {
       if (!nexusSDK) throw new Error("Nexus SDK not initialized");
-      const decimals = TOKEN_METADATA[token].decimals;
-      const amountBigInt = nexusSDK?.utils?.parseUnits(inputs.amount, decimals);
+      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
+        inputs.amount,
+        token,
+        inputs.chain
+      );
       const executeParams: Omit<ExecuteParams, "toChainId"> | undefined =
         executeBuilder
           ? executeBuilder(token, inputs.amount, inputs.chain, address)
@@ -301,8 +303,11 @@ const useDeposit = ({
     activeSimulationIdRef.current = requestId;
     setSimulating(true);
     try {
-      const decimals = TOKEN_METADATA[token].decimals;
-      const amountBigInt = nexusSDK?.utils?.parseUnits(amountToUse, decimals);
+      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
+        amountToUse,
+        token,
+        inputs.chain
+      );
       const executeParams: Omit<ExecuteParams, "toChainId"> | undefined =
         executeBuilder
           ? executeBuilder(token, amountToUse, inputs.chain, address)
