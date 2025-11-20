@@ -14,13 +14,14 @@ export default function Home() {
         <section className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-8 text-foreground">
-              Only thing you need to
+              Componenets <br />
+              you need to
               <br />
-              build with Nexus
+              scale your dapps
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
-              Used by some of the world's largest protocols, Nexus enables you
-              to create{" "}
+              Used by some of the world&apos;s largest protocols, Nexus enables
+              you to create{" "}
               <span className="text-foreground font-medium">
                 high-quality financial applications
               </span>{" "}
@@ -112,7 +113,7 @@ export function BridgeInterface() {
         <section className="container mx-auto px-6 py-32 border-t border-zinc-900 mt-32">
           <div className="mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              What's in Nexus?
+              What&apos;s in Nexus?
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl">
               Everything you need to build great financial products on the web.
@@ -151,7 +152,7 @@ export function BridgeInterface() {
                 title: "Production Tested",
                 desc: "Used in production by leading DeFi protocols handling millions in volume.",
               },
-            ].map((feature, i) => (
+            ].map((feature) => (
               <div
                 key={feature.desc}
                 className="group p-6 rounded-xl border border-border bg-card/20 hover:bg-card/40 transition-colors"

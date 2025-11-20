@@ -80,7 +80,7 @@ const useDeposit = ({
   executeConfig,
   allowance,
 }: UseDepositProps) => {
-  const { fetchUnifiedBalance, getFiatValue } = useNexus();
+  const { fetchBridgableBalance, getFiatValue } = useNexus();
   const handleNexusError = useNexusError();
 
   const allSourceIds = useMemo(
@@ -354,7 +354,7 @@ const useDeposit = ({
   const onSuccess = async () => {
     stopwatch.stop();
     dispatch({ type: "setStatus", payload: "success" });
-    await fetchUnifiedBalance();
+    await fetchBridgableBalance();
   };
 
   const resetState = () => {

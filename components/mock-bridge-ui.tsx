@@ -164,7 +164,7 @@ export default function MockBridgeUI() {
                   </AccordionTrigger>
                   <AccordionContent className="pb-0">
                     <div className="space-y-3 py-2">
-                      {MOCK_BALANCE?.breakdown.map((chain, index) => {
+                      {MOCK_BALANCE?.breakdown.map((chain) => {
                         if (Number.parseFloat(chain.balance) === 0) return null;
                         return (
                           <Fragment key={chain.chain.id}>
