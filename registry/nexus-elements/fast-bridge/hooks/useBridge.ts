@@ -168,42 +168,12 @@ const useBridge = ({
         inputs?.token,
         inputs?.chain
       );
-      if (inputs?.recipient !== connectedAddress) {
-        // Transfer
-        const transferTxn = await nexusSDK.bridgeAndTransfer(
-          {
-            token: inputs?.token,
-            amount: formattedAmount,
-            toChainId: inputs?.chain,
-            recipient: inputs?.recipient,
-          },
-          {
-            onEvent: (event) => {
-              if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-                const list = Array.isArray(event.args) ? event.args : [];
-                onStepsList(list);
-              }
-              if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
-                onStepComplete(event.args);
-              }
-            },
-          }
-        );
-        if (!transferTxn) {
-          throw new Error("Transaction rejected by user");
-        }
-        if (transferTxn) {
-          setLastExplorerUrl(transferTxn.explorerUrl);
-          await onSuccess();
-        }
-        return;
-      }
-      // Bridge
       const bridgeTxn = await nexusSDK.bridge(
         {
           token: inputs?.token,
           amount: formattedAmount,
           toChainId: inputs?.chain,
+          recipient: inputs?.recipient ?? connectedAddress,
         },
         {
           onEvent: (event) => {
