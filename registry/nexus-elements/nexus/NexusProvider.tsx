@@ -164,7 +164,7 @@ const NexusProvider = ({
         console.log("Nexus already initialized");
         return;
       }
-      if (!provider || typeof (provider as any).request !== "function") {
+      if (!provider || typeof provider.request !== "function") {
         throw new Error("Invalid EIP-1193 provider");
       }
       await initializeNexus(provider);

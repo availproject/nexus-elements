@@ -133,7 +133,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
             <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
               <p className="text-xs font-medium mb-2">Chains</p>
               <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
-                {chains.map((c: any) => (
+                {chains.map((c) => (
                   <Button
                     key={c.id}
                     variant={"ghost"}

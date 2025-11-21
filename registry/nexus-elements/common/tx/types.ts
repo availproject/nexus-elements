@@ -1,3 +1,5 @@
+import { BridgeStepType, SwapStepType } from "@avail-project/nexus-core";
+
 export type TransactionStatus =
   | "idle"
   | "preview"
@@ -15,7 +17,7 @@ export type GenericStep<TStep> = {
 /**
  * Normalizes a step to a stable key. Prefers typeID, then type, otherwise JSON.
  */
-export function getStepKey(step: any): string {
+export function getStepKey(step: SwapStepType | BridgeStepType): string {
   if (!step) return "";
   if (typeof step.typeID === "string" && step.typeID.length > 0) {
     return step.typeID;
