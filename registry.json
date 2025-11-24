@@ -701,6 +701,7 @@
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
+        "@radix-ui/react-tabs",
         "@radix-ui/react-popover",
         "class-variance-authority",
         "clsx",
@@ -713,6 +714,7 @@
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/tabs.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json"
       ],

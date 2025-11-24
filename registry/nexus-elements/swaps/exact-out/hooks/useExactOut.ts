@@ -104,10 +104,9 @@ const useExactOut = ({
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
 
-      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
+      const amountBigInt = nexusSDK.utils.parseUnits(
         inputs.toAmount,
-        inputs.toToken.symbol,
-        inputs.toChainID
+        inputs.toToken.decimals
       );
       const swapInput: ExactOutSwapInput = {
         toAmount: amountBigInt,
@@ -166,6 +165,7 @@ const useExactOut = ({
     setDestinationExplorerUrl("");
     setLoading(false);
     stopwatch.stop();
+    stopwatch.reset();
   };
 
   useEffect(() => {
