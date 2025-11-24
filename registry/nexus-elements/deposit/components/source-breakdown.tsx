@@ -20,7 +20,7 @@ interface SourceBreakdownProps {
   tokenSymbol: SUPPORTED_TOKENS;
   isLoading?: boolean;
   chain: SUPPORTED_CHAINS_IDS;
-  unifiedBalance?: UserAsset;
+  bridgableBalance?: UserAsset;
   requiredAmount?: string;
 }
 
@@ -37,16 +37,16 @@ const SourceBreakdown = ({
   tokenSymbol,
   isLoading = false,
   chain,
-  unifiedBalance,
+  bridgableBalance,
   requiredAmount,
 }: SourceBreakdownProps) => {
   const { nexusSDK } = useNexus();
   const fundsOnDestination = useMemo(() => {
     return Number.parseFloat(
-      unifiedBalance?.breakdown?.find((b) => b.chain?.id === chain)?.balance ??
-        "0"
+      bridgableBalance?.breakdown?.find((b) => b.chain?.id === chain)
+        ?.balance ?? "0"
     );
-  }, [unifiedBalance, chain]);
+  }, [bridgableBalance, chain]);
 
   const amountSpend = useMemo(() => {
     const amountToFormat = intent

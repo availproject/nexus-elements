@@ -40,7 +40,7 @@ interface UseBridgeProps {
   nexusSDK: NexusSDK | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  bridgableBalance: UserAsset[] | null;
   prefill?: {
     token: string;
     chainId: number;
@@ -89,7 +89,7 @@ const useBridge = ({
   connectedAddress,
   nexusSDK,
   intent,
-  unifiedBalance,
+  bridgableBalance,
   prefill,
   onComplete,
   onStart,
@@ -196,6 +196,9 @@ const useBridge = ({
       }
     } catch (error) {
       const { message } = handleNexusError(error);
+      intent.current?.deny();
+      intent.current = null;
+      allowance.current = null;
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
@@ -215,9 +218,9 @@ const useBridge = ({
     await fetchBalance();
   };
 
-  const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.find((bal) => bal?.symbol === inputs?.token);
-  }, [unifiedBalance, inputs?.token]);
+  const filteredBridgableBalance = useMemo(() => {
+    return bridgableBalance?.find((bal) => bal?.symbol === inputs?.token);
+  }, [bridgableBalance, inputs?.token]);
 
   const refreshIntent = async () => {
     setRefreshing(true);
@@ -296,7 +299,7 @@ const useBridge = ({
     txError,
     handleTransaction,
     reset,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     startTransaction,
     commitAmount,
     lastExplorerUrl,

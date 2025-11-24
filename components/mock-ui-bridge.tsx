@@ -143,6 +143,7 @@ export default function MockBridgeUI() {
                   type="text"
                   inputMode="decimal"
                   value={"100"}
+                  onChange={() => {}}
                   placeholder="Enter Amount"
                   className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
                 />
