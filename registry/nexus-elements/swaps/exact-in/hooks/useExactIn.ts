@@ -167,7 +167,6 @@ const useExactIn = ({
       swapIntent.current = null;
       await fetchBalance();
     } catch (error) {
-      throw error;
       const { message } = handleNexusError(error);
       setTxError(message);
       onError?.(message);
