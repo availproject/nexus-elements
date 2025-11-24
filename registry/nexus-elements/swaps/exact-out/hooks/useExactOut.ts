@@ -165,6 +165,7 @@ const useExactOut = ({
     setDestinationExplorerUrl("");
     setLoading(false);
     stopwatch.stop();
+    stopwatch.reset();
   };
 
   useEffect(() => {

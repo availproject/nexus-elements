@@ -197,6 +197,7 @@ const useExactIn = ({
     setDestinationExplorerUrl("");
     setLoading(false);
     stopwatch.stop();
+    stopwatch.reset();
   };
 
   useEffect(() => {
