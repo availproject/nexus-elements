@@ -24,7 +24,7 @@ export type TransactionStatus =
   | "idle"
   | "set-source-assets"
   | "set-amount"
-  | "simulating"
+  | "view-breakdown"
   | "swapping"
   | "depositing"
   | "success"
@@ -47,7 +47,6 @@ type SwapDepositState = {
     destination: string | null;
     depositUrl: string | null;
   };
-  isDialogOpen: boolean;
   simulationLoading: boolean;
 };
 
@@ -80,7 +79,6 @@ type Action =
   | { type: "resetInputs" }
   | { type: "setStatus"; payload: TransactionStatus }
   | { type: "setError"; payload: string | null }
-  | { type: "setDialogOpen"; payload: boolean }
   | { type: "setSimulationLoading"; payload: boolean }
   | {
       type: "setExplorerUrls";
@@ -102,7 +100,6 @@ const initialState: SwapDepositState = {
     destination: null,
     depositUrl: null,
   },
-  isDialogOpen: false,
   simulationLoading: false,
 };
 
@@ -117,12 +114,35 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
         merged.toChainId !== undefined &&
         merged.toTokenAddress !== undefined
       ) {
-        return { ...state, inputs: merged as SwapInputs };
+        // Automatic status transitions based on input state
+        let newStatus = state.status;
+        const hasSourceAssets =
+          merged.from !== undefined && merged.from.length > 0;
+        const hasAmount = merged.from?.[0]?.amount !== undefined;
+
+        if (!hasSourceAssets) {
+          newStatus = "idle";
+        } else if (hasSourceAssets && !hasAmount) {
+          newStatus = "set-source-assets";
+        } else if (hasSourceAssets && hasAmount) {
+          newStatus = "set-amount";
+        }
+
+        return {
+          ...state,
+          inputs: merged as SwapInputs,
+          status: newStatus,
+          error: null, // Clear error when inputs change
+        };
       }
       return state;
     }
     case "setSimulation": {
-      return { ...state, simulation: action.payload };
+      return {
+        ...state,
+        simulation: action.payload,
+        status: "view-breakdown", // Transition to view-breakdown when simulation is ready
+      };
     }
     case "resetInputs":
       return {
@@ -138,8 +158,6 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
         ...state,
         explorerUrls: { ...state.explorerUrls, ...action.payload },
       };
-    case "setDialogOpen":
-      return { ...state, isDialogOpen: action.payload };
     case "setSimulationLoading":
       return { ...state, simulationLoading: action.payload };
     case "reset":
@@ -179,14 +197,16 @@ const useSwapDeposit = ({
     [steps]
   );
   const stopwatch = useStopwatch({
-    running: state.isDialogOpen && !swapCompleted,
+    running:
+      (state.status === "swapping" || state.status === "depositing") &&
+      !swapCompleted,
     intervalMs: 100,
   });
 
   const handleSwap = async () => {
     if (!nexusSDK || !state.inputs || loading) return;
     onStart?.();
-    dispatch({ type: "setStatus", payload: "simulating" });
+    dispatch({ type: "setStatus", payload: "swapping" });
     seed(SWAP_EXPECTED_STEPS);
     try {
       const swapResult = await nexusSDK?.swapWithExactIn(state.inputs, {
@@ -281,14 +301,23 @@ const useSwapDeposit = ({
   };
 
   const simulateDeposit = async () => {
-    if (!nexusSDK || !state.inputs || loading || !address) return;
+    if (
+      !nexusSDK ||
+      !state.inputs ||
+      loading ||
+      !address ||
+      !swapIntent.current
+    )
+      return;
     onStart?.();
-    dispatch({ type: "setStatus", payload: "simulating" });
     try {
       const executeParams = executeDeposit(
         state.inputs.toTokenSymbol,
         state.inputs.toTokenAddress,
-        state.inputs.from[0].amount,
+        nexusSDK.utils.parseUnits(
+          swapIntent.current?.intent.destination.amount,
+          swapIntent.current?.intent?.destination?.token?.decimals
+        ),
         state.inputs.toChainId,
         address
       );
@@ -304,13 +333,17 @@ const useSwapDeposit = ({
         type: "setSimulation",
         payload: {
           executeSimulation: depositResult,
-          swapIntent: swapIntent.current!,
+          swapIntent: swapIntent.current,
         },
       });
     } catch (error) {
       const { message } = handleNexusError(error);
       dispatch({ type: "setError", payload: message });
+      dispatch({ type: "setStatus", payload: "error" });
       onError?.(message);
+    } finally {
+      dispatch({ type: "setSimulationLoading", payload: false });
+      // Status is set to "view-breakdown" via setSimulation action in reducer
     }
   };
 
@@ -325,15 +358,11 @@ const useSwapDeposit = ({
   const refreshSimulation = async () => {
     try {
       dispatch({ type: "setSimulationLoading", payload: true });
-      if (state.status !== "simulating") {
-        dispatch({ type: "setStatus", payload: "simulating" });
-      }
-
       const updated = await swapIntent.current?.refresh();
       if (updated) {
         swapIntent.current!.intent = updated;
       }
-      simulateDeposit();
+      await simulateDeposit();
     } catch (e) {
       console.error(e);
     } finally {
@@ -377,10 +406,16 @@ const useSwapDeposit = ({
       gasUsd,
       gasFormatted,
     };
-  }, [nexusSDK, getFiatValue]);
+  }, [nexusSDK, getFiatValue, state.simulation, state.inputs]);
 
   usePolling(
-    Boolean(swapIntent.current) && !state.isDialogOpen,
+    Boolean(swapIntent.current) &&
+      !(
+        state.status === "swapping" ||
+        state.status === "depositing" ||
+        state.status === "error" ||
+        state.status === "success"
+      ),
     async () => {
       await refreshSimulation();
     },
@@ -390,6 +425,10 @@ const useSwapDeposit = ({
   return {
     loading,
     inputs: state.inputs,
+    txError: state.error,
+    setTxError: (error: string | null) => {
+      dispatch({ type: "setError", payload: error });
+    },
     setInputs,
     timer: stopwatch.seconds,
     explorerUrls: state.explorerUrls,
