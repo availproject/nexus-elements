@@ -3,9 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeProvider } from "next-themes";
 import Topbar from "@/components/layout/top-bar";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 const Web3Provider = dynamic(() => import("@/providers/Web3Provider"), {
   loading: () => <Skeleton className="w-full h-full" />,
 });

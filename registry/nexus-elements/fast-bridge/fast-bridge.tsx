@@ -26,6 +26,7 @@ import {
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
+import ViewHistory from "../view-history/view-history";
 
 interface FastBridgeProps {
   connectedAddress: Address;
@@ -89,7 +90,8 @@ const FastBridge: FC<FastBridgeProps> = ({
   });
   return (
     <Card className="w-full max-w-xl">
-      <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
+      <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6 relative">
+        <ViewHistory className="absolute -top-2 right-3" />
         <ChainSelect
           selectedChain={inputs?.chain}
           handleSelect={(chain) =>
@@ -131,12 +133,12 @@ const FastBridge: FC<FastBridgeProps> = ({
             />
 
             <div className="w-full flex items-start justify-between gap-x-4">
-              <p className="text-base font-semibold">You receive</p>
+              <p className="text-base font-light">You receive</p>
               <div className="flex flex-col gap-y-1 min-w-fit">
                 {refreshing ? (
                   <Skeleton className="h-5 w-28" />
                 ) : (
-                  <p className="text-base font-semibold text-right">
+                  <p className="text-base font-light text-right">
                     {`${
                       connectedAddress === inputs?.recipient
                         ? intent?.current?.intent?.destination?.amount
@@ -147,7 +149,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                 {refreshing ? (
                   <Skeleton className="h-4 w-36" />
                 ) : (
-                  <p className="text-sm font-medium text-right">
+                  <p className="text-sm font-light text-right">
                     on {intent?.current?.intent?.destination?.chainName}
                   </p>
                 )}

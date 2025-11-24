@@ -88,13 +88,13 @@ const AmountInput: FC<AmountInputProps> = ({
               onCommit?.(amount ?? "");
             }
           }}
-          className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
+          className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3  h-12!"
           aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
           disabled={disabled || loading}
         />
         <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
           {bridgableBalance && (
-            <p className="text-base font-semibold min-w-max">
+            <p className="text-base font-medium min-w-max">
               {nexusSDK?.utils?.formatTokenBalance(bridgableBalance?.balance, {
                 symbol: bridgableBalance?.symbol,
                 decimals: bridgableBalance?.decimals,
@@ -108,24 +108,24 @@ const AmountInput: FC<AmountInputProps> = ({
             size={"sm"}
             variant={"ghost"}
             onClick={onMaxClick}
-            className="px-0"
+            className="px-0 font-medium"
             disabled={disabled}
           >
-            Max
+            MAX
           </Button>
         </div>
       </div>
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="balance-breakdown">
           <AccordionTrigger
-            className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"
+            className="w-fit justify-end items-center py-0 mt-2 gap-x-0.5 cursor-pointer text-sm font-normal"
             hideChevron={false}
           >
-            View Assets
+            View Balance Breakdown
           </AccordionTrigger>
-          <AccordionContent className="pb-0">
-            <div className="space-y-3 py-2">
-              {bridgableBalance?.breakdown.map((chain, index) => {
+          <AccordionContent className="pb-0 bg-muted rounded-lg mt-4">
+            <div className="space-y-1 py-2">
+              {bridgableBalance?.breakdown.map((chain) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 return (
                   <Fragment key={chain.chain.id}>
@@ -139,25 +139,20 @@ const AmountInput: FC<AmountInputProps> = ({
                             className="rounded-full"
                             loading="lazy"
                             decoding="async"
-                            width="24"
-                            height="24"
+                            width="20"
+                            height="20"
                           />
                         </div>
-                        <span className="text-sm sm:block hidden">
+                        <span className="text-sm font-light sm:block hidden">
                           {SHORT_CHAIN_NAME[chain.chain.id]}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">
-                          {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
-                            symbol: bridgableBalance?.symbol,
-                            decimals: bridgableBalance?.decimals,
-                          })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          ${chain.balanceInFiat.toFixed(2)}
-                        </p>
-                      </div>
+                      <p className="text-sm font-light text-right">
+                        {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
+                          symbol: bridgableBalance?.symbol,
+                          decimals: bridgableBalance?.decimals,
+                        })}
+                      </p>
                     </div>
                   </Fragment>
                 );

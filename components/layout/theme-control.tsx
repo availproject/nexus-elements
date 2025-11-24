@@ -13,7 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/registry/nexus-elements/ui/popover";
-import { Button } from "../ui/button";
+import { Button } from "@/registry/nexus-elements/ui/button";
 
 type ThemeControlProps = {
   theme: string;

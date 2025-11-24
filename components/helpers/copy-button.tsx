@@ -3,7 +3,11 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/registry/nexus-elements/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../registry/nexus-elements/ui/tooltip";
 import { Check, Copy } from "lucide-react";
 
 export function CopyButton({

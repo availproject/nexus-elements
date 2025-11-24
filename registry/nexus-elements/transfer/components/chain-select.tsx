@@ -45,9 +45,12 @@ const ChainSelect: FC<ChainSelectProps> = ({
         }
       }}
     >
-      <div className="flex flex-col items-start gap-y-1 w-full">
+      <div className="flex flex-col items-start gap-y-3 w-full">
         {label && <Label className="text-sm font-semibold">{label}</Label>}
-        <SelectTrigger disabled={disabled} className=" w-full">
+        <SelectTrigger
+          disabled={disabled}
+          className="h-12! w-full text-base font-light"
+        >
           <SelectValue>
             {selectedChainData && (
               <div

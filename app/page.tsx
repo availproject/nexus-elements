@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/registry/nexus-elements/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
 import MockBridgeUI from "@/components/mock-ui-bridge";
 

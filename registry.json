@@ -16,6 +16,7 @@
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
         "class-variance-authority",
         "clsx",
         "lucide-react",
@@ -30,6 +31,7 @@
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/select.json",
         "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json"
       ],
@@ -37,6 +39,11 @@
         {
           "path": "registry/nexus-elements/fast-bridge/fast-bridge.tsx",
           "target": "components/fast-bridge/fast-bridge.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/view-history.tsx",
+          "target": "components/view-history/view-history.tsx",
           "type": "registry:component"
         },
         {
@@ -158,6 +165,7 @@
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
         "class-variance-authority",
         "clsx",
         "lucide-react",
@@ -172,6 +180,7 @@
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/select.json",
         "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json"
       ],
@@ -179,6 +188,11 @@
         {
           "path": "registry/nexus-elements/transfer/transfer.tsx",
           "target": "components/transfer/transfer.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/view-history.tsx",
+          "target": "components/view-history/view-history.tsx",
           "type": "registry:component"
         },
         {
@@ -383,6 +397,22 @@
       ]
     },
     {
+      "name": "badge",
+      "type": "registry:component",
+      "title": "Badge",
+      "description": "UI primitive: Badge",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/badge.tsx",
+          "target": "components/ui/badge.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "label",
       "type": "registry:component",
       "title": "Label",
@@ -410,6 +440,23 @@
         {
           "path": "registry/nexus-elements/ui/select.tsx",
           "target": "components/ui/select.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:component",
+      "title": "Tooltip",
+      "description": "UI primitive: Tooltip",
+      "dependencies": ["@radix-ui/react-tooltip"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/tooltip.tsx",
+          "target": "components/ui/tooltip.tsx",
           "type": "registry:component"
         }
       ]
@@ -536,6 +583,39 @@
       ]
     },
     {
+      "name": "view-history",
+      "type": "registry:component",
+      "title": "View History",
+      "description": "A simple component built with Nexus to display view history",
+      "dependencies": [
+        "lucide-react",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-slot"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/card.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/view-history/view-history.tsx",
+          "target": "components/view-history/view-history.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
+          "target": "components/view-history/hooks/useViewHistory.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "deposit",
       "type": "registry:component",
       "title": "Deposit",
@@ -548,7 +628,8 @@
         "@radix-ui/react-label",
         "@radix-ui/react-popover",
         "@radix-ui/react-checkbox",
-        "@radix-ui/react-slot"
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip"
       ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/accordion.json",
@@ -558,6 +639,7 @@
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json",
         "https://elements.nexus.availproject.org/r/tabs.json"
@@ -716,7 +798,8 @@
         "https://elements.nexus.availproject.org/r/select.json",
         "https://elements.nexus.availproject.org/r/tabs.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json"
       ],
       "files": [
         {
