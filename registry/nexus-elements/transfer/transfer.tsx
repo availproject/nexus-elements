@@ -45,7 +45,14 @@ const FastTransfer: FC<FastTransferProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, intent, unifiedBalance, allowance, network } = useNexus();
+  const {
+    nexusSDK,
+    intent,
+    bridgableBalance,
+    fetchBridgableBalance,
+    allowance,
+    network,
+  } = useNexus();
 
   const {
     inputs,
@@ -58,7 +65,7 @@ const FastTransfer: FC<FastTransferProps> = ({
     setTxError,
     handleTransaction,
     reset,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     startTransaction,
     setIsDialogOpen,
     commitAmount,
@@ -70,11 +77,12 @@ const FastTransfer: FC<FastTransferProps> = ({
     network: network ?? "mainnet",
     nexusSDK,
     intent,
-    unifiedBalance,
+    bridgableBalance,
     onComplete,
     onStart,
     onError,
     allowance,
+    fetchBalance: fetchBridgableBalance,
   });
   return (
     <Card className="w-full max-w-xl">
@@ -99,7 +107,7 @@ const FastTransfer: FC<FastTransferProps> = ({
         <AmountInput
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
-          unifiedBalance={filteredUnifiedBalance}
+          bridgableBalance={filteredBridgableBalance}
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
@@ -115,10 +123,10 @@ const FastTransfer: FC<FastTransferProps> = ({
           <>
             <SourceBreakdown
               intent={intent?.current?.intent}
-              tokenSymbol={filteredUnifiedBalance?.symbol as SUPPORTED_TOKENS}
+              tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
               chain={inputs?.chain}
-              unifiedBalance={filteredUnifiedBalance}
+              bridgableBalance={filteredBridgableBalance}
               requiredAmount={inputs?.amount}
             />
             <div className="w-full flex items-start justify-between gap-x-4">
@@ -128,7 +136,7 @@ const FastTransfer: FC<FastTransferProps> = ({
                   <Skeleton className="h-5 w-28" />
                 ) : (
                   <p className="text-base font-semibold text-right">
-                    {inputs?.amount} {filteredUnifiedBalance?.symbol}
+                    {inputs?.amount} {filteredBridgableBalance?.symbol}
                   </p>
                 )}
                 {refreshing ? (

@@ -24,7 +24,8 @@ import { useAccountEffect } from "wagmi";
 
 interface NexusContextType {
   nexusSDK: NexusSDK | null;
-  unifiedBalance: UserAsset[] | null;
+  bridgableBalance: UserAsset[] | null;
+  swapBalance: UserAsset[] | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
@@ -34,7 +35,8 @@ interface NexusContextType {
   network?: NexusNetwork;
   loading: boolean;
   handleInit: (provider: EthereumProvider) => Promise<void>;
-  fetchUnifiedBalance: () => Promise<void>;
+  fetchBridgableBalance: () => Promise<void>;
+  fetchSwapBalance: () => Promise<void>;
   getFiatValue: (amount: number, token: string) => number;
   initializeNexus: (provider: EthereumProvider) => Promise<void>;
   deinitializeNexus: () => Promise<void>;
@@ -66,7 +68,8 @@ const NexusProvider = ({
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
     null
   );
-  const unifiedBalance = useRef<UserAsset[] | null>(null);
+  const bridgableBalance = useRef<UserAsset[] | null>(null);
+  const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
 
   const intent = useRef<OnIntentHookData | null>(null);
@@ -89,13 +92,13 @@ const NexusProvider = ({
       await sdk.initialize(provider);
       setNexusSDK(sdk);
       initChainsAndTokens();
-      const [unifiedBalanceResult, rates] = await Promise.allSettled([
-        sdk?.getUnifiedBalances(true),
+      const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
+        sdk?.getBalancesForBridge(),
         sdk?.utils?.getCoinbaseRates(),
       ]);
 
-      if (unifiedBalanceResult.status === "fulfilled") {
-        unifiedBalance.current = unifiedBalanceResult.value;
+      if (bridgeAbleBalanceResult.status === "fulfilled") {
+        bridgableBalance.current = bridgeAbleBalanceResult.value;
       }
 
       if (rates?.status === "fulfilled") {
@@ -130,7 +133,8 @@ const NexusProvider = ({
       setNexusSDK(null);
       supportedChainsAndTokens.current = null;
       swapSupportedChainsAndTokens.current = null;
-      unifiedBalance.current = null;
+      bridgableBalance.current = null;
+      setSwapBalance(null);
       exchangeRate.current = null;
       intent.current = null;
       swapIntent.current = null;
@@ -173,12 +177,21 @@ const NexusProvider = ({
     [sdk, loading, initializeNexus]
   );
 
-  const fetchUnifiedBalance = async () => {
+  const fetchBridgableBalance = async () => {
     try {
-      const updatedBalance = await sdk?.getUnifiedBalances(true);
-      unifiedBalance.current = updatedBalance;
+      const updatedBalance = await sdk?.getBalancesForBridge();
+      bridgableBalance.current = updatedBalance;
     } catch (error) {
-      console.error("Error fetching unified balance:", error);
+      console.error("Error fetching bridgable balance:", error);
+    }
+  };
+
+  const fetchSwapBalance = async () => {
+    try {
+      const updatedBalance = await sdk?.getBalancesForSwap();
+      setSwapBalance(updatedBalance);
+    } catch (error) {
+      console.error("Error fetching swap balance:", error);
     }
   };
 
@@ -208,10 +221,12 @@ const NexusProvider = ({
       handleInit,
       supportedChainsAndTokens: supportedChainsAndTokens.current,
       swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
-      unifiedBalance: unifiedBalance.current,
+      bridgableBalance: bridgableBalance.current,
+      swapBalance: swapBalance,
       network: config?.network,
       loading,
-      fetchUnifiedBalance,
+      fetchBridgableBalance,
+      fetchSwapBalance,
       swapIntent,
       exchangeRate: exchangeRate.current,
       getFiatValue,
@@ -226,10 +241,12 @@ const NexusProvider = ({
       handleInit,
       supportedChainsAndTokens.current,
       swapSupportedChainsAndTokens.current,
-      unifiedBalance.current,
+      bridgableBalance.current,
+      swapBalance,
       config,
       loading,
-      fetchUnifiedBalance,
+      fetchBridgableBalance,
+      fetchSwapBalance,
       swapIntent.current,
       exchangeRate.current,
       getFiatValue,

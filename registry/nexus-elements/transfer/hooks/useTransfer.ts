@@ -19,7 +19,6 @@ import {
   type RefObject,
 } from "react";
 import { type Address, isAddress } from "viem";
-import { useNexus } from "../../nexus/NexusProvider";
 import {
   useStopwatch,
   usePolling,
@@ -40,7 +39,7 @@ interface UseTransferProps {
   nexusSDK: NexusSDK | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  bridgableBalance: UserAsset[] | null;
   prefill?: {
     token: string;
     chainId: number;
@@ -50,6 +49,7 @@ interface UseTransferProps {
   onComplete?: () => void;
   onStart?: () => void;
   onError?: (message: string) => void;
+  fetchBalance: () => Promise<void>;
 }
 
 interface TransferState {
@@ -86,14 +86,14 @@ const useTransfer = ({
   network,
   nexusSDK,
   intent,
-  unifiedBalance,
+  bridgableBalance,
   prefill,
   onComplete,
   onStart,
   onError,
   allowance,
+  fetchBalance,
 }: UseTransferProps) => {
-  const { fetchUnifiedBalance } = useNexus();
   const handleNexusError = useNexusError();
   const initialState: TransferState = {
     inputs: buildInitialInputs(network, prefill),
@@ -195,6 +195,9 @@ const useTransfer = ({
       }
     } catch (error) {
       const { message } = handleNexusError(error);
+      intent.current?.deny();
+      intent.current = null;
+      allowance.current = null;
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
@@ -211,12 +214,12 @@ const useTransfer = ({
     allowance.current = null;
     dispatch({ type: "resetInputs" });
     setRefreshing(false);
-    await fetchUnifiedBalance();
+    await fetchBalance();
   };
 
-  const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.find((bal) => bal?.symbol === inputs?.token);
-  }, [unifiedBalance, inputs?.token]);
+  const filteredBridgableBalance = useMemo(() => {
+    return bridgableBalance?.find((bal) => bal?.symbol === inputs?.token);
+  }, [bridgableBalance, inputs?.token]);
 
   const refreshIntent = async () => {
     setRefreshing(true);
@@ -295,7 +298,7 @@ const useTransfer = ({
     txError,
     handleTransaction,
     reset,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     startTransaction,
     commitAmount,
     lastExplorerUrl,

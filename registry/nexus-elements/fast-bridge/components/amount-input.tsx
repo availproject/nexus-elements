@@ -16,7 +16,7 @@ import { LoaderCircle } from "lucide-react";
 interface AmountInputProps {
   amount?: string;
   onChange: (value: string) => void;
-  unifiedBalance?: UserAsset;
+  bridgableBalance?: UserAsset;
   onCommit?: (value: string) => void;
   disabled?: boolean;
   inputs: FastBridgeState;
@@ -25,7 +25,7 @@ interface AmountInputProps {
 const AmountInput: FC<AmountInputProps> = ({
   amount,
   onChange,
-  unifiedBalance,
+  bridgableBalance,
   onCommit,
   disabled,
   inputs,
@@ -93,15 +93,15 @@ const AmountInput: FC<AmountInputProps> = ({
           disabled={disabled || loading}
         />
         <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
-          {unifiedBalance && (
+          {bridgableBalance && (
             <p className="text-base font-semibold min-w-max">
-              {nexusSDK?.utils?.formatTokenBalance(unifiedBalance?.balance, {
-                symbol: unifiedBalance?.symbol,
-                decimals: unifiedBalance?.decimals,
+              {nexusSDK?.utils?.formatTokenBalance(bridgableBalance?.balance, {
+                symbol: bridgableBalance?.symbol,
+                decimals: bridgableBalance?.decimals,
               })}
             </p>
           )}
-          {loading && !unifiedBalance && (
+          {loading && !bridgableBalance && (
             <LoaderCircle className="size-4 animate-spin" />
           )}
           <Button
@@ -125,7 +125,7 @@ const AmountInput: FC<AmountInputProps> = ({
           </AccordionTrigger>
           <AccordionContent className="pb-0">
             <div className="space-y-3 py-2">
-              {unifiedBalance?.breakdown.map((chain, index) => {
+              {bridgableBalance?.breakdown.map((chain, index) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 return (
                   <Fragment key={chain.chain.id}>
@@ -150,8 +150,8 @@ const AmountInput: FC<AmountInputProps> = ({
                       <div className="text-right">
                         <p className="text-sm font-medium">
                           {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
-                            symbol: unifiedBalance?.symbol,
-                            decimals: unifiedBalance?.decimals,
+                            symbol: bridgableBalance?.symbol,
+                            decimals: bridgableBalance?.decimals,
                           })}
                         </p>
                         <p className="text-xs text-muted-foreground">

@@ -46,7 +46,8 @@ interface UseDepositProps {
   nexusSDK: NexusSDK | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  bridgableBalance: UserAsset[] | null;
+  fetchBridgableBalance: () => Promise<void>;
   chainOptions?: { id: number; name: string; logo: string }[];
   address: Address;
   executeBuilder?: (
@@ -72,14 +73,15 @@ const useDeposit = ({
   chain,
   nexusSDK,
   intent,
-  unifiedBalance,
+  bridgableBalance,
   chainOptions,
   address,
   executeBuilder,
   executeConfig,
   allowance,
+  fetchBridgableBalance,
 }: UseDepositProps) => {
-  const { fetchUnifiedBalance, getFiatValue } = useNexus();
+  const { getFiatValue } = useNexus();
   const handleNexusError = useNexusError();
 
   const allSourceIds = useMemo(
@@ -138,9 +140,9 @@ const useDeposit = ({
   const simulationRequestIdRef = useRef(0);
   const activeSimulationIdRef = useRef<number | null>(null);
 
-  const filteredUnifiedBalance = useMemo(() => {
-    return unifiedBalance?.find((bal) => bal?.symbol === token);
-  }, [unifiedBalance, token]);
+  const filteredBridgableBalance = useMemo(() => {
+    return bridgableBalance?.find((bal) => bal?.symbol === token);
+  }, [bridgableBalance, token]);
 
   const allCompleted = useMemo(
     () => (steps?.length ?? 0) > 0 && steps.every((s) => s.completed),
@@ -272,6 +274,9 @@ const useDeposit = ({
       await onSuccess();
     } catch (error) {
       const { message } = handleNexusError(error);
+      intent.current?.deny();
+      intent.current = null;
+      allowance.current = null;
       setTxError(message);
       setIsDialogOpen(false);
       dispatch({ type: "setStatus", payload: "error" });
@@ -292,7 +297,7 @@ const useDeposit = ({
     }
     if (
       Number.parseFloat(amountToUse) >
-      Number.parseFloat(filteredUnifiedBalance?.balance ?? "0")
+      Number.parseFloat(filteredBridgableBalance?.balance ?? "0")
     ) {
       activeSimulationIdRef.current = null;
       setTxError("Insufficient balance");
@@ -359,7 +364,7 @@ const useDeposit = ({
   const onSuccess = async () => {
     stopwatch.stop();
     dispatch({ type: "setStatus", payload: "success" });
-    await fetchUnifiedBalance();
+    await fetchBridgableBalance();
   };
 
   const resetState = () => {
@@ -435,7 +440,7 @@ const useDeposit = ({
     txError,
     setTxError,
     timer: stopwatch.seconds,
-    filteredUnifiedBalance,
+    filteredBridgableBalance,
     simulation,
     lastResult,
     steps,

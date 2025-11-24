@@ -36,7 +36,7 @@ interface UseExactOutProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  unifiedBalance: UserAsset[] | null;
+  swapBalance: UserAsset[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
@@ -51,7 +51,7 @@ interface UseExactOutProps {
 const useExactOut = ({
   nexusSDK,
   swapIntent,
-  unifiedBalance,
+  swapBalance,
   fetchBalance,
   onComplete,
   onStart,
@@ -181,7 +181,7 @@ const useExactOut = ({
         }));
       }
     }
-  }, [prefill, unifiedBalance, inputs.toChainID, inputs.toToken]);
+  }, [prefill, swapBalance, inputs.toChainID, inputs.toToken]);
 
   useEffect(() => {
     if (!swapIntent || isDialogOpen) return;
