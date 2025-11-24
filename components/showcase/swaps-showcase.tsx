@@ -16,7 +16,7 @@ const SwapsShowcase = () => {
       toggle={true}
       toggleLabel="Swap with Exact In"
     >
-      <Swaps exactIn={swapAs === "exactIn"} />
+      <Swaps />
     </ShowcaseWrapper>
   );
 };
