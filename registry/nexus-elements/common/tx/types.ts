@@ -1,5 +1,3 @@
-import { BridgeStepType, SwapStepType } from "@avail-project/nexus-core";
-
 export type TransactionStatus =
   | "idle"
   | "preview"
