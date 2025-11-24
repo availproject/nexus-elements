@@ -62,10 +62,10 @@ const ShowcaseWrapper = ({
   return (
     <div className="w-full flex flex-col gap-y-4">
       <div className="flex items-center justify-between w-full">
-        <NetworkToggle
-          currentNetwork={urlNetwork ?? "mainnet"}
-          disabled={disabledTestnet.has(type)}
-        />
+        {!disabledTestnet.has(type) && (
+          <NetworkToggle currentNetwork={urlNetwork ?? "mainnet"} />
+        )}
+
         {resolvedToggle && (
           <Toggle
             variant={variant}

@@ -185,6 +185,7 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
       />
     );
   }
+
   return (
     <Tabs
       defaultValue="bridgeBalance"
