@@ -480,6 +480,9 @@ const useSwapDeposit = ({
       dispatch({ type: "setError", payload: message });
       dispatch({ type: "setStatus", payload: "error" });
       onError?.(message);
+    } finally {
+      dispatch({ type: "setSimulationLoading", payload: false });
+      // Status is set to "view-breakdown" via setSimulation action in reducer
     }
   };
 
@@ -494,15 +497,11 @@ const useSwapDeposit = ({
   const refreshSimulation = async () => {
     try {
       dispatch({ type: "setSimulationLoading", payload: true });
-      if (state.status !== "simulating") {
-        dispatch({ type: "setStatus", payload: "simulating" });
-      }
-
       const updated = await swapIntent.current?.refresh();
       if (updated) {
         swapIntent.current!.intent = updated;
       }
-      simulateDeposit();
+      await simulateDeposit();
     } catch (e) {
       console.error(e);
     } finally {
