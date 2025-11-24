@@ -35,7 +35,7 @@ export default function Home() {
               <span>~</span>
               <span>
                 npx shadcn@latest add
-                https://elements.nexus.availproject.org/r/fast-bridge.json
+                https://develop.elements.nexus.availproject.org//r/fast-bridge.json
               </span>
             </div>
           </div>
