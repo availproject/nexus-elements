@@ -35,7 +35,7 @@ pnpm dlx shadcn@latest add http://localhost:3000/r/fast-bridge.json
 ## Notes
 
 - The CLI will install the necessary UI primitives and utilities listed as `registryDependencies`.
-- If you prefer npm or yarn, replace the `pnpm dlx` command with the equivalent for your package manager.
+- If you prefer npm or yarn, replace the `pnpm dlx` with `npx` for example, command with the equivalent for your package manager.
 
 ## API updates (performance-focused, no new deps)
 
