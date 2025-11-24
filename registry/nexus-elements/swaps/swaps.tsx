@@ -31,8 +31,8 @@ const Swaps = ({
 }: SwapsProps) => {
   return (
     <Tabs className="w-full" defaultValue={"exact-in"}>
-      <TabsList className="w-full">
-        <TabsTrigger value="exact-in">
+      <TabsList>
+        <TabsTrigger value="exact-int">
           <p className="text-sm font-medium">Exact In</p>
         </TabsTrigger>
         <TabsTrigger value="exact-out">
