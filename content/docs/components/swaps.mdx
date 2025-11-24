@@ -50,8 +50,7 @@ npm install @avail-project/nexus-core@1.0.0-rc.3 @radix-ui/react-dialog @radix-u
 ## Usage (Exact In)
 
 ```tsx showLineNumbers
-<Swaps
-  exactIn
+<SwapExactIn
   onComplete={completeCurrent}
   onError={handleError}
   onStart={handleStart}
@@ -68,8 +67,7 @@ npm install @avail-project/nexus-core@1.0.0-rc.3 @radix-ui/react-dialog @radix-u
 ## Usage (Exact Out)
 
 ```tsx showLineNumbers
-<Swaps
-  exactIn={false}
+<SwapExactOut
   onComplete={completeCurrent}
   onError={handleError}
   onStart={handleStart}
@@ -91,7 +89,6 @@ The `Swaps` component provides cross-chain swaps in either exact-in or exact-out
 
 ```ts title="SwapsProps"
 interface SwapsProps {
-  exactIn?: boolean; // swap mode: exact-in (default: true) or exact-out
   onComplete?: (amount?: string) => void; // called when the swap completes
   onStart?: () => void; // called when the swap starts
   onError?: (message: string) => void; // called on error

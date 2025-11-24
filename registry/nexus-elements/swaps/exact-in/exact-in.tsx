@@ -149,28 +149,31 @@ const SwapExactIn: FC<SwapExactInProps> = ({
                 readOnly
               />
             </div>
-            <div className="w-full flex items-center gap-x-2 justify-between">
-              <Button
-                variant={"destructive"}
-                onClick={() => {
-                  swapIntent.current?.deny();
-                  swapIntent.current = null;
-                  reset();
-                }}
-                className="w-1/2"
-              >
-                Deny
-              </Button>
-              <Button
-                onClick={() => {
-                  swapIntent.current?.allow();
-                  setIsDialogOpen(true);
-                }}
-                className="w-1/2"
-              >
-                Accept
-              </Button>
-            </div>
+            {!isDialogOpen && (
+              <div className="w-full flex items-center gap-x-2 justify-between">
+                <Button
+                  variant={"destructive"}
+                  onClick={() => {
+                    swapIntent.current?.deny();
+                    swapIntent.current = null;
+                    reset();
+                  }}
+                  className="w-1/2"
+                >
+                  Deny
+                </Button>
+                <Button
+                  onClick={() => {
+                    swapIntent.current?.allow();
+                    setIsDialogOpen(true);
+                  }}
+                  className="w-1/2"
+                >
+                  Accept
+                </Button>
+              </div>
+            )}
+
             {swapIntent.current?.intent && (
               <SwapSourceBreakdown intent={swapIntent.current?.intent} />
             )}
