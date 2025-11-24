@@ -11,7 +11,6 @@ interface SwapSourceBreakdownProps {
 
 const SwapSourceBreakdown: React.FC<SwapSourceBreakdownProps> = ({
   intent,
-  isLoading = false,
 }) => {
   const { nexusSDK } = useNexus();
   if (!intent) return null;

@@ -99,7 +99,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
           <DialogHeader>
             <DialogTitle>Select destination asset</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 h-80 overflow-y-auto no-scrollbar">
+          <div className="grid grid-cols-2 gap-4">
             <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
               <p className="text-xs font-medium mb-2">Chains</p>
               <div className="flex flex-col gap-y-1">

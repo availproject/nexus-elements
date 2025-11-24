@@ -13,7 +13,7 @@ import {
 
 import {
   createContext,
-  RefObject,
+  type RefObject,
   useCallback,
   useContext,
   useMemo,
@@ -25,18 +25,18 @@ import { useAccountEffect } from "wagmi";
 interface NexusContextType {
   nexusSDK: NexusSDK | null;
   bridgableBalance: UserAsset[] | null;
-  swapBalances: UserAsset[] | null;
+  swapBalance: UserAsset[] | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   exchangeRate: Record<string, number> | null;
   supportedChainsAndTokens: SupportedChainsAndTokensResult | null;
-  swapSupportedChains: SupportedChainsResult | null;
+  swapSupportedChainsAndTokens: SupportedChainsResult | null;
   network?: NexusNetwork;
   loading: boolean;
   handleInit: (provider: EthereumProvider) => Promise<void>;
   fetchBridgableBalance: () => Promise<void>;
-  fetchSwapBalances: () => Promise<void>;
+  fetchSwapBalance: () => Promise<void>;
   getFiatValue: (amount: number, token: string) => number;
   initializeNexus: (provider: EthereumProvider) => Promise<void>;
   deinitializeNexus: () => Promise<void>;
@@ -53,31 +53,23 @@ type NexusProviderProps = {
   };
 };
 
-const defaultConfig: Required<NexusProviderProps["config"]> = {
-  network: "devnet",
-  debug: false,
-};
-
 const NexusProvider = ({
   children,
-  config = defaultConfig,
+  config = {
+    network: "mainnet",
+    debug: true,
+  },
 }: NexusProviderProps) => {
-  const stableConfig = useMemo(
-    () => ({ ...defaultConfig, ...config }),
-    [config?.network, config?.debug]
-  );
-
-  const sdkRef = useRef<NexusSDK | null>(null);
-  sdkRef.current ??= new NexusSDK(stableConfig);
-  const sdk = sdkRef.current;
-
+  const sdk = useMemo(() => new NexusSDK(config), [config]);
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
-  const swapSupportedChains = useRef<SupportedChainsResult | null>(null);
+  const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
+    null
+  );
   const bridgableBalance = useRef<UserAsset[] | null>(null);
-  const swapBalances = useRef<UserAsset[] | null>(null);
+  const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
 
   const intent = useRef<OnIntentHookData | null>(null);
@@ -90,7 +82,7 @@ const NexusProvider = ({
     );
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
-    swapSupportedChains.current = swapList ?? null;
+    swapSupportedChainsAndTokens.current = swapList ?? null;
   }, [sdk, config?.network]);
 
   const initializeNexus = async (provider: EthereumProvider) => {
@@ -100,13 +92,13 @@ const NexusProvider = ({
       await sdk.initialize(provider);
       setNexusSDK(sdk);
       initChainsAndTokens();
-      const [bridgableBalanceResult, rates] = await Promise.allSettled([
+      const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
         sdk?.getBalancesForBridge(),
         sdk?.utils?.getCoinbaseRates(),
       ]);
 
-      if (bridgableBalanceResult.status === "fulfilled") {
-        bridgableBalance.current = bridgableBalanceResult.value;
+      if (bridgeAbleBalanceResult.status === "fulfilled") {
+        bridgableBalance.current = bridgeAbleBalanceResult.value;
       }
 
       if (rates?.status === "fulfilled") {
@@ -136,12 +128,13 @@ const NexusProvider = ({
 
   const deinitializeNexus = async () => {
     try {
-      if (!sdk.isInitialized()) throw new Error("Nexus is not initialized");
-      await sdk.deinit();
+      if (!nexusSDK) throw new Error("Nexus is not initialized");
+      await nexusSDK?.deinit();
       setNexusSDK(null);
       supportedChainsAndTokens.current = null;
-      swapSupportedChains.current = null;
+      swapSupportedChainsAndTokens.current = null;
       bridgableBalance.current = null;
+      setSwapBalance(null);
       exchangeRate.current = null;
       intent.current = null;
       swapIntent.current = null;
@@ -175,7 +168,7 @@ const NexusProvider = ({
         console.log("Nexus already initialized");
         return;
       }
-      if (!provider || typeof (provider as any).request !== "function") {
+      if (!provider || typeof provider.request !== "function") {
         throw new Error("Invalid EIP-1193 provider");
       }
       await initializeNexus(provider);
@@ -193,12 +186,12 @@ const NexusProvider = ({
     }
   };
 
-  const fetchSwapBalances = async () => {
+  const fetchSwapBalance = async () => {
     try {
       const updatedBalance = await sdk?.getBalancesForSwap();
-      swapBalances.current = updatedBalance;
+      setSwapBalance(updatedBalance);
     } catch (error) {
-      console.error("Error fetching bridgable balance:", error);
+      console.error("Error fetching swap balance:", error);
     }
   };
 
@@ -217,8 +210,6 @@ const NexusProvider = ({
     },
   });
 
-  console.log("%%% re-render");
-
   const value = useMemo(
     () => ({
       nexusSDK,
@@ -229,13 +220,13 @@ const NexusProvider = ({
       allowance,
       handleInit,
       supportedChainsAndTokens: supportedChainsAndTokens.current,
-      swapSupportedChains: swapSupportedChains.current,
+      swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
       bridgableBalance: bridgableBalance.current,
-      swapBalances: swapBalances.current,
+      swapBalance: swapBalance,
       network: config?.network,
       loading,
       fetchBridgableBalance,
-      fetchSwapBalances,
+      fetchSwapBalance,
       swapIntent,
       exchangeRate: exchangeRate.current,
       getFiatValue,
@@ -249,13 +240,13 @@ const NexusProvider = ({
       allowance.current,
       handleInit,
       supportedChainsAndTokens.current,
-      swapSupportedChains.current,
+      swapSupportedChainsAndTokens.current,
       bridgableBalance.current,
-      swapBalances.current,
+      swapBalance,
       config,
       loading,
       fetchBridgableBalance,
-      fetchSwapBalances,
+      fetchSwapBalance,
       swapIntent.current,
       exchangeRate.current,
       getFiatValue,

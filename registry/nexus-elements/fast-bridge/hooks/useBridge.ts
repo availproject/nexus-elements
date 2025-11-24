@@ -3,7 +3,7 @@ import {
   NEXUS_EVENTS,
   type NexusNetwork,
   NexusSDK,
-  OnAllowanceHookData,
+  type OnAllowanceHookData,
   type OnIntentHookData,
   SUPPORTED_CHAINS,
   type SUPPORTED_CHAINS_IDS,
@@ -16,7 +16,7 @@ import {
   useRef,
   useState,
   useReducer,
-  RefObject,
+  type RefObject,
 } from "react";
 import { type Address, isAddress } from "viem";
 import {
@@ -158,20 +158,20 @@ const useBridge = ({
     dispatch({ type: "setStatus", payload: "executing" });
     setTxError(null);
     onStart?.();
+
     try {
       if (!nexusSDK) {
         throw new Error("Nexus SDK not initialized");
       }
-      const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
-        inputs.amount,
-        inputs.token,
-        inputs.chain
+      const formattedAmount = nexusSDK.convertTokenReadableAmountToBigInt(
+        inputs?.amount,
+        inputs?.token,
+        inputs?.chain
       );
-      // Bridge
       const bridgeTxn = await nexusSDK.bridge(
         {
           token: inputs?.token,
-          amount: amountBigInt,
+          amount: formattedAmount,
           toChainId: inputs?.chain,
           recipient: inputs?.recipient ?? connectedAddress,
         },
@@ -196,6 +196,9 @@ const useBridge = ({
       }
     } catch (error) {
       const { message } = handleNexusError(error);
+      intent.current?.deny();
+      intent.current = null;
+      allowance.current = null;
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);

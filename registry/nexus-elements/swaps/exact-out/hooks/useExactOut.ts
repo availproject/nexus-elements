@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useMemo, useState } from "react";
+import { type RefObject, useEffect, useMemo, useState } from "react";
 import {
   NexusSDK,
   SUPPORTED_CHAINS,
@@ -6,8 +6,8 @@ import {
   type ExactOutSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
-  type OnSwapIntentHookData,
   type UserAsset,
+  type OnSwapIntentHookData,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { resolveDestinationFromPrefill } from "../../utils/prefill";
@@ -36,7 +36,7 @@ interface UseExactOutProps {
   nexusSDK: NexusSDK | null;
   address?: Address;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  swapBalances: UserAsset[] | null;
+  swapBalance: UserAsset[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
@@ -51,7 +51,7 @@ interface UseExactOutProps {
 const useExactOut = ({
   nexusSDK,
   swapIntent,
-  swapBalances,
+  swapBalance,
   fetchBalance,
   onComplete,
   onStart,
@@ -181,7 +181,7 @@ const useExactOut = ({
         }));
       }
     }
-  }, [prefill, swapBalances, inputs.toChainID, inputs.toToken]);
+  }, [prefill, swapBalance, inputs.toChainID, inputs.toToken]);
 
   useEffect(() => {
     if (!swapIntent || isDialogOpen) return;

@@ -45,6 +45,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
           "target": "components/common/hooks/useStableCallback.ts",
           "type": "registry:component"
@@ -179,6 +184,11 @@
         {
           "path": "registry/nexus-elements/transfer/transfer.tsx",
           "target": "components/transfer/transfer.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
           "type": "registry:component"
         },
         {
@@ -511,14 +521,16 @@
         "lucide-react",
         "@radix-ui/react-accordion",
         "@radix-ui/react-label",
-        "@radix-ui/react-slot"
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tabs"
       ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/separator.json"
+        "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/tabs.json"
       ],
       "files": [
         {
@@ -559,6 +571,11 @@
         {
           "path": "registry/nexus-elements/deposit/deposit.tsx",
           "target": "components/deposit/deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
           "type": "registry:component"
         },
         {
@@ -708,6 +725,11 @@
         {
           "path": "registry/nexus-elements/swaps/swaps.tsx",
           "target": "components/swaps/swaps.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
           "type": "registry:component"
         },
         {

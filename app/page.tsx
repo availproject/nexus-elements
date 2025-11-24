@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
-import MockBridgeUI from "@/components/mock-bridge-ui";
+import MockBridgeUI from "@/components/mock-ui-bridge";
 
 export default function Home() {
   return (
@@ -95,13 +95,18 @@ export function BridgeInterface() {
         </section>
 
         {/* Features Grid */}
-        <section className="container mx-auto px-6 py-32 border-t border-border mt-32">
-          <div className="mb-16">
+        <section className="container mx-auto px-6 py-32">
+          <div className="mb-16 w-full">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">
-              What&apos;s in Nexus?
+              What is Nexus?
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl">
-              Everything you need to build great financial products on the web.
+            <p className="text-muted-foreground text-lg w-full max-w-4xl">
+              Nexus is a meta-interoperability protocol that eliminates
+              blockchain fragmentation by connecting liquidity, assets, and
+              coordination logic at the base layer. It abstracts complexities
+              such as manual bridging, chain switching, wallet switching, swaps,
+              and complex approvals for the end user to create a seamless
+              “bridgeless” experience.
             </p>
           </div>
 

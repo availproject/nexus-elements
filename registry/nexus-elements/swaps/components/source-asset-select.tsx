@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC, useEffect, useMemo, useState } from "react";
+import React, { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
   Dialog,
@@ -11,10 +11,11 @@ import {
 import { useNexus } from "../../nexus/NexusProvider";
 import {
   CHAIN_METADATA,
+  UserAsset,
   type SUPPORTED_CHAINS_IDS,
 } from "@avail-project/nexus-core";
 import { TOKEN_IMAGES } from "../config/destination";
-import { LoaderCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 type SourceTokenInfo = {
   contractAddress: `0x${string}`;
@@ -31,6 +32,7 @@ interface SourceAssetSelectProps {
   onSelect: (chainId: SUPPORTED_CHAINS_IDS, token: SourceTokenInfo) => void;
   disabled?: boolean;
   label?: string;
+  swapBalance: UserAsset[] | null;
 }
 
 const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
@@ -39,22 +41,25 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   onSelect,
   disabled,
   label = "From",
+  swapBalance,
 }) => {
-  const { swapSupportedChains, swapBalances, fetchSwapBalances, nexusSDK } =
-    useNexus();
+  const { swapSupportedChainsAndTokens, nexusSDK } = useNexus();
   const [open, setOpen] = useState(false);
   const [tempChain, setTempChain] = useState<number | null>(null);
 
+  const chains = swapSupportedChainsAndTokens ?? [];
+
   const tokensForTempChain: SourceTokenInfo[] = useMemo(() => {
-    if (!tempChain || !swapBalances) return [] as SourceTokenInfo[];
+    if (!tempChain || !swapBalance) return [] as SourceTokenInfo[];
     const tokens: SourceTokenInfo[] = [];
 
-    for (const asset of swapBalances) {
+    for (const asset of swapBalance) {
       if (!asset?.breakdown?.length) continue;
       const breakdownForChain = asset.breakdown.find(
         (b) => b.chain?.id === tempChain && Number.parseFloat(b.balance) > 0
       );
       if (!breakdownForChain) continue;
+
       tokens.push({
         contractAddress: breakdownForChain.contractAddress,
         decimals: breakdownForChain.decimals ?? asset.decimals,
@@ -76,23 +81,13 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
       unique.set(t.contractAddress.toLowerCase(), t);
     }
     return Array.from(unique.values());
-  }, [tempChain, swapBalances]);
+  }, [tempChain, swapBalance]);
 
   const handlePick = (tok: SourceTokenInfo) => {
     if (!tempChain) return;
     onSelect(tempChain as SUPPORTED_CHAINS_IDS, tok);
     setOpen(false);
   };
-
-  const handleFetchSwapBalances = async () => {
-    await fetchSwapBalances();
-  };
-
-  useEffect(() => {
-    if (!swapBalances) {
-      handleFetchSwapBalances();
-    }
-  }, []);
 
   return (
     <div className="w-full">
@@ -138,12 +133,12 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           <DialogHeader>
             <DialogTitle>Select source asset</DialogTitle>
           </DialogHeader>
-          {swapBalances && (
+          {swapBalance && (
             <div className="grid grid-cols-2 gap-4">
-              <div className="border rounded-md p-2 max-h-80 overflow-y-auto no-scrollbar">
+              <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
                 <p className="text-xs font-medium mb-2">Chains</p>
                 <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
-                  {swapSupportedChains?.map((c) => (
+                  {chains.map((c) => (
                     <Button
                       key={c.id}
                       variant={"ghost"}
@@ -164,7 +159,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
                   ))}
                 </div>
               </div>
-              <div className="border rounded-md p-2 max-h-80 overflow-y-auto no-scrollbar">
+              <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
                 <p className="text-xs font-medium mb-2">Tokens</p>
                 <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
                   {tempChain && tokensForTempChain ? (
@@ -196,12 +191,12 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
               </div>
             </div>
           )}
-          {!swapBalances && (
-            <div className="w-full flex flex-col items-center justify-center">
-              <LoaderCircle className="size-4 animate-spin" />
+          {!swapBalance && (
+            <div className="flex flex-col items-center justify-center gap-y-3">
               <p className="text-sm text-muted-foreground">
-                Fetching Swappable Assets
+                Fetching swappable assets
               </p>
+              <Loader2 className="animate-spin size-5" />
             </div>
           )}
         </DialogContent>

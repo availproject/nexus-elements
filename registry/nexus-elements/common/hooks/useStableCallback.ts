@@ -4,15 +4,17 @@ import { useCallback, useRef } from "react";
  * Returns a stable function identity that always calls the latest implementation.
  * Useful when passing callbacks to memoized children without re-creating handlers.
  */
-export function useStableCallback<T extends (...args: any[]) => any>(fn: T): T {
-  const fnRef = useRef<T>(fn);
+export function useStableCallback<Args extends readonly unknown[], Return>(
+  fn: (...args: Args) => Return
+): (...args: Args) => Return {
+  const fnRef = useRef<(...args: Args) => Return>(fn);
   fnRef.current = fn;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const stable = useCallback(
-    ((...args: any[]) => {
+    ((...args: Args) => {
       return fnRef.current(...args);
-    }) as T,
+    }) as (...args: Args) => Return,
     []
   );
 

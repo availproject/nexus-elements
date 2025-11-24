@@ -26,7 +26,6 @@ import {
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
-import TransferSourceBreakdown from "./components/transfer-source-breakdown";
 
 interface FastBridgeProps {
   connectedAddress: Address;
@@ -77,7 +76,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     status,
   } = useBridge({
     prefill,
-    network: network ?? "devnet",
+    network: network ?? "mainnet",
     connectedAddress,
     nexusSDK,
     intent,
@@ -125,26 +124,11 @@ const FastBridge: FC<FastBridgeProps> = ({
         />
         {intent?.current?.intent && (
           <>
-            {inputs?.recipient === connectedAddress ? (
-              <SourceBreakdown
-                intent={intent?.current?.intent}
-                tokenSymbol={
-                  filteredBridgableBalance?.symbol as SUPPORTED_TOKENS
-                }
-                isLoading={refreshing}
-              />
-            ) : (
-              <TransferSourceBreakdown
-                intent={intent?.current?.intent}
-                tokenSymbol={
-                  filteredBridgableBalance?.symbol as SUPPORTED_TOKENS
-                }
-                isLoading={refreshing}
-                chain={inputs?.chain}
-                bridgableBalance={filteredBridgableBalance}
-                requiredAmount={inputs?.amount}
-              />
-            )}
+            <SourceBreakdown
+              intent={intent?.current?.intent}
+              tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+              isLoading={refreshing}
+            />
 
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">You receive</p>

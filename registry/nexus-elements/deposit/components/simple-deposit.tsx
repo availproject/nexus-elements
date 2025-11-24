@@ -33,7 +33,13 @@ const SimpleDeposit = ({
   destinationLabel = "on Hyperliquid Perps",
   depositExecute,
 }: SimpleDepositProps) => {
-  const { nexusSDK, intent, bridgableBalance, allowance } = useNexus();
+  const {
+    nexusSDK,
+    intent,
+    bridgableBalance,
+    fetchBridgableBalance,
+    allowance,
+  } = useNexus();
 
   const {
     inputs,
@@ -64,6 +70,7 @@ const SimpleDeposit = ({
     chainOptions,
     address,
     executeBuilder: depositExecute,
+    fetchBridgableBalance,
   });
   const renderDepositButtonContent = useCallback(() => {
     if (isDialogOpen) return "Deposit";
@@ -175,7 +182,7 @@ const SimpleDeposit = ({
         </>
       )}
 
-      {!intent.current &&
+      {!isDialogOpen &&
         (simulation ? (
           <div className="w-full flex items-center justify-center gap-x-2 px-1">
             <Button

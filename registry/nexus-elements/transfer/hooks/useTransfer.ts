@@ -16,10 +16,9 @@ import {
   useRef,
   useState,
   useReducer,
-  RefObject,
+  type RefObject,
 } from "react";
 import { type Address, isAddress } from "viem";
-import { useNexus } from "../../nexus/NexusProvider";
 import {
   useStopwatch,
   usePolling,
@@ -50,6 +49,7 @@ interface UseTransferProps {
   onComplete?: () => void;
   onStart?: () => void;
   onError?: (message: string) => void;
+  fetchBalance: () => Promise<void>;
 }
 
 interface TransferState {
@@ -92,8 +92,8 @@ const useTransfer = ({
   onStart,
   onError,
   allowance,
+  fetchBalance,
 }: UseTransferProps) => {
-  const { fetchBridgableBalance } = useNexus();
   const handleNexusError = useNexusError();
   const initialState: TransferState = {
     inputs: buildInitialInputs(network, prefill),
@@ -163,9 +163,9 @@ const useTransfer = ({
         throw new Error("Nexus SDK not initialized");
       }
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
-        inputs.amount,
-        inputs.token,
-        inputs.chain
+        inputs?.amount,
+        inputs?.token,
+        inputs?.chain
       );
       const transferTxn = await nexusSDK.bridgeAndTransfer(
         {
@@ -195,6 +195,9 @@ const useTransfer = ({
       }
     } catch (error) {
       const { message } = handleNexusError(error);
+      intent.current?.deny();
+      intent.current = null;
+      allowance.current = null;
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
@@ -211,7 +214,7 @@ const useTransfer = ({
     allowance.current = null;
     dispatch({ type: "resetInputs" });
     setRefreshing(false);
-    await fetchBridgableBalance();
+    await fetchBalance();
   };
 
   const filteredBridgableBalance = useMemo(() => {

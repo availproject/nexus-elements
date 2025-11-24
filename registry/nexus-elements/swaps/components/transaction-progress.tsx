@@ -49,6 +49,7 @@ const StepList: FC<{ steps: DisplayStep[]; currentIndex: number }> = memo(
     );
   }
 );
+StepList.displayName = "StepList";
 
 const TransactionProgress: FC<TransactionProgressProps> = ({
   timer,
@@ -58,18 +59,18 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
 }) => {
   const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
     const completedTypes = new Set<string | undefined>(
-      steps?.filter((s) => s?.completed).map((s) => (s?.step as any)?.type)
+      steps?.filter((s) => s?.completed).map((s) => s?.step?.type)
     );
     // Consider only steps that were actually emitted by the SDK (ignore pre-seeded placeholders)
     const eventfulTypes = new Set<string | undefined>(
       steps
         ?.filter((s) => {
-          const st = (s?.step as any) ?? {};
+          const st = s?.step ?? {};
           return (
             "explorerURL" in st || "chain" in st || "completed" in st // present when event args were merged into step
           );
         })
-        .map((s) => (s?.step as any)?.type)
+        .map((s) => s?.step?.type)
     );
     const hasAny = (types: string[]) =>
       types.some((t) => completedTypes.has(t));

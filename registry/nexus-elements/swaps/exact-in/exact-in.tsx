@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, type FC } from "react";
+import React, { useEffect, useMemo, type FC } from "react";
 import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
@@ -38,7 +38,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, swapIntent, swapBalances, fetchSwapBalances } = useNexus();
+  const { nexusSDK, swapIntent, swapBalance, fetchSwapBalance } = useNexus();
   const {
     inputs,
     setInputs,
@@ -56,8 +56,8 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   } = useExactIn({
     nexusSDK,
     swapIntent,
-    swapBalances,
-    fetchBalance: fetchSwapBalances,
+    swapBalance,
+    fetchBalance: fetchSwapBalance,
     onComplete,
     onStart,
     onError,
@@ -65,16 +65,11 @@ const SwapExactIn: FC<SwapExactInProps> = ({
   });
 
   const availableBalance = useMemo(() => {
-    if (
-      !nexusSDK ||
-      !swapBalances ||
-      !inputs?.fromToken ||
-      !inputs?.fromChainID
-    )
+    if (!nexusSDK || !swapBalance || !inputs?.fromToken || !inputs?.fromChainID)
       return undefined;
-    const filteredToken = swapBalances?.find(
-      (token) => token.symbol === inputs?.fromToken?.symbol
-    );
+    const filteredToken = swapBalance
+      ?.find((token) => token.symbol === inputs?.fromToken?.symbol)
+      ?.breakdown?.find((chain) => chain.chain?.id === inputs?.fromChainID);
 
     if (!filteredToken) return undefined;
 
@@ -82,7 +77,13 @@ const SwapExactIn: FC<SwapExactInProps> = ({
       symbol: inputs?.fromToken?.symbol,
       decimals: filteredToken?.decimals,
     });
-  }, [inputs?.fromToken, inputs?.fromChainID, swapBalances, nexusSDK]);
+  }, [inputs?.fromToken, inputs?.fromChainID, swapBalance, nexusSDK]);
+
+  useEffect(() => {
+    if (!swapBalance) {
+      fetchSwapBalance();
+    }
+  }, [swapBalance]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -99,6 +100,7 @@ const SwapExactIn: FC<SwapExactInProps> = ({
             setInputs({ ...inputs, fromChainID, fromToken })
           }
           disabled={Boolean(prefill?.fromChainID && prefill?.fromToken)}
+          swapBalance={swapBalance}
         />
         <div className="flex flex-col gap-y-2">
           <label className="text-sm font-medium" htmlFor="swap-amount">

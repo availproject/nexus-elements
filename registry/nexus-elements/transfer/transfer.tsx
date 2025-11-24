@@ -45,7 +45,14 @@ const FastTransfer: FC<FastTransferProps> = ({
   onError,
   prefill,
 }) => {
-  const { nexusSDK, intent, bridgableBalance, allowance, network } = useNexus();
+  const {
+    nexusSDK,
+    intent,
+    bridgableBalance,
+    fetchBridgableBalance,
+    allowance,
+    network,
+  } = useNexus();
 
   const {
     inputs,
@@ -67,7 +74,7 @@ const FastTransfer: FC<FastTransferProps> = ({
     status,
   } = useTransfer({
     prefill,
-    network: network ?? "devnet",
+    network: network ?? "mainnet",
     nexusSDK,
     intent,
     bridgableBalance,
@@ -75,6 +82,7 @@ const FastTransfer: FC<FastTransferProps> = ({
     onStart,
     onError,
     allowance,
+    fetchBalance: fetchBridgableBalance,
   });
   return (
     <Card className="w-full max-w-xl">

@@ -11,32 +11,22 @@ import {
 } from "../ui/accordion";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
+import { NexusSDK, type UserAsset } from "@avail-project/nexus-core";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
-const UnifiedBalance = ({ className }: { className?: string }) => {
-  const { bridgableBalance, nexusSDK } = useNexus();
-
-  const totalFiat = useMemo(() => {
-    if (!bridgableBalance) return "0.00";
-    const total = bridgableBalance.reduce(
-      (acc, fiat) => acc + fiat.balanceInFiat,
-      0
-    );
-    return total.toFixed(2);
-  }, [bridgableBalance]);
-
-  const tokens = useMemo(() => {
-    return (bridgableBalance ?? []).filter(
-      (token) => Number.parseFloat(token.balance) > 0
-    );
-  }, [bridgableBalance]);
-
+const BalanceBreakdown = ({
+  className,
+  totalFiat,
+  tokens,
+  nexusSDK,
+}: {
+  totalFiat: string;
+  tokens: UserAsset[];
+  nexusSDK: NexusSDK | null;
+  className?: string;
+}) => {
   return (
-    <div
-      className={cn(
-        "w-full max-w-lg mx-auto py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border",
-        className
-      )}
-    >
+    <div className={cn(className)}>
       <div className="flex items-center justify-start w-full">
         <Label className="font-semibold text-muted-foreground">
           Total Balance:
@@ -149,6 +139,88 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
         })}
       </Accordion>
     </div>
+  );
+};
+
+const UnifiedBalance = ({ className }: { className?: string }) => {
+  const { bridgableBalance, swapBalance, nexusSDK } = useNexus();
+
+  const totalFiat = useMemo(() => {
+    if (!bridgableBalance) return "0.00";
+
+    return bridgableBalance
+      .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
+      .toFixed(2);
+  }, [bridgableBalance, swapBalance]);
+
+  const swapTotalFiat = useMemo(() => {
+    if (!swapBalance) return "0.00";
+    return swapBalance
+      .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
+      .toFixed(2);
+  }, [swapBalance]);
+
+  const tokens = useMemo(
+    () =>
+      bridgableBalance?.filter(
+        (token) => Number.parseFloat(token.balance) > 0
+      ) ?? [],
+    [bridgableBalance]
+  );
+
+  const swapTokens = useMemo(
+    () =>
+      swapBalance?.filter((token) => Number.parseFloat(token.balance) > 0) ??
+      [],
+    [swapBalance]
+  );
+
+  if (!swapBalance) {
+    return (
+      <BalanceBreakdown
+        totalFiat={totalFiat}
+        tokens={tokens}
+        nexusSDK={nexusSDK}
+        className="w-full max-w-lg mx-auto py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border"
+      />
+    );
+  }
+  return (
+    <Tabs
+      defaultValue="bridgeBalance"
+      className="w-full max-w-lg py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center rounded-lg border border-border"
+    >
+      <TabsList className="w-full">
+        <TabsTrigger value="bridgeBalance">
+          <p className="text-sm font-medium">Bridgeable Balance</p>
+        </TabsTrigger>
+        <TabsTrigger value="swapBalance">
+          <p className="text-sm font-medium">Swappable Balance</p>
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent
+        value="bridgeBalance"
+        className="w-full overflow-y-scroll max-h-[372px] pt-6 no-scrollbar"
+      >
+        <BalanceBreakdown
+          totalFiat={totalFiat}
+          tokens={tokens}
+          nexusSDK={nexusSDK}
+          className={className}
+        />
+      </TabsContent>
+      <TabsContent
+        value="swapBalance"
+        className="w-full overflow-y-scroll max-h-[372px] pt-6 no-scrollbar"
+      >
+        <BalanceBreakdown
+          totalFiat={swapTotalFiat}
+          tokens={swapTokens}
+          nexusSDK={nexusSDK}
+          className={className}
+        />
+      </TabsContent>
+    </Tabs>
   );
 };
 UnifiedBalance.displayName = "UnifiedBalance";

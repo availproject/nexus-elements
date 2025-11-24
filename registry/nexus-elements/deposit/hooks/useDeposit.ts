@@ -21,7 +21,7 @@ import {
   useRef,
   useState,
   useReducer,
-  RefObject,
+  type RefObject,
 } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
@@ -47,6 +47,7 @@ interface UseDepositProps {
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   bridgableBalance: UserAsset[] | null;
+  fetchBridgableBalance: () => Promise<void>;
   chainOptions?: { id: number; name: string; logo: string }[];
   address: Address;
   executeBuilder?: (
@@ -78,8 +79,9 @@ const useDeposit = ({
   executeBuilder,
   executeConfig,
   allowance,
+  fetchBridgableBalance,
 }: UseDepositProps) => {
-  const { fetchBridgableBalance, getFiatValue } = useNexus();
+  const { getFiatValue } = useNexus();
   const handleNexusError = useNexusError();
 
   const allSourceIds = useMemo(
@@ -272,6 +274,9 @@ const useDeposit = ({
       await onSuccess();
     } catch (error) {
       const { message } = handleNexusError(error);
+      intent.current?.deny();
+      intent.current = null;
+      allowance.current = null;
       setTxError(message);
       setIsDialogOpen(false);
       dispatch({ type: "setStatus", payload: "error" });

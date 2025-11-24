@@ -6,6 +6,7 @@ import { useAccount, useConnectorClient } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";
 import { Button } from "@/registry/nexus-elements/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface PreviewPanelProps {
   children: ReactNode;
   connectLabel: string;
@@ -15,17 +16,21 @@ export function PreviewPanel({
   children,
   connectLabel,
 }: Readonly<PreviewPanelProps>) {
-  const { status } = useAccount();
+  const { status, connector } = useAccount();
   const { data: walletClient } = useConnectorClient();
   const { nexusSDK, handleInit, loading } = useNexus();
+  const isMobile = useIsMobile();
 
   const initializeNexus = async () => {
     try {
-      const wcProvider = walletClient && {
+      const mobileProvider = walletClient && {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         request: (args: unknown) => walletClient.request(args as any),
       };
-      await handleInit(wcProvider as unknown as EthereumProvider);
+      const desktopProvider = await connector?.getProvider();
+      const effectiveProvider = isMobile ? mobileProvider : desktopProvider;
+
+      await handleInit(effectiveProvider as EthereumProvider);
       if (nexusSDK) {
         toast.success("Nexus initialized successfully");
       }
