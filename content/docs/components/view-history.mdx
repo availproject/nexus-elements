@@ -47,7 +47,7 @@ npm install @avail-project/nexus-core@1.0.0-rc.3 lucide-react @radix-ui/react-ac
 ## Usage
 
 ```tsx showLineNumbers
-<ViewHistory />
+<ViewHistory viewAsModal={false} className={className} />
 ```
 
 ## API Reference
@@ -61,6 +61,7 @@ The `ViewHistory` component displays your transaction history with Nexus.
 ```ts title="ViewHistoryProps"
 interface ViewHistoryProps {
   className?: string; // optional container className
+  viewAsModal?: boolean; // optional view as modal
 }
 ```
 

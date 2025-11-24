@@ -8,7 +8,7 @@ const ViewHistoryShowcase = () => {
       connectLabel="Connect wallet to use Nexus View History"
       type="view-history"
     >
-      <ViewHistory />
+      <ViewHistory viewAsModal={false} />
     </ShowcaseWrapper>
   );
 };

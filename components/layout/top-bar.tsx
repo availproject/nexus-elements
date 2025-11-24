@@ -140,9 +140,9 @@ export default function Topbar() {
 
   return (
     <div className="sticky top-0 z-40 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="h-(--header-height) px-4 py-4 flex items-center justify-between gap-4 ">
+      <div className="h-(--header-height) px-4! py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-x-6">
-          <Link href={"/"} className={cn("cursor-pointer")}>
+          <Link href={"/"} className={cn("cursor-pointer hidden sm:block")}>
             <Image
               src="/avail-logo-dark.svg"
               alt="Nexus Elements"
@@ -202,8 +202,9 @@ export default function Topbar() {
             setPalette={setPalette}
             isMobile={isMobile}
           />
-
-          <ConnectWalletButton />
+          <div className="hidden sm:block">
+            <ConnectWalletButton />
+          </div>
         </div>
       </div>
     </div>

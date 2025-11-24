@@ -9,6 +9,8 @@ import {
 import Link, { LinkProps } from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import ConnectWalletButton from "../helpers/wallet-connect-button";
+import Image from "next/image";
 
 function MobileLink({
   href,
@@ -89,7 +91,27 @@ function MobileNav({
         alignOffset={-16}
         sideOffset={14}
       >
-        <div className="flex flex-col gap-12 overflow-auto px-6 py-6">
+        <div className="flex flex-col sm:gap-12 gap-6 overflow-auto px-6 py-6">
+          <div className="w-full items-center justify-between flex sm:hidden h-fit">
+            <Link href={"/"} className={cn("cursor-pointer ")}>
+              <Image
+                src="/avail-logo-dark.svg"
+                alt="Nexus Elements"
+                width={100}
+                height={100}
+                className="sm:w-[100px] sm:h-[100px] w-[60px] h-[60px]  dark:hidden block"
+              />
+              <Image
+                src="/avail-logo-light.svg"
+                alt="Nexus Elements"
+                width={100}
+                height={100}
+                className="sm:w-[100px] sm:h-[100px] w-[60px] h-[60px]  hidden dark:block"
+              />
+            </Link>
+            <ConnectWalletButton />
+          </div>
+
           <div className="flex flex-col gap-4">
             <div className="text-muted-foreground text-sm font-medium">
               Menu

@@ -92,7 +92,13 @@ const DestinationToken = ({
   );
 };
 
-const ViewHistory = ({ className }: { className?: string }) => {
+const ViewHistory = ({
+  viewAsModal = true,
+  className,
+}: {
+  viewAsModal?: boolean;
+  className?: string;
+}) => {
   const {
     history,
     displayedHistory,
@@ -133,8 +139,8 @@ const ViewHistory = ({ className }: { className?: string }) => {
 
               <Separator className="my-1" />
 
-              <div className="flex items-center justify-between gap-x-4">
-                <div className="flex items-center gap-x-3 flex-1">
+              <div className="flex flex-col sm:flex-row  items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-x-3 flex-1 w-full sm:min-w-fit">
                   <SourceChains sources={pastIntent.sources} />
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <div className="h-px w-8 bg-border" />
@@ -154,8 +160,8 @@ const ViewHistory = ({ className }: { className?: string }) => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-x-2">
-                  <div className="text-right">
+                <div className="flex items-center justify-between sm:justify-end  gap-x-2 w-full">
+                  <div className="text-left sm:text-right">
                     <p className="text-xs text-muted-foreground">Expiry</p>
                     <p className="text-xs font-medium">
                       {formatExpiryDate(pastIntent.expiry)}
@@ -226,6 +232,14 @@ const ViewHistory = ({ className }: { className?: string }) => {
       </div>
     );
   };
+
+  if (!viewAsModal) {
+    return (
+      <div className="flex flex-col gap-y-3 max-h-96 no-scrollbar overflow-y-auto w-full max-w-md">
+        {renderHistoryContent()}
+      </div>
+    );
+  }
 
   return (
     <Dialog>
