@@ -51,7 +51,10 @@ const TokenSelect = ({
     >
       <div className="flex flex-col items-start gap-y-1">
         {label && <Label className="text-sm font-semibold">{label}</Label>}
-        <SelectTrigger disabled={disabled} className="w-full">
+        <SelectTrigger
+          disabled={disabled}
+          className="w-full h-12! text-base font-light"
+        >
           <SelectValue placeholder="Select a token" className="w-full">
             {selectedChain && selectedTokenData && (
               <div className="flex items-center gap-x-2 w-full">

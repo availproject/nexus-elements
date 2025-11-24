@@ -26,6 +26,7 @@ import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
 import useTransfer from "./hooks/useTransfer";
 import AllowanceModal from "./components/allowance-modal";
+import ViewHistory from "../view-history/view-history";
 
 interface FastTransferProps {
   prefill?: {
@@ -87,6 +88,7 @@ const FastTransfer: FC<FastTransferProps> = ({
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
+        <ViewHistory className="absolute -top-2 right-3" />
         <ChainSelect
           selectedChain={inputs?.chain}
           handleSelect={(chain) =>

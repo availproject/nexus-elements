@@ -1,11 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/registry/nexus-elements/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
-<<<<<<< Updated upstream
 import MockBridgeUI from "@/components/mock-ui-bridge";
-=======
-import MockBridgeUI from "@/components/mock-bridge-ui";
->>>>>>> Stashed changes
 
 export default function Home() {
   return (
@@ -17,7 +13,6 @@ export default function Home() {
         {/* Hero Section */}
         <section className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center mb-16">
-<<<<<<< Updated upstream
             <h1 className="text-7xl  font-bold tracking-tighter mb-8 text-foreground">
               Plug n Play components <br /> to{" "}
               <span className="text-chart-1">10x</span> your UX
@@ -37,41 +32,6 @@ export default function Home() {
               </Link>
             </div>
             <div className="mt-12 flex items-center justify-center gap-2 text-sm text-foreground font-mono border border-border rounded-md p-4 w-full overflow-x-scroll lg:w-max bg-background mx-auto">
-=======
-            <h1 className="text-6xl md:text-8xl font-bold tracking-tighter mb-8 text-foreground">
-              Only thing you need to
-              <br />
-              build with Nexus
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
-              Used by some of the world's largest protocols, Nexus enables you
-              to create{" "}
-              <span className="text-foreground font-medium">
-                high-quality financial applications
-              </span>{" "}
-              with the power of React components.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href={"/docs/get-started"}>
-                <Button
-                  size="lg"
-                  className="h-12 px-8 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-medium"
-                >
-                  Get Started
-                </Button>
-              </Link>
-              <Link href={"/docs/view-components"}>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 px-8 border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground text-base font-medium"
-                >
-                  View Components
-                </Button>
-              </Link>
-            </div>
-            <div className="mt-12 flex items-center justify-center gap-2 text-sm text-muted-foreground font-mono">
->>>>>>> Stashed changes
               <span>~</span>
               <span>
                 npx shadcn@latest add
@@ -79,7 +39,6 @@ export default function Home() {
               </span>
             </div>
           </div>
-<<<<<<< Updated upstream
 
           {/* Code Preview / Feature Highlight */}
           <div className="max-w-6xl mx-auto mt-24 border border-border rounded-xl bg-card overflow-hidden shadow-2xl shadow-black/50">
@@ -148,71 +107,6 @@ export function BridgeInterface() {
               such as manual bridging, chain switching, wallet switching, swaps,
               and complex approvals for the end user to create a seamless
               “bridgeless” experience.
-=======
-
-          {/* Code Preview / Feature Highlight */}
-          <div className="max-w-6xl mx-auto mt-24 border border-border rounded-xl bg-card overflow-hidden shadow-2xl shadow-black/50">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/50">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
-                <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
-              </div>
-              <div className="text-xs text-muted-foreground font-mono">
-                fast-bridge-demo.tsx
-              </div>
-              <div className="w-16" /> {/* Spacer for centering */}
-            </div>
-            <div className="grid lg:grid-cols-2">
-              <div className="p-12 border-r border-border bg-card flex items-center justify-center min-h-[500px]">
-                <div className="w-full max-w-md">
-                  <MockBridgeUI />
-                </div>
-              </div>
-              <div className="p-0 bg-[#0d0d0d] overflow-hidden relative flex flex-col">
-                <div className="absolute top-4 right-4 text-xs text-muted-foreground font-mono z-10">
-                  TypeScript
-                </div>
-                <div className="flex-1 overflow-auto p-8">
-                  <pre className="text-sm font-mono text-muted-foreground leading-relaxed">
-                    <code>{`import { FastBridge } from '@nexus/elements'
-import { useAccount } from 'wagmi'
-
-export function BridgeInterface() {
-  const { address } = useAccount()
-
-  return (
-    <div className="p-4">
-      <FastBridge 
-        connectedAddress={address}
-        prefill={{
-          token: 'USDC',
-          chainId: 10,
-          amount: '100',
-        }}
-        onComplete={(tx) => {
-          console.log('Bridge successful:', tx)
-        }}
-      />
-    </div>
-  )
-}`}</code>
-                  </pre>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Grid */}
-        <section className="container mx-auto px-6 py-32 border-t border-zinc-900 mt-32">
-          <div className="mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              What's in Nexus?
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl">
-              Everything you need to build great financial products on the web.
->>>>>>> Stashed changes
             </p>
           </div>
 
@@ -248,11 +142,7 @@ export function BridgeInterface() {
                 title: "Production Tested",
                 desc: "Used in production by leading DeFi protocols handling millions in volume.",
               },
-<<<<<<< Updated upstream
             ].map((feature) => (
-=======
-            ].map((feature, i) => (
->>>>>>> Stashed changes
               <div
                 key={feature.desc}
                 className="group p-6 rounded-xl border border-border bg-card/20 hover:bg-card/40 transition-colors"

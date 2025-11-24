@@ -6,6 +6,8 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { Skeleton } from "../../ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import { MessageCircleQuestion } from "lucide-react";
 
 interface DepositFeeBreakdownProps {
   total: string;
@@ -20,6 +22,23 @@ const DepositFeeBreakdown = ({
   execute,
   isLoading = false,
 }: DepositFeeBreakdownProps) => {
+  const feeRows = [
+    {
+      key: "transaction",
+      label: "Transaction Fee",
+      value: bridge,
+      description:
+        "Cost required to bridge assets through Nexus, covering the cross-chain operation.",
+    },
+    {
+      key: "deposit",
+      label: "Deposit Fee",
+      value: execute,
+      description:
+        "Gas fee required to execute the deposit contract call on chain.",
+    },
+  ];
+
   return (
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="deposit-fee-breakdown">
@@ -45,26 +64,29 @@ const DepositFeeBreakdown = ({
         </div>
         <AccordionContent>
           <div className="w-full flex flex-col items-center justify-between gap-y-3 bg-muted px-4 py-2 rounded-lg mt-2">
-            {bridge && (
-              <div className="flex items-center w-full justify-between">
-                <p className="text-sm font-semibold">Transaction Fee</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-20" />
-                ) : (
-                  <p className="text-sm font-semibold">{bridge}</p>
-                )}
-              </div>
-            )}
-            {execute && (
-              <div className="flex items-center w-full justify-between">
-                <p className="text-sm font-semibold">Deposit Fee</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-20" />
-                ) : (
-                  <p className="text-sm font-semibold">{execute}</p>
-                )}
-              </div>
-            )}
+            {feeRows.map(({ key, label, value, description }) => {
+              if (!value) return null;
+              return (
+                <Tooltip key={key}>
+                  <div className="flex items-center w-full justify-between">
+                    <div className="flex items-center gap-x-2">
+                      <p className="text-sm font-semibold">{label}</p>
+                      <TooltipTrigger asChild>
+                        <MessageCircleQuestion className="size-4" />
+                      </TooltipTrigger>
+                    </div>
+                    {isLoading ? (
+                      <Skeleton className="h-4 w-20" />
+                    ) : (
+                      <p className="text-sm font-semibold">{value}</p>
+                    )}
+                  </div>
+                  <TooltipContent className="max-w-sm text-balance">
+                    <p className="text-sm font-semibold">{description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
           </div>
         </AccordionContent>
       </AccordionItem>

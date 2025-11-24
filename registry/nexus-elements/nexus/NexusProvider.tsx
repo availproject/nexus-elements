@@ -68,7 +68,10 @@ const NexusProvider = ({
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
-  sdkRef.current ??= new NexusSDK(stableConfig);
+  sdkRef.current ??= new NexusSDK({
+    ...stableConfig,
+    siweChain: config?.network === "testnet" ? 11155111 : 1,
+  });
   const sdk = sdkRef.current;
 
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
@@ -219,8 +222,6 @@ const NexusProvider = ({
       deinitializeNexus();
     },
   });
-
-  console.log("%%% re-render");
 
   const value = useMemo(
     () => ({

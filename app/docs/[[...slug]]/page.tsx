@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { OnThisPage } from "@/components/helpers/on-this-page";
 import fm from "front-matter";
 import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/registry/nexus-elements/ui/badge";
 import { DocsCopyPage } from "@/components/mdx/docs-copy-page";
 import { absoluteUrl } from "@/lib/utils";
 

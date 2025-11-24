@@ -30,7 +30,7 @@ const SourceBreakdown = ({
           {isLoading ? (
             <>
               <div className="flex flex-col items-start gap-y-1 min-w-fit">
-                <p className="text-base font-semibold">You Spend</p>
+                <p className="text-base font-light">You Spend</p>
                 <Skeleton className="h-4 w-44" />
               </div>
               <div className="flex flex-col items-end gap-y-1 min-w-fit">
@@ -44,16 +44,16 @@ const SourceBreakdown = ({
             intent?.sources && (
               <>
                 <div className="flex flex-col items-start gap-y-1 min-w-fit">
-                  <p className="text-base font-semibold">You Spend</p>
-                  <p className="text-sm font-medium">
-                    {intent?.sources?.length > 1
-                      ? `${intent?.sources?.length} Assets on ${intent?.sources?.length} chains`
-                      : `${intent?.sources?.length} asset on ${intent?.sources?.length} chain`}
+                  <p className="text-base font-light">You Spend</p>
+                  <p className="text-sm font-light">
+                    {`${intent?.token.symbol.toUpperCase()} on ${
+                      intent?.sources?.length
+                    } ${intent?.sources?.length > 1 ? "chains" : "chain"}`}
                   </p>
                 </div>
 
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
-                  <p className="text-base font-semibold">
+                  <p className="text-base font-light">
                     {nexusSDK?.utils?.formatTokenBalance(intent?.sourcesTotal, {
                       symbol: tokenSymbol,
                       decimals: intent?.token?.decimals,
@@ -64,7 +64,7 @@ const SourceBreakdown = ({
                     className="py-0 items-center gap-x-1"
                     hideChevron={false}
                   >
-                    <p className="text-sm font-medium">View Sources</p>
+                    <p className="text-sm font-light">View Sources</p>
                   </AccordionTrigger>
                 </div>
               </>
@@ -87,10 +87,10 @@ const SourceBreakdown = ({
                       height={20}
                       className="rounded-full"
                     />
-                    <p className="text-sm font-semibold">{source.chainName}</p>
+                    <p className="text-base font-light">{source.chainName}</p>
                   </div>
 
-                  <p className="text-sm font-semibold">
+                  <p className="text-base font-light">
                     {nexusSDK?.utils?.formatTokenBalance(source.amount, {
                       symbol: tokenSymbol,
                       decimals: intent?.token?.decimals,

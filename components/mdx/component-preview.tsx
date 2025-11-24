@@ -2,7 +2,7 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { ComponentSource } from "./component-source";
 import { ComponentPreviewTabs } from "./component-preview-tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 
 type ComponentPreviewProps = React.ComponentProps<"div"> & {
   name: string;
@@ -24,6 +24,7 @@ const SHOWCASE_MAP: Record<
   "unified-balance": () =>
     import("@/components/showcase/unified-balance-showcase"),
   "fast-transfer": () => import("@/components/showcase/transfer-showcase"),
+  "view-history": () => import("@/components/showcase/view-history-showcase"),
 };
 
 export function ComponentPreview({

@@ -1,12 +1,12 @@
 "use client";
 import dynamic from "next/dynamic";
 import React, { useEffect, useRef, useState } from "react";
-import { Skeleton } from "../ui/skeleton";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 
 const ThemeControl = dynamic(
   () => import("./theme-control").then((m) => m.default),
@@ -83,6 +83,11 @@ const NAV_ITEMS = [
         id: "unified-balance",
         label: "Unified Balance",
         href: "/docs/components/unified-balance",
+      },
+      {
+        id: "view-history",
+        label: "View History",
+        href: "/docs/components/view-history",
       },
     ],
   },

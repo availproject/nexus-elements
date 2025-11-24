@@ -7,8 +7,8 @@ import {
 } from "@avail-project/nexus-core";
 import { encodeFunctionData, parseUnits, type Abi } from "viem";
 import dynamic from "next/dynamic";
-import { Skeleton } from "../ui/skeleton";
 import { useState } from "react";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 const NexusDeposit = dynamic(
   () => import("@/registry/nexus-elements/deposit/deposit"),
   {

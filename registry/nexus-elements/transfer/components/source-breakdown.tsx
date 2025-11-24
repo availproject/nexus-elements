@@ -103,7 +103,7 @@ const SourceBreakdown = ({
           {isLoading ? (
             <>
               <div className="flex flex-col items-start gap-y-1 min-w-fit">
-                <p className="text-base font-semibold">You Spend</p>
+                <p className="text-base font-light">You Spend</p>
                 <Skeleton className="h-4 w-44" />
               </div>
               <div className="flex flex-col items-end gap-y-1 min-w-fit">
@@ -117,12 +117,12 @@ const SourceBreakdown = ({
             displaySources && (
               <>
                 <div className="flex flex-col items-start gap-y-1 min-w-fit">
-                  <p className="text-base font-semibold">You Spend</p>
-                  <p className="text-sm font-medium">{spendOnSources}</p>
+                  <p className="text-base font-light">You Spend</p>
+                  <p className="text-sm font-light">{spendOnSources}</p>
                 </div>
 
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
-                  <p className="text-base font-semibold">
+                  <p className="text-base font-light">
                     {nexusSDK?.utils?.formatTokenBalance(amountSpend, {
                       symbol: tokenSymbol,
                       decimals: intent?.token?.decimals,
@@ -157,10 +157,10 @@ const SourceBreakdown = ({
                       height={20}
                       className="rounded-full"
                     />
-                    <p className="text-sm font-semibold">{source.chainName}</p>
+                    <p className="text-sm font-light">{source.chainName}</p>
                   </div>
 
-                  <p className="text-sm font-semibold">
+                  <p className="text-sm font-light">
                     {nexusSDK?.utils?.formatTokenBalance(source.amount, {
                       symbol: tokenSymbol,
                       decimals: intent?.token?.decimals,
