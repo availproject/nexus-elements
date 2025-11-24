@@ -126,7 +126,12 @@ const useExactIn = ({
       setLoading(true);
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
-      const amountBigInt = nexusSDK.utils.parseUnits(
+      // const amountBigInt = nexusSDK.utils.parseUnits(
+      //   inputs.fromAmount,
+      //   inputs.fromToken.symbol,
+      //   inputs.fromChainID
+      // );
+      const amountBigInt = nexusSDK?.utils?.parseUnits(
         inputs.fromAmount,
         inputs.fromToken.decimals
       );
@@ -166,6 +171,7 @@ const useExactIn = ({
       swapIntent.current = null;
       await fetchBalance();
     } catch (error) {
+      throw error;
       const { message } = handleNexusError(error);
       setTxError(message);
       onError?.(message);
