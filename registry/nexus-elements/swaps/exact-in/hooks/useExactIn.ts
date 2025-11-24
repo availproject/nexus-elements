@@ -126,8 +126,7 @@ const useExactIn = ({
       setLoading(true);
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
-
-      const amountBigInt = nexusSDK?.utils?.parseUnits(
+      const amountBigInt = nexusSDK.utils.parseUnits(
         inputs.fromAmount,
         inputs.fromToken.decimals
       );
