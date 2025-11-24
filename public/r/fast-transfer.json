@@ -17,16 +17,16 @@
     "tailwind-merge"
   ],
   "registryDependencies": [
-    "https://develop.elements.nexus.availproject.org//r/accordion.json",
-    "https://develop.elements.nexus.availproject.org//r/button.json",
-    "https://develop.elements.nexus.availproject.org//r/card.json",
-    "https://develop.elements.nexus.availproject.org//r/dialog.json",
-    "https://develop.elements.nexus.availproject.org//r/input.json",
-    "https://develop.elements.nexus.availproject.org//r/label.json",
-    "https://develop.elements.nexus.availproject.org//r/select.json",
-    "https://develop.elements.nexus.availproject.org//r/skeleton.json",
-    "https://develop.elements.nexus.availproject.org//r/nexus-provider.json",
-    "https://develop.elements.nexus.availproject.org//r/utils.json"
+    "https://develop.elements.nexus.availproject.org/r/accordion.json",
+    "https://develop.elements.nexus.availproject.org/r/button.json",
+    "https://develop.elements.nexus.availproject.org/r/card.json",
+    "https://develop.elements.nexus.availproject.org/r/dialog.json",
+    "https://develop.elements.nexus.availproject.org/r/input.json",
+    "https://develop.elements.nexus.availproject.org/r/label.json",
+    "https://develop.elements.nexus.availproject.org/r/select.json",
+    "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+    "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {

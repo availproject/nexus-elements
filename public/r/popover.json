@@ -5,7 +5,7 @@
   "title": "Popover",
   "description": "UI primitive: Popover",
   "registryDependencies": [
-    "https://develop.elements.nexus.availproject.org//r/utils.json"
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {

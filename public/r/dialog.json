@@ -5,7 +5,7 @@
   "title": "Dialog",
   "description": "UI primitive: Dialog",
   "registryDependencies": [
-    "https://develop.elements.nexus.availproject.org//r/utils.json"
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {
