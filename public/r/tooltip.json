@@ -4,7 +4,9 @@
   "type": "registry:component",
   "title": "Tooltip",
   "description": "UI primitive: Tooltip",
-  "dependencies": ["@radix-ui/react-tooltip"],
+  "dependencies": [
+    "@radix-ui/react-tooltip"
+  ],
   "registryDependencies": [
     "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
