@@ -13,19 +13,14 @@ import {
 
 interface NetworkToggleProps {
   currentNetwork: NexusNetwork;
-  disabled?: boolean;
 }
 
-const NetworkToggle: React.FC<NetworkToggleProps> = ({
-  currentNetwork,
-  disabled = false,
-}) => {
+const NetworkToggle: React.FC<NetworkToggleProps> = ({ currentNetwork }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { nexusSDK, deinitializeNexus } = useNexus();
 
   const handleNetworkChange = () => {
-    if (disabled) return;
     if (nexusSDK) {
       deinitializeNexus();
     }
@@ -42,7 +37,6 @@ const NetworkToggle: React.FC<NetworkToggleProps> = ({
       <Select
         value={currentNetwork as string}
         onValueChange={handleNetworkChange}
-        disabled={disabled}
       >
         <SelectTrigger>
           <SelectValue placeholder="Select a network" />

@@ -1,4 +1,4 @@
-import React, { type FC, Fragment, useEffect, useRef } from "react";
+import { type FC, Fragment, useEffect, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { type UserAsset } from "@avail-project/nexus-core";

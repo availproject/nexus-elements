@@ -1,4 +1,4 @@
-import React, { type FC } from "react";
+import { type FC } from "react";
 import { Card, CardContent } from "../../ui/card";
 import AmountInput from "../components/amount-input";
 import DestinationAssetSelect from "../components/destination-asset-select";

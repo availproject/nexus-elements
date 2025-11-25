@@ -924,6 +924,112 @@
           "type": "registry:component"
         }
       ]
+    },
+    {
+      "name": "swap-deposit",
+      "type": "registry:component",
+      "title": "Swap Deposit",
+      "description": "Swap and Deposit tokens across chains and contracts",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-popover",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/tabs.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/swap-deposit/swap-deposit.tsx",
+          "target": "components/swap-deposit/swap-deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/asset-select.tsx",
+          "target": "components/swap-deposit/components/asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/exact-in/hooks/useExactIn.ts",
+          "target": "components/swaps/exact-in/hooks/useExactIn.ts",
+          "type": "registry:component"
+        }
+      ]
     }
   ]
 }

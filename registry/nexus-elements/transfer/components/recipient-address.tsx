@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC, useState } from "react";
+import { type FC, useState } from "react";
 import { Input } from "../../ui/input";
 import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";

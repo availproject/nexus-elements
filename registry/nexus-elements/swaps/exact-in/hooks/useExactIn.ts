@@ -9,7 +9,6 @@ import {
   type OnSwapIntentHookData,
   type UserAsset,
 } from "@avail-project/nexus-core";
-import { type Address } from "viem";
 import {
   resolveDestinationFromPrefill,
   resolveSourceFromPrefill,
@@ -28,6 +27,7 @@ type SourceTokenInfo = {
   name: string;
   symbol: string;
 };
+
 type DestinationTokenInfo = {
   tokenAddress: `0x${string}`;
   decimals: number;
@@ -46,7 +46,6 @@ interface SwapInputs {
 
 interface UseExactInProps {
   nexusSDK: NexusSDK | null;
-  address?: Address;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   swapBalance: UserAsset[] | null;
   fetchBalance: () => Promise<void>;

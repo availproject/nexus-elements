@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC } from "react";
+import { type FC } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
@@ -18,7 +18,7 @@ import {
 import TransactionProgress from "./components/transaction-progress";
 import SourceBreakdown from "./components/source-breakdown";
 import {
-  SUPPORTED_CHAINS_IDS,
+  type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
 import { type Address } from "viem";

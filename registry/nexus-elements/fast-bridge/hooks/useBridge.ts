@@ -57,6 +57,7 @@ type BridgeState = {
   inputs: FastBridgeState;
   status: TransactionStatus;
 };
+
 type Action =
   | { type: "setInputs"; payload: Partial<FastBridgeState> }
   | { type: "resetInputs" }
