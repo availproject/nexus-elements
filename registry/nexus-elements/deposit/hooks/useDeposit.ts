@@ -26,7 +26,7 @@ import {
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
 import {
-  TransactionStatus,
+  type TransactionStatus,
   useDebouncedValue,
   useNexusError,
   usePolling,

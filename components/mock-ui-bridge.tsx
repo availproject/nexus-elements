@@ -1,7 +1,6 @@
 "use client";
 
 import { Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/registry/nexus-elements/ui/card";
 import { Label } from "@/registry/nexus-elements/ui/label";
 import {
@@ -24,6 +23,7 @@ import { Fragment } from "react";
 import { SHORT_CHAIN_NAME } from "@/registry/nexus-elements/common/utils/constant";
 import { Input } from "@/registry/nexus-elements/ui/input";
 import Link from "next/link";
+import { Button } from "@/registry/nexus-elements/ui/button";
 
 const MOCK_BALANCE = {
   abstracted: true,

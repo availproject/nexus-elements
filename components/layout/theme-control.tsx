@@ -1,3 +1,4 @@
+"use client";
 import { Moon, Palette, Sun } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import {
@@ -13,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/registry/nexus-elements/ui/popover";
-import { Button } from "../ui/button";
+import { Button } from "@/registry/nexus-elements/ui/button";
 
 type ThemeControlProps = {
   theme: string;
@@ -96,6 +97,7 @@ const ThemeControl = ({
             setTheme={setTheme}
             palette={palette}
             setPalette={setPalette}
+            isMobile={isMobile}
           />
         </PopoverContent>
       </Popover>
@@ -108,6 +110,7 @@ const ThemeControl = ({
       setTheme={setTheme}
       palette={palette}
       setPalette={setPalette}
+      isMobile={isMobile}
     />
   );
 };

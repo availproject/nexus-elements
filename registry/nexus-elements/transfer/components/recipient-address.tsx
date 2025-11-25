@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC, useRef, useState } from "react";
+import { type FC, useState } from "react";
 import { Input } from "../../ui/input";
 import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";
@@ -18,36 +18,35 @@ const RecipientAddress: FC<RecipientAddressProps> = ({
   disabled,
 }) => {
   const { nexusSDK } = useNexus();
-  const [isEditing, setIsEditing] = useState(true);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   return (
     <div className="w-full">
       {isEditing ? (
         <div className="flex items-center w-full justify-between gap-x-4">
           <Input
-            defaultValue={address}
+            value={address}
             placeholder="Enter Recipient Address"
-            ref={inputRef}
+            onChange={(e) => onChange(e.target.value)}
             className="w-full"
+            disabled={disabled}
           />
           <Button
-            variant={"outline"}
+            variant={"ghost"}
             size={"icon"}
             onClick={() => {
-              const nextValue = inputRef.current?.value?.trim() ?? "";
-              onChange(nextValue);
               setIsEditing(false);
             }}
+            disabled={disabled}
           >
             <Check className="size-5" />
           </Button>
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row items-start sm:items-center w-full justify-between">
-          <p className="font-semibold">Recipient Address</p>
+          <p className="font-light text-base">Recipient Address</p>
           <div className="flex items-center gap-x-3 ">
             {address && (
-              <p className="font-semibold">
+              <p className="font-light text-base">
                 {nexusSDK?.utils?.truncateAddress(address, 6, 6)}
               </p>
             )}
@@ -58,10 +57,10 @@ const RecipientAddress: FC<RecipientAddressProps> = ({
               onClick={() => {
                 setIsEditing(true);
               }}
-              className="px-0 size-6"
+              className="px-0 size-5"
               disabled={disabled}
             >
-              <Edit className="size-6" />
+              <Edit className="size-5" />
             </Button>
           </div>
         </div>

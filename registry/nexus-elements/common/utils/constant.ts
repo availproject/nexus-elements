@@ -11,6 +11,7 @@ export const SHORT_CHAIN_NAME: Record<number, string> = {
   50104: "Sophon",
   8217: "Kaia",
   56: "BNB",
+  143: "Monad",
   999: "HyperEVM",
   728126428: "Tron",
   11155111: "Sepolia",

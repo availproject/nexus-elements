@@ -3,7 +3,6 @@ import {
   type SUPPORTED_TOKENS,
   type ExecuteParams,
 } from "@avail-project/nexus-core";
-import React from "react";
 import DepositModal from "./components/deposit-modal";
 import { type Address } from "viem";
 import Container from "./components/container";

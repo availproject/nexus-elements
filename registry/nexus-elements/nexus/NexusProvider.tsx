@@ -53,14 +53,27 @@ type NexusProviderProps = {
   };
 };
 
+const defaultConfig: Required<NexusProviderProps["config"]> = {
+  network: "mainnet",
+  debug: false,
+};
+
 const NexusProvider = ({
   children,
-  config = {
-    network: "mainnet",
-    debug: true,
-  },
+  config = defaultConfig,
 }: NexusProviderProps) => {
-  const sdk = useMemo(() => new NexusSDK(config), [config]);
+  const stableConfig = useMemo(
+    () => ({ ...defaultConfig, ...config }),
+    [config?.network, config?.debug]
+  );
+
+  const sdkRef = useRef<NexusSDK | null>(null);
+  sdkRef.current ??= new NexusSDK({
+    ...stableConfig,
+    siweChain: config?.network === "testnet" ? 11155111 : 1,
+  });
+  const sdk = sdkRef.current;
+
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const supportedChainsAndTokens =

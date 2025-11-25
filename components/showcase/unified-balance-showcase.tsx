@@ -1,7 +1,7 @@
 import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import dynamic from "next/dynamic";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 const UnifiedBalance = dynamic(
   () => import("@/registry/nexus-elements/unified-balance/unified-balance"),
   {

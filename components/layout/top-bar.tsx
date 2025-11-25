@@ -1,12 +1,12 @@
 "use client";
 import dynamic from "next/dynamic";
 import React, { useEffect, useRef, useState } from "react";
-import { Skeleton } from "../ui/skeleton";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 
 const ThemeControl = dynamic(
   () => import("./theme-control").then((m) => m.default),
@@ -84,6 +84,11 @@ const NAV_ITEMS = [
         label: "Unified Balance",
         href: "/docs/components/unified-balance",
       },
+      {
+        id: "view-history",
+        label: "View History",
+        href: "/docs/components/view-history",
+      },
     ],
   },
 ];
@@ -135,9 +140,9 @@ export default function Topbar() {
 
   return (
     <div className="sticky top-0 z-40 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="h-(--header-height) px-4 py-4 flex items-center justify-between gap-4 ">
+      <div className="h-(--header-height) px-4! py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-x-6">
-          <Link href={"/"} className={cn("cursor-pointer")}>
+          <Link href={"/"} className={cn("cursor-pointer hidden sm:block")}>
             <Image
               src="/avail-logo-dark.svg"
               alt="Nexus Elements"
@@ -197,8 +202,9 @@ export default function Topbar() {
             setPalette={setPalette}
             isMobile={isMobile}
           />
-
-          <ConnectWalletButton />
+          <div className="hidden sm:block">
+            <ConnectWalletButton />
+          </div>
         </div>
       </div>
     </div>

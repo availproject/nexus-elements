@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, type FC } from "react";
+import { useEffect, useMemo, type FC } from "react";
 import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";

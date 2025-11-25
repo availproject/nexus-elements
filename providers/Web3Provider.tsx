@@ -24,7 +24,7 @@ import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import { useSearchParams } from "next/navigation";
 import { type NexusNetwork } from "@avail-project/nexus-core";
 import { Suspense, useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 
 const hyperEVM = defineChain({
   id: 999,

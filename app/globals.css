@@ -6,6 +6,7 @@
 @custom-variant fixed (&:is(.layout-fixed *));
 
 @theme inline {
+  --breakpoint-xs: 375px;
   --breakpoint-3xl: 1600px;
   --breakpoint-4xl: 2000px;
   --font-sans: var(--font-sans);

@@ -12,9 +12,15 @@ type ElementType =
   | "swaps"
   | "fast-bridge"
   | "unified-balance"
-  | "fast-transfer";
+  | "fast-transfer"
+  | "view-history"
+  | "swap-deposit";
 
-const disabledTestnet = new Set<ElementType>(["deposit", "swaps"]);
+const disabledTestnet = new Set<ElementType>([
+  "deposit",
+  "swaps",
+  "swap-deposit",
+]);
 
 type ToggleControlProps = Omit<
   React.ComponentProps<typeof Toggle>,
@@ -56,10 +62,10 @@ const ShowcaseWrapper = ({
   return (
     <div className="w-full flex flex-col gap-y-4">
       <div className="flex items-center justify-between w-full">
-        <NetworkToggle
-          currentNetwork={urlNetwork ?? "devnet"}
-          disabled={disabledTestnet.has(type)}
-        />
+        {!disabledTestnet.has(type) && (
+          <NetworkToggle currentNetwork={urlNetwork ?? "mainnet"} />
+        )}
+
         {resolvedToggle && (
           <Toggle
             variant={variant}

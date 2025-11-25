@@ -1,7 +1,6 @@
 "use client";
 
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { Button } from "../ui/button";
 import { Check, ChevronDown, Copy } from "lucide-react";
 import {
   Popover,
@@ -16,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Separator } from "../ui/separator";
+import { Button } from "@/registry/nexus-elements/ui/button";
 
 function getPromptUrl(baseURL: string, url: string) {
   return `${baseURL}?q=${encodeURIComponent(

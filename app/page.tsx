@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/registry/nexus-elements/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
 import MockBridgeUI from "@/components/mock-ui-bridge";
 
@@ -13,11 +13,11 @@ export default function Home() {
         {/* Hero Section */}
         <section className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h1 className="text-7xl  font-bold tracking-tighter mb-8 text-foreground">
+            <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter mb-8 text-foreground">
               Plug n Play components <br /> to{" "}
               <span className="text-chart-1">10x</span> your UX
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
+            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
               Ready-made React components for almost any use case. Use as is or
               customise and go to market fast
             </p>
@@ -33,10 +33,7 @@ export default function Home() {
             </div>
             <div className="mt-12 flex items-center justify-center gap-2 text-sm text-foreground font-mono border border-border rounded-md p-4 w-full overflow-x-scroll lg:w-max bg-background mx-auto">
               <span>~</span>
-              <span>
-                npx shadcn@latest add
-                https://develop.elements.nexus.availproject.org/r/fast-bridge.json
-              </span>
+              <span>npx shadcn@latest add @nexus-elements/fast-bridge</span>
             </div>
           </div>
 

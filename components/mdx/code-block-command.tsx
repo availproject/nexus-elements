@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/registry/nexus-elements/ui/tooltip";
 import {
   Tabs,
   TabsContent,
@@ -14,6 +13,7 @@ import {
   TabsTrigger,
 } from "@/registry/nexus-elements/ui/tabs";
 import { Check, Copy, Terminal } from "lucide-react";
+import { Button } from "@/registry/nexus-elements/ui/button";
 
 export function CodeBlockCommand({
   __npm__,
