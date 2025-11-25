@@ -33,7 +33,9 @@
         "https://elements.nexus.availproject.org/r/skeleton.json",
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/separator.json"
       ],
       "files": [
         {
@@ -44,6 +46,11 @@
         {
           "path": "registry/nexus-elements/view-history/view-history.tsx",
           "target": "components/view-history/view-history.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
+          "target": "components/view-history/hooks/useViewHistory.ts",
           "type": "registry:component"
         },
         {
@@ -182,7 +189,9 @@
         "https://elements.nexus.availproject.org/r/skeleton.json",
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/separator.json"
       ],
       "files": [
         {
@@ -193,6 +202,11 @@
         {
           "path": "registry/nexus-elements/view-history/view-history.tsx",
           "target": "components/view-history/view-history.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
+          "target": "components/view-history/hooks/useViewHistory.ts",
           "type": "registry:component"
         },
         {
