@@ -5,7 +5,7 @@
   "title": "Select",
   "description": "UI primitive: Select",
   "registryDependencies": [
-    "https://elements.nexus.availproject.org/r/utils.json"
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {

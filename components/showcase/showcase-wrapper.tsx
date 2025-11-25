@@ -49,7 +49,7 @@ const ShowcaseWrapper = ({
   ...toggleProps
 }: ShowcaseWrapperProps) => {
   const searchParams = useSearchParams();
-  const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
+  const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;
   const resolvedToggle =
     typeof toggle === "boolean"
       ? toggle

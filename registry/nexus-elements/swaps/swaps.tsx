@@ -3,6 +3,7 @@
 import SwapExactIn from "./exact-in/exact-in";
 import SwapExactOut from "./exact-out/exact-out";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface SwapsProps {
   onComplete?: (amount?: string) => void;

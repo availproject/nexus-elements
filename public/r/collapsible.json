@@ -5,7 +5,7 @@
   "title": "Collapsible",
   "description": "UI primitive: Collapsible",
   "registryDependencies": [
-    "https://elements.nexus.availproject.org/r/utils.json"
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {
