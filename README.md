@@ -4,16 +4,10 @@
 
 You can install the `fast-bridge` component into any project using the shadcn CLI via a direct URL.
 
-### Direct URL (zero setup)
+### Direct registry (zero setup)
 
 ```bash
-pnpm dlx shadcn@latest add https://elements.nexus.availproject.org/r/fast-bridge.json
-```
-
-### Custom registry flag
-
-```bash
-pnpm dlx shadcn@latest add --registry https://elements.nexus.availproject.org/r/{name}.json fast-bridge
+pnpm dlx shadcn@latest add @nexus-elements/fast-bridge
 ```
 
 ### Local development (install from localhost)

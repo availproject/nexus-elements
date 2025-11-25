@@ -33,10 +33,7 @@ export default function Home() {
             </div>
             <div className="mt-12 flex items-center justify-center gap-2 text-sm text-foreground font-mono border border-border rounded-md p-4 w-full overflow-x-scroll lg:w-max bg-background mx-auto">
               <span>~</span>
-              <span>
-                npx shadcn@latest add
-                https://elements.nexus.availproject.org/r/fast-bridge.json
-              </span>
+              <span>npx shadcn@latest add @nexus-elements/fast-bridge</span>
             </div>
           </div>
 
