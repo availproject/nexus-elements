@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC } from "react";
+import { type FC } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";

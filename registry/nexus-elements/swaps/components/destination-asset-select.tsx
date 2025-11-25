@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
   Dialog,

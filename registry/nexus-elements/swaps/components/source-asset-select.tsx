@@ -1,5 +1,5 @@
 "use client";
-import React, { type FC, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
   Dialog,
@@ -11,7 +11,7 @@ import {
 import { useNexus } from "../../nexus/NexusProvider";
 import {
   CHAIN_METADATA,
-  UserAsset,
+  type UserAsset,
   type SUPPORTED_CHAINS_IDS,
 } from "@avail-project/nexus-core";
 import { TOKEN_IMAGES } from "../config/destination";

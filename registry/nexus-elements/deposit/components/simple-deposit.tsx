@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback } from "react";
-import { BaseDepositProps } from "../deposit";
+import { useCallback } from "react";
+import { type BaseDepositProps } from "../deposit";
 import AmountInput from "./amount-input";
 import SourceSelect from "./source-select";
 import { Button } from "../../ui/button";

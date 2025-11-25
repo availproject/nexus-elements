@@ -1,5 +1,5 @@
 import { Check, LoaderPinwheel, Circle, Link as LinkIcon } from "lucide-react";
-import React, { type FC, useMemo } from "react";
+import { type FC, useMemo } from "react";
 import {
   type BridgeStepType,
   type SwapStepType,

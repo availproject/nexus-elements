@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+
 import SwapExactIn from "./exact-in/exact-in";
 import SwapExactOut from "./exact-out/exact-out";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";

@@ -1,4 +1,4 @@
-import { RFF } from "@avail-project/nexus-core";
+import { type RFF } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useCallback, useEffect, useState } from "react";
 
