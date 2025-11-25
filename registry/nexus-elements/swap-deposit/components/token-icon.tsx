@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type TokenIconSize = "sm" | "md" | "lg";
@@ -31,7 +30,7 @@ export const TokenIcon = ({
   return (
     <span className={cn("relative inline-flex", className)}>
       {tokenLogo ? (
-        <Image
+        <img
           src={tokenLogo}
           alt={symbol ?? "token"}
           width={dimension}
@@ -54,7 +53,7 @@ export const TokenIcon = ({
       )}
       {chainLogo && (
         <span className="absolute -bottom-0.5 -right-0.5 rounded-full border border-background bg-background">
-          <Image
+          <img
             src={chainLogo}
             alt="chain logo"
             width={Math.max(14, dimension * 0.4)}
@@ -66,4 +65,3 @@ export const TokenIcon = ({
     </span>
   );
 };
-
