@@ -11,10 +11,17 @@ overrides:
 importers:
   .:
     dependencies:
+<<<<<<< Updated upstream
       "@avail-project/nexus-core":
         specifier: 1.0.0-beta.50
         version: 1.0.0-beta.50(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)
       "@radix-ui/react-accordion":
+=======
+      '@avail-project/nexus-core':
+        specifier: 1.0.0-beta.50
+        version: 1.0.0-beta.50(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)
+      '@radix-ui/react-accordion':
+>>>>>>> Stashed changes
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       "@radix-ui/react-checkbox":
@@ -181,11 +188,16 @@ packages:
       }
     hasBin: true
 
+<<<<<<< Updated upstream
   "@avail-project/ca-common@1.0.0-dev.4":
     resolution:
       {
         integrity: sha512-EG7BP4o6f1juSHIzxOO/X4AzWO+pnvI177gg0hbfyYV8eSFsWOm5L/PPKk7FCE20YGinS/R21R/F8r2q3Tgcdg==,
       }
+=======
+  '@avail-project/ca-common@1.0.0-dev.4':
+    resolution: {integrity: sha512-EG7BP4o6f1juSHIzxOO/X4AzWO+pnvI177gg0hbfyYV8eSFsWOm5L/PPKk7FCE20YGinS/R21R/F8r2q3Tgcdg==}
+>>>>>>> Stashed changes
     peerDependencies:
       "@cosmjs/proto-signing": ^0.34.0
       "@cosmjs/stargate": ^0.34.0
@@ -196,11 +208,16 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
+<<<<<<< Updated upstream
   "@avail-project/nexus-core@1.0.0-beta.50":
     resolution:
       {
         integrity: sha512-IvBoPKn0N/nVMSiji/uN8W1+pfr1aX4a71eVsjPbB3eZsX0jI5lhRY8KcAAm1YoEB64/7A+6+eR06EVJht0CPQ==,
       }
+=======
+  '@avail-project/nexus-core@1.0.0-beta.50':
+    resolution: {integrity: sha512-IvBoPKn0N/nVMSiji/uN8W1+pfr1aX4a71eVsjPbB3eZsX0jI5lhRY8KcAAm1YoEB64/7A+6+eR06EVJht0CPQ==}
+>>>>>>> Stashed changes
 
   "@babel/code-frame@7.27.1":
     resolution:
@@ -11718,7 +11735,13 @@ snapshots:
 
   "@antfu/ni@23.3.1": {}
 
+<<<<<<< Updated upstream
   "@avail-project/ca-common@1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))":
+=======
+  '@antfu/ni@23.3.1': {}
+
+  '@avail-project/ca-common@1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+>>>>>>> Stashed changes
     dependencies:
       "@bufbuild/protobuf": 2.10.1
       "@cosmjs/proto-signing": 0.34.1
@@ -11736,6 +11759,7 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
+<<<<<<< Updated upstream
   "@avail-project/nexus-core@1.0.0-beta.50(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)":
     dependencies:
       "@avail-project/ca-common": 1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
@@ -11748,6 +11772,20 @@ snapshots:
       "@opentelemetry/sdk-logs": 0.208.0(@opentelemetry/api@1.9.0)
       "@starkware-industries/starkware-crypto-utils": 0.2.1
       "@tronweb3/tronwallet-abstract-adapter": 1.1.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+=======
+  '@avail-project/nexus-core@1.0.0-beta.50(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)':
+    dependencies:
+      '@avail-project/ca-common': 1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@cosmjs/proto-signing': 0.34.1
+      '@cosmjs/stargate': 0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      '@metamask/safe-event-emitter': 3.1.2
+      '@opentelemetry/api-logs': 0.208.0
+      '@opentelemetry/exporter-logs-otlp-http': 0.208.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-logs': 0.208.0(@opentelemetry/api@1.9.0)
+      '@starkware-industries/starkware-crypto-utils': 0.2.1
+      '@tronweb3/tronwallet-abstract-adapter': 1.1.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+>>>>>>> Stashed changes
       axios: 1.13.1
       buffer: 6.0.3
       decimal.js: 10.6.0
