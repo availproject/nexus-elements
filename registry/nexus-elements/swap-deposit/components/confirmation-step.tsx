@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { DepositHeader } from "./deposit-header";
 import { TokenIcon } from "./token-icon";
-import { InfoCard } from "./info-card";
-import { InfoRow } from "./info-row";
+import { InfoRow, InfoCard } from "./info";
 import { Button } from "../../ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../../ui/collapsible";
+} from "@/registry/nexus-elements/ui/collapsible";
 import {
   Tooltip,
   TooltipContent,
@@ -18,25 +17,22 @@ import {
   TooltipTrigger,
 } from "../../ui/tooltip";
 import { ChevronRight, Fuel, Info } from "lucide-react";
-
-const usd = (value?: number) =>
-  value !== undefined ? `$${value.toFixed(2)}` : "—";
+import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
+import { type AssetSelection } from "./asset-select";
+import { cn } from "@/lib/utils";
+import { Separator } from "../../ui/separator";
 
 export interface ConfirmationDetails {
   sourceLabel: string;
-  sourceTokenLogo?: string;
+  sources: (AssetSelection | undefined)[];
+  gasTokenSymbol?: string;
   estimatedTime?: string;
-  sendTokenSymbol: string;
-  sendAmount: number;
-  sendTokenLogo?: string;
+  amountSpent: string;
   receiveTokenSymbol: string;
-  receiveAmount: number;
+  receiveAmountAfterSwap: string;
+  receiveTokenChain: SUPPORTED_CHAINS_IDS;
   receiveTokenLogo?: string;
-  networkCost?: number;
-  sourceChainGas?: number;
-  destinationChainGas?: number;
-  priceImpact?: number;
-  maxSlippage?: number;
+  networkCost?: string;
 }
 
 interface ConfirmationStepProps {
@@ -59,7 +55,7 @@ export const ConfirmationStep = ({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full flex-col bg-background no-scrollbar">
       <DepositHeader
         title={title}
         onBack={onBack}
@@ -70,7 +66,7 @@ export const ConfirmationStep = ({
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <div className="text-center py-2">
           <p className="text-4xl font-light text-foreground">
-            ${amount.toFixed(2)}
+            ${amount.toFixed(6)}
           </p>
           <div className="mt-2 inline-flex items-center gap-2 text-muted-foreground text-sm">
             <TokenIcon
@@ -78,64 +74,51 @@ export const ConfirmationStep = ({
               tokenLogo={details.receiveTokenLogo}
               size="sm"
             />
-            <span>
-              {details.receiveAmount.toFixed(6)} {details.receiveTokenSymbol}
-            </span>
+            <span>{details.receiveAmountAfterSwap}</span>
           </div>
         </div>
 
         <InfoCard>
           <InfoRow
-            label="Source"
-            value={
-              <div className="flex items-center gap-2">
-                <TokenIcon
-                  symbol={details.sendTokenSymbol}
-                  tokenLogo={details.sourceTokenLogo}
-                  size="sm"
-                />
-                <span>{details.sourceLabel}</span>
-              </div>
-            }
-          />
-          <div className="border-t border-border" />
-          <InfoRow
-            label="Estimated time"
-            value={details.estimatedTime ?? "Few seconds"}
-          />
-        </InfoCard>
-
-        <InfoCard>
-          <InfoRow
             label="You send"
             value={
-              <div className="flex items-center gap-2">
-                <TokenIcon
-                  symbol={details.sendTokenSymbol}
-                  tokenLogo={details.sendTokenLogo}
-                  size="sm"
-                />
-                <span>
-                  {details.sendAmount.toFixed(6)} {details.sendTokenSymbol}
-                </span>
+              <div className="flex items-center gap-2 py-1.5">
+                {details.sources?.map((source, index) => (
+                  <TokenIcon
+                    key={source?.tokenAddress}
+                    symbol={source?.symbol}
+                    tokenLogo={source?.tokenLogo}
+                    chainLogo={source?.chainLogo}
+                    size="sm"
+                    className={cn(
+                      "last:mr-0",
+                      index !== (details.sources?.length ?? 0) - 1 && "-mr-3"
+                    )}
+                  />
+                ))}
+                <span>{details.amountSpent}</span>
               </div>
             }
           />
-          <div className="border-t border-border" />
+          <Separator className="my-2" />
           <InfoRow
             label="You receive"
             value={
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 py-1.5">
                 <TokenIcon
                   symbol={details.receiveTokenSymbol}
                   tokenLogo={details.receiveTokenLogo}
                   size="sm"
                 />
-                <span>
-                  {details.receiveAmount.toFixed(6)} {details.receiveTokenSymbol}
-                </span>
+                <span>{details.receiveAmountAfterSwap}</span>
               </div>
             }
+          />
+          <Separator className="my-2" />
+          <InfoRow
+            label="Estimated time"
+            value={details.estimatedTime ?? "Few seconds"}
+            valueClassName="py-1.5"
           />
         </InfoCard>
 
@@ -161,10 +144,8 @@ export const ConfirmationStep = ({
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-xs">
-                            Source gas: {usd(details.sourceChainGas)}
-                          </p>
-                          <p className="text-xs">
-                            Destination gas: {usd(details.destinationChainGas)}
+                            Gas fee required to complete the on-chain deposit
+                            transaction
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -173,54 +154,8 @@ export const ConfirmationStep = ({
                   value={
                     <span className="flex items-center gap-1">
                       <Fuel className="h-3.5 w-3.5 text-muted-foreground" />
-                      {usd(details.networkCost)}
+                      {details.networkCost}
                     </span>
-                  }
-                />
-                <div className="border-t border-border" />
-                <InfoRow
-                  label={
-                    <span className="flex items-center gap-1">
-                      Price impact
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            Estimated market impact for this trade.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </span>
-                  }
-                  value={
-                    details.priceImpact !== undefined
-                      ? `${details.priceImpact.toFixed(2)}%`
-                      : "—"
-                  }
-                />
-                <div className="border-t border-border" />
-                <InfoRow
-                  label={
-                    <span className="flex items-center gap-1">
-                      Max slippage
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            Maximum price movement allowed before reverting.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </span>
-                  }
-                  value={
-                    details.maxSlippage !== undefined
-                      ? `Auto · ${details.maxSlippage.toFixed(2)}%`
-                      : "Auto"
                   }
                 />
               </TooltipProvider>
@@ -232,14 +167,19 @@ export const ConfirmationStep = ({
       <div className="space-y-3 border-t border-border p-4 text-center text-xs text-muted-foreground">
         <p>
           By clicking Confirm, you agree to our{" "}
-          <a href="#" className="text-foreground underline">
+          <a
+            href="https://docs.availproject.org/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="text-foreground underline"
+          >
             terms
-          </a>
+          </a>{" "}
           .
         </p>
         <Button
           onClick={onConfirm}
-          className="h-12 w-full rounded-xl text-base font-semibold"
+          className="w-full rounded-xl text-base font-semibold"
         >
           Confirm order
         </Button>
@@ -247,4 +187,3 @@ export const ConfirmationStep = ({
     </div>
   );
 };
-

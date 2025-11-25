@@ -1,7 +1,14 @@
+"use client";
 import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import SwapDeposit from "@/registry/nexus-elements/swap-deposit/swap-deposit";
 import { Abi, encodeFunctionData } from "viem";
+import {
+  CHAIN_METADATA,
+  SUPPORTED_CHAINS,
+  TOKEN_CONTRACT_ADDRESSES,
+  TOKEN_METADATA,
+} from "@avail-project/nexus-core";
 
 const SwapDepositShowcase = () => {
   return (
@@ -10,6 +17,18 @@ const SwapDepositShowcase = () => {
       type="swap-deposit"
     >
       <SwapDeposit
+        destination={{
+          chainId: SUPPORTED_CHAINS.ARBITRUM,
+          tokenAddress:
+            TOKEN_CONTRACT_ADDRESSES["USDT"][SUPPORTED_CHAINS.ARBITRUM],
+          tokenSymbol: "USDT",
+          tokenDecimals: TOKEN_METADATA["USDT"].decimals,
+          tokenLogo: TOKEN_METADATA["USDT"].icon,
+          label: "Deposit USDT on Arbitrum",
+          gasTokenSymbol:
+            CHAIN_METADATA[SUPPORTED_CHAINS.ARBITRUM].nativeCurrency.symbol,
+          estimatedTime: "≈ 30s",
+        }}
         executeDeposit={(tokenSymbol, tokenAddress, amount, _chainId, user) => {
           const contractAddress =
             "0x794a61358D6845594F94dc1DB02A252b5b4814aD" as const;

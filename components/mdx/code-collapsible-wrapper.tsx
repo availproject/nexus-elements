@@ -7,7 +7,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@/registry/nexus-elements/ui/collapsible";
 import { Separator } from "@/registry/nexus-elements/ui/separator";
 
 export function CodeCollapsibleWrapper({
