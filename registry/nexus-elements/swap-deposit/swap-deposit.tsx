@@ -44,7 +44,7 @@ const SwapDeposit = ({
   destination,
   title = "Select Sources",
 }: SwapDepositProps) => {
-  const { nexusSDK } = useNexus();
+  const { nexusSDK, swapBalance } = useNexus();
 
   const {
     status,
@@ -201,6 +201,11 @@ const SwapDeposit = ({
         onContinue={handleSourcesContinue}
         onBack={reset}
         onClose={reset}
+        emptyLabel={
+          swapBalance
+            ? "No swappable assets found"
+            : "Fetching swappable tokens"
+        }
       />
     );
   };
