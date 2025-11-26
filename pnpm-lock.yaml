@@ -351,8 +351,6 @@ packages:
 
   '@cosmjs/stargate@0.34.0':
     resolution: {integrity: sha512-FU/A0OdkNKfqQ4d7CC8KceTVGoCy3BemFgVjbXL/K5FnAafEjqqWInQ531oNvBejpMdm1NSkfbp97CfILeTW7A==}
-  '@cosmjs/stargate@0.34.0':
-    resolution: {integrity: sha512-FU/A0OdkNKfqQ4d7CC8KceTVGoCy3BemFgVjbXL/K5FnAafEjqqWInQ531oNvBejpMdm1NSkfbp97CfILeTW7A==}
 
   '@cosmjs/stream@0.34.1':
     resolution: {integrity: sha512-EVbSFUnBMHkRX7Oy+JrGe3i8TjxnRs5BKJa8CZnn4ZHSWf6Krw+nWlaJ7FixFttd+PX8c+Agzw+Qhv3pm9HPVg==}
@@ -6896,7 +6894,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
   '@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       '@cosmjs/amino': 0.34.1
