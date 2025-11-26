@@ -54,6 +54,7 @@ const SimpleDeposit = ({
     setTxError,
     timer,
     filteredBridgableBalance,
+    unfilteredBridgableBalance,
     simulation,
     startTransaction,
     cancelSimulation,
@@ -72,6 +73,7 @@ const SimpleDeposit = ({
     executeBuilder: depositExecute,
     fetchBridgableBalance,
   });
+
   const renderDepositButtonContent = useCallback(() => {
     if (isDialogOpen) return "Deposit";
     if (refreshing)
@@ -95,7 +97,8 @@ const SimpleDeposit = ({
     <div className="flex flex-col items-center w-full gap-y-3 rounded-lg">
       {/* Sources */}
       <SourceSelect
-        chainOptions={chainOptions}
+        token={token ?? "USDC"}
+        balanceBreakdown={unfilteredBridgableBalance}
         selected={inputs?.selectedSources}
         onChange={(selected) =>
           setInputs({ ...inputs, selectedSources: selected })

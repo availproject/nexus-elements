@@ -140,9 +140,67 @@ const useDeposit = ({
   const simulationRequestIdRef = useRef(0);
   const activeSimulationIdRef = useRef<number | null>(null);
 
-  const filteredBridgableBalance = useMemo(() => {
-    return bridgableBalance?.find((bal) => bal?.symbol === token);
+  // Unfiltered balance: only filtered by token and non-zero balance (for SourceSelect)
+  const unfilteredBridgableBalance = useMemo(() => {
+    const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
+    if (!tokenBalance) return undefined;
+
+    // Only filter by non-zero balance, not by selected sources
+    const nonZeroBreakdown = tokenBalance.breakdown.filter(
+      (chain) => Number.parseFloat(chain.balance) > 0
+    );
+
+    // Recalculate total balance from non-zero sources
+    const totalBalance = nonZeroBreakdown.reduce(
+      (sum, chain) => sum + Number.parseFloat(chain.balance),
+      0
+    );
+
+    const totalBalanceInFiat = nonZeroBreakdown.reduce(
+      (sum, chain) => sum + chain.balanceInFiat,
+      0
+    );
+
+    return {
+      ...tokenBalance,
+      balance: totalBalance.toString(),
+      balanceInFiat: totalBalanceInFiat,
+      breakdown: nonZeroBreakdown,
+    };
   }, [bridgableBalance, token]);
+
+  // Filtered balance: filtered by token, selected sources, and non-zero balance (for AmountInput)
+  const filteredBridgableBalance = useMemo(() => {
+    const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
+    if (!tokenBalance) return undefined;
+
+    // Filter breakdown by selected sources and non-zero balances
+    const selectedSourcesSet = new Set(inputs.selectedSources);
+    const filteredBreakdown = tokenBalance.breakdown.filter(
+      (chain) =>
+        selectedSourcesSet.has(chain.chain.id) &&
+        Number.parseFloat(chain.balance) > 0
+    );
+
+    // Recalculate total balance from filtered sources
+    const totalBalance = filteredBreakdown.reduce(
+      (sum, chain) => sum + Number.parseFloat(chain.balance),
+      0
+    );
+
+    // Recalculate total balance in fiat from filtered sources
+    const totalBalanceInFiat = filteredBreakdown.reduce(
+      (sum, chain) => sum + chain.balanceInFiat,
+      0
+    );
+
+    return {
+      ...tokenBalance,
+      balance: totalBalance.toString(),
+      balanceInFiat: totalBalanceInFiat,
+      breakdown: filteredBreakdown,
+    };
+  }, [bridgableBalance, token, inputs.selectedSources]);
 
   const allCompleted = useMemo(
     () => (steps?.length ?? 0) > 0 && steps.every((s) => s.completed),
@@ -441,6 +499,7 @@ const useDeposit = ({
     setTxError,
     timer: stopwatch.seconds,
     filteredBridgableBalance,
+    unfilteredBridgableBalance,
     simulation,
     lastResult,
     steps,
