@@ -49,7 +49,7 @@ const ShowcaseWrapper = ({
   ...toggleProps
 }: ShowcaseWrapperProps) => {
   const searchParams = useSearchParams();
-  const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
+  const urlNetwork = (searchParams.get("network") || "canary") as NexusNetwork;
   const resolvedToggle =
     typeof toggle === "boolean"
       ? toggle
@@ -63,7 +63,7 @@ const ShowcaseWrapper = ({
     <div className="w-full flex flex-col gap-y-4">
       <div className="flex items-center justify-between w-full">
         {!disabledTestnet.has(type) && (
-          <NetworkToggle currentNetwork={urlNetwork ?? "mainnet"} />
+          <NetworkToggle currentNetwork={urlNetwork ?? "canary"} />
         )}
 
         {resolvedToggle && (
