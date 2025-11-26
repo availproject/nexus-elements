@@ -1,3 +1,4 @@
+"use client";
 import { Moon, Palette, Sun } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import {
@@ -96,6 +97,7 @@ const ThemeControl = ({
             setTheme={setTheme}
             palette={palette}
             setPalette={setPalette}
+            isMobile={isMobile}
           />
         </PopoverContent>
       </Popover>
@@ -108,6 +110,7 @@ const ThemeControl = ({
       setTheme={setTheme}
       palette={palette}
       setPalette={setPalette}
+      isMobile={isMobile}
     />
   );
 };

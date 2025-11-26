@@ -347,8 +347,8 @@ packages:
   '@cosmjs/socket@0.34.1':
     resolution: {integrity: sha512-+MiuC+WDzaA8cU635JEK8tY/ImrRRcPzE+0ExoL4ZzqgzIcXf1hbgmqgKF85yyhGnk/nMTLsEteyoJIaWxsTtA==}
 
-  '@cosmjs/stargate@0.34.0':
-    resolution: {integrity: sha512-FU/A0OdkNKfqQ4d7CC8KceTVGoCy3BemFgVjbXL/K5FnAafEjqqWInQ531oNvBejpMdm1NSkfbp97CfILeTW7A==}
+  '@cosmjs/stargate@0.34.1':
+    resolution: {integrity: sha512-BOaSEmHnThtpKft7jFwFKOKptRoVNq01vmaDKoTISgmS5qi9JgVwiogjL679Aclmmy/xO+GoRfQvWsFrR7f1KA==}
 
   '@cosmjs/stream@0.34.1':
     resolution: {integrity: sha512-EVbSFUnBMHkRX7Oy+JrGe3i8TjxnRs5BKJa8CZnn4ZHSWf6Krw+nWlaJ7FixFttd+PX8c+Agzw+Qhv3pm9HPVg==}
@@ -7068,11 +7068,11 @@ snapshots:
 
   '@antfu/ni@23.3.1': {}
 
-  '@avail-project/ca-common@1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@avail-project/ca-common@1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@bufbuild/protobuf': 2.10.1
       '@cosmjs/proto-signing': 0.34.1
-      '@cosmjs/stargate': 0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      '@cosmjs/stargate': 0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@improbable-eng/grpc-web': 0.15.0(google-protobuf@3.21.4)
       axios: 1.13.1
       browser-headers: 0.4.1
@@ -7088,9 +7088,9 @@ snapshots:
 
   '@avail-project/nexus-core@1.0.0-beta.50(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3)))(zod@3.25.76)':
     dependencies:
-      '@avail-project/ca-common': 1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@avail-project/ca-common': 1.0.0-dev.4(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(fuels@0.101.1(vitest@3.0.9(@types/debug@4.1.12)(@types/node@20.19.24)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.11.6(@types/node@20.19.24)(typescript@5.9.3))))(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.1
-      '@cosmjs/stargate': 0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      '@cosmjs/stargate': 0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@metamask/safe-event-emitter': 3.1.2
       '@opentelemetry/api-logs': 0.208.0
       '@opentelemetry/exporter-logs-otlp-http': 0.208.0(@opentelemetry/api@1.9.0)
@@ -7429,7 +7429,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+  '@cosmjs/stargate@0.34.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       '@cosmjs/amino': 0.34.1
       '@cosmjs/encoding': 0.34.1

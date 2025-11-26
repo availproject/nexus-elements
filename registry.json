@@ -347,6 +347,22 @@
       ]
     },
     {
+      "name": "collapsible",
+      "type": "registry:component",
+      "title": "Collapsible",
+      "description": "UI primitive: Collapsible",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/collapsible.tsx",
+          "target": "components/ui/collapsible.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
       "name": "button",
       "type": "registry:component",
       "title": "Button",
@@ -935,6 +951,146 @@
         {
           "path": "registry/nexus-elements/swaps/utils/prefill.ts",
           "target": "components/swaps/utils/prefill.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "swap-deposit",
+      "type": "registry:component",
+      "title": "Swap Deposit",
+      "description": "Swap and Deposit tokens across chains and contracts",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@radix-ui/react-collapsible",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/collapsible.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
+        "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/swap-deposit/swap-deposit.tsx",
+          "target": "components/swap-deposit/swap-deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/asset-select.tsx",
+          "target": "components/swap-deposit/components/asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/amount-step.tsx",
+          "target": "components/swap-deposit/components/amount-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/confirmation-step.tsx",
+          "target": "components/swap-deposit/components/confirmation-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/deposit-header.tsx",
+          "target": "components/swap-deposit/components/deposit-header.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/info.tsx",
+          "target": "components/swap-deposit/components/info.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/step-indicator.tsx",
+          "target": "components/swap-deposit/components/step-indicator.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/token-icon.tsx",
+          "target": "components/swap-deposit/components/token-icon.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/transaction-status-step.tsx",
+          "target": "components/swap-deposit/components/transaction-status-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/hooks/useSwapDeposit.ts",
+          "target": "components/swap-deposit/hooks/useSwapDeposit.ts",
           "type": "registry:component"
         }
       ]
