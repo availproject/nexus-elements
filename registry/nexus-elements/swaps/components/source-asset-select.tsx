@@ -24,6 +24,7 @@ type SourceTokenInfo = {
   name: string;
   symbol: string;
   balance?: string;
+  chainId?: number;
 };
 
 interface SourceAssetSelectProps {
@@ -47,45 +48,59 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [tempChain, setTempChain] = useState<number | null>(null);
 
-  const chains = swapSupportedChainsAndTokens ?? [];
-
-  const tokensForTempChain: SourceTokenInfo[] = useMemo(() => {
-    if (!tempChain || !swapBalance) return [] as SourceTokenInfo[];
+  // Get all tokens from swapBalance with their chain info
+  const allTokens: SourceTokenInfo[] = useMemo(() => {
+    if (!swapBalance) return [];
     const tokens: SourceTokenInfo[] = [];
 
     for (const asset of swapBalance) {
       if (!asset?.breakdown?.length) continue;
-      const breakdownForChain = asset.breakdown.find(
-        (b) => b.chain?.id === tempChain && Number.parseFloat(b.balance) > 0
-      );
-      if (!breakdownForChain) continue;
+      for (const breakdown of asset.breakdown) {
+        if (Number.parseFloat(breakdown.balance) <= 0) continue;
 
-      tokens.push({
-        contractAddress: breakdownForChain.contractAddress,
-        decimals: breakdownForChain.decimals ?? asset.decimals,
-        logo: TOKEN_IMAGES[asset.symbol] ?? "",
-        name: asset.symbol,
-        symbol: asset.symbol,
-        balance: nexusSDK?.utils?.formatTokenBalance(
-          breakdownForChain?.balance,
-          {
+        tokens.push({
+          contractAddress: breakdown.contractAddress,
+          decimals: breakdown.decimals ?? asset.decimals,
+          logo: TOKEN_IMAGES[asset.symbol] ?? "",
+          name: asset.symbol,
+          symbol: asset.symbol,
+          balance: nexusSDK?.utils?.formatTokenBalance(breakdown?.balance, {
             symbol: asset.symbol,
             decimals: asset.decimals,
-          }
-        ),
-      });
+          }),
+          chainId: breakdown.chain?.id,
+        });
+      }
     }
 
+    // Dedupe by contractAddress + chainId
     const unique = new Map<string, SourceTokenInfo>();
     for (const t of tokens) {
-      unique.set(t.contractAddress.toLowerCase(), t);
+      const key = `${t.contractAddress.toLowerCase()}-${t.chainId}`;
+      unique.set(key, t);
     }
     return Array.from(unique.values());
-  }, [tempChain, swapBalance]);
+  }, [swapBalance, nexusSDK]);
+
+  // Only show chains that have tokens with balance
+  const chainsWithTokens = useMemo(() => {
+    if (!swapSupportedChainsAndTokens || !allTokens.length) return [];
+    const chainIdsWithTokens = new Set(allTokens.map((t) => t.chainId));
+    return swapSupportedChainsAndTokens.filter((c) =>
+      chainIdsWithTokens.has(c.id)
+    );
+  }, [swapSupportedChainsAndTokens, allTokens]);
+
+  // Filter tokens by selected chain, or show all if no chain selected
+  const displayedTokens: SourceTokenInfo[] = useMemo(() => {
+    if (!tempChain) return allTokens;
+    return allTokens.filter((t) => t.chainId === tempChain);
+  }, [tempChain, allTokens]);
 
   const handlePick = (tok: SourceTokenInfo) => {
-    if (!tempChain) return;
-    onSelect(tempChain as SUPPORTED_CHAINS_IDS, tok);
+    const chainId = tempChain ?? tok.chainId;
+    if (!chainId) return;
+    onSelect(chainId as SUPPORTED_CHAINS_IDS, tok);
     setOpen(false);
   };
 
@@ -134,11 +149,20 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
             <DialogTitle>Select source asset</DialogTitle>
           </DialogHeader>
           {swapBalance && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 no-scrollbar">
               <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
                 <p className="text-xs font-medium mb-2">Chains</p>
                 <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
-                  {chains.map((c) => (
+                  <Button
+                    variant={"ghost"}
+                    onClick={() => setTempChain(null)}
+                    className={`flex items-center justify-start w-full gap-x-2 p-2 rounded hover:bg-muted ${
+                      tempChain === null ? "bg-muted" : ""
+                    }`}
+                  >
+                    <span className="text-sm">All Chains</span>
+                  </Button>
+                  {chainsWithTokens.map((c) => (
                     <Button
                       key={c.id}
                       variant={"ghost"}
@@ -161,30 +185,50 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
               </div>
               <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
                 <p className="text-xs font-medium mb-2">Tokens</p>
-                <div className="flex flex-col items-center sm:items-start gap-y-1 w-full">
-                  {tempChain && tokensForTempChain ? (
-                    tokensForTempChain?.map((t) => (
+                <div className="flex flex-col items-center sm:items-start gap-y-1 w-full  no-scrollbar">
+                  {displayedTokens.length > 0 ? (
+                    displayedTokens.map((t) => (
                       <Button
-                        key={t.symbol}
+                        key={`${t.contractAddress}-${t.chainId}`}
                         variant={"ghost"}
                         onClick={() => handlePick(t)}
-                        className="flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full"
+                        className="flex items-center justify-between gap-x-2 p-2 rounded hover:bg-muted w-full"
                       >
-                        {t.symbol ? (
-                          <img
-                            src={TOKEN_IMAGES[t.symbol]}
-                            alt={t.symbol}
-                            width={18}
-                            height={18}
-                            className="rounded-full"
-                          />
-                        ) : null}
-                        <p className="text-sm text-foreground">{t.balance}</p>
+                        <div className="flex items-center gap-x-2">
+                          {t.symbol ? (
+                            <div className="relative">
+                              <img
+                                src={TOKEN_IMAGES[t.symbol]}
+                                alt={t.symbol}
+                                width={18}
+                                height={18}
+                                className="rounded-full"
+                              />
+                              {!tempChain && t.chainId && (
+                                <img
+                                  src={
+                                    CHAIN_METADATA[
+                                      t.chainId as SUPPORTED_CHAINS_IDS
+                                    ]?.logo
+                                  }
+                                  alt=""
+                                  width={10}
+                                  height={10}
+                                  className="rounded-full absolute bottom-0 right-0 translate-x-1/3 translate-y-1/6"
+                                />
+                              )}
+                            </div>
+                          ) : null}
+                          <p className="text-sm text-foreground">{t.symbol}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t.balance}
+                        </p>
                       </Button>
                     ))
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Select a chain
+                      No Tokens Found
                     </p>
                   )}
                 </div>

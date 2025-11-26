@@ -59,6 +59,11 @@ const AmountInput = ({
 }: AmountInputProps) => {
   const { nexusSDK, loading } = useNexus();
 
+  const hasSelectedSources =
+    bridgableBalance && bridgableBalance.breakdown.length > 0;
+  const hasBalance =
+    hasSelectedSources && Number.parseFloat(bridgableBalance.balance) > 0;
+
   return (
     <div className="flex flex-col items-start gap-y-1 w-full py-2">
       <Accordion type="single" collapsible className="w-full">
@@ -74,9 +79,9 @@ const AmountInput = ({
               value={value ?? ""}
               onChange={(e) => onChange?.(e.target.value)}
               className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
-              disabled={disabled || loading}
+              disabled={disabled || loading || !hasSelectedSources}
             />
-            {bridgableBalance && (
+            {bridgableBalance && hasSelectedSources && (
               <p className="text-base font-semibold min-w-max">
                 {nexusSDK?.utils?.formatTokenBalance(
                   bridgableBalance?.balance,
@@ -85,6 +90,11 @@ const AmountInput = ({
                     decimals: bridgableBalance?.decimals,
                   }
                 )}
+              </p>
+            )}
+            {bridgableBalance && !hasSelectedSources && (
+              <p className="text-sm text-muted-foreground min-w-max">
+                No sources selected
               </p>
             )}
             {loading && !bridgableBalance && (
@@ -99,7 +109,7 @@ const AmountInput = ({
                   variant={"ghost"}
                   key={option.label}
                   className="text-xs py-0.5 px-0 size-max"
-                  disabled={disabled}
+                  disabled={disabled || !hasBalance}
                   onClick={() => {
                     if (!bridgableBalance?.balance) return;
 
@@ -118,7 +128,7 @@ const AmountInput = ({
                 </Button>
               ))}
             </div>
-            {bridgableBalance && (
+            {hasSelectedSources && (
               <AccordionTrigger
                 className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"
                 hideChevron={false}
@@ -130,7 +140,7 @@ const AmountInput = ({
 
           <AccordionContent className="pb-0">
             <div className="space-y-3 py-2">
-              {bridgableBalance?.breakdown.map((chain, index) => {
+              {bridgableBalance?.breakdown.map((chain) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 return (
                   <Fragment key={chain.chain.id}>

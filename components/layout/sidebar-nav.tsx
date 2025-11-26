@@ -18,10 +18,14 @@ import {
 const TOP_LEVEL_SECTIONS = [
   { name: "Get Started", href: "/docs/get-started" },
   { name: "Components", href: "/docs/view-components" },
-  // { name: "Experience Nexus", href: "/experience" },
+  { name: "MCP", href: "/docs/mcp" },
 ];
 
-const EXCLUDED_SECTIONS: string[] = ["get-started.mdx", "view-components.mdx"];
+const EXCLUDED_SECTIONS: string[] = [
+  "get-started.mdx",
+  "view-components.mdx",
+  "mcp.mdx",
+];
 const EXCLUDED_PAGES: string[] = [];
 
 export default function SidebarNav({

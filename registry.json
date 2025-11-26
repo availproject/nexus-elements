@@ -10,12 +10,13 @@
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@avail-project/nexus-core@1.0.0-rc.4",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
         "@radix-ui/react-tooltip",
         "class-variance-authority",
         "clsx",
@@ -159,12 +160,13 @@
       "title": "Fast Transfer",
       "description": "A simple component built with Nexus to enable cross chain transfer",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@avail-project/nexus-core@1.0.0-rc.4",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
         "@radix-ui/react-tooltip",
         "class-variance-authority",
         "clsx",
@@ -307,7 +309,7 @@
       "type": "registry:component",
       "title": "Nexus Provider",
       "description": "Shared Nexus SDK provider and types for Nexus Elements",
-      "dependencies": ["@avail-project/nexus-core@1.0.0-rc.3"],
+      "dependencies": ["@avail-project/nexus-core@1.0.0-rc.4"],
       "files": [
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
@@ -794,7 +796,7 @@
       "title": "Swaps",
       "description": "Swap tokens across chains (Exact In)",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@avail-project/nexus-core@1.0.0-rc.4",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
         "@radix-ui/react-select",

@@ -18,6 +18,7 @@ import {
 } from "@/registry/nexus-elements/ui/tabs";
 import { Code } from "lucide-react";
 import { DepsInstall } from "../helpers/deps-install";
+import { Callout } from "./callout";
 
 export const mdxComponents: MDXComponentsMap = {
   // Headings
@@ -232,6 +233,7 @@ export const mdxComponents: MDXComponentsMap = {
   DepsInstall,
   CopyButton,
   CodeBlockCommand,
+  Callout,
   Link: ({ className, ...props }: React.ComponentProps<typeof Link>) => (
     <Link
       className={cn("font-medium underline underline-offset-4", className)}
