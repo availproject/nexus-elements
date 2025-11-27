@@ -25,32 +25,48 @@ const DepositShowcase = () => {
       connectLabel="Connect wallet to use Nexus Deposit"
       type="deposit"
       toggle={true}
-      toggleLabel="View as Modal"
+      toggleLabel="Embed"
       pressed={viewAs}
       onPressedChange={(value) => setViewAs(value)}
     >
       <NexusDeposit
         address={address ?? `0x`}
-        token="USDT"
-        chain={SUPPORTED_CHAINS.ARBITRUM}
+        token="USDC"
+        chain={SUPPORTED_CHAINS.BASE}
         embed={viewAs}
         destinationLabel="on Aave v3"
-        heading="Deposit USDT"
+        heading="Deposit USDC on Aave"
         depositExecute={(token, amount, _chainId, user) => {
           const contractAddress =
-            "0x794a61358D6845594F94dc1DB02A252b5b4814aD" as const;
+            "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5" as const;
           const abi: Abi = [
             {
-              name: "supply",
-              type: "function",
-              stateMutability: "nonpayable",
               inputs: [
-                { name: "asset", type: "address" },
-                { name: "amount", type: "uint256" },
-                { name: "onBehalfOf", type: "address" },
-                { name: "referralCode", type: "uint16" },
+                {
+                  internalType: "address",
+                  name: "asset",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amount",
+                  type: "uint256",
+                },
+                {
+                  internalType: "address",
+                  name: "onBehalfOf",
+                  type: "address",
+                },
+                {
+                  internalType: "uint16",
+                  name: "referralCode",
+                  type: "uint16",
+                },
               ],
+              name: "supply",
               outputs: [],
+              stateMutability: "nonpayable",
+              type: "function",
             },
           ];
           const amountWei = parseUnits(amount, 6);

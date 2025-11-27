@@ -57,7 +57,7 @@ const SourceSelect = ({
         Customise source chains
         <ChevronDown className="size-4 text-primary data-[state=open]:rotate-180 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </PopoverTrigger>
-      <PopoverContent className="w-max sm:w-sm overflow-y-scroll max-h-[300px] no-scrollbar">
+      <PopoverContent className="w-max sm:w-sm no-scrollbar">
         {balanceBreakdown && balanceBreakdown?.breakdown.length > 0 ? (
           <>
             <div className="flex items-center gap-x-2 pb-3 mb-3 border-b border-border w-full">
@@ -76,7 +76,7 @@ const SourceSelect = ({
                 Select All
               </Label>
             </div>
-            <div className="grid grid-cols-1 gap-1 w-full">
+            <div className="grid grid-cols-1 gap-1 w-full overflow-y-auto max-h-[300px] no-scrollbar">
               {balanceBreakdown?.breakdown.map((chain) => (
                 <div key={chain.chain.id} className="flex items-center gap-x-2">
                   <Checkbox
