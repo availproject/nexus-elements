@@ -19,7 +19,7 @@ import {
   monadTestnet,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Chain, defineChain } from "viem";
+import { defineChain } from "viem";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import { useSearchParams } from "next/navigation";
 import { type NexusNetwork } from "@avail-project/nexus-core";
@@ -60,21 +60,23 @@ const sophon = defineChain({
   },
 });
 
-// Add chain icons for RainbowKit
-type ConnectKitChain = Chain & { iconUrl?: string; iconBackground?: string };
-
-const hyperEVMWithIcon: ConnectKitChain = {
-  ...hyperEVM,
+const monad = {
+  id: 143,
+  name: "Monad",
+  nativeCurrency: {
+    name: "Monad",
+    symbol: "MON",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: { http: ["https://rpcs.avail.so/monad"] },
+  },
+  blockExplorers: {
+    default: { name: "MonVision", url: "https://monadvision.com/" },
+  },
+  testnet: false,
   iconUrl:
-    "https://assets.coingecko.com/coins/images/50882/standard/hyperliquid.jpg?1729431300",
-  iconBackground: "#0a3cff",
-};
-
-const sophonWithIcon: ConnectKitChain = {
-  ...sophon,
-  iconUrl:
-    "https://assets.coingecko.com/coins/images/38680/standard/sophon_logo_200.png?1747898236",
-  iconBackground: "#6b5cff",
+    "https://assets.coingecko.com/coins/images/38927/standard/monad.png?1764042736",
 };
 
 const config = createConfig(
@@ -99,6 +101,7 @@ const config = createConfig(
       optimismSepolia,
       polygonAmoy,
       monadTestnet,
+      monad,
     ],
   })
 );
