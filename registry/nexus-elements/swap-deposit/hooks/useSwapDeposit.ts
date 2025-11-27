@@ -8,7 +8,14 @@ import {
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
 } from "@avail-project/nexus-core";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import {
   SWAP_EXPECTED_STEPS,
   useNexusError,
@@ -403,20 +410,23 @@ const useSwapDeposit = ({
           throw new Error(swapResult?.error || "Swap failed");
         }
 
-        const finalSwap =
-          swapResult.result.destinationSwap?.swaps[
-            swapResult.result.destinationSwap?.swaps.length - 1
-          ];
-        console.log("swap complete", swapResult, finalSwap);
-        if (finalSwap) {
-          const formattedAmount = nexusSDK.utils.formatUnits(
-            finalSwap?.outputAmount,
-            finalSwap?.outputDecimals
+        console.log("swap complete", swapResult, swapIntent.current?.intent);
+        if (swapResult) {
+          const formattedAmount = nexusSDK.utils.parseUnits(
+            swapIntent.current?.intent?.destination?.amount ?? "0",
+            swapIntent.current?.intent?.destination?.token?.decimals ??
+              destination.tokenDecimals
           );
-          dispatch({ type: "setReceiveAmount", payload: formattedAmount });
-          onSwapComplete?.(formattedAmount, swapResult.result.explorerURL);
+          dispatch({
+            type: "setReceiveAmount",
+            payload: swapIntent.current?.intent?.destination?.amount ?? "",
+          });
+          onSwapComplete?.(
+            swapIntent.current?.intent?.destination?.amount,
+            swapResult.result.explorerURL
+          );
           dispatch({ type: "setStatus", payload: "depositing" });
-          handleDeposit(finalSwap.outputAmount);
+          handleDeposit(formattedAmount);
         }
       })
       .catch((error) => {
@@ -753,7 +763,6 @@ const useSwapDeposit = ({
 
     // Data from NexusProvider (for AssetSelect)
     swapBalance,
-    getFiatValue,
     availableAssets,
 
     // Selected sources

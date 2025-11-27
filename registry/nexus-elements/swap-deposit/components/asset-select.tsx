@@ -24,7 +24,6 @@ export interface AssetSelection {
 interface AssetSelectProps {
   title?: string;
   availableAssets: AssetSelection[];
-  getFiatValue: (amount: number, symbol: string) => number;
   selectedSources: AssetSelection[];
   onToggle: (source: AssetSelection) => void;
   onSelectAll: () => void;
@@ -48,7 +47,6 @@ const LOW_BALANCE_THRESHOLD = 5;
 const AssetSelect = ({
   title = "Select Sources",
   availableAssets,
-  getFiatValue,
   selectedSources,
   onToggle,
   onSelectAll,

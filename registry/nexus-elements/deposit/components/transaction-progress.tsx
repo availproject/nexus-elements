@@ -12,6 +12,7 @@ interface BridgeExecuteProgressProps {
   steps: Array<{ id: number; completed: boolean; step: ProgressStep }>;
   intentUrl?: string;
   executeUrl?: string;
+  transactionComplete?: boolean;
 }
 
 type DisplayStep = { id: string; label: string; completed: boolean };
@@ -53,13 +54,16 @@ const BridgeExecuteProgress: FC<BridgeExecuteProgressProps> = ({
   steps,
   intentUrl,
   executeUrl,
+  transactionComplete = false,
 }) => {
   const totalSteps = Array.isArray(steps) ? steps.length : 0;
   const completedSteps = Array.isArray(steps)
     ? steps.reduce((acc, s) => acc + (s?.completed ? 1 : 0), 0)
     : 0;
-  const percent = totalSteps > 0 ? completedSteps / totalSteps : 0;
-  const allCompleted = percent >= 1;
+  // Use step-based progress, but cap at 75% until transaction promise resolves
+  const stepPercent = totalSteps > 0 ? completedSteps / totalSteps : 0;
+  const percent = transactionComplete ? 1 : Math.min(stepPercent, 0.75);
+  const allCompleted = transactionComplete;
 
   // Custom milestone copy for deposit flow
   const milestones = useMemo(

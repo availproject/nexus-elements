@@ -70,14 +70,19 @@ const NAV_ITEMS = [
         href: "/docs/components/fast-bridge",
       },
       {
-        id: "transfer",
-        label: "Transfer",
-        href: "/docs/components/transfer",
+        id: "swap-deposit",
+        label: "Swap And Deposit",
+        href: "/docs/components/swap-deposit",
       },
       {
         id: "swaps",
         label: "Swaps",
         href: "/docs/components/swaps",
+      },
+      {
+        id: "transfer",
+        label: "Transfer",
+        href: "/docs/components/transfer",
       },
       {
         id: "unified-balance",

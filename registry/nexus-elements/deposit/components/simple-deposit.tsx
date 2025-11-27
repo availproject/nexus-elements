@@ -172,7 +172,7 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={`$${feeBreakdown?.totalGasFee} USD`}
+            total={`${feeBreakdown?.totalGasFee}`}
             bridge={feeBreakdown?.bridgeFormatted ?? ""}
             execute={feeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}
@@ -237,6 +237,7 @@ const SimpleDeposit = ({
               executeUrl={
                 lastResult ? lastResult.executeExplorerUrl : undefined
               }
+              transactionComplete={!!lastResult}
             />
           )}
         </DialogContent>

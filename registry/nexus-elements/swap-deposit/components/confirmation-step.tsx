@@ -18,7 +18,7 @@ import {
 } from "../../ui/tooltip";
 import { Skeleton } from "../../ui/skeleton";
 import { ChevronRight, Fuel, Info } from "lucide-react";
-import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
+import { type SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
 import { type AssetSelection } from "./asset-select";
 import { cn } from "@/lib/utils";
 import { Separator } from "../../ui/separator";

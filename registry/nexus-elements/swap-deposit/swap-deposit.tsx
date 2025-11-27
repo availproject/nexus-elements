@@ -52,7 +52,6 @@ const SwapDeposit = ({
     txError,
     simulationLoading,
     timer,
-    getFiatValue,
     availableAssets,
     selectedSources,
     totalSelectedBalance,
@@ -199,7 +198,6 @@ const SwapDeposit = ({
       <AssetSelect
         title={title}
         availableAssets={availableAssets}
-        getFiatValue={getFiatValue}
         selectedSources={selectedSources}
         onToggle={handleToggleSource}
         onSelectAll={handleSelectAll}

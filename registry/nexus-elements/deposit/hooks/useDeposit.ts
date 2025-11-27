@@ -139,8 +139,8 @@ const useDeposit = ({
 
   const simulationRequestIdRef = useRef(0);
   const activeSimulationIdRef = useRef<number | null>(null);
+  const prevIsDialogOpenRef = useRef(isDialogOpen);
 
-  // Unfiltered balance: only filtered by token and non-zero balance (for SourceSelect)
   const unfilteredBridgableBalance = useMemo(() => {
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
@@ -169,7 +169,6 @@ const useDeposit = ({
     };
   }, [bridgableBalance, token]);
 
-  // Filtered balance: filtered by token, selected sources, and non-zero balance (for AmountInput)
   const filteredBridgableBalance = useMemo(() => {
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
@@ -213,13 +212,7 @@ const useDeposit = ({
   // Debounce amount input for auto-simulation UX
   const debouncedAmount = useDebouncedValue(inputs?.amount ?? "", 1200);
 
-  const feeBreakdown: {
-    totalGasFee: string | number;
-    bridgeUsd?: number;
-    bridgeFormatted?: string;
-    gasUsd: number;
-    gasFormatted: string;
-  } = useMemo(() => {
+  const feeBreakdown = useMemo(() => {
     if (!nexusSDK || !simulation || !token)
       return {
         totalGasFee: 0,
@@ -267,7 +260,7 @@ const useDeposit = ({
       const totalGasFee = bridgeUsd + gasUsd;
 
       return {
-        totalGasFee: totalGasFee.toFixed(4),
+        totalGasFee: `$${totalGasFee.toFixed(4)} USD`,
         bridgeUsd,
         bridgeFormatted,
         gasUsd,
@@ -275,7 +268,7 @@ const useDeposit = ({
       };
     }
     return {
-      totalGasFee: gasUsd,
+      totalGasFee: gasFormatted,
       gasUsd,
       gasFormatted,
     };
@@ -338,13 +331,12 @@ const useDeposit = ({
       setTxError(message);
       setIsDialogOpen(false);
       dispatch({ type: "setStatus", payload: "error" });
-    } finally {
       resetState();
     }
   };
 
   const simulate = async (overrideAmount?: string) => {
-    if (!nexusSDK) return;
+    if (!nexusSDK || isDialogOpen) return;
 
     const amountToUse = overrideAmount ?? inputs?.amount;
 
@@ -449,6 +441,9 @@ const useDeposit = ({
   };
 
   const startTransaction = () => {
+    activeSimulationIdRef.current = null;
+    setSimulating(false);
+    setRefreshing(false);
     setIsDialogOpen(true);
     setTxError(null);
     setAutoAllow(true);
@@ -472,12 +467,15 @@ const useDeposit = ({
   }, [autoAllow, intent.current]);
 
   useEffect(() => {
-    if (!isDialogOpen) {
+    // Only run cleanup when dialog transitions from open to closed
+    if (prevIsDialogOpenRef.current && !isDialogOpen) {
       stopwatch.stop();
       stopwatch.reset();
       setLastResult(null);
+      resetSteps();
     }
-  }, [isDialogOpen, stopwatch]);
+    prevIsDialogOpenRef.current = isDialogOpen;
+  }, [isDialogOpen, stopwatch, resetSteps]);
 
   usePolling(
     Boolean(simulation?.bridgeSimulation?.intent) && !isDialogOpen,
