@@ -5,7 +5,7 @@
   "title": "Fast Bridge",
   "description": "A simple component built with Nexus to enable cross chain bridging",
   "dependencies": [
-    "@avail-project/nexus-core@1.0.0-beta.50",
+    "@avail-project/nexus-core@1.0.0-beta.56",
     "@radix-ui/react-accordion",
     "@radix-ui/react-dialog",
     "@radix-ui/react-label",

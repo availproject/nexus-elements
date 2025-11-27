@@ -8,7 +8,7 @@ import {
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
 } from "@avail-project/nexus-core";
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   SWAP_EXPECTED_STEPS,
   useNexusError,
@@ -194,6 +194,7 @@ const useSwapDeposit = ({
   } = useNexus();
 
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [pollingEnabled, setPollingEnabled] = useState(false);
   const { address } = useAccount();
   const loading = state.status === "swapping" || state.status === "depositing";
   const handleNexusError = useNexusError();
@@ -214,6 +215,7 @@ const useSwapDeposit = ({
 
   const hasAutoSelected = useRef(false);
   const initialSimulationDone = useRef(false);
+  const lastSimulationTime = useRef(0);
 
   const availableAssets = useMemo(() => {
     if (!swapBalance) return [];
@@ -648,6 +650,8 @@ const useSwapDeposit = ({
     dispatch({ type: "reset" });
     resetSteps();
     initialSimulationDone.current = false;
+    lastSimulationTime.current = 0;
+    setPollingEnabled(false);
     stopwatch.stop();
     stopwatch.reset();
   }, [swapIntent, resetSteps, stopwatch]);
@@ -657,11 +661,19 @@ const useSwapDeposit = ({
     resetSteps();
     swapIntent.current = null;
     initialSimulationDone.current = false;
+    lastSimulationTime.current = 0;
+    setPollingEnabled(false);
     stopwatch.stop();
     stopwatch.reset();
   }, [resetSteps, swapIntent, stopwatch]);
 
   const refreshSimulation = async () => {
+    // Skip if last simulation was less than 5 seconds ago (prevents immediate fire after initial)
+    const timeSinceLastSimulation = Date.now() - lastSimulationTime.current;
+    if (timeSinceLastSimulation < 5000) {
+      return;
+    }
+
     try {
       dispatch({ type: "setSimulationLoading", payload: true });
       const updated = await swapIntent.current?.refresh();
@@ -674,26 +686,36 @@ const useSwapDeposit = ({
     } finally {
       dispatch({ type: "setSimulationLoading", payload: false });
       stopwatch.reset();
+      lastSimulationTime.current = Date.now();
     }
   };
 
+  // Poll for swapIntent to be available for initial simulation only
   useEffect(() => {
-    if (initialSimulationDone.current) {
-      return;
-    }
+    // Only run when we're waiting for initial simulation
     if (
-      !swapIntent.current ||
+      initialSimulationDone.current ||
       !state.simulationLoading ||
       state.status !== "view-breakdown"
     ) {
       return;
     }
-    initialSimulationDone.current = true;
-    void simulateDeposit().then(() => {
-      dispatch({ type: "setSimulationLoading", payload: false });
-      stopwatch.reset();
-    });
-  }, [swapIntent.current, state.simulationLoading, state.status]);
+
+    const checkInterval = setInterval(() => {
+      if (swapIntent.current && !initialSimulationDone.current) {
+        clearInterval(checkInterval);
+        initialSimulationDone.current = true;
+        void simulateDeposit().then(() => {
+          dispatch({ type: "setSimulationLoading", payload: false });
+          stopwatch.reset();
+          lastSimulationTime.current = Date.now();
+          setPollingEnabled(true);
+        });
+      }
+    }, 100);
+
+    return () => clearInterval(checkInterval);
+  }, [state.simulationLoading, state.status]);
 
   useEffect(() => {
     if (!nexusSDK) return;
@@ -710,7 +732,8 @@ const useSwapDeposit = ({
   }, [nexusSDK, swapBalance, availableAssets, fetchSwapBalance]);
 
   usePolling(
-    state.status === "view-breakdown" &&
+    pollingEnabled &&
+      state.status === "view-breakdown" &&
       Boolean(swapIntent.current) &&
       !state.simulationLoading,
     async () => {
