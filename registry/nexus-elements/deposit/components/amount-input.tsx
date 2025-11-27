@@ -139,7 +139,7 @@ const AmountInput = ({
           </div>
 
           <AccordionContent className="pb-0">
-            <div className="space-y-3 py-2">
+            <div className="space-y-3 py-2 max-h-40 overflow-y-auto no-scrollbar">
               {bridgableBalance?.breakdown.map((chain) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 return (
