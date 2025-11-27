@@ -15,7 +15,7 @@ function formatExpiryDate(timestamp: number) {
 }
 
 const useViewHistory = () => {
-  const { network, nexusSDK } = useNexus();
+  const { nexusSDK } = useNexus();
   const [history, setHistory] = useState<RFF[] | null>(null);
   const [displayedHistory, setDisplayedHistory] = useState<RFF[]>([]);
   const [page, setPage] = useState(0);
@@ -104,16 +104,6 @@ const useViewHistory = () => {
     }
   };
 
-  const getExplorerUrl = (id: number) => {
-    if (network === "testnet") {
-      return `https://explorer.nexus-folly.availproject.org/intent/${id}`;
-    }
-    if (network === "mainnet") {
-      return `https://explorer.nexus.availproject.org/intent/${id}`;
-    }
-    return `https://explorer.nexus-cerise.availproject.org/intent/${id}`;
-  };
-
   return {
     history,
     displayedHistory,
@@ -121,7 +111,6 @@ const useViewHistory = () => {
     hasMore,
     isLoadingMore,
     getStatus,
-    getExplorerUrl,
     observerTarget,
     ITEMS_PER_PAGE,
     formatExpiryDate,
