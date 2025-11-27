@@ -63,6 +63,25 @@ const sophon = defineChain({
 // Add chain icons for RainbowKit
 type ConnectKitChain = Chain & { iconUrl?: string; iconBackground?: string };
 
+const monad = {
+  id: 143,
+  name: "Monad",
+  nativeCurrency: {
+    name: "Monad",
+    symbol: "MON",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: { http: ["https://rpcs.avail.so/monad"] },
+  },
+  blockExplorers: {
+    default: { name: "MonVision", url: "https://monadvision.com/" },
+  },
+  testnet: false,
+  iconUrl:
+    "https://assets.coingecko.com/coins/images/38927/standard/monad.png?1764042736",
+};
+
 const hyperEVMWithIcon: ConnectKitChain = {
   ...hyperEVM,
   iconUrl:
@@ -84,8 +103,8 @@ const config = createConfig(
     chains: [
       mainnet,
       base,
-      sophon,
-      hyperEVM,
+      sophonWithIcon,
+      hyperEVMWithIcon,
       bsc,
       kaia,
       arbitrum,
@@ -99,6 +118,7 @@ const config = createConfig(
       optimismSepolia,
       polygonAmoy,
       monadTestnet,
+      monad,
     ],
   })
 );
