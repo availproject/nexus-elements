@@ -1,4 +1,4 @@
-import { type RFF } from "@avail-project/nexus-core";
+import { type RequestForFunds } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useCallback, useEffect, useState } from "react";
 
@@ -15,9 +15,11 @@ function formatExpiryDate(timestamp: number) {
 }
 
 const useViewHistory = () => {
-  const { network, nexusSDK } = useNexus();
-  const [history, setHistory] = useState<RFF[] | null>(null);
-  const [displayedHistory, setDisplayedHistory] = useState<RFF[]>([]);
+  const { nexusSDK } = useNexus();
+  const [history, setHistory] = useState<RequestForFunds[] | null>(null);
+  const [displayedHistory, setDisplayedHistory] = useState<RequestForFunds[]>(
+    []
+  );
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -92,7 +94,7 @@ const useViewHistory = () => {
     };
   }, [sentinelNode, loadMore, hasMore, isLoadingMore, displayedHistory.length]);
 
-  const getStatus = (pastIntent: RFF) => {
+  const getStatus = (pastIntent: RequestForFunds) => {
     if (pastIntent?.fulfilled) {
       return "Fulfilled";
     } else if (pastIntent?.deposited) {
@@ -104,16 +106,6 @@ const useViewHistory = () => {
     }
   };
 
-  const getExplorerUrl = (id: number) => {
-    if (network === "testnet") {
-      return `https://explorer.nexus-folly.availproject.org/intent/${id}`;
-    }
-    if (network === "mainnet") {
-      return `https://explorer.nexus.availproject.org/intent/${id}`;
-    }
-    return `https://explorer.nexus-cerise.availproject.org/intent/${id}`;
-  };
-
   return {
     history,
     displayedHistory,
@@ -121,7 +113,6 @@ const useViewHistory = () => {
     hasMore,
     isLoadingMore,
     getStatus,
-    getExplorerUrl,
     observerTarget,
     ITEMS_PER_PAGE,
     formatExpiryDate,

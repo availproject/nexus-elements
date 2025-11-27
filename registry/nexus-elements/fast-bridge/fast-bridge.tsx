@@ -77,7 +77,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     status,
   } = useBridge({
     prefill,
-    network: network ?? "mainnet",
+    network,
     connectedAddress,
     nexusSDK,
     intent,

@@ -105,7 +105,6 @@ const ViewHistory = ({
     hasMore,
     isLoadingMore,
     getStatus,
-    getExplorerUrl,
     observerTarget,
     ITEMS_PER_PAGE,
     formatExpiryDate,
@@ -168,7 +167,7 @@ const ViewHistory = ({
                     </p>
                   </div>
                   <a
-                    href={getExplorerUrl(pastIntent.id)}
+                    href={pastIntent.explorerUrl}
                     target="_blank"
                     rel="noreferrer"
                   >

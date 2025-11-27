@@ -108,7 +108,7 @@ const config = createConfig(
 
 function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
-  const urlNetwork = (searchParams.get("network") || "devnet") as NexusNetwork;
+  const urlNetwork = (searchParams.get("network") || "canary") as NexusNetwork;
   const nexusConfig = useMemo(
     () => ({ network: urlNetwork, debug: true }),
     [urlNetwork]
