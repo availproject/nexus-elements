@@ -6,6 +6,7 @@ import { NexusNetwork } from "@avail-project/nexus-core";
 import { PreviewPanel } from "../helpers/preview-panel";
 import { Toggle } from "../ui/toggle";
 import { Check, X } from "lucide-react";
+import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 
 type ElementType =
   | "deposit"
@@ -48,6 +49,7 @@ const ShowcaseWrapper = ({
   onPressedChange,
   ...toggleProps
 }: ShowcaseWrapperProps) => {
+  const { network } = useNexus();
   const searchParams = useSearchParams();
   const urlNetwork = (searchParams.get("network") || "canary") as NexusNetwork;
   const resolvedToggle =
@@ -84,8 +86,15 @@ const ShowcaseWrapper = ({
           </Toggle>
         )}
       </div>
-
-      <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+      {disabledTestnet.has(type) && network === "testnet" ? (
+        <div className="flex flex-col items-center justify-center">
+          <p className="text-lg font-medium text-center">
+            This feature is unavailable on testnet
+          </p>
+        </div>
+      ) : (
+        <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+      )}
     </div>
   );
 };
