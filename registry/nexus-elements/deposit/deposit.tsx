@@ -5,9 +5,9 @@ import {
 } from "@avail-project/nexus-core";
 import DepositModal from "./components/deposit-modal";
 import { type Address } from "viem";
-import Container from "./components/container";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useNexus } from "../nexus/NexusProvider";
+import SimpleDeposit from "./components/simple-deposit";
 
 export interface BaseDepositProps {
   address: Address;
@@ -59,7 +59,7 @@ const NexusDeposit = ({
           <CardTitle>{heading}</CardTitle>
         </CardHeader>
         <CardContent className="px-3">
-          <Container
+          <SimpleDeposit
             address={address}
             token={token}
             chain={chain}

@@ -461,20 +461,26 @@ const useSwapDeposit = ({
         state.inputs.toChainId,
         address
       );
-      const depositResult = await nexusSDK.simulateExecute({
-        ...executeParams,
-        toChainId: state.inputs.toChainId,
+      const simulateDepositResult = await nexusSDK.simulateBridgeAndExecute({
+        token: destination.tokenSymbol,
+        amount: nexusSDK.utils.parseUnits(
+          swapIntent.current?.intent.destination.amount,
+          swapIntent.current?.intent?.destination?.token?.decimals
+        ),
+        toChainId: destination.chainId,
+        execute: executeParams,
+        sourceChains: state.inputs.from.map((asset) => asset.chainId),
       });
 
-      console.log("depositResult", depositResult);
+      console.log("simulateDepositResult", simulateDepositResult);
 
-      if (!depositResult) {
+      if (!simulateDepositResult) {
         throw new Error("Simulation failed");
       }
       dispatch({
         type: "setSimulation",
         payload: {
-          executeSimulation: depositResult,
+          executeSimulation: simulateDepositResult?.executeSimulation,
           swapIntent: swapIntent.current,
         },
       });

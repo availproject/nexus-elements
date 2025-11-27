@@ -205,7 +205,7 @@ export const ConfirmationStep = ({
           disabled={isSimulating}
           className="w-full rounded-xl text-base font-semibold"
         >
-          {isSimulating ? "Simulating..." : "Confirm order"}
+          {isSimulating ? "Refreshing quote" : "Confirm order"}
         </Button>
       </div>
     </div>
