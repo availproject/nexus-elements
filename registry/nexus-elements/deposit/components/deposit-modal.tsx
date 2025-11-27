@@ -6,9 +6,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../ui/dialog";
-import Container from "./container";
 import { type BaseDepositProps } from "../deposit";
 import { Button } from "../../ui/button";
+import SimpleDeposit from "./simple-deposit";
 
 interface DepositModalProps extends BaseDepositProps {
   heading?: string;
@@ -33,7 +33,7 @@ const DepositModal = ({
         <DialogHeader>
           <DialogTitle>{heading}</DialogTitle>
         </DialogHeader>
-        <Container
+        <SimpleDeposit
           address={address}
           token={token}
           chain={chain}

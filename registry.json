@@ -654,7 +654,6 @@
       "dependencies": [
         "@avail-project/nexus-core@1.0.0-beta.56",
         "lucide-react",
-        "@radix-ui/react-tabs",
         "@radix-ui/react-dialog",
         "@radix-ui/react-accordion",
         "@radix-ui/react-label",
@@ -675,7 +674,6 @@
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/tabs.json",
         "https://elements.nexus.availproject.org/r/popover.json",
         "https://elements.nexus.availproject.org/r/checkbox.json"
       ],
@@ -743,11 +741,6 @@
         {
           "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
           "target": "components/common/tx/useTransactionSteps.ts",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/deposit/components/container.tsx",
-          "target": "components/deposit/components/container.tsx",
           "type": "registry:component"
         },
         {

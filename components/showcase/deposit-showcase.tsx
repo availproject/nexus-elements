@@ -19,7 +19,7 @@ const NexusDeposit = dynamic(
 
 const DepositShowcase = () => {
   const { address } = useAccount();
-  const [viewAs, setViewAs] = useState<boolean>(true);
+  const [viewAs, setViewAs] = useState<boolean>(false);
   return (
     <ShowcaseWrapper
       connectLabel="Connect wallet to use Nexus Deposit"
