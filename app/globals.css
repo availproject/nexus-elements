@@ -1,6 +1,61 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Delight Font Family */
+@font-face {
+  font-family: "Delight";
+  src: url("/fonts/delight/Web-TT/Delight-Regular.woff2") format("woff2"),
+    url("/fonts/delight/Web-TT/Delight-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Delight";
+  src: url("/fonts/delight/Web-TT/Delight-Medium.woff2") format("woff2"),
+    url("/fonts/delight/Web-TT/Delight-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Delight";
+  src: url("/fonts/delight/Web-TT/Delight-SemiBold.woff2") format("woff2"),
+    url("/fonts/delight/Web-TT/Delight-SemiBold.woff") format("woff");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Delight";
+  src: url("/fonts/delight/Web-TT/Delight-Bold.woff2") format("woff2"),
+    url("/fonts/delight/Web-TT/Delight-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Delight";
+  src: url("/fonts/delight/Web-TT/Delight-ExtraBold.woff2") format("woff2"),
+    url("/fonts/delight/Web-TT/Delight-ExtraBold.woff") format("woff");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Delight";
+  src: url("/fonts/delight/Web-TT/Delight-Black.woff2") format("woff2"),
+    url("/fonts/delight/Web-TT/Delight-Black.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @custom-variant fixed (&:is(.layout-fixed *));
@@ -11,6 +66,8 @@
   --breakpoint-4xl: 2000px;
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-sans: var(--font-title);
+  --font-serif: var(--font-body);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -57,7 +114,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -76,7 +133,7 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-1: #0473ff;
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
@@ -98,6 +155,8 @@
   --code-number: oklch(0.56 0 0);
   --selection: oklch(0.145 0 0);
   --selection-foreground: oklch(1 0 0);
+  --font-title: "Delight", system-ui, sans-serif;
+  --font-body: var(--font-inter), "Inter", system-ui, sans-serif;
 }
 
 .dark {
@@ -119,7 +178,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-1: #0473ff;
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);

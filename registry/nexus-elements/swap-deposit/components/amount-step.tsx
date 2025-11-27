@@ -10,7 +10,7 @@ import { useNexus } from "../../nexus/NexusProvider";
 import { CHAIN_METADATA } from "@avail-project/nexus-core";
 import { type AssetSelection } from "./asset-select";
 
-const PERCENTAGES = [25, 50, 75, 100] as const;
+const PERCENTAGES = [25, 50, 75, 100];
 
 export interface AmountStepToken {
   symbol: string;
@@ -154,7 +154,7 @@ export const AmountStep = ({
       <div className="space-y-4 p-4">
         <div className="flex items-center justify-center gap-3 px-4 py-2 border border-border rounded-full w-max mx-auto">
           <div className="flex items-center gap-2 text-sm">
-            <div>
+            <div className="max-w-40 overflow-x-scroll no-scrollbar flex items-center">
               {token.sources?.map((source, index) => (
                 <TokenIcon
                   key={source.tokenAddress}
@@ -163,8 +163,12 @@ export const AmountStep = ({
                   chainLogo={source.chainLogo}
                   size="sm"
                   className={cn(
-                    "last:mr-0",
-                    index !== (token.sources?.length ?? 0) - 1 && "-mr-3"
+                    "last:mr-0 size-6",
+                    index !== (token.sources?.length ?? 0) - 1 &&
+                      token?.sources?.length &&
+                      token.sources.length > 5
+                      ? "-mr-5"
+                      : "-mr-3"
                   )}
                 />
               ))}

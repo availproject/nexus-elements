@@ -9,7 +9,7 @@
     "build": "pnpm postinstall && next build",
     "start": "next start",
     "lint": "next lint",
-    "registry:build": "shadcn build",
+    "build:registry": "shadcn build",
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {

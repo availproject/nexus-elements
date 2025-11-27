@@ -25,7 +25,6 @@ export type TransactionStatus =
   | "idle"
   | "set-source-assets"
   | "set-amount"
-  | "simulating"
   | "view-breakdown"
   | "swapping"
   | "depositing"
@@ -156,7 +155,6 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
       return {
         ...state,
         simulation: action.payload,
-        status: "view-breakdown",
       };
     case "setStatus":
       return { ...state, status: action.payload };
@@ -207,11 +205,15 @@ const useSwapDeposit = ({
   } = useTransactionSteps<SwapStepType>();
 
   const stopwatch = useStopwatch({
-    running: state.status === "swapping" || state.status === "depositing",
+    running:
+      state.status === "swapping" ||
+      state.status === "depositing" ||
+      (state.status === "view-breakdown" && !state.simulationLoading),
     intervalMs: 100,
   });
 
   const hasAutoSelected = useRef(false);
+  const initialSimulationDone = useRef(false);
 
   const availableAssets = useMemo(() => {
     if (!swapBalance) return [];
@@ -239,8 +241,6 @@ const useSwapDeposit = ({
     }
     return items.toSorted((a, b) => b.balanceInFiat - a.balanceInFiat);
   }, [swapBalance]);
-
-  // Fetch balance on mount, auto-select all assets once available
 
   const activeIntent = state.simulation?.swapIntent ?? swapIntent.current;
 
@@ -316,7 +316,6 @@ const useSwapDeposit = ({
     return { totalGasFee: gasUsd, gasUsd, gasFormatted };
   }, [nexusSDK, getFiatValue, state.simulation, state.inputs]);
 
-  // Total USD balance of selected sources
   const totalSelectedBalance = useMemo(
     () =>
       state.selectedSources.reduce(
@@ -369,15 +368,10 @@ const useSwapDeposit = ({
       });
   };
 
-  // Creates swap intent and sets up the execution flow
-  // The swap will only execute when allow() is called via handleConfirmOrder
   const initiateSwapIntent = (inputs: SwapInputs) => {
     if (!nexusSDK || !inputs || loading) return;
     onStart?.();
     seed(SWAP_EXPECTED_STEPS);
-
-    // swapWithExactIn creates an intent and waits for allow()/deny()
-    // The promise only resolves after allow() is called
     nexusSDK
       .swapWithExactIn(inputs, {
         onEvent: (event) => {
@@ -403,7 +397,6 @@ const useSwapDeposit = ({
         },
       })
       .then((swapResult) => {
-        // This block executes AFTER allow() is called and swap completes
         if (!swapResult?.success) {
           throw new Error(swapResult?.error || "Swap failed");
         }
@@ -420,7 +413,6 @@ const useSwapDeposit = ({
           );
           dispatch({ type: "setReceiveAmount", payload: formattedAmount });
           onSwapComplete?.(formattedAmount, swapResult.result.explorerURL);
-          // Chain the deposit after swap completes
           dispatch({ type: "setStatus", payload: "depositing" });
           handleDeposit(finalSwap.outputAmount);
         }
@@ -436,8 +428,7 @@ const useSwapDeposit = ({
       });
   };
 
-  const simulateDeposit = async () => {
-    console.log("simulating deposit");
+  const simulateDeposit = async (): Promise<boolean> => {
     if (
       !nexusSDK ||
       !state.inputs ||
@@ -445,7 +436,7 @@ const useSwapDeposit = ({
       !address ||
       !swapIntent.current
     )
-      return;
+      return false;
 
     try {
       const executeParams = executeDeposit(
@@ -475,17 +466,16 @@ const useSwapDeposit = ({
           swapIntent: swapIntent.current,
         },
       });
+      return true;
     } catch (error) {
       const { message } = handleNexusError(error);
       dispatch({ type: "setError", payload: message });
       dispatch({ type: "setStatus", payload: "error" });
       onError?.(message);
-    } finally {
-      dispatch({ type: "setSimulationLoading", payload: false });
+      return false;
     }
   };
 
-  // Toggle a source selection (checkbox behavior)
   const handleToggleSource = useCallback(
     (source: AssetSelection) => {
       const sourceId = `${source.symbol}-${source.chainId}-${source.tokenAddress}`;
@@ -494,7 +484,6 @@ const useSwapDeposit = ({
       );
 
       if (isSelected) {
-        // Remove from selection
         dispatch({
           type: "setSelectedSources",
           payload: state.selectedSources.filter(
@@ -511,23 +500,10 @@ const useSwapDeposit = ({
     [state.selectedSources]
   );
 
-  // Select all available sources
-  const handleSelectAll = useCallback(() => {
-    dispatch({ type: "setSelectedSources", payload: availableAssets });
-  }, [availableAssets]);
-
-  // Deselect all sources
-  const handleDeselectAll = useCallback(() => {
-    dispatch({ type: "setSelectedSources", payload: [] });
-  }, []);
-
-  // Continue from asset selection to amount step
   const handleSourcesContinue = useCallback(() => {
     if (!nexusSDK || state.selectedSources.length === 0) return;
 
     dispatch({ type: "setError", payload: null });
-
-    // Sort by balance descending and create from array with 0 amounts
     const sortedSources = [...state.selectedSources].sort(
       (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance)
     );
@@ -552,11 +528,7 @@ const useSwapDeposit = ({
   const handleAmountContinue = useCallback(
     (totalAmountUsd: number) => {
       if (!nexusSDK || state.selectedSources.length === 0) return;
-
-      // Buffer: use max 95% of any token's balance to avoid draining fully
       const MAX_USAGE_RATIO = 0.95;
-
-      // Build source data with USD values and max usable amounts
       const sourcesWithUsd = state.selectedSources.map((source) => ({
         ...source,
         tokenBalance: Number.parseFloat(source.balance),
@@ -564,7 +536,6 @@ const useSwapDeposit = ({
         maxUsableUsd: source.balanceInFiat * MAX_USAGE_RATIO,
       }));
 
-      // Sort by USD value descending - higher balance = higher priority
       const sortedSources = sourcesWithUsd.toSorted(
         (a, b) => b.usdValue - a.usdValue
       );
@@ -574,42 +545,33 @@ const useSwapDeposit = ({
         0
       );
 
-      // Initialize allocations with proportional distribution
       const allocations = sortedSources.map((source) => {
         const proportion = source.usdValue / totalUsdBalance;
         const idealAllocation = totalAmountUsd * proportion;
-        // Cap at max usable (95% of balance) to avoid draining
         const cappedAllocation = Math.min(idealAllocation, source.maxUsableUsd);
 
         return {
           source,
           allocation: cappedAllocation,
-          // Track how much was capped for redistribution
           excessAmount: Math.max(0, idealAllocation - source.maxUsableUsd),
         };
       });
 
-      // Redistribute capped amounts to sources that have headroom
       let remainingToAllocate = allocations.reduce(
         (sum, a) => sum + a.excessAmount,
         0
       );
-
-      // Iteratively redistribute until we've allocated everything or hit limits
       const MAX_ITERATIONS = 10;
       let iteration = 0;
 
       while (remainingToAllocate > 0.01 && iteration < MAX_ITERATIONS) {
         iteration++;
 
-        // Find sources that can still accept more
         const sourcesWithHeadroom = allocations.filter(
           (a) => a.allocation < a.source.maxUsableUsd
         );
 
         if (sourcesWithHeadroom.length === 0) break;
-
-        // Calculate total available headroom
         const totalHeadroom = sourcesWithHeadroom.reduce(
           (sum, a) => sum + (a.source.maxUsableUsd - a.allocation),
           0
@@ -618,8 +580,6 @@ const useSwapDeposit = ({
         if (totalHeadroom <= 0) break;
 
         const toDistribute = Math.min(remainingToAllocate, totalHeadroom);
-
-        // Distribute proportionally based on each source's available headroom
         for (const alloc of sourcesWithHeadroom) {
           const headroom = alloc.source.maxUsableUsd - alloc.allocation;
           const share = headroom / totalHeadroom;
@@ -633,12 +593,9 @@ const useSwapDeposit = ({
         remainingToAllocate = Math.max(0, remainingToAllocate - toDistribute);
       }
 
-      // Convert USD allocations to token amounts, filtering out zero allocations
       const fromArray = allocations
-        .filter(({ allocation }) => allocation > 0.001) // Skip negligible amounts
+        .filter(({ allocation }) => allocation > 0.001)
         .map(({ source, allocation }) => {
-          // Convert USD to token amount using exchange rate
-          // exchangeRate contains "USD per token" (e.g., ETH -> 3514 means 1 ETH = $3514)
           const rate = exchangeRate?.[source.symbol.toUpperCase()] ?? 1;
           const tokenAmount = rate > 0 ? allocation / rate : 0;
 
@@ -653,7 +610,7 @@ const useSwapDeposit = ({
             amount: parsed,
           };
         })
-        .filter((item) => item.amount > BigInt(0)); // Extra safety: remove zero amounts
+        .filter((item) => item.amount > BigInt(0));
 
       if (fromArray.length === 0) {
         dispatch({
@@ -671,9 +628,8 @@ const useSwapDeposit = ({
       };
 
       dispatch({ type: "setInputs", payload: newInputs });
-      // Set to simulating first - will move to view-breakdown after intent is received and deposit simulated
-      dispatch({ type: "setStatus", payload: "simulating" });
-      // Start swap intent creation (waits for allow() to execute)
+      dispatch({ type: "setStatus", payload: "view-breakdown" });
+      dispatch({ type: "setSimulationLoading", payload: true });
       initiateSwapIntent(newInputs);
     },
     [nexusSDK, state.selectedSources, destination, exchangeRate]
@@ -681,7 +637,6 @@ const useSwapDeposit = ({
 
   const handleConfirmOrder = useCallback(() => {
     if (!swapIntent.current) return;
-    // Set status to swapping before calling allow()
     dispatch({ type: "setStatus", payload: "swapping" });
     swapIntent.current.allow();
   }, [swapIntent]);
@@ -692,6 +647,7 @@ const useSwapDeposit = ({
     }
     dispatch({ type: "reset" });
     resetSteps();
+    initialSimulationDone.current = false;
     stopwatch.stop();
     stopwatch.reset();
   }, [swapIntent, resetSteps, stopwatch]);
@@ -700,6 +656,7 @@ const useSwapDeposit = ({
     dispatch({ type: "reset" });
     resetSteps();
     swapIntent.current = null;
+    initialSimulationDone.current = false;
     stopwatch.stop();
     stopwatch.reset();
   }, [resetSteps, swapIntent, stopwatch]);
@@ -716,29 +673,27 @@ const useSwapDeposit = ({
       console.error(e);
     } finally {
       dispatch({ type: "setSimulationLoading", payload: false });
+      stopwatch.reset();
     }
   };
 
-  // Trigger initial simulation when swapIntent is populated during "simulating"
-  // Since swapIntent is a ref, we need to poll for changes
   useEffect(() => {
-    if (state.status !== "simulating") {
+    if (initialSimulationDone.current) {
       return;
     }
-
-    // Poll for swapIntent to be available (set by SDK's onSwapIntentHook)
-    const checkInterval = setInterval(() => {
-      if (swapIntent.current) {
-        clearInterval(checkInterval);
-        void simulateDeposit();
-      }
-    }, 100);
-
-    // Cleanup on unmount or status change
-    return () => {
-      clearInterval(checkInterval);
-    };
-  }, [state.status]);
+    if (
+      !swapIntent.current ||
+      !state.simulationLoading ||
+      state.status !== "view-breakdown"
+    ) {
+      return;
+    }
+    initialSimulationDone.current = true;
+    void simulateDeposit().then(() => {
+      dispatch({ type: "setSimulationLoading", payload: false });
+      stopwatch.reset();
+    });
+  }, [swapIntent.current, state.simulationLoading, state.status]);
 
   useEffect(() => {
     if (!nexusSDK) return;
@@ -754,9 +709,10 @@ const useSwapDeposit = ({
     }
   }, [nexusSDK, swapBalance, availableAssets, fetchSwapBalance]);
 
-  // Poll for simulation updates during "view-breakdown" status
   usePolling(
-    state.status === "view-breakdown" && Boolean(swapIntent.current),
+    state.status === "view-breakdown" &&
+      Boolean(swapIntent.current) &&
+      !state.simulationLoading,
     async () => {
       await refreshSimulation();
     },
@@ -789,8 +745,13 @@ const useSwapDeposit = ({
 
     // Handlers
     handleToggleSource,
-    handleSelectAll,
-    handleDeselectAll,
+    handleSelectAll: () =>
+      dispatch({
+        type: "setSelectedSources",
+        payload: availableAssets,
+      }),
+    handleDeselectAll: () =>
+      dispatch({ type: "setSelectedSources", payload: [] }),
     handleSourcesContinue,
     handleAmountContinue,
     handleConfirmOrder,
