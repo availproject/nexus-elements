@@ -665,6 +665,7 @@
       ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/collapsible.json",
         "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/card.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
@@ -674,7 +675,9 @@
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/tabs.json"
+        "https://elements.nexus.availproject.org/r/tabs.json",
+        "https://elements.nexus.availproject.org/r/popover.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json"
       ],
       "files": [
         {
@@ -773,8 +776,18 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/deposit/components/transaction-progress.tsx",
-          "target": "components/deposit/components/transaction-progress.tsx",
+          "path": "registry/nexus-elements/deposit/components/transaction-status-step.tsx",
+          "target": "components/deposit/components/transaction-status-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/info.tsx",
+          "target": "components/deposit/components/info.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/step-indicator.tsx",
+          "target": "components/deposit/components/step-indicator.tsx",
           "type": "registry:component"
         },
         {

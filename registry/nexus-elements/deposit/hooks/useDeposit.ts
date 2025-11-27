@@ -21,18 +21,25 @@ import {
   useRef,
   useState,
   useReducer,
+  useCallback,
   type RefObject,
 } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
 import {
-  type TransactionStatus,
   useDebouncedValue,
   useNexusError,
   usePolling,
   useStopwatch,
   useTransactionSteps,
 } from "../../common";
+
+export type DepositStatus =
+  | "idle"
+  | "previewing"
+  | "executing"
+  | "success"
+  | "error";
 
 interface DepositInputs {
   chain: SUPPORTED_CHAINS_IDS;
@@ -61,12 +68,23 @@ interface UseDepositProps {
 
 type DepositState = {
   inputs: DepositInputs;
-  status: TransactionStatus;
+  status: DepositStatus;
+  explorerUrls: {
+    intentUrl: string | null;
+    executeUrl: string | null;
+  };
+  error: string | null;
+  lastResult: BridgeAndExecuteResult | null;
 };
+
 type Action =
   | { type: "setInputs"; payload: Partial<DepositInputs> }
   | { type: "resetInputs" }
-  | { type: "setStatus"; payload: TransactionStatus };
+  | { type: "setStatus"; payload: DepositStatus }
+  | { type: "setExplorerUrls"; payload: Partial<DepositState["explorerUrls"]> }
+  | { type: "setError"; payload: string | null }
+  | { type: "setLastResult"; payload: BridgeAndExecuteResult | null }
+  | { type: "reset" };
 
 const useDeposit = ({
   token,
@@ -88,48 +106,101 @@ const useDeposit = ({
     () => chainOptions?.map((c) => c.id) ?? [],
     [chainOptions]
   );
-  const initialState: DepositState = {
-    inputs: {
-      chain,
-      amount: undefined,
-      selectedSources: allSourceIds,
-    },
-    status: "idle",
-  };
+
+  const createInitialState = useCallback(
+    (): DepositState => ({
+      inputs: {
+        chain,
+        amount: undefined,
+        selectedSources: allSourceIds,
+      },
+      status: "idle",
+      explorerUrls: {
+        intentUrl: null,
+        executeUrl: null,
+      },
+      error: null,
+      lastResult: null,
+    }),
+    [chain, allSourceIds]
+  );
+
+  const initialState = createInitialState();
 
   function reducer(state: DepositState, action: Action): DepositState {
     switch (action.type) {
-      case "setInputs":
-        return { ...state, inputs: { ...state.inputs, ...action.payload } };
+      case "setInputs": {
+        const newInputs = { ...state.inputs, ...action.payload };
+        let newStatus = state.status;
+        if (
+          state.status === "idle" &&
+          newInputs.amount &&
+          Number.parseFloat(newInputs.amount) > 0
+        ) {
+          newStatus = "previewing";
+        }
+        if (
+          state.status === "previewing" &&
+          (!newInputs.amount || Number.parseFloat(newInputs.amount) <= 0)
+        ) {
+          newStatus = "idle";
+        }
+        return { ...state, inputs: newInputs, status: newStatus };
+      }
       case "resetInputs":
         return {
           ...state,
           inputs: { chain, amount: undefined, selectedSources: allSourceIds },
+          status: "idle",
         };
       case "setStatus":
         return { ...state, status: action.payload };
+      case "setExplorerUrls":
+        return {
+          ...state,
+          explorerUrls: { ...state.explorerUrls, ...action.payload },
+        };
+      case "setError":
+        return { ...state, error: action.payload };
+      case "setLastResult":
+        return { ...state, lastResult: action.payload };
+      case "reset":
+        return createInitialState();
       default:
         return state;
     }
   }
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const inputs = state.inputs;
+  const { inputs, status, explorerUrls, error: txError, lastResult } = state;
+
   const setInputs = (next: Partial<DepositInputs>) => {
     dispatch({ type: "setInputs", payload: next });
   };
 
-  const loading = state.status === "executing";
-  const [refreshing, setRefreshing] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [txError, setTxError] = useState<string | null>(null);
+  const setTxError = (error: string | null) => {
+    dispatch({ type: "setError", payload: error });
+  };
+
+  const loading = status === "executing";
+  const isProcessing = status === "executing";
+  const isSuccess = status === "success";
+  const isError = status === "error";
+
+  // Simulation state (useState)
   const [simulation, setSimulation] =
     useState<BridgeAndExecuteSimulationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
-  const [autoAllow, setAutoAllow] = useState(false);
-  const [lastResult, setLastResult] = useState<BridgeAndExecuteResult | null>(
-    null
-  );
+
+  // Derived: refreshing = simulating while we already have a simulation
+  const refreshing = simulating && simulation !== null;
+
+  // Refs for non-rendering state
+  const autoAllowRef = useRef(false);
+  const transactionStartedRef = useRef(false);
+  const simulationRequestIdRef = useRef(0);
+  const activeSimulationIdRef = useRef<number | null>(null);
+
   const {
     steps,
     onStepsList,
@@ -137,20 +208,14 @@ const useDeposit = ({
     reset: resetSteps,
   } = useTransactionSteps<BridgeStepType>();
 
-  const simulationRequestIdRef = useRef(0);
-  const activeSimulationIdRef = useRef<number | null>(null);
-  const prevIsDialogOpenRef = useRef(isDialogOpen);
-
   const unfilteredBridgableBalance = useMemo(() => {
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
 
-    // Only filter by non-zero balance, not by selected sources
     const nonZeroBreakdown = tokenBalance.breakdown.filter(
       (chain) => Number.parseFloat(chain.balance) > 0
     );
 
-    // Recalculate total balance from non-zero sources
     const totalBalance = nonZeroBreakdown.reduce(
       (sum, chain) => sum + Number.parseFloat(chain.balance),
       0
@@ -173,7 +238,6 @@ const useDeposit = ({
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
 
-    // Filter breakdown by selected sources and non-zero balances
     const selectedSourcesSet = new Set(inputs.selectedSources);
     const filteredBreakdown = tokenBalance.breakdown.filter(
       (chain) =>
@@ -181,13 +245,11 @@ const useDeposit = ({
         Number.parseFloat(chain.balance) > 0
     );
 
-    // Recalculate total balance from filtered sources
     const totalBalance = filteredBreakdown.reduce(
       (sum, chain) => sum + Number.parseFloat(chain.balance),
       0
     );
 
-    // Recalculate total balance in fiat from filtered sources
     const totalBalanceInFiat = filteredBreakdown.reduce(
       (sum, chain) => sum + chain.balanceInFiat,
       0
@@ -205,11 +267,12 @@ const useDeposit = ({
     () => (steps?.length ?? 0) > 0 && steps.every((s) => s.completed),
     [steps]
   );
+
   const stopwatch = useStopwatch({
-    running: isDialogOpen && !allCompleted,
+    running: isProcessing && !allCompleted && transactionStartedRef.current,
     intervalMs: 100,
   });
-  // Debounce amount input for auto-simulation UX
+
   const debouncedAmount = useDebouncedValue(inputs?.amount ?? "", 1200);
 
   const feeBreakdown = useMemo(() => {
@@ -277,7 +340,7 @@ const useDeposit = ({
   const handleTransaction = async () => {
     if (!inputs?.amount || !inputs?.chain) return;
     dispatch({ type: "setStatus", payload: "executing" });
-    setTxError(null);
+    dispatch({ type: "setError", payload: null });
     try {
       if (!nexusSDK) throw new Error("Nexus SDK not initialized");
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
@@ -309,6 +372,12 @@ const useDeposit = ({
               onStepsList(list);
             }
             if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+              if (
+                !transactionStartedRef.current &&
+                event.args.type === "INTENT_HASH_SIGNED"
+              ) {
+                transactionStartedRef.current = true;
+              }
               onStepComplete(event.args);
             }
           },
@@ -316,27 +385,31 @@ const useDeposit = ({
       );
 
       if (!result) {
-        setTxError("Transaction rejected by user");
-        setIsDialogOpen(false);
-        resetState();
+        dispatch({ type: "setError", payload: "Transaction rejected by user" });
+        dispatch({ type: "setStatus", payload: "error" });
         return;
       }
-      setLastResult(result);
+      dispatch({ type: "setLastResult", payload: result });
+      dispatch({
+        type: "setExplorerUrls",
+        payload: {
+          intentUrl: result.bridgeExplorerUrl ?? null,
+          executeUrl: result.executeExplorerUrl ?? null,
+        },
+      });
       await onSuccess();
     } catch (error) {
       const { message } = handleNexusError(error);
       intent.current?.deny();
       intent.current = null;
       allowance.current = null;
-      setTxError(message);
-      setIsDialogOpen(false);
+      dispatch({ type: "setError", payload: message });
       dispatch({ type: "setStatus", payload: "error" });
-      resetState();
     }
   };
 
   const simulate = async (overrideAmount?: string) => {
-    if (!nexusSDK || isDialogOpen) return;
+    if (!nexusSDK || isProcessing || isSuccess) return;
 
     const amountToUse = overrideAmount ?? inputs?.amount;
 
@@ -350,7 +423,7 @@ const useDeposit = ({
       Number.parseFloat(filteredBridgableBalance?.balance ?? "0")
     ) {
       activeSimulationIdRef.current = null;
-      setTxError("Insufficient balance");
+      dispatch({ type: "setError", payload: "Insufficient balance" });
       setSimulation(null);
       return;
     }
@@ -382,11 +455,11 @@ const useDeposit = ({
         return;
       }
       if (sim) {
-        setTxError(null);
+        dispatch({ type: "setError", payload: null });
         setSimulation(sim);
       } else {
         setSimulation(null);
-        setTxError("Simulation failed");
+        dispatch({ type: "setError", payload: "Simulation failed" });
       }
     } catch (error) {
       if (activeSimulationIdRef.current !== requestId) {
@@ -394,7 +467,7 @@ const useDeposit = ({
       }
       setSimulation(null);
       const { message } = handleNexusError(error);
-      setTxError(message);
+      dispatch({ type: "setError", payload: message });
     } finally {
       if (activeSimulationIdRef.current === requestId) {
         setSimulating(false);
@@ -403,12 +476,10 @@ const useDeposit = ({
   };
 
   const refreshSimulation = async () => {
-    if (simulating || refreshing) return;
+    if (simulating) return;
     if (!simulation?.bridgeSimulation?.intent) return;
     if (!inputs?.amount) return;
-    setRefreshing(true);
     await simulate(inputs?.amount);
-    setRefreshing(false);
   };
 
   const onSuccess = async () => {
@@ -417,68 +488,51 @@ const useDeposit = ({
     await fetchBridgableBalance();
   };
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     allowance.current = null;
-    setInputs({
-      chain,
-      amount: undefined,
-      selectedSources: allSourceIds,
-    });
-    setRefreshing(false);
-    setSimulation(null);
     intent.current = null;
-    activeSimulationIdRef.current = null;
+    setSimulation(null);
     setSimulating(false);
+    transactionStartedRef.current = false;
+    autoAllowRef.current = false;
+    activeSimulationIdRef.current = null;
     resetSteps();
     stopwatch.stop();
     stopwatch.reset();
-    dispatch({ type: "setStatus", payload: "idle" });
-  };
+    dispatch({ type: "reset" });
+  }, [allowance, intent, resetSteps, stopwatch]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     intent.current?.deny();
     resetState();
-  };
+  }, [intent, resetState]);
 
-  const startTransaction = () => {
+  const startTransaction = useCallback(() => {
     activeSimulationIdRef.current = null;
     setSimulating(false);
-    setRefreshing(false);
-    setIsDialogOpen(true);
-    setTxError(null);
-    setAutoAllow(true);
+    dispatch({ type: "setError", payload: null });
+    autoAllowRef.current = true;
     void handleTransaction();
-  };
+  }, [handleTransaction]);
 
-  // Automatically simulate once required inputs are present and user stops typing
   useEffect(() => {
     const hasRequiredInputs =
       Boolean(debouncedAmount) && Boolean(inputs?.chain) && Boolean(token);
-    if (!hasRequiredInputs) return;
+    if (!hasRequiredInputs || isProcessing || isSuccess) return;
     void simulate(debouncedAmount);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedAmount, inputs?.chain, token]);
+  }, [debouncedAmount, inputs?.chain, token, isProcessing, isSuccess]);
 
   useEffect(() => {
-    if (autoAllow && intent.current) {
+    if (autoAllowRef.current && intent.current) {
       intent.current.allow();
-      setAutoAllow(false);
+      autoAllowRef.current = false;
     }
-  }, [autoAllow, intent.current]);
-
-  useEffect(() => {
-    // Only run cleanup when dialog transitions from open to closed
-    if (prevIsDialogOpenRef.current && !isDialogOpen) {
-      stopwatch.stop();
-      stopwatch.reset();
-      setLastResult(null);
-      resetSteps();
-    }
-    prevIsDialogOpenRef.current = isDialogOpen;
-  }, [isDialogOpen, stopwatch, resetSteps]);
+  }, [intent.current]);
 
   usePolling(
-    Boolean(simulation?.bridgeSimulation?.intent) && !isDialogOpen,
+    Boolean(simulation?.bridgeSimulation?.intent) &&
+      !isProcessing &&
+      !isSuccess,
     async () => {
       await refreshSimulation();
     },
@@ -486,30 +540,45 @@ const useDeposit = ({
   );
 
   return {
+    // State
     inputs,
     setInputs,
+    status,
+    explorerUrls,
+
+    // Derived state
     loading,
+    isProcessing,
+    isSuccess,
+    isError,
     simulating,
     refreshing,
-    isDialogOpen,
-    setIsDialogOpen,
+
+    // Error handling
     txError,
     setTxError,
+
+    // Timer
     timer: stopwatch.seconds,
+
+    // Balance data
     filteredBridgableBalance,
     unfilteredBridgableBalance,
+
+    // Simulation data
     simulation,
     lastResult,
     steps,
+    feeBreakdown,
+
+    // Actions
     handleTransaction,
     startTransaction,
     reset,
     simulate,
-    feeBreakdown,
     cancelSimulation: () => {
       activeSimulationIdRef.current = null;
       setSimulating(false);
-      setRefreshing(false);
       setSimulation(null);
     },
   };
