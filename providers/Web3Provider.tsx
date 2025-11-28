@@ -96,11 +96,14 @@ const sophonWithIcon: ConnectKitChain = {
   iconBackground: "#6b5cff",
 };
 
+const WALLET_CONNECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!;
+console.log("id", !!WALLET_CONNECT_ID);
+
 const defaultConfig = getDefaultConfig({
   appName: "Nexus Elements",
   appDescription: "Prebuilt React components powered by Avail Nexus",
   appIcon: "https://elements.nexus.availproject.org/avail-fav.svg",
-  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
+  walletConnectProjectId: WALLET_CONNECT_ID,
   chains: [
     mainnet,
     base,
