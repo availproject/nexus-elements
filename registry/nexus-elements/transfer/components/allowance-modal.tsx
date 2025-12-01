@@ -123,6 +123,34 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
     [sources.length]
   );
 
+  const isCustomValueValid = (
+    value: string,
+    minimumRaw: bigint,
+    decimals: number
+  ): boolean => {
+    if (!value || value.trim() === "") return false;
+    try {
+      const parsedValue = nexusSDK?.utils?.parseUnits(value, decimals);
+      if (parsedValue === undefined) return false;
+      return parsedValue >= minimumRaw;
+    } catch {
+      return false;
+    }
+  };
+
+  const hasValidationErrors = useMemo(() => {
+    return sources.some((source, index) => {
+      if (selectedOption[index] !== "custom") return false;
+      const value = customValues[index];
+      if (!value || value.trim() === "") return false;
+      return !isCustomValueValid(
+        value,
+        source.allowance.minimumRaw,
+        source.token.decimals
+      );
+    });
+  }, [sources, selectedOption, customValues]);
+
   const onClose = () => {
     deny();
     allowance.current = null;
@@ -224,6 +252,16 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
             <div className="mt-4 space-y-2">
               {ALLOWANCE_CHOICES.map((choice) => {
                 if (choice.choice === "custom") {
+                  const customValue = customValues[index] ?? "";
+                  const isCustomSelected = selectedOption[index] === "custom";
+                  const showError =
+                    isCustomSelected &&
+                    customValue.trim() !== "" &&
+                    !isCustomValueValid(
+                      customValue,
+                      source.allowance.minimumRaw,
+                      source.token.decimals
+                    );
                   return (
                     <AllowanceOption
                       key={choice.choice}
@@ -235,26 +273,31 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
                       title={choice.title}
                       description={choice.description}
                     >
-                      <Input
-                        type="number"
-                        step="any"
-                        min="0"
-                        inputMode="decimal"
-                        placeholder="0.00"
-                        value={
-                          selectedOption[index] === "custom"
-                            ? customValues[index]
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const next = [...customValues];
-                          next[index] = e.target.value;
-                          setCustomValues(next);
-                        }}
-                        maxLength={source.token.decimals}
-                        className="h-9 w-40 rounded-lg border bg-background/80 text-sm disabled:opacity-60"
-                        disabled={selectedOption[index] !== "custom"}
-                      />
+                      <div className="flex flex-col gap-1">
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          value={isCustomSelected ? customValue : ""}
+                          onChange={(e) => {
+                            const next = [...customValues];
+                            next[index] = e.target.value;
+                            setCustomValues(next);
+                          }}
+                          maxLength={source.token.decimals}
+                          className={`h-9 w-40 rounded-lg border bg-background/80 text-sm disabled:opacity-60 ${
+                            showError ? "border-destructive" : ""
+                          }`}
+                          disabled={!isCustomSelected}
+                        />
+                        {showError && (
+                          <p className="text-xs text-destructive">
+                            Min: {source.allowance.minimum}
+                          </p>
+                        )}
+                      </div>
                     </AllowanceOption>
                   );
                 }
@@ -285,7 +328,11 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
         <Button variant="ghost" onClick={onClose} className="font-semibold">
           Deny
         </Button>
-        <Button onClick={onApprove} className="w-full sm:w-auto font-semibold">
+        <Button
+          onClick={onApprove}
+          className="w-full sm:w-auto font-semibold"
+          disabled={hasValidationErrors}
+        >
           Approve Selected
         </Button>
       </div>

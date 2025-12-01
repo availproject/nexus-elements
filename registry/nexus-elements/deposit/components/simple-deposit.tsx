@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import AllowanceModal from "./allowance-modal";
-import BridgeExecuteProgress from "./transaction-progress";
+import DepositTransactionStatusStep from "./transaction-status-step";
 import DepositFeeBreakdown from "./fee-breakdown";
 import SourceBreakdown from "./source-breakdown";
 import { useNexus } from "../../nexus/NexusProvider";
@@ -44,12 +44,14 @@ const SimpleDeposit = ({
   const {
     inputs,
     setInputs,
+    status,
+    explorerUrls,
     loading,
+    isProcessing,
+    isSuccess,
+    isError,
     simulating,
     refreshing,
-    lastResult,
-    isDialogOpen,
-    setIsDialogOpen,
     txError,
     setTxError,
     timer,
@@ -75,7 +77,6 @@ const SimpleDeposit = ({
   });
 
   const renderDepositButtonContent = useCallback(() => {
-    if (isDialogOpen) return "Deposit";
     if (refreshing)
       return (
         <div className="flex items-center gap-x-2">
@@ -91,8 +92,41 @@ const SimpleDeposit = ({
         </div>
       );
     return "Deposit";
-  }, [isDialogOpen, refreshing, simulating]);
+  }, [refreshing, simulating]);
 
+  if (isProcessing || isSuccess || isError) {
+    return (
+      <>
+        {allowance.current && (
+          <Dialog open={true} onOpenChange={() => {}}>
+            <DialogContent>
+              <DialogHeader className="sr-only">
+                <DialogTitle>Set Token Allowances</DialogTitle>
+              </DialogHeader>
+              <AllowanceModal
+                allowance={allowance}
+                callback={startTransaction}
+                onCloseCallback={reset}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+        <DepositTransactionStatusStep
+          status={status}
+          timer={timer}
+          steps={steps}
+          tokenSymbol={token ?? "USDC"}
+          amount={inputs?.amount ?? "0"}
+          destinationLabel={destinationLabel}
+          explorerUrls={explorerUrls}
+          feeBreakdown={feeBreakdown}
+          onClose={reset}
+        />
+      </>
+    );
+  }
+
+  // Default: show form view (idle/previewing states)
   return (
     <div className="flex flex-col items-center w-full gap-y-3 rounded-lg">
       {/* Sources */}
@@ -172,7 +206,7 @@ const SimpleDeposit = ({
           </div>
 
           <DepositFeeBreakdown
-            total={`$${feeBreakdown?.totalGasFee} USD`}
+            total={`${feeBreakdown?.totalGasFee}`}
             bridge={feeBreakdown?.bridgeFormatted ?? ""}
             execute={feeBreakdown?.gasFormatted ?? ""}
             isLoading={refreshing}
@@ -185,62 +219,31 @@ const SimpleDeposit = ({
         </>
       )}
 
-      {!isDialogOpen &&
-        (simulation ? (
-          <div className="w-full flex items-center justify-center gap-x-2 px-1">
-            <Button
-              variant={"destructive"}
-              onClick={() => {
-                reset();
-                setTxError(null);
-              }}
-              className="w-1/2"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={startTransaction}
-              disabled={isDialogOpen || loading || simulating || refreshing}
-              className="w-1/2"
-            >
-              {renderDepositButtonContent()}
-            </Button>
-          </div>
-        ) : (
-          <Button disabled={true} className="w-full px-2">
+      {simulation ? (
+        <div className="w-full flex items-center justify-center gap-x-2 px-1">
+          <Button
+            variant={"destructive"}
+            onClick={() => {
+              reset();
+              setTxError(null);
+            }}
+            className="w-1/2"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={startTransaction}
+            disabled={loading || simulating || refreshing}
+            className="w-1/2"
+          >
             {renderDepositButtonContent()}
           </Button>
-        ))}
-
-      <Dialog
-        open={isDialogOpen}
-        onOpenChange={(open) => {
-          if (loading) return;
-          setIsDialogOpen(open);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader className="sr-only">
-            <DialogTitle>Transaction Progress</DialogTitle>
-          </DialogHeader>
-          {allowance.current ? (
-            <AllowanceModal
-              allowance={allowance}
-              callback={startTransaction}
-              onCloseCallback={reset}
-            />
-          ) : (
-            <BridgeExecuteProgress
-              timer={timer}
-              steps={steps}
-              intentUrl={lastResult ? lastResult.bridgeExplorerUrl : undefined}
-              executeUrl={
-                lastResult ? lastResult.executeExplorerUrl : undefined
-              }
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      ) : (
+        <Button disabled={true} className="w-full px-2">
+          {renderDepositButtonContent()}
+        </Button>
+      )}
 
       {txError && (
         <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-sm">

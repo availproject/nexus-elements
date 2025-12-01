@@ -16,10 +16,8 @@ function formatExpiryDate(timestamp: number) {
 
 const useViewHistory = () => {
   const { nexusSDK } = useNexus();
-  const [history, setHistory] = useState<RequestForFunds[] | null>(null);
-  const [displayedHistory, setDisplayedHistory] = useState<RequestForFunds[]>(
-    []
-  );
+  const [history, setHistory] = useState<RFF[] | null>(null);
+  const [displayedHistory, setDisplayedHistory] = useState<RFF[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);

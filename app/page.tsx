@@ -2,22 +2,19 @@ import Link from "next/link";
 import { Button } from "@/registry/nexus-elements/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
 import MockBridgeUI from "@/components/mock-ui-bridge";
+import { CopyButton } from "@/components/helpers/copy-button";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-white selection:bg-white selection:text-primary font-sans">
+    <div className="min-h-screen bg-background text-white selection:bg-accent selection:text-primary font-sans">
       <main className="relative pt-32">
-        {/* Grid Background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#333_1px,transparent_1px),linear-gradient(to_bottom,#333_1px,transparent_1px)] bg-size-[24px_24px] opacity-20 mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
-
-        {/* Hero Section */}
         <section className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter mb-8 text-foreground">
+            <h1 className="text-5xl sm:text-7xl font-bold  mb-8 text-foreground">
               Plug n Play components <br /> to{" "}
               <span className="text-chart-1">10x</span> your UX
             </h1>
-            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
+            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10 font-serif">
               Ready-made React components for almost any use case. Use as is or
               customise and go to market fast
             </p>
@@ -34,6 +31,10 @@ export default function Home() {
             <div className="mt-12 flex items-center justify-center gap-2 text-sm text-foreground font-mono border border-border rounded-md p-4 w-full overflow-x-scroll lg:w-max bg-background mx-auto">
               <span>~</span>
               <span>npx shadcn@latest add @nexus-elements/fast-bridge</span>
+              <CopyButton
+                value={"npx shadcn@latest add @nexus-elements/fast-bridge"}
+                customPosition=""
+              />
             </div>
           </div>
 
@@ -94,10 +95,10 @@ export function BridgeInterface() {
         {/* Features Grid */}
         <section className="container mx-auto px-6 py-32">
           <div className="mb-16 w-full">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground font-sans">
               What is Nexus?
             </h2>
-            <p className="text-muted-foreground text-lg w-full max-w-4xl">
+            <p className="text-muted-foreground text-lg w-full max-w-4xl font-serif">
               Nexus is a meta-interoperability protocol that eliminates
               blockchain fragmentation by connecting liquidity, assets, and
               coordination logic at the base layer. It abstracts complexities
@@ -147,10 +148,10 @@ export function BridgeInterface() {
                 <div className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center mb-4 group-hover:border-border/70 transition-colors">
                   <feature.icon className="w-5 h-5 text-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">
+                <h3 className="text-lg font-semibold mb-2 text-foreground font-sans">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed font-serif">
                   {feature.desc}
                 </p>
               </div>

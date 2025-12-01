@@ -10,7 +10,7 @@
       "title": "Fast Bridge",
       "description": "A simple component built with Nexus to enable cross chain bridging",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.4",
+        "@avail-project/nexus-core@1.0.0-beta.56",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -160,7 +160,7 @@
       "title": "Fast Transfer",
       "description": "A simple component built with Nexus to enable cross chain transfer",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.4",
+        "@avail-project/nexus-core@1.0.0-beta.56",
         "@radix-ui/react-accordion",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
@@ -309,7 +309,7 @@
       "type": "registry:component",
       "title": "Nexus Provider",
       "description": "Shared Nexus SDK provider and types for Nexus Elements",
-      "dependencies": ["@avail-project/nexus-core@1.0.0-rc.4"],
+      "dependencies": ["@avail-project/nexus-core@1.0.0-beta.56"],
       "files": [
         {
           "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
@@ -578,6 +578,7 @@
       "title": "Unified Balance",
       "description": "A simple component built with Nexus to display unified balance",
       "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
         "lucide-react",
         "@radix-ui/react-accordion",
         "@radix-ui/react-label",
@@ -639,8 +640,8 @@
       "title": "Deposit",
       "description": "A simple component built with Nexus to enable deposits",
       "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
         "lucide-react",
-        "@radix-ui/react-tabs",
         "@radix-ui/react-dialog",
         "@radix-ui/react-accordion",
         "@radix-ui/react-label",
@@ -651,6 +652,7 @@
       ],
       "registryDependencies": [
         "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/collapsible.json",
         "https://develop.elements.nexus.availproject.org/r/button.json",
         "https://develop.elements.nexus.availproject.org/r/card.json",
         "https://develop.elements.nexus.availproject.org/r/dialog.json",
@@ -660,7 +662,8 @@
         "https://develop.elements.nexus.availproject.org/r/tooltip.json",
         "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
         "https://develop.elements.nexus.availproject.org/r/utils.json",
-        "https://develop.elements.nexus.availproject.org/r/tabs.json"
+        "https://develop.elements.nexus.availproject.org/r/popover.json",
+        "https://develop.elements.nexus.availproject.org/r/checkbox.json"
       ],
       "files": [
         {
@@ -729,11 +732,6 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/deposit/components/container.tsx",
-          "target": "components/deposit/components/container.tsx",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/nexus-elements/deposit/components/deposit-modal.tsx",
           "target": "components/deposit/components/deposit-modal.tsx",
           "type": "registry:component"
@@ -759,8 +757,18 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/deposit/components/transaction-progress.tsx",
-          "target": "components/deposit/components/transaction-progress.tsx",
+          "path": "registry/nexus-elements/deposit/components/transaction-status-step.tsx",
+          "target": "components/deposit/components/transaction-status-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/info.tsx",
+          "target": "components/deposit/components/info.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/step-indicator.tsx",
+          "target": "components/deposit/components/step-indicator.tsx",
           "type": "registry:component"
         },
         {
@@ -796,7 +804,7 @@
       "title": "Swaps",
       "description": "Swap tokens across chains (Exact In)",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.4",
+        "@avail-project/nexus-core@1.0.0-beta.56",
         "@radix-ui/react-dialog",
         "@radix-ui/react-label",
         "@radix-ui/react-select",
@@ -950,7 +958,7 @@
       "title": "Swap Deposit",
       "description": "Swap and Deposit tokens across chains and contracts",
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-rc.3",
+        "@avail-project/nexus-core@1.0.0-beta.56",
         "@radix-ui/react-collapsible",
         "@radix-ui/react-separator",
         "@radix-ui/react-tooltip",

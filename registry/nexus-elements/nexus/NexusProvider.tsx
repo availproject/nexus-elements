@@ -209,11 +209,8 @@ const NexusProvider = ({
 
   function getFiatValue(amount: number, token: string) {
     const key = token.toUpperCase();
-    const rate = Number.parseFloat(String(exchangeRate.current?.[key] ?? "0"));
-    const isValid = Number.isFinite(amount) && Number.isFinite(rate);
-    const approx = isValid ? rate * amount : 0;
-
-    return approx;
+    const rate = exchangeRate.current?.[key] ?? 1;
+    return rate * amount;
   }
 
   useAccountEffect({

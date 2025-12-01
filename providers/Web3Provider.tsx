@@ -60,6 +60,9 @@ const sophon = defineChain({
   },
 });
 
+// Add chain icons for RainbowKit
+type ConnectKitChain = Chain & { iconUrl?: string; iconBackground?: string };
+
 const monad = {
   id: 143,
   name: "Monad",
@@ -79,32 +82,44 @@ const monad = {
     "https://assets.coingecko.com/coins/images/38927/standard/monad.png?1764042736",
 };
 
-const config = createConfig(
-  getDefaultConfig({
-    appName: "Nexus Elements",
-    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
-    chains: [
-      mainnet,
-      base,
-      sophon,
-      hyperEVM,
-      bsc,
-      kaia,
-      arbitrum,
-      avalanche,
-      optimism,
-      polygon,
-      scroll,
-      sepolia,
-      baseSepolia,
-      arbitrumSepolia,
-      optimismSepolia,
-      polygonAmoy,
-      monadTestnet,
-      monad,
-    ],
-  })
-);
+const hyperEVMWithIcon: ConnectKitChain = {
+  ...hyperEVM,
+  iconUrl:
+    "https://assets.coingecko.com/coins/images/38927/standard/monad.png?1764042736",
+};
+
+const WALLET_CONNECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!;
+console.log("id", !!WALLET_CONNECT_ID);
+
+const defaultConfig = getDefaultConfig({
+  appName: "Nexus Elements",
+  appDescription: "Prebuilt React components powered by Avail Nexus",
+  appIcon: "https://elements.nexus.availproject.org/avail-fav.svg",
+  walletConnectProjectId: WALLET_CONNECT_ID,
+  chains: [
+    mainnet,
+    base,
+    sophonWithIcon,
+    hyperEVMWithIcon,
+    bsc,
+    kaia,
+    arbitrum,
+    avalanche,
+    optimism,
+    polygon,
+    scroll,
+    sepolia,
+    baseSepolia,
+    arbitrumSepolia,
+    optimismSepolia,
+    polygonAmoy,
+    monadTestnet,
+    monad,
+  ],
+  enableFamily: false,
+});
+
+const wagmiConfig = createConfig(defaultConfig);
 
 function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
@@ -122,9 +137,9 @@ const Web3Provider = ({
   const queryClient = useMemo(() => new QueryClient(), []);
   return (
     <Suspense fallback={<Skeleton className="w-full h-full" />}>
-      <WagmiProvider config={config}>
+      <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <ConnectKitProvider>
+          <ConnectKitProvider theme="minimal">
             <NexusContainer>{children}</NexusContainer>
           </ConnectKitProvider>
         </QueryClientProvider>

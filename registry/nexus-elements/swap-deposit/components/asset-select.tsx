@@ -24,7 +24,6 @@ export interface AssetSelection {
 interface AssetSelectProps {
   title?: string;
   availableAssets: AssetSelection[];
-  getFiatValue: (amount: number, symbol: string) => number;
   selectedSources: AssetSelection[];
   onToggle: (source: AssetSelection) => void;
   onSelectAll: () => void;
@@ -43,10 +42,11 @@ const usdFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
+const LOW_BALANCE_THRESHOLD = 5;
+
 const AssetSelect = ({
   title = "Select Sources",
   availableAssets,
-  getFiatValue,
   selectedSources,
   onToggle,
   onSelectAll,
@@ -114,8 +114,8 @@ const AssetSelect = ({
                 const sourceId = `${option.symbol}-${option.chainId}-${option.tokenAddress}`;
                 const isSelected = isSourceSelected(option);
                 const numericBalance = Number.parseFloat(option.balance);
-                const usdValue = getFiatValue(numericBalance, option.symbol);
-                const isLowBalance = numericBalance < 10;
+                const usdValue = option.balanceInFiat;
+                const isLowBalance = numericBalance < LOW_BALANCE_THRESHOLD;
 
                 return (
                   <li key={sourceId}>

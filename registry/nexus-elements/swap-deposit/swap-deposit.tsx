@@ -44,7 +44,7 @@ const SwapDeposit = ({
   destination,
   title = "Select Sources",
 }: SwapDepositProps) => {
-  const { nexusSDK } = useNexus();
+  const { nexusSDK, swapBalance } = useNexus();
 
   const {
     status,
@@ -52,11 +52,9 @@ const SwapDeposit = ({
     txError,
     simulationLoading,
     timer,
-    getFiatValue,
     availableAssets,
     selectedSources,
     totalSelectedBalance,
-    activeIntent,
     confirmationDetails,
     feeBreakdown,
     handleToggleSource,
@@ -75,12 +73,11 @@ const SwapDeposit = ({
 
   const isAmountStep =
     status === "set-source-assets" && selectedSources.length > 0;
-  const isSimulating = status === "simulating";
   const isProcessing =
     status === "swapping" || status === "depositing" || loading;
   const isSuccess = status === "success";
   const isError = status === "error";
-  const showReview = status === "view-breakdown" && Boolean(activeIntent);
+  const showReview = status === "view-breakdown";
 
   if (!nexusSDK) {
     return (
@@ -132,35 +129,43 @@ const SwapDeposit = ({
       );
     }
 
-    if (showReview && confirmationDetails && activeIntent) {
+    if (showReview) {
+      // Show confirmation step - with skeletons if still simulating
+      const defaultDetails = {
+        sourceLabel: destination.label ?? "Source route",
+        sources: selectedSources,
+        gasTokenSymbol: destination.gasTokenSymbol,
+        estimatedTime: destination.estimatedTime ?? "≈ 30s",
+        amountSpent: "",
+        receiveTokenSymbol: destination.tokenSymbol,
+        receiveAmountAfterSwap: "",
+        receiveTokenChain: destination.chainId,
+        receiveTokenLogo: destination.tokenLogo,
+        networkCost: feeBreakdown?.gasFormatted ?? "",
+      };
+
       return (
         <div className="flex h-full flex-col">
           <ConfirmationStep
-            amount={confirmationDetails.receiveAmountAfterSwapUsd}
-            details={{
-              ...confirmationDetails,
-              sourceLabel:
-                confirmationDetails.sourceLabel ??
-                destination.label ??
-                "Source route",
-              networkCost: feeBreakdown.gasFormatted,
-            }}
-            countdown={Math.max(0, 30 - Math.floor(timer))}
+            amount={confirmationDetails?.receiveAmountAfterSwapUsd ?? 0}
+            details={
+              confirmationDetails
+                ? {
+                    ...confirmationDetails,
+                    sourceLabel:
+                      confirmationDetails.sourceLabel ??
+                      destination.label ??
+                      "Source route",
+                    networkCost: feeBreakdown?.gasFormatted ?? "",
+                  }
+                : defaultDetails
+            }
+            countdown={Math.max(0, 15 - Math.floor(timer))}
             onConfirm={handleConfirmOrder}
             onBack={handleBack}
             title={destination.label ?? destination.tokenSymbol}
+            isSimulating={simulationLoading}
           />
-        </div>
-      );
-    }
-
-    if (isSimulating) {
-      return (
-        <div className="flex h-full flex-col items-center justify-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Fetching best route...
-          </p>
         </div>
       );
     }
@@ -193,7 +198,6 @@ const SwapDeposit = ({
       <AssetSelect
         title={title}
         availableAssets={availableAssets}
-        getFiatValue={getFiatValue}
         selectedSources={selectedSources}
         onToggle={handleToggleSource}
         onSelectAll={handleSelectAll}
@@ -201,6 +205,11 @@ const SwapDeposit = ({
         onContinue={handleSourcesContinue}
         onBack={reset}
         onClose={reset}
+        emptyLabel={
+          swapBalance
+            ? "No swappable assets found"
+            : "Fetching swappable tokens"
+        }
       />
     );
   };
@@ -211,11 +220,6 @@ const SwapDeposit = ({
         "relative mx-auto h-[520px] py-0 w-full max-w-md overflow-y-scroll no-scrollbar"
       )}
     >
-      {simulationLoading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      )}
       {renderContent()}
     </Card>
   );

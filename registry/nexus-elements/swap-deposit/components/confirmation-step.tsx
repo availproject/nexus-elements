@@ -16,8 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../../ui/tooltip";
+import { Skeleton } from "../../ui/skeleton";
 import { ChevronRight, Fuel, Info } from "lucide-react";
-import { SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
+import { type SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
 import { type AssetSelection } from "./asset-select";
 import { cn } from "@/lib/utils";
 import { Separator } from "../../ui/separator";
@@ -38,6 +39,7 @@ export interface ConfirmationDetails {
 interface ConfirmationStepProps {
   amount: number;
   details: ConfirmationDetails;
+  isSimulating: boolean;
   countdown?: number;
   onConfirm: () => void;
   onBack: () => void;
@@ -51,6 +53,7 @@ export const ConfirmationStep = ({
   onConfirm,
   onBack,
   title = "Deposit USDC",
+  isSimulating = false,
 }: ConfirmationStepProps) => {
   const [open, setOpen] = useState(false);
 
@@ -65,16 +68,24 @@ export const ConfirmationStep = ({
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <div className="text-center py-2">
-          <p className="text-4xl font-light text-foreground">
-            ${amount.toFixed(6)}
-          </p>
+          {isSimulating ? (
+            <Skeleton className="h-10 w-32 mx-auto" />
+          ) : (
+            <p className="text-4xl font-light text-foreground">
+              ${amount.toFixed(6)}
+            </p>
+          )}
           <div className="mt-2 inline-flex items-center gap-2 text-muted-foreground text-sm">
             <TokenIcon
               symbol={details.receiveTokenSymbol}
               tokenLogo={details.receiveTokenLogo}
               size="sm"
             />
-            <span>{details.receiveAmountAfterSwap}</span>
+            {isSimulating ? (
+              <Skeleton className="h-4 w-20" />
+            ) : (
+              <span>{details.receiveAmountAfterSwap}</span>
+            )}
           </div>
         </div>
 
@@ -96,7 +107,11 @@ export const ConfirmationStep = ({
                     )}
                   />
                 ))}
-                <span>{details.amountSpent}</span>
+                {isSimulating ? (
+                  <Skeleton className="h-4 w-24" />
+                ) : (
+                  <span>{details.amountSpent}</span>
+                )}
               </div>
             }
           />
@@ -110,7 +125,11 @@ export const ConfirmationStep = ({
                   tokenLogo={details.receiveTokenLogo}
                   size="sm"
                 />
-                <span>{details.receiveAmountAfterSwap}</span>
+                {isSimulating ? (
+                  <Skeleton className="h-4 w-20" />
+                ) : (
+                  <span>{details.receiveAmountAfterSwap}</span>
+                )}
               </div>
             }
           />
@@ -152,10 +171,14 @@ export const ConfirmationStep = ({
                     </span>
                   }
                   value={
-                    <span className="flex items-center gap-1">
-                      <Fuel className="h-3.5 w-3.5 text-muted-foreground" />
-                      {details.networkCost}
-                    </span>
+                    isSimulating ? (
+                      <Skeleton className="h-4 w-20" />
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <Fuel className="h-3.5 w-3.5 text-muted-foreground" />
+                        {details.networkCost}
+                      </span>
+                    )
                   }
                 />
               </TooltipProvider>
@@ -179,9 +202,10 @@ export const ConfirmationStep = ({
         </p>
         <Button
           onClick={onConfirm}
+          disabled={isSimulating}
           className="w-full rounded-xl text-base font-semibold"
         >
-          Confirm order
+          {isSimulating ? "Refreshing quote" : "Confirm order"}
         </Button>
       </div>
     </div>

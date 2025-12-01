@@ -25,7 +25,7 @@ export const mdxComponents: MDXComponentsMap = {
   h1: ({ className, ...props }: React.ComponentProps<"h1">) => (
     <h1
       className={cn(
-        "font-heading mt-2 scroll-m-28 text-3xl font-bold tracking-tight",
+        "font-heading mt-2 scroll-m-28 text-3xl font-bold tracking-tight font-sans",
         className
       )}
       {...props}
@@ -41,7 +41,7 @@ export const mdxComponents: MDXComponentsMap = {
           .replace(/\?/g, "")
           .toLowerCase()}
         className={cn(
-          "font-heading mt-10 scroll-m-28 text-xl font-semibold tracking-tight first:mt-0 lg:mt-16",
+          "font-heading mt-10 scroll-m-28 text-xl font-semibold tracking-tight first:mt-0 lg:mt-16 font-sans",
           className
         )}
         {...props}
@@ -51,7 +51,7 @@ export const mdxComponents: MDXComponentsMap = {
   h3: ({ className, ...props }: React.ComponentProps<"h3">) => (
     <h3
       className={cn(
-        "font-heading mt-12 scroll-m-28 text-lg font-medium tracking-tight",
+        "font-heading mt-12 scroll-m-28 text-lg font-medium tracking-tight font-sans",
         className
       )}
       {...props}
@@ -60,7 +60,7 @@ export const mdxComponents: MDXComponentsMap = {
   h4: ({ className, ...props }: React.ComponentProps<"h4">) => (
     <h4
       className={cn(
-        "font-heading mt-8 scroll-m-28 text-base font-medium tracking-tight",
+        "font-heading mt-8 scroll-m-28 text-base font-medium tracking-tight font-sans",
         className
       )}
       {...props}
@@ -69,7 +69,7 @@ export const mdxComponents: MDXComponentsMap = {
   // Text
   p: ({ className, ...props }: React.ComponentProps<"p">) => (
     <span
-      className={cn("leading-relaxed not-first:mt-6", className)}
+      className={cn("leading-relaxed not-first:mt-6 font-serif", className)}
       {...props}
     />
   ),
@@ -81,7 +81,7 @@ export const mdxComponents: MDXComponentsMap = {
   ),
   blockquote: ({ className, ...props }: React.ComponentProps<"blockquote">) => (
     <blockquote
-      className={cn("mt-6 border-l-2 pl-6 italic", className)}
+      className={cn("mt-6 border-l-2 pl-6 italic font-serif", className)}
       {...props}
     />
   ),
@@ -95,13 +95,19 @@ export const mdxComponents: MDXComponentsMap = {
     return <figure className={cn(className)} {...props} />;
   },
   ul: ({ className, ...props }: React.ComponentProps<"ul">) => (
-    <ul className={cn("my-6 ml-6 list-disc", className)} {...props} />
+    <ul
+      className={cn("my-6 ml-6 list-disc font-serif", className)}
+      {...props}
+    />
   ),
   ol: ({ className, ...props }: React.ComponentProps<"ol">) => (
-    <ol className={cn("my-6 ml-6 list-decimal", className)} {...props} />
+    <ol
+      className={cn("my-6 ml-6 list-decimal font-serif", className)}
+      {...props}
+    />
   ),
   li: ({ className, ...props }: React.ComponentProps<"li">) => (
-    <li className={cn("mt-2", className)} {...props} />
+    <li className={cn("mt-2 font-serif", className)} {...props} />
   ),
   figcaption: ({
     className,
@@ -116,7 +122,7 @@ export const mdxComponents: MDXComponentsMap = {
     return (
       <figcaption
         className={cn(
-          "text-code-foreground [&_svg]:text-code-foreground flex items-center gap-2 [&_svg]:size-4 [&_svg]:opacity-70",
+          "text-code-foreground [&_svg]:text-code-foreground flex items-center gap-2 [&_svg]:size-4 [&_svg]:opacity-70 font-serif ",
           className
         )}
         {...props}
