@@ -64,11 +64,6 @@ const AmountInput = ({
   const hasBalance =
     hasSelectedSources && Number.parseFloat(bridgableBalance.balance) > 0;
 
-  const hasSelectedSources =
-    bridgableBalance && bridgableBalance.breakdown.length > 0;
-  const hasBalance =
-    hasSelectedSources && Number.parseFloat(bridgableBalance.balance) > 0;
-
   return (
     <div className="flex flex-col items-start gap-y-1 w-full py-2">
       <Accordion type="single" collapsible className="w-full">
@@ -85,9 +80,7 @@ const AmountInput = ({
               onChange={(e) => onChange?.(e.target.value)}
               className="p-0 text-2xl! placeholder:text-2xl w-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none bg-transparent!"
               disabled={disabled || loading || !hasSelectedSources}
-              disabled={disabled || loading || !hasSelectedSources}
             />
-            {bridgableBalance && hasSelectedSources && (
             {bridgableBalance && hasSelectedSources && (
               <p className="text-base font-semibold min-w-max">
                 {nexusSDK?.utils?.formatTokenBalance(
@@ -140,7 +133,6 @@ const AmountInput = ({
                 </Button>
               ))}
             </div>
-            {hasSelectedSources && (
             {hasSelectedSources && (
               <AccordionTrigger
                 className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"

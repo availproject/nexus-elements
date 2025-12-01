@@ -17,9 +17,10 @@ import {
   optimismSepolia,
   polygonAmoy,
   monadTestnet,
+  sophon,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { defineChain } from "viem";
+import { Chain, defineChain } from "viem";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
 import { useSearchParams } from "next/navigation";
 import { type NexusNetwork } from "@avail-project/nexus-core";
@@ -35,28 +36,6 @@ const hyperEVM = defineChain({
   },
   blockExplorers: {
     default: { name: "HyperEVM Scan", url: "https://hyperevmscan.io" },
-  },
-});
-
-const sophon = defineChain({
-  id: 50104,
-  name: "Sophon",
-  nativeCurrency: {
-    decimals: 18,
-    name: "Sophon",
-    symbol: "SOPH",
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://rpc.sophon.xyz"],
-      webSocket: ["wss://rpc.sophon.xyz/ws"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "Sophon Block Explorer",
-      url: "https://explorer.sophon.xyz",
-    },
   },
 });
 
@@ -89,7 +68,6 @@ const hyperEVMWithIcon: ConnectKitChain = {
 };
 
 const WALLET_CONNECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!;
-console.log("id", !!WALLET_CONNECT_ID);
 
 const defaultConfig = getDefaultConfig({
   appName: "Nexus Elements",
@@ -99,7 +77,7 @@ const defaultConfig = getDefaultConfig({
   chains: [
     mainnet,
     base,
-    sophonWithIcon,
+    sophon,
     hyperEVMWithIcon,
     bsc,
     kaia,
@@ -123,7 +101,7 @@ const wagmiConfig = createConfig(defaultConfig);
 
 function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   const searchParams = useSearchParams();
-  const urlNetwork = (searchParams.get("network") || "canary") as NexusNetwork;
+  const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
   const nexusConfig = useMemo(
     () => ({ network: urlNetwork, debug: true }),
     [urlNetwork]
