@@ -48,43 +48,15 @@ npm install @avail-project/nexus-core@1.0.0-beta.56 lucide-react @radix-ui/react
 
 ## Usage
 
-<Step>Wrap your app with the provider</Step>
-
-```tsx showLineNumbers
-"use client";
-import NexusProvider from "@/components/nexus/NexusProvider";
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <NexusProvider>{children}</NexusProvider>;
-}
-```
-
-<Step>Initialize on wallet connect</Step>
-
-```tsx showLineNumbers
-"use client";
-import { useEffect } from "react";
-import { useAccount } from "wagmi";
-import type { EthereumProvider } from "@avail-project/nexus-core";
-import { useNexus } from "@/components/nexus/NexusProvider";
-
-export function InitNexusOnConnect() {
-  const { status, connector } = useAccount();
-  const { handleInit } = useNexus();
-
-  useEffect(() => {
-    if (status === "connected") {
-      connector?.getProvider().then((p) => handleInit(p as EthereumProvider));
-    }
-  }, [status, connector, handleInit]);
-
-  return null;
-}
-```
+<Step className="font-serif text-lg">
+  Don't forget to wrap your app with NexusProvider
+</Step>
+<Step className="font-serif text-base">
+  View Detailed instructions{" "}
+  <a href="/docs/get-started" target="_blank" className="underline">
+    here
+  </a>
+</Step>
 
 ```tsx showLineNumbers
 <NexusDeposit

@@ -17,8 +17,8 @@ import {
 
 const TOP_LEVEL_SECTIONS = [
   { name: "Get Started", href: "/docs/get-started" },
-  { name: "Components", href: "/docs/view-components" },
   { name: "MCP", href: "/docs/mcp" },
+  { name: "Components", href: "/docs/view-components" },
 ];
 
 const EXCLUDED_SECTIONS: string[] = [
