@@ -3,18 +3,19 @@ import { Button } from "@/registry/nexus-elements/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
 import MockBridgeUI from "@/components/mock-ui-bridge";
 import { CopyButton } from "@/components/helpers/copy-button";
+import NexusGlobe from "@/components/nexus-globe";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-white selection:bg-accent selection:text-primary font-sans">
       <main className="relative pt-32">
         <section className="container mx-auto px-6 relative z-10">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <h1 className="text-5xl sm:text-7xl font-bold  mb-8 text-foreground">
+          <div className="max-w-4xl mx-auto text-center mb-16 relative">
+            <h1 className="text-5xl sm:text-7xl font-bold  mb-8 text-foreground select-none">
               Plug n Play components <br /> to{" "}
               <span className="text-chart-1">10x</span> your UX
             </h1>
-            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10 font-serif">
+            <p className="text-base sm:text-xl text-muted-foreground select-none max-w-2xl mx-auto leading-relaxed mb-10 font-serif">
               Ready-made React components for almost any use case. Use as is or
               customise and go to market fast
             </p>
@@ -36,6 +37,7 @@ export default function Home() {
                 customPosition=""
               />
             </div>
+            <NexusGlobe />
           </div>
 
           {/* Code Preview / Feature Highlight */}

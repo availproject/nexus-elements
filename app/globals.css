@@ -156,6 +156,15 @@
   --font-sans: "Delight", system-ui, sans-serif;
   --font-serif: var(--font-inter), "Inter", system-ui, sans-serif;
   --font-mono: var(--font-inter), "Inter", system-ui, sans-serif;
+  /* Globe theme variables */
+  --globe-color: #1a365d;
+  --globe-atmosphere: #ffffff;
+  --globe-emissive: #1a365d;
+  --globe-polygon: rgba(255, 255, 255, 0.7);
+  --globe-ambient-light: #38bdf8;
+  --globe-arc-1: #06b6d4;
+  --globe-arc-2: #3b82f6;
+  --globe-arc-3: #6366f1;
 }
 
 .dark {
@@ -198,6 +207,15 @@
   --code-number: oklch(0.72 0 0);
   --selection: oklch(0.922 0 0);
   --selection-foreground: oklch(0.205 0 0);
+  /* Globe theme variables */
+  --globe-color: #062056;
+  --globe-atmosphere: #ffffff;
+  --globe-emissive: #062056;
+  --globe-polygon: rgba(255, 255, 255, 0.7);
+  --globe-ambient-light: #38bdf8;
+  --globe-arc-1: #06b6d4;
+  --globe-arc-2: #3b82f6;
+  --globe-arc-3: #6366f1;
 }
 
 .light-blue {
@@ -258,6 +276,15 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  /* Globe theme variables */
+  --globe-color: #0c4a6e;
+  --globe-atmosphere: #bae6fd;
+  --globe-emissive: #0c4a6e;
+  --globe-polygon: rgba(56, 189, 248, 0.6);
+  --globe-ambient-light: #38bdf8;
+  --globe-arc-1: #22d3ee;
+  --globe-arc-2: #38bdf8;
+  --globe-arc-3: #0ea5e9;
 }
 
 .dark-blue {
@@ -316,6 +343,15 @@
   --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
     0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
+  /* Globe theme variables */
+  --globe-color: #082f49;
+  --globe-atmosphere: #7dd3fc;
+  --globe-emissive: #082f49;
+  --globe-polygon: rgba(56, 189, 248, 0.5);
+  --globe-ambient-light: #0ea5e9;
+  --globe-arc-1: #22d3ee;
+  --globe-arc-2: #38bdf8;
+  --globe-arc-3: #0284c7;
 }
 
 .light-cyber {
@@ -376,6 +412,15 @@
   --shadow-2xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  /* Globe theme variables */
+  --globe-color: #1e1b4b;
+  --globe-atmosphere: #f0abfc;
+  --globe-emissive: #1e1b4b;
+  --globe-polygon: rgba(240, 171, 252, 0.5);
+  --globe-ambient-light: #e879f9;
+  --globe-arc-1: #ff00ff;
+  --globe-arc-2: #00ffff;
+  --globe-arc-3: #a855f7;
 }
 
 .dark-cyber {
@@ -434,6 +479,15 @@
   --shadow-xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.1),
     0px 8px 10px -3px hsl(0 0% 0% / 0.1);
   --shadow-2xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.25);
+  /* Globe theme variables */
+  --globe-color: #0f0326;
+  --globe-atmosphere: #d946ef;
+  --globe-emissive: #0f0326;
+  --globe-polygon: rgba(217, 70, 239, 0.6);
+  --globe-ambient-light: #d946ef;
+  --globe-arc-1: #ff00ff;
+  --globe-arc-2: #00ffff;
+  --globe-arc-3: #8b5cf6;
 }
 
 .light-mono {
@@ -493,6 +547,15 @@
   --shadow-2xl: 0px 1px 0px 0px hsl(0 0% 0% / 0);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  /* Globe theme variables */
+  --globe-color: #e5e5e5;
+  --globe-atmosphere: #a3a3a3;
+  --globe-emissive: #e5e5e5;
+  --globe-polygon: rgba(163, 163, 163, 0.6);
+  --globe-ambient-light: #737373;
+  --globe-arc-1: #525252;
+  --globe-arc-2: #737373;
+  --globe-arc-3: #404040;
 }
 
 .dark-mono {
@@ -550,6 +613,15 @@
   --shadow-xl: 0px 1px 0px 0px hsl(0 0% 0% / 0),
     0px 8px 10px -1px hsl(0 0% 0% / 0);
   --shadow-2xl: 0px 1px 0px 0px hsl(0 0% 0% / 0);
+  /* Globe theme variables */
+  --globe-color: #171717;
+  --globe-atmosphere: #525252;
+  --globe-emissive: #171717;
+  --globe-polygon: rgba(82, 82, 82, 0.7);
+  --globe-ambient-light: #a3a3a3;
+  --globe-arc-1: #737373;
+  --globe-arc-2: #a3a3a3;
+  --globe-arc-3: #525252;
 }
 
 .light-neo {
@@ -609,6 +681,15 @@
   --shadow-2xl: 4px 4px 0px 0px hsl(0 0% 0% / 2.5);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  /* Globe theme variables */
+  --globe-color: #fef2f2;
+  --globe-atmosphere: #fca5a5;
+  --globe-emissive: #fef2f2;
+  --globe-polygon: rgba(252, 165, 165, 0.5);
+  --globe-ambient-light: #ef4444;
+  --globe-arc-1: #ff3333;
+  --globe-arc-2: #ffff00;
+  --globe-arc-3: #3b82f6;
 }
 
 .dark-neo {
@@ -666,6 +747,15 @@
   --shadow-xl: 4px 4px 0px 0px hsl(0 0% 0% / 1),
     4px 8px 10px -1px hsl(0 0% 0% / 1);
   --shadow-2xl: 4px 4px 0px 0px hsl(0 0% 0% / 2.5);
+  /* Globe theme variables */
+  --globe-color: #0a0a0a;
+  --globe-atmosphere: #f87171;
+  --globe-emissive: #0a0a0a;
+  --globe-polygon: rgba(248, 113, 113, 0.6);
+  --globe-ambient-light: #f87171;
+  --globe-arc-1: #ff6666;
+  --globe-arc-2: #ffff66;
+  --globe-arc-3: #60a5fa;
 }
 
 @layer base {
