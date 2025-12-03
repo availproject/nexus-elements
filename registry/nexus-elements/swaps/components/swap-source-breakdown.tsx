@@ -6,12 +6,10 @@ type SwapIntent = Parameters<OnSwapIntentHook>[0]["intent"];
 
 interface SwapSourceBreakdownProps {
   intent: SwapIntent;
-  isLoading?: boolean;
 }
 
 const SwapSourceBreakdown: React.FC<SwapSourceBreakdownProps> = ({
   intent,
-  isLoading,
 }) => {
   const { nexusSDK } = useNexus();
   if (!intent) return null;
