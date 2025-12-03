@@ -18,6 +18,8 @@ import {
   useTransactionSteps,
   SWAP_EXPECTED_STEPS,
   useNexusError,
+  useDebouncedValue,
+  useDebouncedCallback,
 } from "../../../common";
 
 type SourceTokenInfo = {
@@ -36,7 +38,7 @@ type DestinationTokenInfo = {
   symbol: string;
 };
 
-interface SwapInputs {
+export interface SwapInputs {
   fromChainID: SUPPORTED_CHAINS_IDS;
   fromToken?: SourceTokenInfo;
   fromAmount?: string;
@@ -74,14 +76,11 @@ const useExactIn = ({
   const handleNexusError = useNexusError();
 
   const [inputs, setInputs] = useState<SwapInputs>({
-    fromChainID:
-      (prefill?.fromChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.BASE,
-    toChainID:
-      (prefill?.toChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.OPTIMISM,
+    fromChainID: prefill?.fromChainID as SUPPORTED_CHAINS_IDS,
+    toChainID: prefill?.toChainID as SUPPORTED_CHAINS_IDS,
     fromAmount: prefill?.fromAmount ?? undefined,
   });
   const [loading, setLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const [sourceExplorerUrl, setSourceExplorerUrl] = useState<string>("");
   const [destinationExplorerUrl, setDestinationExplorerUrl] =
@@ -94,10 +93,10 @@ const useExactIn = ({
   } = useTransactionSteps<SwapStepType>();
   const swapCompleted = useMemo(
     () => steps.some((s) => s.step?.type === "SWAP_COMPLETE" && s.completed),
-    [steps]
+    [steps],
   );
   const stopwatch = useStopwatch({
-    running: isDialogOpen && !swapCompleted,
+    running: !swapCompleted,
     intervalMs: 100,
   });
 
@@ -127,8 +126,8 @@ const useExactIn = ({
       setTxError(null);
       seed(SWAP_EXPECTED_STEPS);
       const amountBigInt = nexusSDK.utils.parseUnits(
-        inputs.fromAmount,
-        inputs.fromToken.decimals
+        inputs?.fromAmount,
+        inputs.fromToken.decimals,
       );
       const swapInput: ExactInSwapInput = {
         from: [
@@ -170,25 +169,22 @@ const useExactIn = ({
       setTxError(message);
       onError?.(message);
       swapIntent.current = null;
-      setIsDialogOpen(false);
     } finally {
       setLoading(false);
       stopwatch.stop();
     }
   };
 
+  const debouncedSwapStart = useDebouncedCallback(handleSwap, 1200);
+
   const resetLocal = () => {
     setInputs({
-      fromChainID:
-        (prefill?.fromChainID as SUPPORTED_CHAINS_IDS) ?? SUPPORTED_CHAINS.BASE,
-      toChainID:
-        (prefill?.toChainID as SUPPORTED_CHAINS_IDS) ??
-        SUPPORTED_CHAINS.OPTIMISM,
+      fromChainID: prefill?.fromChainID as SUPPORTED_CHAINS_IDS,
+      toChainID: prefill?.toChainID as SUPPORTED_CHAINS_IDS,
       fromAmount: prefill?.fromAmount ?? undefined,
       fromToken: undefined,
       toToken: undefined,
     });
-    setIsDialogOpen(false);
     setTxError(null);
     resetSteps();
     swapIntent.current = null;
@@ -199,6 +195,72 @@ const useExactIn = ({
     stopwatch.reset();
   };
 
+  const availableBalance = useMemo(() => {
+    if (!nexusSDK || !swapBalance || !inputs?.fromToken || !inputs?.fromChainID)
+      return undefined;
+    return (
+      swapBalance
+        ?.find((token) => token.symbol === inputs?.fromToken?.symbol)
+        ?.breakdown?.find((chain) => chain.chain?.id === inputs?.fromChainID) ??
+      undefined
+    );
+  }, [inputs?.fromToken, inputs?.fromChainID, swapBalance, nexusSDK]);
+
+  const destinationBalance = useMemo(() => {
+    if (!nexusSDK || !swapBalance || !inputs?.toToken || !inputs?.toChainID)
+      return undefined;
+    return (
+      swapBalance
+        ?.find((token) => token.symbol === inputs?.toToken?.symbol)
+        ?.breakdown?.find((chain) => chain.chain?.id === inputs?.toChainID) ??
+      undefined
+    );
+  }, [inputs?.toToken, inputs?.toChainID, swapBalance, nexusSDK]);
+
+  const availableStables = useMemo(() => {
+    if (!nexusSDK || !swapBalance) return [];
+    const filteredToken = swapBalance?.filter((token) => {
+      if (["USDT", "USDC", "ETH", "DAI", "WBTC"].includes(token.symbol)) {
+        return token;
+      }
+    });
+    return filteredToken ?? [];
+  }, [swapBalance, nexusSDK]);
+
+  const formatBalance = (
+    balance?: string | number,
+    symbol?: string,
+    decimals?: number,
+  ) => {
+    if (!balance || !symbol || !decimals) return undefined;
+    return nexusSDK?.utils?.formatTokenBalance(balance, {
+      symbol: symbol,
+      decimals: decimals,
+    });
+  };
+
+  useEffect(() => {
+    if (!swapBalance) {
+      fetchBalance();
+    }
+  }, [swapBalance]);
+
+  useEffect(() => {
+    if (
+      !areInputsValid ||
+      !inputs?.fromAmount ||
+      !inputs?.fromChainID ||
+      !inputs?.fromToken ||
+      !inputs?.toChainID ||
+      !inputs?.toToken
+    ) {
+      swapIntent.current?.deny();
+      swapIntent.current = null;
+      return;
+    }
+    debouncedSwapStart();
+  }, [inputs, areInputsValid]);
+
   useEffect(() => {
     if (
       prefill?.fromToken &&
@@ -208,7 +270,7 @@ const useExactIn = ({
       const src = resolveSourceFromPrefill(
         swapBalance,
         inputs.fromChainID,
-        prefill.fromToken
+        prefill.fromToken,
       );
       if (src) {
         setInputs((prev) => ({ ...prev, fromToken: src }));
@@ -217,7 +279,7 @@ const useExactIn = ({
     if (prefill?.toToken && inputs.toChainID !== undefined && !inputs.toToken) {
       const dst = resolveDestinationFromPrefill(
         inputs.toChainID,
-        prefill.toToken
+        prefill.toToken,
       );
       if (dst) {
         setInputs((prev) => ({ ...prev, toToken: dst }));
@@ -233,7 +295,7 @@ const useExactIn = ({
   ]);
 
   useEffect(() => {
-    if (!swapIntent || isDialogOpen) return;
+    if (!swapIntent.current) return;
     const id = setInterval(async () => {
       try {
         const updated = await swapIntent.current?.refresh();
@@ -245,16 +307,19 @@ const useExactIn = ({
       }
     }, 15000);
     return () => clearInterval(id);
-  }, [swapIntent.current, isDialogOpen]);
+  }, [swapIntent.current]);
 
   return {
     inputs,
     setInputs,
     loading,
-    isDialogOpen,
-    setIsDialogOpen,
     txError,
     setTxError,
+    availableBalance,
+    availableStables,
+    destinationBalance,
+    formatBalance,
+
     timer: stopwatch.seconds,
     steps,
     sourceExplorerUrl,

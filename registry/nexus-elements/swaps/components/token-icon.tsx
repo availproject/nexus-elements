@@ -35,23 +35,23 @@ export const TokenIcon = ({
           alt={symbol ?? "token"}
           width={dimension}
           height={dimension}
-          className="rounded-full object-cover"
+          className={cn("rounded-full object-cover")}
         />
       ) : (
         <span
           className={cn(
-            "rounded-full bg-muted text-muted-foreground flex items-center justify-center font-semibold uppercase",
+            "rounded-full bg-ring/80 text-muted-foreground flex items-center justify-center font-semibold uppercase",
             {
               "h-6 w-6 text-xs": size === "sm",
               "h-8 w-8 text-sm": size === "md",
               "h-10 w-10 text-base": size === "lg",
-            }
+            },
           )}
         >
-          {symbol?.slice(0, 2) ?? "?"}
+          {" "}
         </span>
       )}
-      {chainLogo && (
+      {chainLogo ? (
         <span className="absolute -bottom-0.5 -right-0.5 rounded-full border border-background bg-background">
           <img
             src={chainLogo}
@@ -60,6 +60,14 @@ export const TokenIcon = ({
             height={Math.max(14, dimension * 0.4)}
             className="rounded-full object-cover"
           />
+        </span>
+      ) : (
+        <span
+          className={cn(
+            "absolute -bottom-0.5 -right-0.5 rounded-full bg-ring text-muted-foreground flex items-center justify-center font-semibold uppercase size-6",
+          )}
+        >
+          {" "}
         </span>
       )}
     </span>
