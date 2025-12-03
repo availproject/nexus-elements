@@ -41,7 +41,7 @@ export function computeAmountFromFraction(
   fraction: number,
   decimals: number,
   safetyMargin = DEFAULT_SAFETY_MARGIN,
-  balanceIsBaseUnits = false
+  balanceIsBaseUnits = false,
 ): string {
   if (!balanceStr) return "0";
 
@@ -76,3 +76,10 @@ export function computeAmountFromFraction(
     .replace(/\.0+$/u, "")
     .replace(/^\.$/u, "0");
 }
+
+export const usdFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
