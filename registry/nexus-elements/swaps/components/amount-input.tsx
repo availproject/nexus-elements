@@ -1,5 +1,6 @@
 import { type FC, useEffect, useRef } from "react";
 import { Input } from "../../ui/input";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface AmountInputProps {
   amount?: string;
@@ -20,7 +21,10 @@ const AmountInput: FC<AmountInputProps> = ({
   hideBalance = false,
   balance,
 }) => {
+  const { getFiatValue } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
   const scheduleCommit = (val: string) => {
     if (!onCommit || disabled) return;
     if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
@@ -39,12 +43,23 @@ const AmountInput: FC<AmountInputProps> = ({
   }, []);
 
   return (
-    <div className="w-full flex sm:flex-row flex-col border border-border rounded-lg gap-y-2">
-      <Input
+    <div className="relative flex items-start gap-2 text-3xl font-medium transition-all duration-150 ease-out w-full">
+      <div
+        ref={mirrorRef}
+        className="absolute invisible pointer-events-none text-3xl font-medium whitespace-pre"
+        style={{
+          fontVariantNumeric: "proportional-nums",
+        }}
+      >
+        {amount || "0"}
+      </div>
+
+      <input
+        ref={inputRef}
         type="text"
         inputMode="decimal"
-        value={amount ?? ""}
-        placeholder={`Enter Amount ${symbol ?? ""}`}
+        placeholder="0"
+        value={amount}
         onChange={(e) => {
           let next = e.target.value.replaceAll(/[^0-9.]/g, "");
           const parts = next.split(".");
@@ -53,24 +68,10 @@ const AmountInput: FC<AmountInputProps> = ({
           onChange(next);
           scheduleCommit(next);
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            if (commitTimerRef.current) {
-              clearTimeout(commitTimerRef.current);
-              commitTimerRef.current = null;
-            }
-            onCommit?.(amount ?? "");
-          }
-        }}
-        className="w-full border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
-        aria-invalid={Boolean(amount) && Number.isNaN(Number(amount))}
-        disabled={disabled}
+        autoFocus
+        className="bg-transparent w-full text-foreground text-3xl font-medium outline-none transition-all duration-150 placeholder-muted-foreground proportional-nums"
       />
-      {!hideBalance && balance && (
-        <div className="flex items-center justify-end-safe gap-x-4 w-max px-2 border-l border-border">
-          <p className="text-sm font-semibold w-max">{balance}</p>
-        </div>
-      )}
+      <div className="absolute -inset-1 -z-10 blur-sm pointer-events-none opacity-0" />
     </div>
   );
 };
