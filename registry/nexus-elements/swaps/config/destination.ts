@@ -187,6 +187,8 @@ export const DESTINATION_SWAP_TOKENS = new Map<
 export const TOKEN_IMAGES: Record<string, string> = {
   USDC: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png",
   USDT: "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png",
+  "USD₮0":
+    "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png",
   WETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
   USDS: "https://assets.coingecko.com/coins/images/39926/standard/usds.webp?1726666683",
   SOPH: "https://assets.coingecko.com/coins/images/38680/large/sophon_logo_200.png",

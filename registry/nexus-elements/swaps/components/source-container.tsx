@@ -1,8 +1,8 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import { Label } from "../../ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "../../ui/button";
-import { type SwapInputs } from "../exact-in/hooks/useExactIn";
+import { TransactionStatus, type SwapInputs } from "../hooks/useExactIn";
 import { computeAmountFromFraction, usdFormatter } from "../../common";
 import { CHAIN_METADATA, type UserAsset } from "@avail-project/nexus-core";
 import AmountInput from "./amount-input";
@@ -39,12 +39,13 @@ const RANGE_OPTIONS = [
 const SAFETY_MARGIN = 0.05;
 
 interface SourceContainerProps {
+  status: TransactionStatus;
   sourceHovered: boolean;
   inputs: SwapInputs;
   availableBalance?: UserAsset["breakdown"][0];
   swapBalance: UserAsset[] | null;
-  setInputs: Dispatch<SetStateAction<SwapInputs>>;
-  setTxError: Dispatch<SetStateAction<string | null>>;
+  setInputs: (inputs: Partial<SwapInputs>) => void;
+  setTxError: (error: string | null) => void;
   getFiatValue: (amount: number, token: string) => number;
   formatBalance: (
     balance?: string | number,
@@ -54,6 +55,8 @@ interface SourceContainerProps {
 }
 
 const SourceContainer: React.FC<SourceContainerProps> = ({
+  status,
+  error,
   sourceHovered,
   inputs,
   availableBalance,
@@ -64,7 +67,7 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
   formatBalance,
 }) => {
   return (
-    <div className="bg-background rounded-xl p-4 flex flex-col items-center w-full gap-y-4">
+    <div className="bg-background rounded-xl flex flex-col items-center w-full gap-y-4">
       <div className="w-full flex items-center justify-between">
         <Label className="text-lg font-medium text-foreground">Sell</Label>
         <div
@@ -98,73 +101,75 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col items-start justify-between gap-y-4">
-          <AmountInput
-            amount={inputs?.fromAmount}
-            onChange={(val) => {
+      <div className="flex items-center justify-between gap-x-4 w-full">
+        <AmountInput
+          amount={inputs?.fromAmount ?? ''}
+          onChange={(val) => {
+            if(availableBalance?.balance){
               const parsedAvailableBalance = Number.parseFloat(
-                availableBalance?.balance ?? "0",
+                availableBalance?.balance,
               );
               const parsedVal = Number.parseFloat(val);
               if (parsedVal > parsedAvailableBalance) {
                 setTxError("Insufficient Balance");
                 return;
               }
-              setInputs({ ...inputs, fromAmount: val });
-            }}
-            disabled={false}
-          />
-          {inputs.fromAmount && inputs?.fromToken ? (
-            <span className="text-sm text-accent-foreground">
-              {usdFormatter.format(
-                getFiatValue(
-                  Number.parseFloat(inputs.fromAmount),
-                  inputs.fromToken?.logo,
-                ),
-              )}
-            </span>
-          ) : (
-            <span className="h-5" />
-          )}
-        </div>
-        <div className="flex flex-col items-end justify-between gap-y-4">
-          <Dialog>
-            <DialogTrigger asChild>
-              <div className="flex items-center gap-x-3 bg-card/50 hover:bg-card-foreground/10 border border-border min-w-max rounded-full p-1 cursor-pointer  transition-colors">
-                <TokenIcon
-                  symbol={inputs?.fromToken?.symbol}
-                  tokenLogo={inputs?.fromToken?.logo}
-                  chainLogo={CHAIN_METADATA[inputs?.fromChainID]?.logo}
-                  size="lg"
-                />
-                <span className="font-medium">{inputs?.fromToken?.symbol}</span>
-                <ChevronDown size={16} className="mr-1" />
-              </div>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Select Source</DialogTitle>
-              </DialogHeader>
-              <SourceAssetSelect
-                onSelect={(fromChainID, fromToken) =>
-                  setInputs({ ...inputs, fromChainID, fromToken })
-                }
-                swapBalance={swapBalance}
-              />
-            </DialogContent>
-          </Dialog>
+            }
+            setInputs({ ...inputs, fromAmount: val });
+          }}
+        />
 
-          <span className="text-sm text-muted-foreground">
-            {formatBalance(
-              availableBalance?.balance ?? "0",
-              inputs?.fromToken?.symbol,
-              availableBalance?.decimals,
-            ) || inputs?.fromToken?.symbol
-              ? `0 ${inputs?.fromToken?.symbol}`
-              : ""}
+        <Dialog>
+          <DialogTrigger asChild>
+            <div className="flex items-center gap-x-3 bg-card/50 hover:bg-card-foreground/10 border border-border min-w-max rounded-full p-1 cursor-pointer  transition-colors">
+              <TokenIcon
+                symbol={inputs?.fromToken?.symbol}
+                tokenLogo={inputs?.fromToken?.logo}
+                chainLogo={
+                  inputs?.fromChainID
+                    ? CHAIN_METADATA[inputs?.fromChainID]?.logo
+                    : undefined
+                }
+                size="lg"
+              />
+              <span className="font-medium">{inputs?.fromToken?.symbol}</span>
+              <ChevronDown size={16} className="mr-1" />
+            </div>
+          </DialogTrigger>
+          <DialogContent className="max-w-md!">
+            <DialogHeader>
+              <DialogTitle>Select a Token</DialogTitle>
+            </DialogHeader>
+            <SourceAssetSelect
+              onSelect={(fromChainID, fromToken) =>
+                setInputs({ ...inputs, fromChainID, fromToken })
+              }
+              swapBalance={swapBalance}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="flex items-center justify-between gap-x-4 w-full">
+        {inputs.fromAmount && inputs?.fromToken ? (
+          <span className="text-sm text-accent-foreground">
+            {usdFormatter.format(
+              getFiatValue(
+                Number.parseFloat(inputs.fromAmount),
+                inputs.fromToken?.logo,
+              ),
+            )}
           </span>
-        </div>
+        ) : (
+          <span className="h-5" />
+        )}
+
+        <span className="text-sm text-muted-foreground">
+          {formatBalance(
+            availableBalance?.balance ?? "0",
+            inputs?.fromToken?.symbol,
+            availableBalance?.decimals,
+          )}
+        </span>
       </div>
     </div>
   );

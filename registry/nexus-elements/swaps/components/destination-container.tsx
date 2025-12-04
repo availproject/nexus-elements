@@ -1,4 +1,4 @@
-import React, { Dispatch, type RefObject, SetStateAction } from "react";
+import React, { type RefObject } from "react";
 import { Label } from "../../ui/label";
 import { cn } from "@/lib/utils";
 import {
@@ -7,7 +7,7 @@ import {
   type SUPPORTED_CHAINS_IDS,
   type UserAsset,
 } from "@avail-project/nexus-core";
-import { type SwapInputs } from "../exact-in/hooks/useExactIn";
+import { type SwapInputs } from "../hooks/useExactIn";
 import { Button } from "../../ui/button";
 import { TokenIcon } from "./token-icon";
 import AmountInput from "./amount-input";
@@ -27,8 +27,9 @@ interface DestinationContainerProps {
   inputs: SwapInputs;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   destinationBalance?: UserAsset["breakdown"][0];
+  swapBalance: UserAsset[] | null;
   availableStables: UserAsset[];
-  setInputs: Dispatch<SetStateAction<SwapInputs>>;
+  setInputs: (inputs: Partial<SwapInputs>) => void;
   getFiatValue: (amount: number, token: string) => number;
   formatBalance: (
     balance?: string | number,
@@ -42,13 +43,14 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
   inputs,
   swapIntent,
   destinationBalance,
+  swapBalance,
   availableStables,
   setInputs,
   getFiatValue,
   formatBalance,
 }) => {
   return (
-    <div className="bg-background rounded-xl p-4 flex flex-col items-center w-full gap-y-4">
+    <div className="bg-background rounded-xl flex flex-col items-center w-full gap-y-4">
       <div className="w-full flex items-center justify-between">
         <Label className="text-lg font-medium text-foreground">Buy</Label>
         {(!inputs?.toToken || !inputs?.toChainID) && (
@@ -93,74 +95,73 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col items-start justify-between gap-y-4">
-          <AmountInput
-            amount={
-              formatBalance(
-                swapIntent?.current?.intent.destination.amount,
-                swapIntent.current?.intent.destination.token.symbol,
-                swapIntent.current?.intent.destination.token.decimals,
-              ) ?? "0"
-            }
-            disabled={true}
-          />
-          {swapIntent?.current?.intent?.destination?.amount &&
-          inputs?.toToken ? (
-            <span className="text-sm text-accent-foreground">
-              {usdFormatter.format(
-                getFiatValue(
-                  Number.parseFloat(
-                    swapIntent?.current?.intent?.destination?.amount,
-                  ),
-                  inputs.toToken?.logo,
-                ),
-              )}
-            </span>
-          ) : (
-            <span className="h-5" />
-          )}
-        </div>
-        <div className="flex flex-col items-end justify-between gap-y-4">
-          <Dialog>
-            <DialogTrigger asChild>
-              <div className="flex items-center gap-x-3 bg-card/50 hover:bg-card-foreground/10 border border-border min-w-max rounded-full p-1 cursor-pointer transition-colors">
-                <TokenIcon
-                  symbol={inputs?.toToken?.symbol}
-                  tokenLogo={inputs?.toToken?.logo}
-                  chainLogo={CHAIN_METADATA[inputs?.toChainID]?.logo}
-                  size="lg"
-                />
-                <span className="font-medium">{inputs?.toToken?.symbol}</span>
-                <ChevronDown size={16} className="mr- ref={isSourceHovered}1" />
-              </div>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Select Destination</DialogTitle>
-              </DialogHeader>
-              <DestinationAssetSelect
-                onSelect={(toChainID, toToken) =>
-                  setInputs({ ...inputs, toChainID, toToken })
+      <div className="flex items-center justify-between gap-x-4 w-full">
+        <AmountInput
+          amount={
+            formatBalance(
+              swapIntent?.current?.intent.destination.amount,
+              swapIntent.current?.intent.destination.token.symbol,
+              swapIntent.current?.intent.destination.token.decimals,
+            ) ?? "0"
+          }
+          disabled={true}
+        />
+        <Dialog>
+          <DialogTrigger asChild>
+            <div className="flex items-center gap-x-3 bg-card/50 hover:bg-card-foreground/10 border border-border min-w-max rounded-full p-1 cursor-pointer transition-colors">
+              <TokenIcon
+                symbol={inputs?.toToken?.symbol}
+                tokenLogo={inputs?.toToken?.logo}
+                chainLogo={
+                  inputs?.toChainID
+                    ? CHAIN_METADATA[inputs?.toChainID]?.logo
+                    : undefined
                 }
+                size="lg"
               />
-            </DialogContent>
-          </Dialog>
-
-          {inputs?.toToken ? (
-            <span className="text-sm text-muted-foreground">
-              {formatBalance(
-                destinationBalance?.balance,
-                inputs?.toToken?.symbol,
-                destinationBalance?.decimals,
-              ) || inputs?.toToken?.symbol
-                ? `0 ${inputs?.toToken?.symbol}`
-                : ""}
-            </span>
-          ) : (
-            <span className="h-5" />
-          )}
-        </div>
+              <span className="font-medium">{inputs?.toToken?.symbol}</span>
+              <ChevronDown size={16} className="mr- ref={isSourceHovered}1" />
+            </div>
+          </DialogTrigger>
+          <DialogContent className="max-w-md!">
+            <DialogHeader>
+              <DialogTitle>Select Destination</DialogTitle>
+            </DialogHeader>
+            <DestinationAssetSelect
+              swapBalance={swapBalance}
+              onSelect={(toChainID, toToken) =>
+                setInputs({ ...inputs, toChainID, toToken })
+              }
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="flex items-center justify-between gap-x-4 w-full">
+        {swapIntent?.current?.intent?.destination?.amount && inputs?.toToken ? (
+          <span className="text-sm text-accent-foreground">
+            {usdFormatter.format(
+              getFiatValue(
+                Number.parseFloat(
+                  swapIntent?.current?.intent?.destination?.amount,
+                ),
+                inputs.toToken?.logo,
+              ),
+            )}
+          </span>
+        ) : (
+          <span className="h-5" />
+        )}
+        {inputs?.toToken ? (
+          <span className="text-sm text-muted-foreground">
+            {formatBalance(
+              destinationBalance?.balance,
+              inputs?.toToken?.symbol,
+              destinationBalance?.decimals,
+            ) ?? ""}
+          </span>
+        ) : (
+          <span className="h-5" />
+        )}
       </div>
     </div>
   );
