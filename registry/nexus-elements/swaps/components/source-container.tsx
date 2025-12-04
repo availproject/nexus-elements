@@ -56,7 +56,6 @@ interface SourceContainerProps {
 
 const SourceContainer: React.FC<SourceContainerProps> = ({
   status,
-  error,
   sourceHovered,
   inputs,
   availableBalance,
@@ -103,9 +102,9 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
       </div>
       <div className="flex items-center justify-between gap-x-4 w-full">
         <AmountInput
-          amount={inputs?.fromAmount ?? ''}
+          amount={inputs?.fromAmount ?? ""}
           onChange={(val) => {
-            if(availableBalance?.balance){
+            if (availableBalance?.balance) {
               const parsedAvailableBalance = Number.parseFloat(
                 availableBalance?.balance,
               );
@@ -117,6 +116,7 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
             }
             setInputs({ ...inputs, fromAmount: val });
           }}
+          disabled={status === "simulating"}
         />
 
         <Dialog>
