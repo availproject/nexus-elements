@@ -660,7 +660,8 @@
         "@radix-ui/react-popover",
         "@radix-ui/react-checkbox",
         "@radix-ui/react-slot",
-        "@radix-ui/react-tooltip"
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-collapsible"
       ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/accordion.json",
