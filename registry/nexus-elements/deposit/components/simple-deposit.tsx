@@ -153,7 +153,6 @@ const SimpleDeposit = ({
         disabled={loading || simulating}
         maxLength={filteredBridgableBalance?.decimals}
       />
-
       {/* Shimmer while simulating */}
       {simulating && !simulation && (
         <>
@@ -177,7 +176,6 @@ const SimpleDeposit = ({
           />
         </>
       )}
-
       {simulation && inputs?.amount && (
         <>
           <SourceBreakdown
@@ -218,7 +216,6 @@ const SimpleDeposit = ({
           )}
         </>
       )}
-
       {simulation ? (
         <div className="w-full flex items-center justify-center gap-x-2 px-1">
           <Button
