@@ -508,12 +508,14 @@ const useDeposit = ({
   }, [intent, resetState]);
 
   const startTransaction = useCallback(() => {
+    // Prevent re-entrancy while a transaction is already executing
+    if (isProcessing) return;
     activeSimulationIdRef.current = null;
     setSimulating(false);
     dispatch({ type: "setError", payload: null });
     autoAllowRef.current = true;
     void handleTransaction();
-  }, [handleTransaction]);
+  }, [handleTransaction, isProcessing]);
 
   useEffect(() => {
     const hasRequiredInputs =

@@ -94,15 +94,15 @@ export const StepIndicator = ({
                 className={cn(
                   "relative flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-300",
                   isStepComplete &&
-                    "border-success bg-success text-success-foreground",
+                    "border-primary bg-success text-success-foreground",
                   isStepActive &&
-                    "border-primary text-primary ring-2 ring-primary/20",
+                    "border-primary border-2 text-primary ring-2 ring-primary/20 opacity-100",
                   isStepError &&
-                    "border-destructive bg-destructive text-destructive-foreground",
+                    "border-2 border-destructive text-destructive-foreground",
                   !isStepComplete &&
                     !isStepActive &&
                     !isStepError &&
-                    "border-border text-muted-foreground"
+                    "border-border text-muted-foreground opacity-30"
                 )}
               >
                 <span className="absolute inset-0 flex items-center justify-center">
@@ -111,10 +111,14 @@ export const StepIndicator = ({
                   )}
                   {isStepActive && <Loader2 className="h-3 w-3 animate-spin" />}
                   {isStepError && (
-                    <span className="text-[10px] font-bold">!</span>
+                    <span className="text-[10px] font-bold text-destructive">
+                      !
+                    </span>
                   )}
                   {!isStepComplete && !isStepActive && !isStepError && (
-                    <span className="text-[10px]">{step.id}</span>
+                    <span className="text-[10px] text-foreground">
+                      {step.id}
+                    </span>
                   )}
                 </span>
               </div>
