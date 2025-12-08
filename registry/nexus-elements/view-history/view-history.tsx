@@ -24,7 +24,7 @@ const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
           key={source.chain.id}
           className={cn(
             "rounded-full transition-transform hover:scale-110",
-            index > 0 && "-ml-2"
+            index > 0 && "-ml-2",
           )}
           style={{ zIndex: sources.length - index }}
         >
@@ -75,7 +75,7 @@ const DestinationToken = ({
           key={dest.token.symbol}
           className={cn(
             "rounded-full transition-transform hover:scale-110",
-            index > 0 && "-ml-2"
+            index > 0 && "-ml-2",
           )}
           style={{ zIndex: destination.length - index }}
         >

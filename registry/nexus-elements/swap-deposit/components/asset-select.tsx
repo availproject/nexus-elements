@@ -74,7 +74,7 @@ const AssetSelect = ({
         showClose
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex-1 overflow-y-auto px-4 py-3 no-scrollbar">
         {availableAssets.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
             {emptyLabel}

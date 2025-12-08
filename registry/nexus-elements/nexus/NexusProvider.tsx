@@ -9,6 +9,8 @@ import {
   type SupportedChainsAndTokensResult,
   type SupportedChainsResult,
   type UserAsset,
+  getCoinbaseRates,
+  getSupportedChains,
 } from "@avail-project/nexus-core";
 
 import {
@@ -64,7 +66,7 @@ const NexusProvider = ({
 }: NexusProviderProps) => {
   const stableConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config],
+    [config]
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
@@ -78,7 +80,7 @@ const NexusProvider = ({
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null,
+    null
   );
   const bridgableBalance = useRef<UserAsset[] | null>(null);
   const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
@@ -88,13 +90,36 @@ const NexusProvider = ({
   const allowance = useRef<OnAllowanceHookData | null>(null);
   const swapIntent = useRef<OnSwapIntentHookData | null>(null);
 
-  const initChainsAndTokens = useCallback(() => {
-    const list = sdk.utils.getSupportedChains(
-      config?.network === "testnet" ? 0 : undefined,
+  const setupNexus = useCallback(async () => {
+    const list = getSupportedChains(
+      config?.network === "testnet" ? 0 : undefined
     );
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
     swapSupportedChainsAndTokens.current = swapList ?? null;
+    const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
+      sdk.getBalancesForBridge(),
+      getCoinbaseRates(),
+    ]);
+
+    if (bridgeAbleBalanceResult.status === "fulfilled") {
+      bridgableBalance.current = bridgeAbleBalanceResult.value;
+    }
+
+    if (rates?.status === "fulfilled") {
+      // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
+      // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
+      const usdPerUnit: Record<string, number> = {};
+
+      for (const [symbol, value] of Object.entries(rates.value)) {
+        const unitsPerUsd = Number.parseFloat(String(value));
+        if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
+          usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
+        }
+      }
+      console.log("Usdperunit", usdPerUnit);
+      exchangeRate.current = usdPerUnit;
+    }
   }, [sdk, config?.network]);
 
   const initializeNexus = async (provider: EthereumProvider) => {
@@ -103,30 +128,6 @@ const NexusProvider = ({
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
       setNexusSDK(sdk);
-      initChainsAndTokens();
-      const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
-        sdk.getBalancesForBridge(),
-        sdk.utils.getCoinbaseRates(),
-      ]);
-
-      if (bridgeAbleBalanceResult.status === "fulfilled") {
-        bridgableBalance.current = bridgeAbleBalanceResult.value;
-      }
-
-      if (rates?.status === "fulfilled") {
-        // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
-        // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
-        const usdPerUnit: Record<string, number> = {};
-
-        for (const [symbol, value] of Object.entries(rates.value)) {
-          const unitsPerUsd = Number.parseFloat(String(value));
-          if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
-            usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
-          }
-        }
-        console.log("Usdperunit", usdPerUnit);
-        exchangeRate.current = usdPerUnit;
-      }
     } catch (error) {
       console.error("Error initializing Nexus:", error);
     } finally {
@@ -195,6 +196,7 @@ const NexusProvider = ({
       throw new Error("Invalid EIP-1193 provider");
     }
     await initializeNexus(provider);
+    await setupNexus();
     attachEventHooks();
   };
 
@@ -260,7 +262,7 @@ const NexusProvider = ({
       loading,
       fetchBridgableBalance,
       fetchSwapBalance,
-    ],
+    ]
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>

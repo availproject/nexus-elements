@@ -33,7 +33,7 @@ interface SwapDepositProps {
     tokenAddress: string,
     amount: bigint,
     chainId: number,
-    user: Address
+    user: Address,
   ) => Omit<ExecuteParams, "toChainId">;
   destination: DestinationConfig;
   title?: string;
@@ -217,7 +217,7 @@ const SwapDeposit = ({
   return (
     <Card
       className={cn(
-        "relative mx-auto h-[520px] py-0 w-full max-w-md overflow-y-scroll no-scrollbar"
+        "relative mx-auto h-[520px] py-0 w-full max-w-md overflow-y-scroll no-scrollbar",
       )}
     >
       {renderContent()}

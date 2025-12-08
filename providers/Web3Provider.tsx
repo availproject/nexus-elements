@@ -97,7 +97,6 @@ const sophonWithIcon: ConnectKitChain = {
 };
 
 const WALLET_CONNECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!;
-console.log("id", !!WALLET_CONNECT_ID);
 
 const defaultConfig = getDefaultConfig({
   appName: "Nexus Elements",
@@ -134,7 +133,7 @@ function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
   const nexusConfig = useMemo(
     () => ({ network: urlNetwork, debug: true }),
-    [urlNetwork]
+    [urlNetwork],
   );
   return <NexusProvider config={nexusConfig}>{children}</NexusProvider>;
 }
