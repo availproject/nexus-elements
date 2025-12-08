@@ -49,8 +49,8 @@ const AssetSelect = ({
   availableAssets,
   selectedSources,
   onToggle,
-  onSelectAll,
-  onDeselectAll,
+  // onSelectAll,
+  // onDeselectAll,
   onContinue,
   onBack,
   onClose,
@@ -66,9 +66,9 @@ const AssetSelect = ({
     );
   };
 
-  const allSelected =
-    availableAssets.length > 0 &&
-    selectedSources.length === availableAssets.length;
+  // const allSelected =
+  //   availableAssets.length > 0 &&
+  //   selectedSources.length === availableAssets.length;
   const noneSelected = selectedSources.length === 0;
 
   return (
@@ -88,7 +88,7 @@ const AssetSelect = ({
         ) : (
           <>
             {/* Select All / Deselect All buttons */}
-            <div className="mb-3 flex gap-2">
+            {/* <div className="mb-3 flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -107,7 +107,7 @@ const AssetSelect = ({
               >
                 Deselect All
               </Button>
-            </div>
+            </div> */}
 
             <ul className="space-y-1.5">
               {availableAssets.map((option) => {

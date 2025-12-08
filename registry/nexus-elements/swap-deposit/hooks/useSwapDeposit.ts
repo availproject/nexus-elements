@@ -335,13 +335,7 @@ const useSwapDeposit = ({
   );
 
   const handleDeposit = (amount: bigint) => {
-    console.log("%% DEPOSIT STARTING", {
-      hasAddress: address,
-      hasSDK: nexusSDK,
-      combined: !nexusSDK || !address,
-    });
     if (!nexusSDK || !address) return;
-    console.log("%% DEPOSIT STARTED");
     const executeParams = executeDeposit(
       destination.tokenSymbol,
       destination.tokenAddress,
@@ -504,15 +498,17 @@ const useSwapDeposit = ({
       if (isSelected) {
         dispatch({
           type: "setSelectedSources",
-          payload: state.selectedSources.filter(
-            (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` !== sourceId
-          ),
+          // payload: state.selectedSources.filter(
+          //   (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` !== sourceId
+          // ),
+          payload: [],
         });
         return;
       }
       dispatch({
         type: "setSelectedSources",
-        payload: [...state.selectedSources, source],
+        // payload: [...state.selectedSources, source],
+        payload: [source],
       });
     },
     [state.selectedSources]
@@ -743,7 +739,10 @@ const useSwapDeposit = ({
 
     if (!hasAutoSelected.current && availableAssets.length > 0) {
       hasAutoSelected.current = true;
-      dispatch({ type: "setSelectedSources", payload: availableAssets });
+      dispatch({
+        type: "setSelectedSources",
+        payload: [availableAssets[0]],
+      });
     }
   }, [nexusSDK, swapBalance, availableAssets, fetchSwapBalance]);
 
