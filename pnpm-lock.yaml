@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: github:availproject/nexus-sdk#chore/export-util-fns
-        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/9aad42ba306b1f81baa7b9cbb8fa2a0efc441935(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        specifier: github:availproject/nexus-sdk#develop
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/fe0defb98f863a77d975ad7c8a7b868aa1155879(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -183,8 +183,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/9aad42ba306b1f81baa7b9cbb8fa2a0efc441935':
-    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/9aad42ba306b1f81baa7b9cbb8fa2a0efc441935}
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/fe0defb98f863a77d975ad7c8a7b868aa1155879':
+    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/fe0defb98f863a77d975ad7c8a7b868aa1155879}
     version: 1.0.0-beta.58
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
@@ -6580,7 +6580,7 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/9aad42ba306b1f81baa7b9cbb8fa2a0efc441935(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/fe0defb98f863a77d975ad7c8a7b868aa1155879(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@avail-project/ca-common': https://codeload.github.com/availproject/ca-common/tar.gz/cc26966ae66d32e63ead2382316b0f2f789ea43a(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.0
