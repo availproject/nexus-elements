@@ -116,19 +116,15 @@ const NexusProvider = ({
       if (rates?.status === "fulfilled") {
         // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
         // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
-
         const usdPerUnit: Record<string, number> = {};
 
-        for (const [symbol, value] of Object.entries(rates ?? {})) {
+        for (const [symbol, value] of Object.entries(rates.value)) {
           const unitsPerUsd = Number.parseFloat(String(value));
           if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
             usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
           }
         }
-
-        for (const token of ["ETH", "USDC", "USDT"]) {
-          usdPerUnit[token] ??= 1;
-        }
+        console.log("Usdperunit", usdPerUnit);
         exchangeRate.current = usdPerUnit;
       }
     } catch (error) {

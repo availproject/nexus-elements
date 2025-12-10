@@ -7,6 +7,7 @@ import {
   type ExecuteSimulation,
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
+  parseUnits,
 } from "@avail-project/nexus-core";
 import {
   useCallback,
@@ -146,7 +147,12 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
         } else if (hasSourceAssets && hasAmount) {
           newStatus = "set-amount";
         }
-
+        console.log("setInputs", {
+          ...state,
+          inputs: merged as SwapInputs,
+          status: newStatus,
+          error: null,
+        });
         return {
           ...state,
           inputs: merged as SwapInputs,
@@ -539,7 +545,7 @@ const useSwapDeposit = ({
     });
   }, [nexusSDK, state.selectedSources, destination]);
 
-  const handleAmountContinue = useCallback(
+  const handleMultiSourceAmount = useCallback(
     (totalAmountUsd: number) => {
       if (!nexusSDK || state.selectedSources.length === 0) return;
       const MAX_USAGE_RATIO = 0.95;
@@ -647,6 +653,56 @@ const useSwapDeposit = ({
       initiateSwapIntent(newInputs);
     },
     [nexusSDK, state.selectedSources, destination, exchangeRate]
+  );
+
+  const handleSingleSourceAmount = useCallback(
+    (totalAmountUsd: number) => {
+      if (!nexusSDK || state.selectedSources.length === 0 || !exchangeRate)
+        return;
+      const source = state.selectedSources[0];
+      const tokenAmount = totalAmountUsd / exchangeRate[source.symbol];
+      const tokenAmountStr = tokenAmount.toFixed(source.decimals);
+      const parsed = parseUnits(tokenAmountStr, source.decimals);
+      console.log("% SEND AMOUNT", {
+        totalAmountUsd,
+        tokenAmount,
+        exchangeRate: exchangeRate[source.symbol],
+        decimals: source.decimals,
+        symbol: source.symbol,
+        parsed,
+      });
+      const newInputs: SwapInputs = {
+        from: [
+          {
+            amount: parsed,
+            tokenAddress: source.tokenAddress,
+            chainId: source.chainId,
+          },
+        ],
+        toChainId: destination.chainId,
+        toTokenAddress: destination.tokenAddress,
+        toTokenSymbol: destination.tokenSymbol,
+      };
+      dispatch({ type: "setInputs", payload: newInputs });
+      dispatch({ type: "setStatus", payload: "view-breakdown" });
+      dispatch({ type: "setSimulationLoading", payload: true });
+      initiateSwapIntent(newInputs);
+    },
+    [
+      nexusSDK,
+      state.selectedSources,
+      destination,
+      initiateSwapIntent,
+      exchangeRate,
+    ]
+  );
+
+  const handleAmountContinue = useCallback(
+    (totalAmountUsd: number) => {
+      if (!nexusSDK || state.selectedSources.length === 0) return;
+      handleSingleSourceAmount(totalAmountUsd);
+    },
+    [nexusSDK, state.selectedSources, handleSingleSourceAmount]
   );
 
   const handleConfirmOrder = useCallback(() => {

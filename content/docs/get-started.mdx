@@ -18,16 +18,18 @@ import {
 
 Nexus Elements internally uses shadcn/ui components as its foundation. While you can copy and paste components without shadcn, we strongly recommend using shadcn/ui for the best experience, optimal performance, and seamless integration.
 
+## Install shadcn/ui
+
 <Steps>
-  <Step>Install shadcn/ui</Step>
-  <p>
-    If you haven't already, set up shadcn/ui in your project first. Follow the official installation guide
+  <p className="mb-3">
+    If you haven't already, set up shadcn/ui in your project first. Follow the
+    official installation guide
   </p>
   <Button
     asChild
     variant="secondary"
     size="sm"
-    className="inline-flex items-center gap-2 my-2"
+    className="inline-flex items-center gap-2 my-2 w-full"
   >
     <a
       href="https://ui.shadcn.com/docs/installation"
@@ -40,8 +42,10 @@ Nexus Elements internally uses shadcn/ui components as its foundation. While you
     </a>
   </Button>
   <p>Once installed, come back to continue with Nexus Elements.</p>
+</Steps>
 
-<Step>Add a Nexus Elements component</Step>
+## Install Element
+
 <p className="font-serif">
   You can now start adding Nexus Elements components to your project. The
   command below installs the <code>unified-balance</code> component. Replace it
@@ -58,7 +62,8 @@ npx shadcn@latest add @nexus-elements/unified-balance
 </p>
 
 <span id="usage" className="block -mt-24 pt-24" />
-<Step>Wrap your app with the provider</Step>
+
+## Wrap your app with the provider
 
 ```tsx showLineNumbers
 "use client";
@@ -73,7 +78,7 @@ export default function RootLayout({
 }
 ```
 
-<Step>Initialize on wallet connect</Step>
+## Initialize on wallet connect
 
 ```tsx showLineNumbers
 "use client";
@@ -96,25 +101,24 @@ export function InitNexusOnConnect() {
 }
 ```
 
-  <span id="usage-without-shadcn/ui" className="block -mt-24 pt-24" />
-  <Step>No shadcn/ui? Copy & Paste instead of CLI</Step>
-  <Card className="mt-4">
-    <CardHeader>
-      <CardTitle>Copy and paste components</CardTitle>
-      <CardDescription>
-        Visit any component page to view and copy the source files.
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <ul className="space-y-2 font-serif">
-        <li>Ensure all peer dependencies are installed</li>
-        <li>
-          Set up required UI primitives (buttons, inputs, dialogs, etc.) manually
-        </li>
-        <li>Configure styling and theming yourself</li>
-        <li>Handle any compatibility issues that may arise</li>
-      </ul>
-    </CardContent>
-  </Card>
-</Steps>
+<span id="usage-without-shadcn/ui" className="block -mt-24 pt-24" />
+## No shadcn/ui
+<Card className="mt-4">
+  <CardHeader>
+    <CardTitle>Copy and paste components</CardTitle>
+    <CardDescription>
+      Visit any component page to view and copy the source files.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 font-serif">
+      <li>Ensure all peer dependencies are installed</li>
+      <li>
+        Set up required UI primitives (buttons, inputs, dialogs, etc.) manually
+      </li>
+      <li>Configure styling and theming yourself</li>
+      <li>Handle any compatibility issues that may arise</li>
+    </ul>
+  </CardContent>
+</Card>
 ```

@@ -33,6 +33,7 @@ interface ShowcaseWrapperProps extends ToggleControlProps {
   type: ElementType;
   toggleLabel?: string;
   toggle?: boolean;
+  banner?: string;
 }
 
 const ShowcaseWrapper = ({
@@ -46,6 +47,7 @@ const ShowcaseWrapper = ({
   pressed,
   defaultPressed,
   onPressedChange,
+  banner,
   ...toggleProps
 }: ShowcaseWrapperProps) => {
   const searchParams = useSearchParams();
@@ -84,7 +86,7 @@ const ShowcaseWrapper = ({
           </Toggle>
         )}
       </div>
-
+      <p className="text-sm font-medium">{banner}</p>
       <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
     </div>
   );
