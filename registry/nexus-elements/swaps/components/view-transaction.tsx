@@ -1,4 +1,4 @@
-import React, { FC, type RefObject, useState } from "react";
+import React, { FC, type RefObject, useMemo } from "react";
 import {
   Dialog,
   DialogClose,
@@ -12,10 +12,11 @@ import {
 } from "@avail-project/nexus-core";
 import { MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
+import { StackedTokenIcons } from "./stacked-token-icons";
 import { type GenericStep, usdFormatter } from "../../common";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Button } from "../../ui/button";
-import { type TransactionStatus } from "../hooks/useExactIn";
+import { type TransactionStatus } from "../hooks/useSwaps";
 import TransactionProgress from "./transaction-progress";
 import { Separator } from "../../ui/separator";
 
@@ -84,6 +85,48 @@ const TokenBreakdown = ({
   );
 };
 
+interface MultiSourceBreakdownProps {
+  getFiatValue: (amount: number, token: string) => number;
+  sources: NonNullable<OnSwapIntentHookData["intent"]>["sources"];
+}
+
+const MultiSourceBreakdown = ({
+  getFiatValue,
+  sources,
+}: MultiSourceBreakdownProps) => {
+  // Calculate summed USD value across all sources
+  const totalUsdValue = useMemo(() => {
+    return sources.reduce((sum, source) => {
+      const amount = Number.parseFloat(source.amount);
+      const fiatValue = getFiatValue(amount, source.token.symbol);
+      return sum + fiatValue;
+    }, 0);
+  }, [sources, getFiatValue]);
+
+  // Prepare sources for stacked icons
+  const stackedSources = useMemo(() => {
+    return sources.map((source) => ({
+      tokenLogo: TOKEN_IMAGES[source.token.symbol] ?? "",
+      chainLogo: source.chain.logo,
+      symbol: source.token.symbol,
+    }));
+  }, [sources]);
+
+  return (
+    <div className="flex items-center w-full justify-between">
+      <div className="flex flex-col items-start gap-y-1">
+        <p className="text-xl font-medium">
+          {sources.length} source{sources.length > 1 ? "s" : ""}
+        </p>
+        <p className="text-base text-muted-foreground font-medium">
+          {usdFormatter.format(totalUsdValue)}
+        </p>
+      </div>
+      <StackedTokenIcons sources={stackedSources} size="lg" maxDisplay={4} />
+    </div>
+  );
+};
+
 const ViewTransaction: FC<ViewTransactionProps> = ({
   steps,
   status,
@@ -95,16 +138,46 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
   reset,
   txError,
 }) => {
-  if (!swapIntent.current?.intent) return null;
+  const transactionIntent = swapIntent.current?.intent;
+  const sources = transactionIntent?.sources ?? [];
+  const hasSources = sources.length > 0;
+  const hasMultipleSources = sources.length > 1;
 
-  const transactionIntent = swapIntent.current.intent;
-  console.log("tra  ", transactionIntent);
+  // Prepare source info for TransactionProgress
+  const sourceInfo = useMemo(() => {
+    if (!hasSources || sources.length === 0) {
+      return {
+        symbol: "Multiple assets",
+        logos: { token: "", chain: "" },
+      };
+    }
+    if (hasMultipleSources) {
+      return {
+        symbol: `${sources.length} sources`,
+        logos: {
+          token: TOKEN_IMAGES[sources[0].token.symbol] ?? "",
+          chain: sources[0].chain.logo,
+        },
+      };
+    }
+    return {
+      symbol: sources[0].token.symbol,
+      logos: {
+        token: TOKEN_IMAGES[sources[0].token.symbol] ?? "",
+        chain: sources[0].chain.logo,
+      },
+    };
+  }, [sources, hasSources, hasMultipleSources]);
+
+  if (!transactionIntent) return null;
+
+  console.log("TRANSAXTION INENT", transactionIntent);
+
   return (
     <Dialog
       defaultOpen={true}
       onOpenChange={(open) => {
         if (!open) {
-          console.log("RESET", open);
           reset();
         }
       }}
@@ -119,24 +192,40 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
           </DialogClose>
         </DialogHeader>
         <div className="flex flex-col items-start w-full gap-y-4">
-          <TokenBreakdown
-            nexusSDK={nexusSDK}
-            getFiatValue={getFiatValue}
-            tokenLogo={TOKEN_IMAGES[transactionIntent.sources[0].token.symbol]}
-            chainLogo={transactionIntent.sources[0].chain.logo}
-            symbol={transactionIntent.sources[0].token.symbol}
-            amount={Number.parseFloat(transactionIntent.sources[0].amount)}
-            decimals={transactionIntent.sources[0].token.decimals}
-          />
+          {/* Source section - handle empty, single, and multiple sources */}
+          {!hasSources ? (
+            <div className="flex items-center w-full justify-between">
+              <p className="text-base text-muted-foreground">
+                Calculating sources...
+              </p>
+            </div>
+          ) : hasMultipleSources ? (
+            <MultiSourceBreakdown
+              getFiatValue={getFiatValue}
+              sources={sources}
+            />
+          ) : (
+            <TokenBreakdown
+              nexusSDK={nexusSDK}
+              getFiatValue={getFiatValue}
+              tokenLogo={TOKEN_IMAGES[sources[0].token.symbol] ?? ""}
+              chainLogo={sources[0].chain.logo}
+              symbol={sources[0].token.symbol}
+              amount={Number.parseFloat(sources[0].amount)}
+              decimals={sources[0].token.decimals}
+            />
+          )}
           <MoveDown className="size-5 -ml-1.5 text-muted-foreground" />
           <TokenBreakdown
             nexusSDK={nexusSDK}
             getFiatValue={getFiatValue}
-            tokenLogo={TOKEN_IMAGES[transactionIntent.destination.token.symbol]}
-            chainLogo={transactionIntent.destination.chain.logo}
-            symbol={transactionIntent.destination.token.symbol}
-            amount={Number.parseFloat(transactionIntent.destination.amount)}
-            decimals={transactionIntent.destination.token.decimals}
+            tokenLogo={
+              TOKEN_IMAGES[transactionIntent?.destination?.token.symbol]
+            }
+            chainLogo={transactionIntent?.destination?.chain.logo}
+            symbol={transactionIntent?.destination?.token.symbol}
+            amount={Number.parseFloat(transactionIntent?.destination?.amount)}
+            decimals={transactionIntent?.destination?.token.decimals}
           />
         </div>
         {status === "error" && (
@@ -148,8 +237,9 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
               setStatus("swapping");
               swapIntent.current?.allow();
             }}
+            disabled={!hasSources}
           >
-            Continue
+            {hasSources ? "Continue" : "Waiting for sources..."}
           </Button>
         )}
 
@@ -159,16 +249,23 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
             <TransactionProgress
               steps={steps}
               explorerUrls={explorerUrls}
-              sourceSymbol={transactionIntent.sources[0].token.symbol}
+              sourceSymbol={sourceInfo.symbol}
               destinationSymbol={transactionIntent.destination.token.symbol}
-              sourceLogos={{
-                token: TOKEN_IMAGES[transactionIntent.sources[0].token.symbol],
-                chain: transactionIntent.sources[0].chain.logo,
-              }}
+              sourceLogos={sourceInfo.logos}
               destinationLogos={{
                 token: TOKEN_IMAGES[transactionIntent.destination.token.symbol],
                 chain: transactionIntent.destination.chain.logo,
               }}
+              hasMultipleSources={hasMultipleSources}
+              sources={
+                hasMultipleSources
+                  ? sources.map((s) => ({
+                      tokenLogo: TOKEN_IMAGES[s.token.symbol] ?? "",
+                      chainLogo: s.chain.logo,
+                      symbol: s.token.symbol,
+                    }))
+                  : undefined
+              }
             />
           </>
         )}

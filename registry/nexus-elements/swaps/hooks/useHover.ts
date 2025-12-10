@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useEventListener(
   eventType: string,
   callback: (event: Event) => void,
-  element: HTMLElement | Window | null,
+  element: HTMLElement | Window | null
 ) {
   const callbackRef = useRef(callback);
 
@@ -19,8 +19,6 @@ export function useEventListener(
     return () => element.removeEventListener(eventType, handler);
   }, [eventType, element]);
 }
-
-import { useState } from "react";
 
 export default function useHover(ref: React.RefObject<HTMLElement | null>) {
   const [hovered, setHovered] = useState(false);

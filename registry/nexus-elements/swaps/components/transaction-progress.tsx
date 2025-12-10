@@ -8,6 +8,12 @@ import { StepFlow } from "./step-flow";
 export type DisplayStep = { id: string; label: string; completed: boolean };
 type ProgressStep = BridgeStepType | SwapStepType;
 
+interface TokenSource {
+  tokenLogo: string;
+  chainLogo: string;
+  symbol: string;
+}
+
 interface TransactionProgressProps {
   steps: Array<{ id: number; completed: boolean; step: ProgressStep }>;
   explorerUrls: {
@@ -24,6 +30,8 @@ interface TransactionProgressProps {
     token: string;
     chain: string;
   };
+  hasMultipleSources?: boolean;
+  sources?: TokenSource[];
 }
 
 const STEP_TYPES = {
@@ -50,10 +58,12 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   destinationSymbol,
   sourceLogos,
   destinationLogos,
+  hasMultipleSources,
+  sources,
 }) => {
   const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
     const completedTypes = new Set<string | undefined>(
-      steps?.filter((s) => s?.completed).map((s) => s?.step?.type),
+      steps?.filter((s) => s?.completed).map((s) => s?.step?.type)
     );
     // Consider only steps that were actually emitted by the SDK (ignore pre-seeded placeholders)
     const eventfulTypes = new Set<string | undefined>(
@@ -64,7 +74,7 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
             "explorerURL" in st || "chain" in st || "completed" in st // present when event args were merged into step
           );
         })
-        .map((s) => s?.step?.type),
+        .map((s) => s?.step?.type)
     );
     const hasAny = (types: string[]) =>
       types.some((t) => completedTypes.has(t));
@@ -118,6 +128,8 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
         destinationSymbol={destinationSymbol}
         explorerUrls={explorerUrls}
         allCompleted={allCompleted}
+        hasMultipleSources={hasMultipleSources}
+        sources={sources}
       />
     </div>
   );

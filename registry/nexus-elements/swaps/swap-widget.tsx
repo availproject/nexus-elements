@@ -1,17 +1,25 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { ArrowDownUp, Loader2 } from "lucide-react";
+import { useCallback, useMemo, useRef } from "react";
+import { ArrowDownUp, Loader2, RefreshCcw } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
-import useExactIn, { SwapInputs } from "./hooks/useExactIn";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import useHover from "./hooks/useHover";
 import SourceContainer from "./components/source-container";
 import DestinationContainer from "./components/destination-container";
 import ViewTransaction from "./components/view-transaction";
+import useSwaps, { type SwapInputs } from "./hooks/useSwaps";
 
-function SwapWidget() {
+function SwapWidget({
+  onComplete,
+  onStart,
+  onError,
+}: Readonly<{
+  onComplete?: (amount?: string) => void;
+  onStart?: () => void;
+  onError?: () => void;
+}>) {
   const sourceContainer = useRef<HTMLDivElement | null>(null);
   const destinationContainer = useRef<HTMLDivElement | null>(null);
   const { nexusSDK, swapIntent, swapBalance, fetchSwapBalance, getFiatValue } =
@@ -19,6 +27,8 @@ function SwapWidget() {
   const {
     status,
     inputs,
+    swapMode,
+    setSwapMode,
     txError,
     setInputs,
     setStatus,
@@ -30,15 +40,14 @@ function SwapWidget() {
     availableStables,
     formatBalance,
     destinationBalance,
-  } = useExactIn({
+  } = useSwaps({
     nexusSDK,
     swapIntent,
     swapBalance,
     fetchBalance: fetchSwapBalance,
-    // onComplete,
-    // onStart,
-    // onError,
-    // prefill,
+    onComplete,
+    onStart,
+    onError,
   });
   const sourceHovered = useHover(sourceContainer);
   const destinationHovered = useHover(destinationContainer);
@@ -46,18 +55,24 @@ function SwapWidget() {
   const handleInputSwitch = useCallback(() => {
     swapIntent.current?.deny();
     swapIntent.current = null;
+
+    // Always reset to exactIn mode and clear amounts when switching
+    setSwapMode("exactIn");
+
     if (!inputs?.fromToken || !inputs?.toToken) {
       const switched: SwapInputs = {
         fromChainID: inputs.toChainID,
         toChainID: inputs.fromChainID,
         fromToken: undefined,
         toToken: undefined,
+        fromAmount: undefined,
+        toAmount: undefined,
       };
-      setInputs({ ...inputs, ...switched });
+      setInputs(switched);
       return;
     }
     const isValidSource = swapBalance?.find(
-      (bal) => bal.symbol === inputs.toToken?.symbol,
+      (bal) => bal.symbol === inputs.toToken?.symbol
     );
     if (!isValidSource) {
       const switched: SwapInputs = {
@@ -71,8 +86,10 @@ function SwapWidget() {
         },
         fromToken: undefined,
         toChainID: inputs.fromChainID,
+        fromAmount: undefined,
+        toAmount: undefined,
       };
-      setInputs({ ...inputs, ...switched });
+      setInputs(switched);
       return;
     }
     const switched: SwapInputs = {
@@ -92,9 +109,22 @@ function SwapWidget() {
         logo: inputs.fromToken?.logo,
       },
       toChainID: inputs.fromChainID,
+      fromAmount: undefined,
+      toAmount: undefined,
     };
-    setInputs({ ...inputs, ...switched });
-  }, [inputs, swapIntent, swapBalance]);
+    setInputs(switched);
+  }, [inputs, swapIntent, swapBalance, setSwapMode, setInputs]);
+
+  const buttonIcons = useMemo(() => {
+    if (status === "simulating") {
+      return <Loader2 className="animate-spin size5" />;
+    }
+    return swapMode === "exactIn" ? (
+      <ArrowDownUp className="size-5" />
+    ) : (
+      <RefreshCcw className="size-5" />
+    );
+  }, [status, swapMode]);
 
   return (
     <>
@@ -110,7 +140,10 @@ function SwapWidget() {
               inputs={inputs}
               availableBalance={availableBalance}
               swapBalance={swapBalance}
+              swapMode={swapMode}
+              swapIntent={swapIntent}
               setInputs={setInputs}
+              setSwapMode={setSwapMode}
               setTxError={setTxError}
               getFiatValue={getFiatValue}
               formatBalance={formatBalance}
@@ -126,11 +159,7 @@ function SwapWidget() {
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
             disabled={status === "simulating" || status === "swapping"}
           >
-            {status === "simulating" ? (
-              <Loader2 className="animate-spin size5" />
-            ) : (
-              <ArrowDownUp className="size-5" />
-            )}
+            {buttonIcons}
           </Button>
           <Separator />
 
@@ -147,6 +176,9 @@ function SwapWidget() {
               destinationBalance={destinationBalance}
               swapBalance={swapBalance}
               availableStables={availableStables}
+              swapMode={swapMode}
+              status={status}
+              setSwapMode={setSwapMode}
               getFiatValue={getFiatValue}
               formatBalance={formatBalance}
             />

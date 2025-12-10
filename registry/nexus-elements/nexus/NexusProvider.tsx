@@ -117,7 +117,6 @@ const NexusProvider = ({
           usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
         }
       }
-      console.log("Usdperunit", usdPerUnit);
       exchangeRate.current = usdPerUnit;
     }
   }, [sdk, config?.network]);

@@ -61,35 +61,11 @@ npm install @avail-project/nexus-core@1.0.0-beta.56 @radix-ui/react-dialog @radi
   </a>
 </Step>
 
-## Exact In, know what you are selling
-
 ```tsx showLineNumbers
-<SwapExactIn
+<SwapWidget
   onComplete={completeCurrent}
   onError={handleError}
   onStart={handleStart}
-  exactInprefill={{
-    fromToken: "USDC",
-    fromChainID: SUPPORTED_CHAINS.BASE,
-    fromAmount: "100",
-    toToken: "USDT",
-    toChainID: SUPPORTED_CHAINS.ARBITRUM,
-  }}
-/>
-```
-
-## Exact Out, know what you are buying
-
-```tsx showLineNumbers
-<SwapExactOut
-  onComplete={completeCurrent}
-  onError={handleError}
-  onStart={handleStart}
-  exactOutprefill={{
-    toToken: "USDT",
-    toChainID: SUPPORTED_CHAINS.ARBITRUM,
-    toAmount: "100",
-  }}
 />
 ```
 
@@ -97,7 +73,7 @@ npm install @avail-project/nexus-core@1.0.0-beta.56 @radix-ui/react-dialog @radi
 
 ### Swaps
 
-The `Swaps` component provides cross-chain swaps in either exact-in or exact-out mode with optional prefill and lifecycle callbacks.
+The `Swaps` component provides cross-chain swaps in either exact-in or exact-out mode with optional prefill and lifecycle callbacks. Both modes are handled in SwapWidget
 
 <CodeCollapsibleWrapper className="mt-4">
 
@@ -105,21 +81,7 @@ The `Swaps` component provides cross-chain swaps in either exact-in or exact-out
 interface SwapsProps {
   onComplete?: (amount?: string) => void; // called when the swap completes
   onStart?: () => void; // called when the swap starts
-  onError?: (message: string) => void; // called on error
-  exactInprefill?: {
-    // optional prefill for exact-in mode
-    fromChainID?: number;
-    fromToken?: string;
-    fromAmount?: string;
-    toChainID?: number;
-    toToken?: string;
-  };
-  exactOutprefill?: {
-    // optional prefill for exact-out mode
-    toAmount?: string;
-    toChainID?: number;
-    toToken?: string;
-  };
+  onError?: (message: string) => void; // called when an error occurs
 }
 ```
 

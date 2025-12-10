@@ -1,23 +1,14 @@
-import {
-  type RefObject,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState,
-} from "react";
+import { type RefObject, useEffect, useMemo, useReducer } from "react";
 import {
   NexusSDK,
   type SUPPORTED_CHAINS_IDS,
   type ExactInSwapInput,
+  type ExactOutSwapInput,
   NEXUS_EVENTS,
   type SwapStepType,
   type OnSwapIntentHookData,
   type UserAsset,
 } from "@avail-project/nexus-core";
-import {
-  resolveDestinationFromPrefill,
-  resolveSourceFromPrefill,
-} from "../utils/prefill";
 import {
   useTransactionSteps,
   SWAP_EXPECTED_STEPS,
@@ -55,16 +46,20 @@ export type TransactionStatus =
   | "success"
   | "error";
 
+export type SwapMode = "exactIn" | "exactOut";
+
 export interface SwapInputs {
   fromChainID?: SUPPORTED_CHAINS_IDS;
   fromToken?: SourceTokenInfo;
   fromAmount?: string;
   toChainID?: SUPPORTED_CHAINS_IDS;
   toToken?: DestinationTokenInfo;
+  toAmount?: string;
 }
 
 export type SwapState = {
   inputs: SwapInputs;
+  swapMode: SwapMode;
   status: TransactionStatus;
   error: string | null;
   explorerUrls: {
@@ -77,6 +72,7 @@ type Action =
   | { type: "setInputs"; payload: Partial<SwapInputs> }
   | { type: "setStatus"; payload: TransactionStatus }
   | { type: "setError"; payload: string | null }
+  | { type: "setSwapMode"; payload: SwapMode }
   | {
       type: "setExplorerUrls";
       payload: Partial<SwapState["explorerUrls"]>;
@@ -88,9 +84,11 @@ const initialState: SwapState = {
     fromToken: undefined,
     toToken: undefined,
     fromAmount: undefined,
+    toAmount: undefined,
     fromChainID: undefined,
     toChainID: undefined,
   },
+  swapMode: "exactIn",
   status: "idle",
   error: null,
   explorerUrls: {
@@ -114,6 +112,8 @@ function reducer(state: SwapState, action: Action): SwapState {
       return { ...state, status: action.payload };
     case "setError":
       return { ...state, error: action.payload };
+    case "setSwapMode":
+      return { ...state, swapMode: action.payload };
     case "setExplorerUrls":
       return {
         ...state,
@@ -126,7 +126,7 @@ function reducer(state: SwapState, action: Action): SwapState {
   }
 }
 
-interface UseExactInProps {
+interface UseSwapsProps {
   nexusSDK: NexusSDK | null;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   swapBalance: UserAsset[] | null;
@@ -134,16 +134,9 @@ interface UseExactInProps {
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
-  prefill?: {
-    fromChainID?: number;
-    fromToken?: string;
-    fromAmount?: string;
-    toChainID?: number;
-    toToken?: string;
-  };
 }
 
-const useExactIn = ({
+const useSwaps = ({
   nexusSDK,
   swapIntent,
   swapBalance,
@@ -151,8 +144,7 @@ const useExactIn = ({
   onComplete,
   onStart,
   onError,
-  prefill,
-}: UseExactInProps) => {
+}: UseSwapsProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
     steps,
@@ -161,7 +153,8 @@ const useExactIn = ({
     reset: resetSteps,
   } = useTransactionSteps<SwapStepType>();
 
-  const areInputsValid = useMemo(() => {
+  // Validation for exact-in mode
+  const areExactInInputsValid = useMemo(() => {
     return (
       state?.inputs?.fromChainID !== undefined &&
       state?.inputs?.toChainID !== undefined &&
@@ -171,12 +164,51 @@ const useExactIn = ({
       Number(state.inputs.fromAmount) > 0
     );
   }, [state.inputs]);
+
+  // Validation for exact-out mode
+  const areExactOutInputsValid = useMemo(() => {
+    return (
+      state?.inputs?.toChainID !== undefined &&
+      state?.inputs?.toToken &&
+      state?.inputs?.toAmount &&
+      Number(state.inputs.toAmount) > 0
+    );
+  }, [state.inputs]);
+
+  // Combined validation based on current mode
+  const areInputsValid = useMemo(() => {
+    return state.swapMode === "exactIn"
+      ? areExactInInputsValid
+      : areExactOutInputsValid;
+  }, [state.swapMode, areExactInInputsValid, areExactOutInputsValid]);
+
   const handleNexusError = useNexusError();
 
-  const handleSwap = async () => {
+  // Event handler shared between exact-in and exact-out
+  const handleSwapEvent = (event: { name: string; args: SwapStepType }) => {
+    if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
+      const step = event.args;
+      console.log("STEPS", event);
+      if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
+        dispatch({
+          type: "setExplorerUrls",
+          payload: { sourceExplorerUrl: step.explorerURL },
+        });
+      }
+      if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
+        dispatch({
+          type: "setExplorerUrls",
+          payload: { destinationExplorerUrl: step.explorerURL },
+        });
+      }
+      onStepComplete(step);
+    }
+  };
+
+  const handleExactInSwap = async () => {
     if (
       !nexusSDK ||
-      !areInputsValid ||
+      !areExactInInputsValid ||
       !state?.inputs?.fromToken ||
       !state?.inputs?.toToken ||
       !state?.inputs?.fromAmount ||
@@ -184,54 +216,80 @@ const useExactIn = ({
       !state?.inputs?.fromChainID
     )
       return;
+
+    const amountBigInt = nexusSDK.utils.parseUnits(
+      state.inputs.fromAmount,
+      state.inputs.fromToken.decimals
+    );
+    const swapInput: ExactInSwapInput = {
+      from: [
+        {
+          chainId: state.inputs.fromChainID,
+          amount: amountBigInt,
+          tokenAddress: state.inputs.fromToken.contractAddress,
+        },
+      ],
+      toChainId: state.inputs.toChainID,
+      toTokenAddress: state.inputs.toToken.tokenAddress,
+    };
+
+    const result = await nexusSDK.swapWithExactIn(swapInput, {
+      onEvent: (event) =>
+        handleSwapEvent(event as { name: string; args: SwapStepType }),
+    });
+
+    if (!result?.success) {
+      throw new Error(result?.error || "Swap failed");
+    }
+  };
+
+  const handleExactOutSwap = async () => {
+    if (
+      !nexusSDK ||
+      !areExactOutInputsValid ||
+      !state?.inputs?.toToken ||
+      !state?.inputs?.toAmount ||
+      !state?.inputs?.toChainID
+    )
+      return;
+
+    const amountBigInt = nexusSDK.utils.parseUnits(
+      state.inputs.toAmount,
+      state.inputs.toToken.decimals
+    );
+    const swapInput: ExactOutSwapInput = {
+      toAmount: amountBigInt,
+      toChainId: state.inputs.toChainID,
+      toTokenAddress: state.inputs.toToken.tokenAddress,
+    };
+
+    const result = await nexusSDK.swapWithExactOut(swapInput, {
+      onEvent: (event) =>
+        handleSwapEvent(event as { name: string; args: SwapStepType }),
+    });
+    console.log("EXACT OUT RES", result);
+    if (!result?.success) {
+      throw new Error(result?.error || "Swap failed");
+    }
+  };
+
+  const handleSwap = async () => {
+    if (!nexusSDK || !areInputsValid) return;
+
     try {
       onStart?.();
       dispatch({ type: "setStatus", payload: "simulating" });
       seed(SWAP_EXPECTED_STEPS);
-      const amountBigInt = nexusSDK.utils.parseUnits(
-        state.inputs?.fromAmount,
-        state.inputs.fromToken.decimals,
-      );
-      const swapInput: ExactInSwapInput = {
-        from: [
-          {
-            chainId: state.inputs?.fromChainID,
-            amount: amountBigInt,
-            tokenAddress: state.inputs.fromToken.contractAddress,
-          },
-        ],
-        toChainId: state.inputs?.toChainID,
-        toTokenAddress: state.inputs.toToken.tokenAddress,
-      };
 
-      const result = await nexusSDK.swapWithExactIn(swapInput, {
-        onEvent: (event) => {
-          if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-            const step = event.args;
-            console.log("STEP COMPLETED", step);
-            if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
-              dispatch({
-                type: "setExplorerUrls",
-                payload: { sourceExplorerUrl: step.explorerURL },
-              });
-            }
-            if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
-              dispatch({
-                type: "setExplorerUrls",
-                payload: { destinationExplorerUrl: step.explorerURL },
-              });
-            }
-            onStepComplete(step);
-          }
-        },
-      });
-      if (!result?.success) {
-        throw new Error(result?.error || "Swap failed");
+      if (state.swapMode === "exactIn") {
+        await handleExactInSwap();
+      } else {
+        await handleExactOutSwap();
       }
+
       dispatch({ type: "setStatus", payload: "success" });
       onComplete?.(swapIntent.current?.intent?.destination?.amount);
       await fetchBalance();
-      // dispatch({ type: "setInputs", payload: initialState.inputs });
     } catch (error) {
       const { message } = handleNexusError(error);
       dispatch({ type: "setStatus", payload: "error" });
@@ -261,7 +319,7 @@ const useExactIn = ({
       swapBalance
         ?.find((token) => token.symbol === state.inputs?.fromToken?.symbol)
         ?.breakdown?.find(
-          (chain) => chain.chain?.id === state.inputs?.fromChainID,
+          (chain) => chain.chain?.id === state.inputs?.fromChainID
         ) ?? undefined
     );
   }, [
@@ -283,7 +341,7 @@ const useExactIn = ({
       swapBalance
         ?.find((token) => token.symbol === state?.inputs?.toToken?.symbol)
         ?.breakdown?.find(
-          (chain) => chain.chain?.id === state?.inputs?.toChainID,
+          (chain) => chain.chain?.id === state?.inputs?.toChainID
         ) ?? undefined
     );
   }, [state?.inputs?.toToken, state?.inputs?.toChainID, swapBalance, nexusSDK]);
@@ -301,7 +359,7 @@ const useExactIn = ({
   const formatBalance = (
     balance?: string | number,
     symbol?: string,
-    decimals?: number,
+    decimals?: number
   ) => {
     if (!balance || !symbol || !decimals) return undefined;
     return nexusSDK?.utils?.formatTokenBalance(balance, {
@@ -317,14 +375,21 @@ const useExactIn = ({
   }, [swapBalance]);
 
   useEffect(() => {
-    if (
-      !areInputsValid ||
-      !state?.inputs?.fromAmount ||
-      !state?.inputs?.fromChainID ||
-      !state?.inputs?.fromToken ||
-      !state?.inputs?.toChainID ||
-      !state?.inputs?.toToken
-    ) {
+    // Check validity based on current swap mode
+    const isValidForCurrentMode =
+      state.swapMode === "exactIn"
+        ? areExactInInputsValid &&
+          state?.inputs?.fromAmount &&
+          state?.inputs?.fromChainID &&
+          state?.inputs?.fromToken &&
+          state?.inputs?.toChainID &&
+          state?.inputs?.toToken
+        : areExactOutInputsValid &&
+          state?.inputs?.toAmount &&
+          state?.inputs?.toChainID &&
+          state?.inputs?.toToken;
+
+    if (!isValidForCurrentMode) {
       swapIntent.current?.deny();
       swapIntent.current = null;
       return;
@@ -332,43 +397,12 @@ const useExactIn = ({
     if (state.status === "idle") {
       debouncedSwapStart();
     }
-  }, [state.inputs, areInputsValid, state.status]);
-
-  useEffect(() => {
-    if (
-      prefill?.fromToken &&
-      prefill?.fromChainID &&
-      !state.inputs?.fromToken
-    ) {
-      const src = resolveSourceFromPrefill(
-        swapBalance,
-        state.inputs?.fromChainID,
-        prefill.fromToken,
-      );
-      if (src) {
-        dispatch({ type: "setInputs", payload: { fromToken: src } });
-      }
-    }
-    if (
-      prefill?.toToken &&
-      state.inputs?.toChainID !== undefined &&
-      !state.inputs?.toToken
-    ) {
-      const dst = resolveDestinationFromPrefill(
-        state.inputs?.toChainID,
-        prefill.toToken,
-      );
-      if (dst) {
-        dispatch({ type: "setInputs", payload: { toToken: dst } });
-      }
-    }
   }, [
-    prefill,
-    swapBalance,
-    state.inputs?.fromChainID,
-    state.inputs?.toChainID,
-    state.inputs?.fromToken,
-    state.inputs?.toToken,
+    state.inputs,
+    state.swapMode,
+    areExactInInputsValid,
+    areExactOutInputsValid,
+    state.status,
   ]);
 
   const refreshSimulation = async () => {
@@ -387,12 +421,15 @@ const useExactIn = ({
     async () => {
       await refreshSimulation();
     },
-    15000,
+    15000
   );
 
   return {
     status: state.status,
     inputs: state.inputs,
+    swapMode: state.swapMode,
+    setSwapMode: (mode: SwapMode) =>
+      dispatch({ type: "setSwapMode", payload: mode }),
     setStatus: (status: TransactionStatus) =>
       dispatch({ type: "setStatus", payload: status }),
     setInputs: (inputs: Partial<SwapInputs>) => {
@@ -417,4 +454,4 @@ const useExactIn = ({
   };
 };
 
-export default useExactIn;
+export default useSwaps;

@@ -15,17 +15,17 @@ import {
   SelectItem,
   SelectTrigger,
 } from "../../ui/select";
-import { Link2, Search } from "lucide-react";
+import { Link2, Search, X } from "lucide-react";
 import { SHORT_CHAIN_NAME, usdFormatter } from "../../common";
 import { TokenIcon } from "./token-icon";
 import { useNexus } from "../../nexus/NexusProvider";
-import { type DestinationTokenInfo } from "../hooks/useExactIn";
+import { type DestinationTokenInfo } from "../hooks/useSwaps";
 
 interface DestinationAssetSelectProps {
   swapBalance: UserAsset[] | null;
   onSelect: (
     chainId: SUPPORTED_CHAINS_IDS,
-    token: DestinationTokenInfo,
+    token: DestinationTokenInfo
   ) => void;
 }
 
@@ -35,6 +35,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
 }) => {
   const { nexusSDK } = useNexus();
   const [tempChain, setTempChain] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Get all tokens from all chains with their chain info
   const allTokens: DestinationTokenInfo[] = useMemo(() => {
@@ -67,11 +68,28 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
     return Array.from(DESTINATION_SWAP_TOKENS.keys());
   }, []);
 
-  // Filter tokens by selected chain, or show all if no chain selected
+  // Filter tokens by selected chain and search query
   const displayedTokens: DestinationTokenInfo[] = useMemo(() => {
-    if (!tempChain) return allTokens;
-    return allTokens.filter((t) => t.chainId === tempChain);
-  }, [tempChain, allTokens]);
+    let filtered = allTokens;
+
+    // Filter by chain
+    if (tempChain) {
+      filtered = filtered.filter((t) => t.chainId === tempChain);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (t) =>
+          t.symbol.toLowerCase().includes(query) ||
+          t.name.toLowerCase().includes(query) ||
+          t.tokenAddress.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [tempChain, allTokens, searchQuery]);
 
   const handlePick = (tok: DestinationTokenInfo) => {
     const chainId = tempChain ?? tok.chainId;
@@ -86,20 +104,31 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
           value={tempChain ? CHAIN_METADATA[tempChain].name : ""}
           onValueChange={(value) => {
             const matchedChain = chainsWithTokens.find(
-              (chain) => String(chain) === value,
+              (chain) => String(chain) === value
             );
             if (matchedChain) {
               setTempChain(matchedChain);
             }
           }}
         >
-          <div className="flex bg-input/30 w-full px-2">
+          <div className="flex bg-input/30 w-full px-2 py-1.5">
             <div className="flex items-center gap-x-2 w-full justify-between">
               <Search className="size-5 opacity-65" />
               <input
-                placeholder="Search"
+                placeholder="Search tokens..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent w-full text-foreground text-base font-medium outline-none transition-all duration-150 placeholder-muted-foreground proportional-nums disabled:opacity-80"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="p-0.5 hover:bg-muted rounded-full transition-colors"
+                >
+                  <X className="size-4 opacity-65" />
+                </button>
+              )}
             </div>
             <SelectTrigger className="rounded-full border-none cursor-pointer bg-transparent!">
               {tempChain ? (

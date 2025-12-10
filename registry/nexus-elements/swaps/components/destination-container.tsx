@@ -7,7 +7,11 @@ import {
   type SUPPORTED_CHAINS_IDS,
   type UserAsset,
 } from "@avail-project/nexus-core";
-import { type SwapInputs } from "../hooks/useExactIn";
+import {
+  type SwapInputs,
+  type SwapMode,
+  type TransactionStatus,
+} from "../hooks/useSwaps";
 import { Button } from "../../ui/button";
 import { TokenIcon } from "./token-icon";
 import AmountInput from "./amount-input";
@@ -29,12 +33,15 @@ interface DestinationContainerProps {
   destinationBalance?: UserAsset["breakdown"][0];
   swapBalance: UserAsset[] | null;
   availableStables: UserAsset[];
+  swapMode: SwapMode;
+  status: TransactionStatus;
   setInputs: (inputs: Partial<SwapInputs>) => void;
+  setSwapMode: (mode: SwapMode) => void;
   getFiatValue: (amount: number, token: string) => number;
   formatBalance: (
     balance?: string | number,
     symbol?: string,
-    decimals?: number,
+    decimals?: number
   ) => string | undefined;
 }
 
@@ -45,10 +52,23 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
   destinationBalance,
   swapBalance,
   availableStables,
+  swapMode,
+  status,
   setInputs,
+  setSwapMode,
   getFiatValue,
   formatBalance,
 }) => {
+  // In exactOut mode, show user's input; in exactIn mode, show calculated destination
+  const displayedAmount =
+    swapMode === "exactOut"
+      ? inputs.toAmount ?? ""
+      : formatBalance(
+          swapIntent?.current?.intent?.destination?.amount,
+          swapIntent?.current?.intent?.destination?.token?.symbol,
+          swapIntent?.current?.intent?.destination?.token?.decimals
+        ) ?? "";
+
   return (
     <div className="bg-background rounded-xl flex flex-col items-center w-full gap-y-4">
       <div className="w-full flex items-center justify-between">
@@ -59,7 +79,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
               "flex transition-all duration-150 ease-out w-full justify-end gap-x-2",
               destinationHovered
                 ? "opacity-100 translate-y-0"
-                : "opacity-0 -translate-y-1",
+                : "opacity-0 -translate-y-1"
             )}
           >
             {availableStables.map((token) => (
@@ -97,14 +117,18 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
       </div>
       <div className="flex items-center justify-between gap-x-4 w-full">
         <AmountInput
-          amount={
-            formatBalance(
-              swapIntent?.current?.intent.destination.amount,
-              swapIntent.current?.intent.destination.token.symbol,
-              swapIntent.current?.intent.destination.token.decimals,
-            ) ?? "0"
-          }
-          disabled={true}
+          amount={displayedAmount}
+          onChange={(val) => {
+            setSwapMode("exactOut");
+            setInputs({ toAmount: val, fromAmount: undefined });
+          }}
+          onFocus={() => {
+            if (swapMode !== "exactOut") {
+              setSwapMode("exactOut");
+              setInputs({ fromAmount: undefined });
+            }
+          }}
+          disabled={status === "simulating" || status === "swapping"}
         />
         <Dialog>
           <DialogTrigger asChild>
@@ -142,10 +166,10 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
             {usdFormatter.format(
               getFiatValue(
                 Number.parseFloat(
-                  swapIntent?.current?.intent?.destination?.amount,
+                  swapIntent?.current?.intent?.destination?.amount
                 ),
-                inputs.toToken?.logo,
-              ),
+                inputs.toToken?.logo
+              )
             )}
           </span>
         ) : (
@@ -156,7 +180,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
             {formatBalance(
               destinationBalance?.balance,
               inputs?.toToken?.symbol,
-              destinationBalance?.decimals,
+              destinationBalance?.decimals
             ) ?? ""}
           </span>
         ) : (

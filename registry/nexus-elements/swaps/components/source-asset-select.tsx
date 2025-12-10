@@ -8,7 +8,7 @@ import {
   CHAIN_METADATA,
 } from "@avail-project/nexus-core";
 import { TOKEN_IMAGES } from "../config/destination";
-import { Link2, Loader2, Search } from "lucide-react";
+import { Link2, Loader2, Search, X } from "lucide-react";
 import { DialogClose } from "../../ui/dialog";
 import {
   Select,
@@ -18,12 +18,11 @@ import {
   SelectTrigger,
 } from "../../ui/select";
 import { TokenIcon } from "./token-icon";
-import { SHORT_CHAIN_NAME, usdFormatter } from "../../common";
-import { type SourceTokenInfo } from "../hooks/useExactIn";
+import { SHORT_CHAIN_NAME } from "../../common";
+import { type SourceTokenInfo } from "../hooks/useSwaps";
 
 interface SourceAssetSelectProps {
   onSelect: (chainId: SUPPORTED_CHAINS_IDS, token: SourceTokenInfo) => void;
-  disabled?: boolean;
   swapBalance: UserAsset[] | null;
 }
 
@@ -37,6 +36,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
     logo: string;
     name: string;
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Get all tokens from swapBalance with their chain info
   const allTokens: SourceTokenInfo[] = useMemo(() => {
@@ -78,15 +78,32 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
     if (!swapSupportedChainsAndTokens || !allTokens.length) return [];
     const chainIdsWithTokens = new Set(allTokens.map((t) => t.chainId));
     return swapSupportedChainsAndTokens.filter((c) =>
-      chainIdsWithTokens.has(c.id),
+      chainIdsWithTokens.has(c.id)
     );
   }, [swapSupportedChainsAndTokens, allTokens]);
 
-  // Filter tokens by selected chain, or show all if no chain selected
+  // Filter tokens by selected chain and search query
   const displayedTokens: SourceTokenInfo[] = useMemo(() => {
-    if (!tempChain) return allTokens;
-    return allTokens.filter((t) => t.chainId === tempChain.id);
-  }, [tempChain, allTokens]);
+    let filtered = allTokens;
+
+    // Filter by chain
+    if (tempChain) {
+      filtered = filtered.filter((t) => t.chainId === tempChain.id);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (t) =>
+          t.symbol.toLowerCase().includes(query) ||
+          t.name.toLowerCase().includes(query) ||
+          t.contractAddress.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [tempChain, allTokens, searchQuery]);
 
   const handlePick = (tok: SourceTokenInfo) => {
     const chainId = tempChain?.id ?? tok.chainId;
@@ -110,7 +127,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
         value={tempChain?.name}
         onValueChange={(value) => {
           const matchedChain = chainsWithTokens.find(
-            (chain) => chain.name === value,
+            (chain) => chain.name === value
           );
           if (matchedChain) {
             setTempChain(matchedChain);
@@ -121,9 +138,20 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           <div className="flex items-center gap-x-2 w-full justify-between">
             <Search className="size-5 opacity-65" />
             <input
-              placeholder="Search"
+              placeholder="Search tokens..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent w-full text-foreground text-base font-medium outline-none transition-all duration-150 placeholder-muted-foreground proportional-nums disabled:opacity-80"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="p-0.5 hover:bg-muted rounded-full transition-colors"
+              >
+                <X className="size-4 opacity-65" />
+              </button>
+            )}
           </div>
           <SelectTrigger className="rounded-full border-none cursor-pointer bg-transparent!">
             {tempChain ? (

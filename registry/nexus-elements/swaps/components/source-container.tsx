@@ -1,10 +1,18 @@
-import React from "react";
+import React, { type RefObject } from "react";
 import { Label } from "../../ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "../../ui/button";
-import { TransactionStatus, type SwapInputs } from "../hooks/useExactIn";
+import {
+  type TransactionStatus,
+  type SwapInputs,
+  type SwapMode,
+} from "../hooks/useSwaps";
 import { computeAmountFromFraction, usdFormatter } from "../../common";
-import { CHAIN_METADATA, type UserAsset } from "@avail-project/nexus-core";
+import {
+  CHAIN_METADATA,
+  type UserAsset,
+  type OnSwapIntentHookData,
+} from "@avail-project/nexus-core";
 import AmountInput from "./amount-input";
 import {
   Dialog,
@@ -44,13 +52,16 @@ interface SourceContainerProps {
   inputs: SwapInputs;
   availableBalance?: UserAsset["breakdown"][0];
   swapBalance: UserAsset[] | null;
+  swapMode: SwapMode;
+  swapIntent: RefObject<OnSwapIntentHookData | null>;
   setInputs: (inputs: Partial<SwapInputs>) => void;
+  setSwapMode: (mode: SwapMode) => void;
   setTxError: (error: string | null) => void;
   getFiatValue: (amount: number, token: string) => number;
   formatBalance: (
     balance?: string | number,
     symbol?: string,
-    decimals?: number,
+    decimals?: number
   ) => string | undefined;
 }
 
@@ -60,11 +71,47 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
   inputs,
   availableBalance,
   swapBalance,
+  swapMode,
+  swapIntent,
   setInputs,
+  setSwapMode,
   setTxError,
   getFiatValue,
   formatBalance,
 }) => {
+  const isExactOut = swapMode === "exactOut";
+
+  // In exactIn mode, show user's input; in exactOut mode, show calculated source from intent
+  const displayedAmount =
+    swapMode === "exactIn"
+      ? inputs.fromAmount ?? ""
+      : formatBalance(
+          swapIntent?.current?.intent?.sources?.[0]?.amount,
+          swapIntent?.current?.intent?.sources?.[0]?.token?.symbol,
+          swapIntent?.current?.intent?.sources?.[0]?.token?.decimals
+        ) ?? "";
+
+  const isDisabled =
+    isExactOut || status === "simulating" || status === "swapping";
+
+  // Render exact-out read-only view
+  if (isExactOut) {
+    return (
+      <div className="bg-background rounded-xl flex flex-col items-center w-full gap-y-4 h-[134px]">
+        <div className="w-full flex items-center justify-between">
+          <Label className="text-lg font-medium text-foreground">Sell</Label>
+        </div>
+        <div className="flex items-center justify-center w-full py-4">
+          <p className="text-sm text-muted-foreground text-center">
+            Enter destination token, chain and amount.
+            <br />
+            We&apos;ll calculate the best sources for you.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-background rounded-xl flex flex-col items-center w-full gap-y-4">
       <div className="w-full flex items-center justify-between">
@@ -74,7 +121,7 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
             "flex transition-all duration-150 ease-out w-full justify-end gap-x-2",
             sourceHovered
               ? "opacity-100 translate-y-0"
-              : "opacity-0 -translate-y-1",
+              : "opacity-0 -translate-y-1"
           )}
         >
           {RANGE_OPTIONS.map((option) => (
@@ -85,13 +132,14 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
               disabled={!inputs.fromChainID || !inputs.fromToken}
               onClick={() => {
                 if (!inputs.fromToken) return 0;
+                setSwapMode("exactIn");
                 const amount = computeAmountFromFraction(
                   availableBalance?.balance ?? "0",
                   option.value,
                   inputs?.fromToken?.decimals,
-                  SAFETY_MARGIN,
+                  SAFETY_MARGIN
                 );
-                setInputs({ ...inputs, fromAmount: amount });
+                setInputs({ fromAmount: amount, toAmount: undefined });
               }}
               className="px-5 py-1.5 rounded-full hover:-translate-y-1 hover:object-scale-down"
             >
@@ -102,11 +150,11 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
       </div>
       <div className="flex items-center justify-between gap-x-4 w-full">
         <AmountInput
-          amount={inputs?.fromAmount ?? ""}
+          amount={displayedAmount}
           onChange={(val) => {
             if (availableBalance?.balance) {
               const parsedAvailableBalance = Number.parseFloat(
-                availableBalance?.balance,
+                availableBalance?.balance
               );
               const parsedVal = Number.parseFloat(val);
               if (parsedVal > parsedAvailableBalance) {
@@ -114,14 +162,26 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
                 return;
               }
             }
-            setInputs({ ...inputs, fromAmount: val });
+            setSwapMode("exactIn");
+            setInputs({ fromAmount: val, toAmount: undefined });
           }}
-          disabled={status === "simulating"}
+          onFocus={() => {
+            if (swapMode !== "exactIn") {
+              setSwapMode("exactIn");
+              setInputs({ toAmount: undefined });
+            }
+          }}
+          disabled={isDisabled}
         />
 
         <Dialog>
           <DialogTrigger asChild>
-            <div className="flex items-center gap-x-3 bg-card/50 hover:bg-card-foreground/10 border border-border min-w-max rounded-full p-1 cursor-pointer  transition-colors">
+            <div
+              className={cn(
+                "flex items-center gap-x-3 bg-card/50 hover:bg-card-foreground/10 border border-border min-w-max rounded-full p-1 cursor-pointer transition-colors",
+                isDisabled ? "pointer-events-none select-none opacity-50" : ""
+              )}
+            >
               <TokenIcon
                 symbol={inputs?.fromToken?.symbol}
                 tokenLogo={inputs?.fromToken?.logo}
@@ -155,8 +215,8 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
             {usdFormatter.format(
               getFiatValue(
                 Number.parseFloat(inputs.fromAmount),
-                inputs.fromToken?.logo,
-              ),
+                inputs.fromToken?.logo
+              )
             )}
           </span>
         ) : (
@@ -167,7 +227,7 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
           {formatBalance(
             availableBalance?.balance ?? "0",
             inputs?.fromToken?.symbol,
-            availableBalance?.decimals,
+            availableBalance?.decimals
           )}
         </span>
       </div>
