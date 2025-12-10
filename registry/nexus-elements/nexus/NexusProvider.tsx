@@ -5,10 +5,12 @@ import {
   NexusSDK,
   type OnAllowanceHookData,
   type OnIntentHookData,
-  type SupportedChainsResult,
-  type UserAsset,
   type OnSwapIntentHookData,
   type SupportedChainsAndTokensResult,
+  type SupportedChainsResult,
+  type UserAsset,
+  getCoinbaseRates,
+  getSupportedChains,
 } from "@avail-project/nexus-core";
 
 import {
@@ -64,7 +66,7 @@ const NexusProvider = ({
 }: NexusProviderProps) => {
   const stableConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config?.network, config?.debug]
+    [config]
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
@@ -88,13 +90,35 @@ const NexusProvider = ({
   const allowance = useRef<OnAllowanceHookData | null>(null);
   const swapIntent = useRef<OnSwapIntentHookData | null>(null);
 
-  const initChainsAndTokens = useCallback(() => {
-    const list = sdk?.utils?.getSupportedChains(
+  const setupNexus = useCallback(async () => {
+    const list = getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
     supportedChainsAndTokens.current = list ?? null;
-    const swapList = sdk?.utils?.getSwapSupportedChainsAndTokens();
+    const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
     swapSupportedChainsAndTokens.current = swapList ?? null;
+    const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
+      sdk.getBalancesForBridge(),
+      getCoinbaseRates(),
+    ]);
+
+    if (bridgeAbleBalanceResult.status === "fulfilled") {
+      bridgableBalance.current = bridgeAbleBalanceResult.value;
+    }
+
+    if (rates?.status === "fulfilled") {
+      // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
+      // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
+      const usdPerUnit: Record<string, number> = {};
+
+      for (const [symbol, value] of Object.entries(rates.value)) {
+        const unitsPerUsd = Number.parseFloat(String(value));
+        if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
+          usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
+        }
+      }
+      exchangeRate.current = usdPerUnit;
+    }
   }, [sdk, config?.network]);
 
   const initializeNexus = async (provider: EthereumProvider) => {
@@ -103,30 +127,6 @@ const NexusProvider = ({
       if (sdk.isInitialized()) throw new Error("Nexus is already initialized");
       await sdk.initialize(provider);
       setNexusSDK(sdk);
-      initChainsAndTokens();
-      const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
-        sdk?.getBalancesForBridge(),
-        sdk?.utils?.getCoinbaseRates(),
-      ]);
-
-      if (bridgeAbleBalanceResult.status === "fulfilled") {
-        bridgableBalance.current = bridgeAbleBalanceResult.value;
-      }
-
-      if (rates?.status === "fulfilled") {
-        // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
-        // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
-        const usdPerUnit: Record<string, number> = {};
-
-        for (const [symbol, value] of Object.entries(rates.value)) {
-          const unitsPerUsd = Number.parseFloat(String(value));
-          if (Number.isFinite(unitsPerUsd) && unitsPerUsd > 0) {
-            usdPerUnit[symbol.toUpperCase()] = 1 / unitsPerUsd;
-          }
-        }
-        console.log("Usdperunit", usdPerUnit);
-        exchangeRate.current = usdPerUnit;
-      }
     } catch (error) {
       console.error("Error initializing Nexus:", error);
     } finally {
@@ -155,39 +155,53 @@ const NexusProvider = ({
 
   const attachEventHooks = () => {
     sdk.setOnAllowanceHook((data: OnAllowanceHookData) => {
+      /**
+       * Useful when you want the user to select, min, max or a custom value
+       * Can use this to capture data and then show it on the UI
+       * @see - always call data.allow() to progress the flow, otherwise it will stay stuck here.
+       * const {allow, sources, deny} = data
+       * @example allow(['min', 'max', '0.5']), the array in allow function should match number of sources.
+       * You can skip setting this hook if you want, sdk will auto progress if this hook is not attached
+       */
       allowance.current = data;
     });
 
     sdk.setOnIntentHook((data: OnIntentHookData) => {
+      /**
+       * Useful when you want to capture the intent, and display it on the UI (bridge, bridgeAndTransfer, bridgeAndExecute)
+       * const {allow, deny, intent, refresh} = data
+       * @see - always call data.allow() to progress the flow, otherwise it will stay stuck here.
+       * deny() to reject the intent
+       * refresh() to refresh the intent, best to call refresh in 15 second intervals
+       * data.intent -> details about the intent, useful when wanting to display info on UI
+       * You can skip setting this hook if you want, sdk will auto progress if this hook is not attached
+       */
       intent.current = data;
     });
 
     sdk.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
+      /**
+       * Same behaviour and function as setOnIntentHook, except this one is for swaps exclusively
+       */
       swapIntent.current = data;
     });
   };
 
-  const handleInit = useCallback(
-    async (provider: EthereumProvider) => {
-      if (loading) {
-        return;
-      }
-      if (sdk.isInitialized()) {
-        console.log("Nexus already initialized");
-        return;
-      }
-      if (!provider || typeof provider.request !== "function") {
-        throw new Error("Invalid EIP-1193 provider");
-      }
-      await initializeNexus(provider);
-      attachEventHooks();
-    },
-    [sdk, loading, initializeNexus]
-  );
+  const handleInit = async (provider: EthereumProvider) => {
+    if (sdk.isInitialized() || loading) {
+      return;
+    }
+    if (!provider || typeof provider.request !== "function") {
+      throw new Error("Invalid EIP-1193 provider");
+    }
+    await initializeNexus(provider);
+    await setupNexus();
+    attachEventHooks();
+  };
 
   const fetchBridgableBalance = async () => {
     try {
-      const updatedBalance = await sdk?.getBalancesForBridge();
+      const updatedBalance = await sdk.getBalancesForBridge();
       bridgableBalance.current = updatedBalance;
     } catch (error) {
       console.error("Error fetching bridgable balance:", error);
@@ -196,7 +210,7 @@ const NexusProvider = ({
 
   const fetchSwapBalance = async () => {
     try {
-      const updatedBalance = await sdk?.getBalancesForSwap();
+      const updatedBalance = await sdk.getBalancesForSwap();
       setSwapBalance(updatedBalance);
     } catch (error) {
       console.error("Error fetching swap balance:", error);
@@ -247,7 +261,6 @@ const NexusProvider = ({
       loading,
       fetchBridgableBalance,
       fetchSwapBalance,
-      getFiatValue,
     ]
   );
   return (

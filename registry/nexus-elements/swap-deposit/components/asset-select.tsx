@@ -7,6 +7,7 @@ import { Badge } from "../../ui/badge";
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useNexus } from "../../nexus/NexusProvider";
+import { usdFormatter } from "../../common";
 
 // Selection result containing the data needed for inputs
 export interface AssetSelection {
@@ -35,13 +36,6 @@ interface AssetSelectProps {
   ctaLabel?: string;
 }
 
-const usdFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
 const LOW_BALANCE_THRESHOLD = 5;
 
 const AssetSelect = ({
@@ -62,7 +56,7 @@ const AssetSelect = ({
   const isSourceSelected = (source: AssetSelection) => {
     const sourceId = `${source.symbol}-${source.chainId}-${source.tokenAddress}`;
     return selectedSources.some(
-      (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` === sourceId
+      (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` === sourceId,
     );
   };
 
@@ -80,7 +74,7 @@ const AssetSelect = ({
         showClose
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex-1 overflow-y-auto px-4 py-3 no-scrollbar">
         {availableAssets.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
             {emptyLabel}
@@ -124,7 +118,7 @@ const AssetSelect = ({
                         "flex h-auto w-full items-center justify-between rounded-xl p-3 transition-colors",
                         isSelected
                           ? "bg-secondary/50 hover:bg-background"
-                          : "hover:bg-secondary/50"
+                          : "hover:bg-secondary/50",
                       )}
                     >
                       <div className="flex items-center gap-x-3 text-left">
@@ -148,7 +142,7 @@ const AssetSelect = ({
                               {
                                 symbol: option.symbol,
                                 decimals: option.decimals,
-                              }
+                              },
                             )}
                           </p>
                         </div>

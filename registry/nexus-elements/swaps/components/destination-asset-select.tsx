@@ -2,47 +2,40 @@
 import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../ui/dialog";
-import {
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
+  type UserAsset,
 } from "@avail-project/nexus-core";
-import { DESTINATION_SWAP_TOKENS, TOKEN_IMAGES } from "../config/destination";
-
-type DestinationTokenInfo = {
-  tokenAddress: `0x${string}`;
-  decimals: number;
-  logo: string;
-  name: string;
-  symbol: string;
-  chainId?: number;
-};
+import { DESTINATION_SWAP_TOKENS } from "../config/destination";
+import { DialogClose } from "../../ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+} from "../../ui/select";
+import { Link2, Search, X } from "lucide-react";
+import { SHORT_CHAIN_NAME, usdFormatter } from "../../common";
+import { TokenIcon } from "./token-icon";
+import { useNexus } from "../../nexus/NexusProvider";
+import { type DestinationTokenInfo } from "../hooks/useSwaps";
 
 interface DestinationAssetSelectProps {
-  selectedChain?: SUPPORTED_CHAINS_IDS;
-  selectedToken?: DestinationTokenInfo;
+  swapBalance: UserAsset[] | null;
   onSelect: (
     chainId: SUPPORTED_CHAINS_IDS,
     token: DestinationTokenInfo
   ) => void;
-  disabled?: boolean;
-  label?: string;
 }
 
 const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
-  selectedChain,
-  selectedToken,
+  swapBalance,
   onSelect,
-  disabled,
-  label = "To",
 }) => {
-  const [open, setOpen] = useState(false);
+  const { nexusSDK } = useNexus();
   const [tempChain, setTempChain] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Get all tokens from all chains with their chain info
   const allTokens: DestinationTokenInfo[] = useMemo(() => {
@@ -55,160 +48,165 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
         });
       }
     }
-    return tokens;
-  }, []);
+    return tokens.map((token) => {
+      const balance = swapBalance
+        ?.find((t) => t.symbol === token.symbol)
+        ?.breakdown?.find((chain) => chain.chain?.id === token.chainId);
+      return {
+        ...token,
+        balance: nexusSDK?.utils?.formatTokenBalance(balance?.balance ?? "0", {
+          symbol: token.symbol,
+          decimals: balance?.decimals ?? 0,
+        }),
+        balanceInFiat: usdFormatter.format(balance?.balanceInFiat ?? 0),
+      };
+    });
+  }, [swapBalance]);
 
   // Only show chains that have tokens
   const chainsWithTokens = useMemo(() => {
-    return Array.from(DESTINATION_SWAP_TOKENS.keys()).filter(
-      (chainId) => (DESTINATION_SWAP_TOKENS.get(chainId)?.length ?? 0) > 0
-    );
+    return Array.from(DESTINATION_SWAP_TOKENS.keys());
   }, []);
 
-  // Filter tokens by selected chain, or show all if no chain selected
+  // Filter tokens by selected chain and search query
   const displayedTokens: DestinationTokenInfo[] = useMemo(() => {
-    if (!tempChain) return allTokens;
-    return allTokens.filter((t) => t.chainId === tempChain);
-  }, [tempChain, allTokens]);
+    let filtered = allTokens;
+
+    // Filter by chain
+    if (tempChain) {
+      filtered = filtered.filter((t) => t.chainId === tempChain);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (t) =>
+          t.symbol.toLowerCase().includes(query) ||
+          t.name.toLowerCase().includes(query) ||
+          t.tokenAddress.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [tempChain, allTokens, searchQuery]);
 
   const handlePick = (tok: DestinationTokenInfo) => {
     const chainId = tempChain ?? tok.chainId;
     if (!chainId) return;
     onSelect(chainId as SUPPORTED_CHAINS_IDS, tok);
-    setOpen(false);
   };
 
   return (
     <div className="w-full">
-      <p className="text-sm font-semibold mb-1">{label}</p>
-      <Dialog open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
-        <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-between"
-            disabled={disabled}
-          >
-            {selectedChain && selectedToken ? (
-              <div className="flex items-center gap-x-3">
-                <div className="relative">
-                  <img
-                    src={TOKEN_IMAGES[selectedToken?.symbol]}
-                    alt={selectedToken.symbol}
-                    width={24}
-                    height={24}
-                    className="rounded-full"
-                  />
-                  <img
-                    src={CHAIN_METADATA[selectedChain].logo}
-                    alt={CHAIN_METADATA[selectedChain].name}
-                    width={16}
-                    height={16}
-                    className="rounded-full absolute bottom-0 right-0 translate-x-1/3 translate-y-1/6"
-                  />
-                </div>
-
-                <span className="text-sm font-medium">
-                  {selectedToken.symbol} on {CHAIN_METADATA[selectedChain].name}
-                </span>
-              </div>
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                Select chain and token
-              </span>
-            )}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Select destination asset</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
-              <p className="text-xs font-medium mb-2">Chains</p>
-              <div className="flex flex-col gap-y-1">
-                <Button
+      <div className="w-full flex flex-col gap-y-3">
+        <Select
+          value={tempChain ? CHAIN_METADATA[tempChain].name : ""}
+          onValueChange={(value) => {
+            const matchedChain = chainsWithTokens.find(
+              (chain) => String(chain) === value
+            );
+            if (matchedChain) {
+              setTempChain(matchedChain);
+            }
+          }}
+        >
+          <div className="flex bg-input/30 w-full px-2 py-1.5">
+            <div className="flex items-center gap-x-2 w-full justify-between">
+              <Search className="size-5 opacity-65" />
+              <input
+                placeholder="Search tokens..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent w-full text-foreground text-base font-medium outline-none transition-all duration-150 placeholder-muted-foreground proportional-nums disabled:opacity-80"
+              />
+              {searchQuery && (
+                <button
                   type="button"
-                  variant="ghost"
-                  onClick={() => setTempChain(null)}
-                  className={`flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full ${
-                    tempChain === null ? "bg-muted" : ""
-                  }`}
+                  onClick={() => setSearchQuery("")}
+                  className="p-0.5 hover:bg-muted rounded-full transition-colors"
                 >
-                  <span className="text-sm">All Chains</span>
-                </Button>
-                {chainsWithTokens.map((id) => {
-                  const meta = CHAIN_METADATA[id as SUPPORTED_CHAINS_IDS];
-                  return (
-                    <Button
-                      key={id}
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setTempChain(id)}
-                      className={`flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full ${
-                        tempChain === id ? "bg-muted" : ""
-                      }`}
-                    >
-                      <img
-                        src={meta.logo}
-                        alt={meta.name}
-                        width={18}
-                        height={18}
-                        className="rounded-full"
-                      />
-                      <span className="text-sm">{meta.name}</span>
-                    </Button>
-                  );
-                })}
-              </div>
+                  <X className="size-4 opacity-65" />
+                </button>
+              )}
             </div>
-            <div className="border rounded-md p-2 max-h-80 overflow-y-auto">
-              <p className="text-xs font-medium mb-2">Tokens</p>
-              <div className="flex flex-col gap-y-1">
-                {displayedTokens.length > 0 ? (
-                  displayedTokens.map((t) => (
-                    <Button
-                      key={`${t.tokenAddress}-${t.chainId}`}
-                      type="button"
-                      variant="ghost"
-                      onClick={() => handlePick(t)}
-                      className="flex items-center justify-start gap-x-2 p-2 rounded hover:bg-muted w-full"
-                    >
-                      <div className="relative">
-                        {t.logo ? (
-                          <img
-                            src={t.logo}
-                            alt={t.symbol}
-                            width={18}
-                            height={18}
-                            className="rounded-full"
-                          />
-                        ) : null}
-                        {!tempChain && t.chainId && (
-                          <img
-                            src={
-                              CHAIN_METADATA[t.chainId as SUPPORTED_CHAINS_IDS]
-                                ?.logo
-                            }
-                            alt=""
-                            width={10}
-                            height={10}
-                            className="rounded-full absolute bottom-0 right-0 translate-x-1/3 translate-y-1/6"
-                          />
-                        )}
-                      </div>
-                      <span className="text-sm">{t.symbol}</span>
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    No tokens available
-                  </p>
-                )}
-              </div>
-            </div>
+            <SelectTrigger className="rounded-full border-none cursor-pointer bg-transparent!">
+              {tempChain ? (
+                <img
+                  src={CHAIN_METADATA[tempChain].logo}
+                  alt={CHAIN_METADATA[tempChain].name}
+                  width={24}
+                  height={24}
+                  className="rounded-full size-6"
+                />
+              ) : (
+                <div className="size-8 rounded-full flex items-center justify-center border border-border">
+                  <Link2 className="size-4" />
+                </div>
+              )}
+            </SelectTrigger>
           </div>
-        </DialogContent>
-      </Dialog>
+          <SelectContent>
+            <SelectGroup>
+              {chainsWithTokens.map((c) => (
+                <SelectItem key={c} value={String(c)}>
+                  <div className="flex items-center justify-between gap-x-2">
+                    <img
+                      src={CHAIN_METADATA[c].logo}
+                      alt={CHAIN_METADATA[c].name}
+                      width={20}
+                      height={20}
+                      className="rounded-full size-5"
+                    />
+                    <span className="text-sm">{CHAIN_METADATA[c].name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <p className="text-sm">
+          {tempChain
+            ? `Tokens on ${SHORT_CHAIN_NAME[tempChain]}`
+            : "All Tokens"}
+        </p>
+        <div className="rounded-md px-2 max-h-80 overflow-y-auto no-scrollbar">
+          <div className="flex flex-col items-center sm:items-start gap-y-4 w-full no-scrollbar">
+            {displayedTokens.length > 0 ? (
+              displayedTokens.map((t) => (
+                <DialogClose asChild key={`${t.tokenAddress}-${t.chainId}`}>
+                  <Button
+                    variant={"ghost"}
+                    onClick={() => handlePick(t)}
+                    className="flex items-center justify-between gap-x-2 p-2 rounded w-full h-max"
+                  >
+                    <div className="flex items-center gap-x-2">
+                      {t.symbol ? (
+                        <div className="relative">
+                          <TokenIcon
+                            symbol={t.symbol}
+                            tokenLogo={t.logo}
+                            chainLogo={CHAIN_METADATA[t.chainId ?? 1]?.logo}
+                            className="border border-border rounded-full"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="text-base text-foreground">{t.balance}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t.balanceInFiat}
+                      </p>
+                    </div>
+                  </Button>
+                </DialogClose>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground">No Tokens Found</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

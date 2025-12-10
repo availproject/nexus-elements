@@ -149,7 +149,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
         source.token.decimals
       );
     });
-  }, [sources, selectedOption, customValues]);
+  }, [sources, selectedOption, customValues, isCustomValueValid]);
 
   const onClose = () => {
     deny();
