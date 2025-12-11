@@ -2,14 +2,16 @@
 import { Button } from "@/registry/nexus-elements/ui/button";
 import { ConnectKitButton } from "connectkit";
 import { truncateAddress } from "@avail-project/nexus-core";
+import { Loader2 } from "lucide-react";
 
 const ConnectWalletButton = () => {
   return (
     <ConnectKitButton.Custom>
-      {({ isConnected, isConnecting, show, hide, address, ensName, chain }) => {
+      {({ isConnected, isConnecting, show, address }) => {
         return (
-          <Button size={"sm"} onClick={show} variant={"outline"}>
-            {isConnected ? truncateAddress(address ?? "", 6, 6) : "Connect"}
+          <Button variant={"outline"} size={"sm"} onClick={show}>
+            {isConnecting && <Loader2 className="size-5 animate-spin" />}
+            {isConnected ? truncateAddress(address ?? "", 4, 4) : "Connect"}
           </Button>
         );
       }}

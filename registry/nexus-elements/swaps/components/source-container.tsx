@@ -165,12 +165,6 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
             setSwapMode("exactIn");
             setInputs({ fromAmount: val, toAmount: undefined });
           }}
-          onFocus={() => {
-            if (swapMode !== "exactIn") {
-              setSwapMode("exactIn");
-              setInputs({ toAmount: undefined });
-            }
-          }}
           disabled={isDisabled}
         />
 
