@@ -10,7 +10,6 @@ import {
   type SupportedChainsResult,
   type UserAsset,
   getCoinbaseRates,
-  getSupportedChains,
 } from "@avail-project/nexus-core";
 
 import {
@@ -91,7 +90,7 @@ const NexusProvider = ({
   const swapIntent = useRef<OnSwapIntentHookData | null>(null);
 
   const setupNexus = useCallback(async () => {
-    const list = getSupportedChains(
+    const list = sdk.utils.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
     supportedChainsAndTokens.current = list ?? null;
