@@ -155,10 +155,10 @@ const Web3Provider = ({
               "--ck-body-color": "var(--color-foreground)",
               "--ck-border-radius": "var(--radius-lg)",
               "--ck-overlay-backdrop-filter": "blur(8px)",
-              "--ck-primary-button-color": "var(--color-primary)",
+              "--ck-primary-button-color": "var(--color-foreground)",
               "--ck-primary-button-background": "var(--color-background)",
               "--ck-primary-button-box-shadow":
-                "inset 0px 0px 0px 1px var(--color-primary)",
+                "inset 0px 0px 0px 1px var(--color-muted-foreground)",
               "--ck-primary-button-border-radius": "var(--radius-lg)",
               "--ck-primary-button-font-weight": "800",
               "--ck-primary-button-hover-color": "var(--color-primary)",
