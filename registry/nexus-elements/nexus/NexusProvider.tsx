@@ -9,7 +9,6 @@ import {
   type SupportedChainsAndTokensResult,
   type SupportedChainsResult,
   type UserAsset,
-  getCoinbaseRates,
 } from "@avail-project/nexus-core";
 
 import {
@@ -98,7 +97,7 @@ const NexusProvider = ({
     swapSupportedChainsAndTokens.current = swapList ?? null;
     const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
       sdk.getBalancesForBridge(),
-      getCoinbaseRates(),
+      sdk.utils.getCoinbaseRates(),
     ]);
 
     if (bridgeAbleBalanceResult.status === "fulfilled") {
