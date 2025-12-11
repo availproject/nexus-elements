@@ -122,12 +122,6 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
             setSwapMode("exactOut");
             setInputs({ toAmount: val, fromAmount: undefined });
           }}
-          onFocus={() => {
-            if (swapMode !== "exactOut") {
-              setSwapMode("exactOut");
-              setInputs({ fromAmount: undefined });
-            }
-          }}
           disabled={status === "simulating" || status === "swapping"}
         />
         <Dialog>
