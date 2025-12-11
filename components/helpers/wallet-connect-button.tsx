@@ -1,10 +1,20 @@
 "use client";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/registry/nexus-elements/ui/button";
 import { ConnectKitButton } from "connectkit";
+import { truncateAddress } from "@avail-project/nexus-core";
 
 const ConnectWalletButton = () => {
-  const isMobile = useIsMobile();
-  return <ConnectKitButton theme={"auto"} showAvatar={!!isMobile} />;
+  return (
+    <ConnectKitButton.Custom>
+      {({ isConnected, isConnecting, show, hide, address, ensName, chain }) => {
+        return (
+          <Button size={"sm"} onClick={show} variant={"outline"}>
+            {isConnected ? truncateAddress(address ?? "", 6, 6) : "Connect"}
+          </Button>
+        );
+      }}
+    </ConnectKitButton.Custom>
+  );
 };
 
 export default ConnectWalletButton;

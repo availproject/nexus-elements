@@ -14,9 +14,11 @@ type ElementType =
   | "unified-balance"
   | "fast-transfer"
   | "view-history"
-  | "swap-deposit";
+  | "swap-deposit"
+  | "new-deposit";
 
 const disabledTestnet = new Set<ElementType>([
+  "new-deposit",
   "deposit",
   "swaps",
   "swap-deposit",
