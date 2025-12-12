@@ -1,6 +1,6 @@
 "use client";
 import { NexusNetwork } from "@avail-project/nexus-core";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import {
   Select,
@@ -14,13 +14,25 @@ import { NETWORK_KEY } from "@/providers/Web3Provider";
 
 const NetworkToggle = () => {
   const { nexusSDK, deinitializeNexus } = useNexus();
-  const currentNetwork = getItem(NETWORK_KEY) as NexusNetwork;
+  const [currentNetwork, setCurrentNetwork] = useState<NexusNetwork>("mainnet");
+
+  useEffect(() => {
+    // Read from localStorage on client side only
+    const storedNetwork = getItem(NETWORK_KEY) as NexusNetwork | null;
+    if (storedNetwork && (storedNetwork === "mainnet" || storedNetwork === "testnet")) {
+      setCurrentNetwork(storedNetwork);
+    } else {
+      setCurrentNetwork("mainnet");
+    }
+  }, []);
+
   const handleNetworkChange = async (newValue: string) => {
     if (nexusSDK) {
       await deinitializeNexus();
     }
 
     setItem(NETWORK_KEY, newValue);
+    setCurrentNetwork(newValue as NexusNetwork);
     window.location.reload();
   };
 

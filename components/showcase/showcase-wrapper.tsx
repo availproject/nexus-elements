@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import NetworkToggle from "../helpers/network-toggle";
 import { PreviewPanel } from "../helpers/preview-panel";
 import { Toggle } from "../ui/toggle";
@@ -50,6 +50,14 @@ const ShowcaseWrapper = ({
   banner,
   ...toggleProps
 }: ShowcaseWrapperProps) => {
+  const [currentNetwork, setCurrentNetwork] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Read from localStorage on client side only
+    const storedNetwork = getItem(NETWORK_KEY);
+    setCurrentNetwork(storedNetwork ?? "mainnet");
+  }, []);
+
   const resolvedToggle =
     typeof toggle === "boolean"
       ? toggle
@@ -58,7 +66,6 @@ const ShowcaseWrapper = ({
         onPressedChange !== undefined;
   const isPressed = pressed ?? defaultPressed ?? false;
   const label = toggleLabel ?? "Swap with Exact In";
-  const currentNetwork = getItem(NETWORK_KEY);
 
   return (
     <div className="w-full flex flex-col gap-y-4">
