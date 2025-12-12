@@ -21,10 +21,10 @@ import {
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Chain, defineChain } from "viem";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
-import { useSearchParams } from "next/navigation";
 import { type NexusNetwork } from "@avail-project/nexus-core";
 import { Suspense, useMemo } from "react";
 import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
+import { getItem, setItem } from "@/lib/local-storage";
 
 const hyperEVM = defineChain({
   id: 999,
@@ -127,21 +127,23 @@ const defaultConfig = getDefaultConfig({
 });
 
 const wagmiConfig = createConfig(defaultConfig);
+export const NETWORK_KEY = "nexus-elements-network-key";
 
 function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
-  const searchParams = useSearchParams();
-  const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
+  const network = (getItem(NETWORK_KEY) ?? "mainnet") as NexusNetwork;
+  if (!network) {
+    setItem(NETWORK_KEY, "mainnet");
+  }
   const nexusConfig = useMemo(
-    () => ({ network: urlNetwork, debug: true }),
-    [urlNetwork]
+    () => ({ network: network, debug: true }),
+    [network]
   );
   return <NexusProvider config={nexusConfig}>{children}</NexusProvider>;
 }
-
+const queryClient = new QueryClient();
 const Web3Provider = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
-  const queryClient = useMemo(() => new QueryClient(), []);
   return (
     <Suspense fallback={<Skeleton className="w-full h-full" />}>
       <WagmiProvider config={wagmiConfig}>

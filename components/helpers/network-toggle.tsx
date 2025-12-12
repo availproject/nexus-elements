@@ -1,7 +1,6 @@
 "use client";
 import { NexusNetwork } from "@avail-project/nexus-core";
 import React from "react";
-import { usePathname } from "next/navigation";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import {
   Select,
@@ -10,22 +9,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/registry/nexus-elements/ui/select";
+import { getItem, setItem } from "@/lib/local-storage";
+import { NETWORK_KEY } from "@/providers/Web3Provider";
 
-interface NetworkToggleProps {
-  currentNetwork: NexusNetwork;
-}
-
-const NetworkToggle: React.FC<NetworkToggleProps> = ({ currentNetwork }) => {
-  const pathname = usePathname();
+const NetworkToggle = () => {
   const { nexusSDK, deinitializeNexus } = useNexus();
-
-  const handleNetworkChange = async () => {
+  const currentNetwork = getItem(NETWORK_KEY) as NexusNetwork;
+  const handleNetworkChange = async (newValue: string) => {
     if (nexusSDK) {
       await deinitializeNexus();
     }
-    window.location.href = `${pathname}?network=${
-      currentNetwork === "testnet" ? "mainnet" : "testnet"
-    }`;
+
+    setItem(NETWORK_KEY, newValue);
+    window.location.reload();
   };
 
   return (
