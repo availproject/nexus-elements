@@ -1,7 +1,7 @@
 "use client";
 import { NexusNetwork } from "@avail-project/nexus-core";
 import React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import {
   Select,
@@ -17,19 +17,15 @@ interface NetworkToggleProps {
 
 const NetworkToggle: React.FC<NetworkToggleProps> = ({ currentNetwork }) => {
   const pathname = usePathname();
-  const router = useRouter();
   const { nexusSDK, deinitializeNexus } = useNexus();
 
   const handleNetworkChange = async () => {
     if (nexusSDK) {
       await deinitializeNexus();
     }
-    router.push(
-      `${pathname}?network=${
-        currentNetwork === "testnet" ? "mainnet" : "testnet"
-      }`
-    );
-    router.refresh();
+    window.location.href = `${pathname}?network=${
+      currentNetwork === "testnet" ? "mainnet" : "testnet"
+    }`;
   };
 
   return (
