@@ -21,7 +21,6 @@ import {
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Chain, defineChain } from "viem";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
-import { type NexusNetwork } from "@avail-project/nexus-core";
 import { Suspense, useMemo, useState, useEffect } from "react";
 import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 import { getItem, setItem } from "@/lib/local-storage";
@@ -152,7 +151,7 @@ function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
   }, []);
 
   const nexusConfig = useMemo(
-    () => ({ network: network as NexusNetwork, debug: true }),
+    () => ({ network: network, debug: true }),
     [network],
   );
 
