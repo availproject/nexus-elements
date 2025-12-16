@@ -130,30 +130,30 @@ const wagmiConfig = createConfig(defaultConfig);
 export const NETWORK_KEY = "nexus-elements-network-key";
 
 function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [network, setNetwork] = useState<NexusNetwork>("mainnet");
+  const [network, setNetwork] = useState<"testnet" | "devnet">("devnet");
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     // Initialize network from localStorage on client side
-    const storedNetwork = getItem(NETWORK_KEY) as NexusNetwork | null;
+    const storedNetwork = getItem(NETWORK_KEY) as string | null;
 
     if (
       storedNetwork &&
-      (storedNetwork === "mainnet" || storedNetwork === "testnet")
+      (storedNetwork === "devnet" || storedNetwork === "testnet")
     ) {
       setNetwork(storedNetwork);
     } else {
-      // Set default to mainnet if not found or invalid
-      setNetwork("mainnet");
-      setItem(NETWORK_KEY, "mainnet");
+      // Set default to devnet if not found or invalid
+      setNetwork("devnet");
+      setItem(NETWORK_KEY, "devnet");
     }
 
     setIsInitialized(true);
   }, []);
 
   const nexusConfig = useMemo(
-    () => ({ network: network, debug: true }),
-    [network]
+    () => ({ network: network as NexusNetwork, debug: true }),
+    [network],
   );
 
   // Don't render until we've initialized from localStorage

@@ -14,15 +14,22 @@ import { NETWORK_KEY } from "@/providers/Web3Provider";
 
 const NetworkToggle = () => {
   const { nexusSDK, deinitializeNexus } = useNexus();
-  const [currentNetwork, setCurrentNetwork] = useState<NexusNetwork>("mainnet");
+  const [currentNetwork, setCurrentNetwork] = useState<"testnet" | "devnet">(
+    "devnet",
+  );
 
   useEffect(() => {
     // Read from localStorage on client side only
-    const storedNetwork = getItem(NETWORK_KEY) as NexusNetwork | null;
-    if (storedNetwork && (storedNetwork === "mainnet" || storedNetwork === "testnet")) {
-      setCurrentNetwork(storedNetwork);
+    const storedNetwork = getItem(NETWORK_KEY) as string | null;
+    if (
+      storedNetwork &&
+      (storedNetwork === "mainnet" ||
+        storedNetwork === "testnet" ||
+        storedNetwork === "devnet")
+    ) {
+      setCurrentNetwork(storedNetwork as "testnet" | "devnet");
     } else {
-      setCurrentNetwork("mainnet");
+      setCurrentNetwork("devnet");
     }
   }, []);
 
@@ -32,7 +39,7 @@ const NetworkToggle = () => {
     }
 
     setItem(NETWORK_KEY, newValue);
-    setCurrentNetwork(newValue as NexusNetwork);
+    setCurrentNetwork(newValue as "testnet" | "devnet");
     window.location.reload();
   };
 
