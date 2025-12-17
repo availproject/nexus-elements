@@ -22,6 +22,7 @@
 # production
 /build
 /packages/elements/dist
+/packages/elements/node_modules/
 
 # misc
 .DS_Store
