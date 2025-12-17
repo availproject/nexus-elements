@@ -13,7 +13,7 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: github:availproject/nexus-sdk#temp/debugnet
+        specifier: github:availproject/nexus-sdk#c3ce3e512ac1d3c7aac02c1649ae79909603f62d
         version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/c3ce3e512ac1d3c7aac02c1649ae79909603f62d(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
