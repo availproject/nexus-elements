@@ -7,10 +7,15 @@ settings:
 overrides:
   '@types/react': 19.1.2
   '@types/react-dom': 19.1.2
+  '@avail-project/nexus-core': github:availproject/nexus-sdk#develop
 
 importers:
 
   .:
+    dependencies:
+      '@avail-project/nexus-core':
+        specifier: github:availproject/nexus-sdk#develop
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/65f6e3ba2bfb2342e55b93c5fc5bf63a46d115be(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.0
@@ -164,8 +169,8 @@ importers:
   packages/elements:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: 1.0.0-beta.56
-        version: 1.0.0-beta.56(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        specifier: github:availproject/nexus-sdk#develop
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/65f6e3ba2bfb2342e55b93c5fc5bf63a46d115be(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.2(react@19.2.2))(react@19.2.2)
@@ -268,17 +273,6 @@ packages:
     resolution: {integrity: sha512-C90iyzm/jLV7Lomv2UzwWUzRv9WZr1oRsFRKsX5HjQL4EXrbi9H/RtBkjCP+NF+ABZXUKpAa4F1dkoTaea4zHg==}
     hasBin: true
 
-  '@avail-project/ca-common@1.0.0-rc.1':
-    resolution: {integrity: sha512-6qOnrqFDa3HG1DYxdjUHoA9FKHKfUdhOdLdYISY3mI4PDI88L3dl1HRoQrmdL4RKHUrPXbnaVxawYtX+RU2jOw==}
-    peerDependencies:
-      '@cosmjs/proto-signing': ^0.34.0
-      '@cosmjs/stargate': ^0.34.0
-      axios: ^1.10.0
-      decimal.js: ^10.6.0
-      long: ^5.3.2
-      msgpackr: ^1.11.4
-      viem: ^2.31.7
-
   '@avail-project/ca-common@https://codeload.github.com/availproject/ca-common/tar.gz/4480df49dbd40edc89de806f2b844b62007c5a2e':
     resolution: {tarball: https://codeload.github.com/availproject/ca-common/tar.gz/4480df49dbd40edc89de806f2b844b62007c5a2e}
     version: 1.0.0
@@ -290,9 +284,6 @@ packages:
       long: ^5.3.2
       msgpackr: ^1.11.4
       viem: ^2.31.7
-
-  '@avail-project/nexus-core@1.0.0-beta.56':
-    resolution: {integrity: sha512-AsAxv6v4oYDiHtEq56WBOIMdTVNB38oL4RT2QtFijhLxCD3m4dOtBXwCHfTEKJMJstm0vunRu70owrO9nnawbg==}
 
   '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/65f6e3ba2bfb2342e55b93c5fc5bf63a46d115be':
     resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/65f6e3ba2bfb2342e55b93c5fc5bf63a46d115be}
@@ -7242,23 +7233,6 @@ snapshots:
 
   '@antfu/ni@23.3.1': {}
 
-  '@avail-project/ca-common@1.0.0-rc.1(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.7)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@bufbuild/protobuf': 2.10.2
-      '@cosmjs/proto-signing': 0.34.0
-      '@cosmjs/stargate': 0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@improbable-eng/grpc-web': 0.15.0(google-protobuf@3.21.4)
-      axios: 1.13.2
-      browser-headers: 0.4.1
-      decimal.js: 10.6.0
-      es-toolkit: 1.43.0
-      long: 5.3.2
-      msgpackr: 1.11.7
-      tslib: 2.8.1
-      viem: 2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-    transitivePeerDependencies:
-      - google-protobuf
-
   '@avail-project/ca-common@https://codeload.github.com/availproject/ca-common/tar.gz/4480df49dbd40edc89de806f2b844b62007c5a2e(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.7)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@bufbuild/protobuf': 2.10.2
@@ -7276,39 +7250,6 @@ snapshots:
       viem: 2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
       - google-protobuf
-
-  '@avail-project/nexus-core@1.0.0-beta.56(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@avail-project/ca-common': 1.0.0-rc.1(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.7)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10))
-      '@cosmjs/proto-signing': 0.34.0
-      '@cosmjs/stargate': 0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@metamask/safe-event-emitter': 3.1.2
-      '@opentelemetry/api-logs': 0.208.0
-      '@opentelemetry/exporter-logs-otlp-http': 0.208.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-logs': 0.208.0(@opentelemetry/api@1.9.0)
-      '@starkware-industries/starkware-crypto-utils': 0.2.1
-      '@tronweb3/tronwallet-abstract-adapter': 1.1.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      axios: 1.13.2
-      buffer: 6.0.3
-      decimal.js: 10.6.0
-      es-toolkit: 1.43.0
-      it-ws: 6.1.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      long: 5.3.2
-      msgpackr: 1.11.7
-      posthog-js: 1.308.0
-      tronweb: 6.1.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      tslib: 2.8.1
-      viem: 2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-      - bufferutil
-      - debug
-      - encoding
-      - google-protobuf
-      - typescript
-      - utf-8-validate
-      - zod
 
   '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/65f6e3ba2bfb2342e55b93c5fc5bf63a46d115be(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:

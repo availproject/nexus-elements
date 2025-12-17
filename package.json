@@ -13,10 +13,14 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.0"
   },
+  "dependencies": {
+    "@avail-project/nexus-core": "github:availproject/nexus-sdk#develop"
+  },
   "pnpm": {
     "overrides": {
       "@types/react": "19.1.2",
-      "@types/react-dom": "19.1.2"
+      "@types/react-dom": "19.1.2",
+      "@avail-project/nexus-core": "github:availproject/nexus-sdk#develop"
     }
   }
 }
