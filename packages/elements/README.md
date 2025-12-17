@@ -17,7 +17,7 @@ yarn add @avail-project/nexus-elements
 This package requires React 18 or 19:
 
 ```bash
-npm install react react-dom
+npm install react react-dom @avail-project/nexus-core
 ```
 
 ## Usage

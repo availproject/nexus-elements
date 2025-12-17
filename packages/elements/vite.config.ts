@@ -33,16 +33,33 @@ export default defineConfig({
       formats: ["es", "cjs"],
     },
     rollupOptions: {
-      external: ["react", "react-dom", "react/jsx-runtime"],
+      external: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "wagmi",
+        "viem",
+        "@tanstack/react-query",
+        "@avail-project/nexus-core",
+        // Externalize all wagmi and viem subpaths
+        /^wagmi\//,
+        /^viem\//,
+        /^@tanstack\/react-query/,
+        /^@avail-project\/nexus-core/,
+      ],
       output: {
         preserveModules: false,
         globals: {
           react: "React",
           "react-dom": "ReactDOM",
+          wagmi: "wagmi",
+          viem: "viem",
+          "@tanstack/react-query": "ReactQuery",
+          "@avail-project/nexus-core": "NexusCore",
         },
       },
     },
     cssCodeSplit: false,
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV === "production" ? false : true,
   },
 });

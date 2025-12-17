@@ -6,6 +6,7 @@
     "build": "pnpm --filter docs build",
     "build:elements": "pnpm --filter @avail-project/nexus-elements build",
     "lint": "pnpm --filter docs lint",
+    "test-tarball": "pnpm --filter @avail-project/nexus-elements build && cd packages/elements && pnpm pack",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build:elements && changeset publish"
