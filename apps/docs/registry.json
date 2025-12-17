@@ -1,0 +1,1111 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "nexus-elements",
+  "namespace": "nexus-elements",
+  "homepage": "https://elements.nexus.availproject.org",
+  "items": [
+    {
+      "name": "fast-bridge",
+      "type": "registry:component",
+      "title": "Fast Bridge",
+      "description": "A simple component built with Nexus to enable cross chain bridging",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
+        "class-variance-authority",
+        "clsx",
+        "lucide-react",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/separator.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/fast-bridge/fast-bridge.tsx",
+          "target": "components/fast-bridge/fast-bridge.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/view-history.tsx",
+          "target": "components/view-history/view-history.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
+          "target": "components/view-history/hooks/useViewHistory.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/allowance-modal.tsx",
+          "target": "components/fast-bridge/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/amount-input.tsx",
+          "target": "components/fast-bridge/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/source-breakdown.tsx",
+          "target": "components/fast-bridge/components/source-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/chain-select.tsx",
+          "target": "components/fast-bridge/components/chain-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/fee-breakdown.tsx",
+          "target": "components/fast-bridge/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/recipient-address.tsx",
+          "target": "components/fast-bridge/components/recipient-address.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/token-select.tsx",
+          "target": "components/fast-bridge/components/token-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/components/transaction-progress.tsx",
+          "target": "components/fast-bridge/components/transaction-progress.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/fast-bridge/hooks/useBridge.ts",
+          "target": "components/fast-bridge/hooks/useBridge.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "fast-transfer",
+      "type": "registry:component",
+      "title": "Fast Transfer",
+      "description": "A simple component built with Nexus to enable cross chain transfer",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
+        "class-variance-authority",
+        "clsx",
+        "lucide-react",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/separator.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/transfer/transfer.tsx",
+          "target": "components/transfer/transfer.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/view-history.tsx",
+          "target": "components/view-history/view-history.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
+          "target": "components/view-history/hooks/useViewHistory.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/allowance-modal.tsx",
+          "target": "components/transfer/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/amount-input.tsx",
+          "target": "components/transfer/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/source-breakdown.tsx",
+          "target": "components/transfer/components/source-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/chain-select.tsx",
+          "target": "components/transfer/components/chain-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/fee-breakdown.tsx",
+          "target": "components/transfer/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/recipient-address.tsx",
+          "target": "components/transfer/components/recipient-address.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/token-select.tsx",
+          "target": "components/transfer/components/token-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/components/transaction-progress.tsx",
+          "target": "components/transfer/components/transaction-progress.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/transfer/hooks/useTransfer.ts",
+          "target": "components/transfer/hooks/useTransfer.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "nexus-provider",
+      "type": "registry:component",
+      "title": "Nexus Provider",
+      "description": "Shared Nexus SDK provider and types for Nexus Elements",
+      "dependencies": ["@avail-project/nexus-core@1.0.0-beta.56"],
+      "files": [
+        {
+          "path": "registry/nexus-elements/nexus/NexusProvider.tsx",
+          "target": "components/nexus/NexusProvider.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "accordion",
+      "type": "registry:component",
+      "title": "Accordion",
+      "description": "UI primitive: Accordion",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/accordion.tsx",
+          "target": "components/ui/accordion.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "collapsible",
+      "type": "registry:component",
+      "title": "Collapsible",
+      "description": "UI primitive: Collapsible",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/collapsible.tsx",
+          "target": "components/ui/collapsible.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:component",
+      "title": "Button",
+      "description": "UI primitive: Button",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/button.tsx",
+          "target": "components/ui/button.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:component",
+      "title": "Card",
+      "description": "UI primitive: Card",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/card.tsx",
+          "target": "components/ui/card.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:component",
+      "title": "Dialog",
+      "description": "UI primitive: Dialog",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/dialog.tsx",
+          "target": "components/ui/dialog.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:component",
+      "title": "Input",
+      "description": "UI primitive: Input",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/input.tsx",
+          "target": "components/ui/input.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:component",
+      "title": "Badge",
+      "description": "UI primitive: Badge",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/badge.tsx",
+          "target": "components/ui/badge.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "label",
+      "type": "registry:component",
+      "title": "Label",
+      "description": "UI primitive: Label",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/label.tsx",
+          "target": "components/ui/label.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:component",
+      "title": "Select",
+      "description": "UI primitive: Select",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/select.tsx",
+          "target": "components/ui/select.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:component",
+      "title": "Tooltip",
+      "description": "UI primitive: Tooltip",
+      "dependencies": ["@radix-ui/react-tooltip"],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/tooltip.tsx",
+          "target": "components/ui/tooltip.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "separator",
+      "type": "registry:component",
+      "title": "Separator",
+      "description": "UI primitive: Separator",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/separator.tsx",
+          "target": "components/ui/separator.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:component",
+      "title": "Skeleton",
+      "description": "UI primitive: Skeleton",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/skeleton.tsx",
+          "target": "components/ui/skeleton.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:component",
+      "title": "Tabs",
+      "description": "UI primitive: Tabs",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/tabs.tsx",
+          "target": "components/ui/tabs.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:component",
+      "title": "Checkbox",
+      "description": "UI primitive: Checkbox",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/checkbox.tsx",
+          "target": "components/ui/checkbox.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:component",
+      "title": "Popover",
+      "description": "UI primitive: Popover",
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/ui/popover.tsx",
+          "target": "components/ui/popover.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "utils",
+      "type": "registry:component",
+      "title": "Utils (cn)",
+      "description": "Utility helpers used by UI components",
+      "files": [
+        {
+          "path": "lib/utils.ts",
+          "target": "lib/utils.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "unified-balance",
+      "type": "registry:component",
+      "title": "Unified Balance",
+      "description": "A simple component built with Nexus to display unified balance",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
+        "lucide-react",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-label",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tabs"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/tabs.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/unified-balance/unified-balance.tsx",
+          "target": "components/unified-balance/unified-balance.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "view-history",
+      "type": "registry:component",
+      "title": "View History",
+      "description": "A simple component built with Nexus to display view history",
+      "dependencies": [
+        "lucide-react",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-slot"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/card.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/view-history/view-history.tsx",
+          "target": "components/view-history/view-history.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
+          "target": "components/view-history/hooks/useViewHistory.ts",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "type": "registry:component",
+      "title": "Deposit",
+      "description": "A simple component built with Nexus to enable deposits",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
+        "lucide-react",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-label",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-collapsible"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/collapsible.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json",
+        "https://elements.nexus.availproject.org/r/popover.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/deposit/deposit.tsx",
+          "target": "components/deposit/deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/deposit-modal.tsx",
+          "target": "components/deposit/components/deposit-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/simple-deposit.tsx",
+          "target": "components/deposit/components/simple-deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/source-select.tsx",
+          "target": "components/deposit/components/source-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/amount-input.tsx",
+          "target": "components/deposit/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/fee-breakdown.tsx",
+          "target": "components/deposit/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/transaction-status-step.tsx",
+          "target": "components/deposit/components/transaction-status-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/info.tsx",
+          "target": "components/deposit/components/info.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/step-indicator.tsx",
+          "target": "components/deposit/components/step-indicator.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/hooks/useDeposit.ts",
+          "target": "components/deposit/hooks/useDeposit.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/ui/checkbox.tsx",
+          "target": "components/ui/checkbox.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/ui/popover.tsx",
+          "target": "components/ui/popover.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/allowance-modal.tsx",
+          "target": "components/deposit/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/source-breakdown.tsx",
+          "target": "components/deposit/components/source-breakdown.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "swaps",
+      "type": "registry:component",
+      "title": "Swaps",
+      "description": "Swap tokens across chains (Exact In)",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/swaps/swap-widget.tsx",
+          "target": "components/swaps/swap-widget.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/source-asset-select.tsx",
+          "target": "components/swaps/components/source-asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/destination-asset-select.tsx",
+          "target": "components/swaps/components/destination-asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/source-container.tsx",
+          "target": "components/swaps/components/source-container.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/destination-container.tsx",
+          "target": "components/swaps/components/destination-container.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/amount-input.tsx",
+          "target": "components/swaps/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/step-flow.tsx",
+          "target": "components/swaps/components/step-flow.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/view-transaction.tsx",
+          "target": "components/swaps/components/view-transaction.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/token-icon.tsx",
+          "target": "components/swaps/components/token-icon.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/stacked-token-icons.tsx",
+          "target": "components/swaps/components/stacked-token-icons.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/hooks/useSwaps.ts",
+          "target": "components/swaps/hooks/useSwaps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/hooks/useHover.ts",
+          "target": "components/swaps/hooks/useHover.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/config/destination.ts",
+          "target": "components/swaps/config/destination.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/transaction-progress.tsx",
+          "target": "components/swaps/components/transaction-progress.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "swap-deposit",
+      "type": "registry:component",
+      "title": "Swap Deposit",
+      "description": "Swap and Deposit tokens across chains and contracts",
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@radix-ui/react-collapsible",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/collapsible.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
+        "https://elements.nexus.availproject.org/r/badge.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
+        "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/nexus-elements/swap-deposit/swap-deposit.tsx",
+          "target": "components/swap-deposit/swap-deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/asset-select.tsx",
+          "target": "components/swap-deposit/components/asset-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/amount-step.tsx",
+          "target": "components/swap-deposit/components/amount-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/confirmation-step.tsx",
+          "target": "components/swap-deposit/components/confirmation-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/deposit-header.tsx",
+          "target": "components/swap-deposit/components/deposit-header.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/info.tsx",
+          "target": "components/swap-deposit/components/info.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/step-indicator.tsx",
+          "target": "components/swap-deposit/components/step-indicator.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/token-icon.tsx",
+          "target": "components/swap-deposit/components/token-icon.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/components/transaction-status-step.tsx",
+          "target": "components/swap-deposit/components/transaction-status-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swap-deposit/hooks/useSwapDeposit.ts",
+          "target": "components/swap-deposit/hooks/useSwapDeposit.ts",
+          "type": "registry:component"
+        }
+      ]
+    }
+  ]
+}
