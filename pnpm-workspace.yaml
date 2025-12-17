@@ -4,3 +4,4 @@ packages:
 
 onlyBuiltDependencies:
   - "@avail-project/nexus-core"
+  - "@avail-project/ca-common"
