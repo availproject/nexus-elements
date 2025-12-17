@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* Nexus Elements CSS Variables */
+.nexus-elements {
+  /* Default light theme - users can override via provider */
+  --nexus-background: 0 0% 100%;
+  --nexus-foreground: 0 0% 3.9%;
+  --nexus-card: 0 0% 100%;
+  --nexus-card-foreground: 0 0% 3.9%;
+  --nexus-popover: 0 0% 100%;
+  --nexus-popover-foreground: 0 0% 3.9%;
+  --nexus-primary: 0 0% 9%;
+  --nexus-primary-foreground: 0 0% 98%;
+  --nexus-secondary: 0 0% 96.1%;
+  --nexus-secondary-foreground: 0 0% 9%;
+  --nexus-muted: 0 0% 96.1%;
+  --nexus-muted-foreground: 0 0% 45.1%;
+  --nexus-accent: 0 0% 96.1%;
+  --nexus-accent-foreground: 0 0% 9%;
+  --nexus-destructive: 0 84.2% 60.2%;
+  --nexus-destructive-foreground: 0 0% 98%;
+  --nexus-border: 0 0% 89.8%;
+  --nexus-input: 0 0% 89.8%;
+  --nexus-ring: 0 0% 3.9%;
+  --nexus-radius: 0.5rem;
+
+  /* Map nexus variables to standard shadcn variable names */
+  --background: hsl(var(--nexus-background));
+  --foreground: hsl(var(--nexus-foreground));
+  --card: hsl(var(--nexus-card));
+  --card-foreground: hsl(var(--nexus-card-foreground));
+  --popover: hsl(var(--nexus-popover));
+  --popover-foreground: hsl(var(--nexus-popover-foreground));
+  --primary: hsl(var(--nexus-primary));
+  --primary-foreground: hsl(var(--nexus-primary-foreground));
+  --secondary: hsl(var(--nexus-secondary));
+  --secondary-foreground: hsl(var(--nexus-secondary-foreground));
+  --muted: hsl(var(--nexus-muted));
+  --muted-foreground: hsl(var(--nexus-muted-foreground));
+  --accent: hsl(var(--nexus-accent));
+  --accent-foreground: hsl(var(--nexus-accent-foreground));
+  --destructive: hsl(var(--nexus-destructive));
+  --destructive-foreground: hsl(var(--nexus-destructive-foreground));
+  --border: hsl(var(--nexus-border));
+  --input: hsl(var(--nexus-input));
+  --ring: hsl(var(--nexus-ring));
+  --radius: var(--nexus-radius);
+}
+
+/* Tailwind v4 theme configuration */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* Base styles */
+.nexus-elements {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.nexus-elements * {
+  border-color: var(--border);
+}
