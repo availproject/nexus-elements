@@ -96,14 +96,14 @@ export const ConfirmationStep = ({
               <div className="flex items-center gap-2 py-1.5">
                 {details.sources?.map((source, index) => (
                   <TokenIcon
-                    key={source?.tokenAddress}
+                    key={source?.balance + source?.chainLogo!}
                     symbol={source?.symbol}
                     tokenLogo={source?.tokenLogo}
                     chainLogo={source?.chainLogo}
                     size="sm"
                     className={cn(
                       "last:mr-0",
-                      index !== (details.sources?.length ?? 0) - 1 && "-mr-3"
+                      index !== (details.sources?.length ?? 0) - 1 && "-mr-3",
                     )}
                   />
                 ))}

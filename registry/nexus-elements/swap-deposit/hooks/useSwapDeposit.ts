@@ -4,10 +4,10 @@ import {
   type SwapStepType,
   type ExactInSwapInput,
   type ExecuteParams,
-  type ExecuteSimulation,
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
   parseUnits,
+  SwapAndExecuteParams,
 } from "@avail-project/nexus-core";
 import {
   useCallback,
@@ -55,12 +55,11 @@ interface DestinationConfig {
 }
 
 type SwapDepositState = {
-  inputs: SwapInputs | null;
+  inputs: SwapAndExecuteParams | null;
   selectedSources: AssetSelection[];
   status: TransactionStatus;
   error: string | null;
   simulation: {
-    executeSimulation: ExecuteSimulation;
     swapIntent: OnSwapIntentHookData;
   } | null;
   explorerUrls: {
@@ -78,7 +77,7 @@ interface UseSwapDepositProps {
     tokenAddress: string,
     amount: bigint,
     chainId: number,
-    user: Address
+    user: Address,
   ) => Omit<ExecuteParams, "toChainId">;
   destination: DestinationConfig;
   onSwapComplete?: (amount?: string, explorerURL?: string) => void;
@@ -88,12 +87,11 @@ interface UseSwapDepositProps {
 }
 
 type Action =
-  | { type: "setInputs"; payload: Partial<SwapInputs> }
+  | { type: "setInputs"; payload: Partial<SwapAndExecuteParams> }
   | { type: "setSelectedSources"; payload: AssetSelection[] }
   | {
       type: "setSimulation";
       payload: {
-        executeSimulation: ExecuteSimulation;
         swapIntent: OnSwapIntentHookData;
       };
     }
@@ -129,16 +127,14 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
         ? { ...state.inputs, ...action.payload }
         : { ...action.payload };
       if (
-        merged.from !== undefined &&
         merged.toChainId !== undefined &&
         merged.toTokenAddress !== undefined
       ) {
         let newStatus = state.status;
         const hasSourceAssets =
-          merged.from !== undefined && merged.from.length > 0;
+          merged.sources !== undefined && merged.sources.length > 0;
         const hasAmount =
-          merged.from?.[0]?.amount !== undefined &&
-          merged.from?.[0]?.amount > BigInt(0);
+          merged.toAmount !== undefined && merged.toAmount > BigInt(0);
 
         if (!hasSourceAssets) {
           newStatus = "idle";
@@ -149,13 +145,13 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
         }
         console.log("setInputs", {
           ...state,
-          inputs: merged as SwapInputs,
+          inputs: merged as SwapAndExecuteParams,
           status: newStatus,
           error: null,
         });
         return {
           ...state,
-          inputs: merged as SwapInputs,
+          inputs: merged as SwapAndExecuteParams,
           status: newStatus,
           error: null,
         };
@@ -266,12 +262,12 @@ const useSwapDeposit = ({
       {
         symbol: activeIntent.intent.destination.token.symbol,
         decimals: activeIntent.intent.destination.token.decimals,
-      }
+      },
     );
 
     const receiveAmountAfterSwapUsd = getFiatValue(
       Number.parseFloat(activeIntent.intent.destination.amount),
-      destination.tokenSymbol
+      destination.tokenSymbol,
     );
 
     const totalAmountSpent = nexusSDK?.utils?.formatTokenBalance(
@@ -282,15 +278,15 @@ const useSwapDeposit = ({
       {
         symbol: destination.tokenSymbol,
         decimals: destination.tokenDecimals,
-      }
+      },
     );
 
     const sources = activeIntent.intent.sources.map((source) =>
       availableAssets.find(
         (asset) =>
           asset.chainId === source.chain.id &&
-          asset.symbol === source.token.symbol
-      )
+          asset.symbol === source.token.symbol,
+      ),
     );
 
     return {
@@ -316,17 +312,16 @@ const useSwapDeposit = ({
     const nativeDecimals = native?.decimals;
 
     const gasFormatted =
-      nexusSDK?.utils?.formatTokenBalance(
-        state.simulation.executeSimulation?.gasFee,
-        { symbol: nativeSymbol, decimals: nativeDecimals }
-      ) ?? "0";
+      nexusSDK?.utils?.formatTokenBalance(BigInt(200000), {
+        symbol: nativeSymbol,
+        decimals: nativeDecimals,
+      }) ?? "0";
     const gasUnits = Number.parseFloat(
-      nexusSDK?.utils?.formatUnits(
-        state.simulation.executeSimulation?.gasFee,
-        nativeDecimals
-      )
+      nexusSDK?.utils?.formatUnits(BigInt(200000), nativeDecimals),
     );
     const gasUsd = getFiatValue(gasUnits, nativeSymbol);
+
+    console.log("GAS REQUIRED", { gasFormatted, gasUnits, gasUsd });
 
     return { totalGasFee: gasUsd, gasUsd, gasFormatted };
   }, [nexusSDK, getFiatValue, state.simulation, state.inputs]);
@@ -335,54 +330,18 @@ const useSwapDeposit = ({
     () =>
       state.selectedSources.reduce(
         (sum, source) => sum + source.balanceInFiat,
-        0
+        0,
       ),
-    [state.selectedSources, getFiatValue]
+    [state.selectedSources, getFiatValue],
   );
 
-  const handleDeposit = (amount: bigint) => {
-    if (!nexusSDK || !address) return;
-    const executeParams = executeDeposit(
-      destination.tokenSymbol,
-      destination.tokenAddress,
-      amount,
-      destination.chainId,
-      address
-    );
-
-    nexusSDK
-      .execute({
-        ...executeParams,
-        toChainId: destination.chainId,
-      })
-      .then((depositResult) => {
-        if (!depositResult) {
-          throw new Error("Deposit failed");
-        }
-        dispatch({
-          type: "setExplorerUrls",
-          payload: { depositUrl: depositResult.explorerUrl },
-        });
-        onDepositComplete?.(depositResult.explorerUrl);
-        return fetchSwapBalance();
-      })
-      .then(() => {
-        dispatch({ type: "setStatus", payload: "success" });
-      })
-      .catch((error) => {
-        const { message } = handleNexusError(error);
-        dispatch({ type: "setError", payload: message });
-        dispatch({ type: "setStatus", payload: "error" });
-        onError?.(message);
-      });
-  };
-
-  const initiateSwapIntent = (inputs: SwapInputs) => {
+  const initiateSwapIntent = (inputs: SwapAndExecuteParams) => {
     if (!nexusSDK || !inputs || loading) return;
     onStart?.();
     seed(SWAP_EXPECTED_STEPS);
+    console.log("SWAP INPUTS", inputs);
     nexusSDK
-      .swapWithExactIn(inputs, {
+      .swapAndExecute(inputs, {
         onEvent: (event) => {
           if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
             const step = event.args as SwapStepType & {
@@ -406,28 +365,15 @@ const useSwapDeposit = ({
         },
       })
       .then((swapResult) => {
-        if (!swapResult?.success) {
-          throw new Error(swapResult?.error || "Swap failed");
-        }
-
         console.log("swap complete", swapResult, swapIntent.current?.intent);
-        if (swapResult) {
-          const formattedAmount = nexusSDK.utils.parseUnits(
-            swapIntent.current?.intent?.destination?.amount ?? "0",
-            swapIntent.current?.intent?.destination?.token?.decimals ??
-              destination.tokenDecimals
-          );
-          dispatch({
-            type: "setReceiveAmount",
-            payload: swapIntent.current?.intent?.destination?.amount ?? "",
-          });
-          onSwapComplete?.(
-            swapIntent.current?.intent?.destination?.amount,
-            swapResult.result.explorerURL
-          );
-          dispatch({ type: "setStatus", payload: "depositing" });
-          handleDeposit(formattedAmount);
-        }
+        dispatch({
+          type: "setReceiveAmount",
+          payload: swapIntent.current?.intent?.destination?.amount ?? "",
+        });
+        onSwapComplete?.(swapIntent.current?.intent?.destination?.amount);
+        onDepositComplete?.();
+        dispatch({ type: "setStatus", payload: "success" });
+        return fetchSwapBalance();
       })
       .catch((error) => {
         const { message } = handleNexusError(error);
@@ -440,84 +386,28 @@ const useSwapDeposit = ({
       });
   };
 
-  const simulateDeposit = async (): Promise<boolean> => {
-    if (
-      !nexusSDK ||
-      !state.inputs ||
-      loading ||
-      !address ||
-      !swapIntent.current
-    )
-      return false;
-
-    try {
-      const executeParams = executeDeposit(
-        state.inputs.toTokenSymbol,
-        state.inputs.toTokenAddress,
-        nexusSDK.utils.parseUnits(
-          swapIntent.current?.intent.destination.amount,
-          swapIntent.current?.intent?.destination?.token?.decimals
-        ),
-        state.inputs.toChainId,
-        address
-      );
-      const simulateDepositResult = await nexusSDK.simulateBridgeAndExecute({
-        token: destination.tokenSymbol,
-        amount: nexusSDK.utils.parseUnits(
-          swapIntent.current?.intent.destination.amount,
-          swapIntent.current?.intent?.destination?.token?.decimals
-        ),
-        toChainId: destination.chainId,
-        execute: executeParams,
-        sourceChains: state.inputs.from.map((asset) => asset.chainId),
-      });
-
-      console.log("simulateDepositResult", simulateDepositResult);
-
-      if (!simulateDepositResult) {
-        throw new Error("Simulation failed");
-      }
-      dispatch({
-        type: "setSimulation",
-        payload: {
-          executeSimulation: simulateDepositResult?.executeSimulation,
-          swapIntent: swapIntent.current,
-        },
-      });
-      return true;
-    } catch (error) {
-      const { message } = handleNexusError(error);
-      dispatch({ type: "setError", payload: message });
-      dispatch({ type: "setStatus", payload: "error" });
-      onError?.(message);
-      return false;
-    }
-  };
-
   const handleToggleSource = useCallback(
     (source: AssetSelection) => {
       const sourceId = `${source.symbol}-${source.chainId}-${source.tokenAddress}`;
       const isSelected = state.selectedSources.some(
-        (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` === sourceId
+        (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` === sourceId,
       );
 
       if (isSelected) {
         dispatch({
           type: "setSelectedSources",
-          // payload: state.selectedSources.filter(
-          //   (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` !== sourceId
-          // ),
-          payload: [],
+          payload: state.selectedSources.filter(
+            (s) => `${s.symbol}-${s.chainId}-${s.tokenAddress}` !== sourceId,
+          ),
         });
         return;
       }
       dispatch({
         type: "setSelectedSources",
-        // payload: [...state.selectedSources, source],
-        payload: [source],
+        payload: [...state.selectedSources, source],
       });
     },
-    [state.selectedSources]
+    [state.selectedSources],
   );
 
   const handleSourcesContinue = useCallback(() => {
@@ -525,163 +415,53 @@ const useSwapDeposit = ({
 
     dispatch({ type: "setError", payload: null });
     const sortedSources = [...state.selectedSources].sort(
-      (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance)
+      (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance),
     );
 
     const fromArray = sortedSources.map((source) => ({
       chainId: source.chainId as SUPPORTED_CHAINS_IDS,
       tokenAddress: source.tokenAddress,
-      amount: BigInt(0),
     }));
 
     dispatch({
       type: "setInputs",
       payload: {
-        from: fromArray,
+        sources: fromArray,
         toChainId: destination.chainId,
         toTokenAddress: destination.tokenAddress,
-        toTokenSymbol: destination.tokenSymbol,
       },
     });
   }, [nexusSDK, state.selectedSources, destination]);
 
-  const handleMultiSourceAmount = useCallback(
-    (totalAmountUsd: number) => {
-      if (!nexusSDK || state.selectedSources.length === 0) return;
-      const MAX_USAGE_RATIO = 0.95;
-      const sourcesWithUsd = state.selectedSources.map((source) => ({
-        ...source,
-        tokenBalance: Number.parseFloat(source.balance),
-        usdValue: source.balanceInFiat,
-        maxUsableUsd: source.balanceInFiat * MAX_USAGE_RATIO,
-      }));
-
-      const sortedSources = sourcesWithUsd.toSorted(
-        (a, b) => b.usdValue - a.usdValue
-      );
-
-      const totalUsdBalance = sortedSources.reduce(
-        (sum, s) => sum + s.usdValue,
-        0
-      );
-
-      const allocations = sortedSources.map((source) => {
-        const proportion = source.usdValue / totalUsdBalance;
-        const idealAllocation = totalAmountUsd * proportion;
-        const cappedAllocation = Math.min(idealAllocation, source.maxUsableUsd);
-
-        return {
-          source,
-          allocation: cappedAllocation,
-          excessAmount: Math.max(0, idealAllocation - source.maxUsableUsd),
-        };
-      });
-
-      let remainingToAllocate = allocations.reduce(
-        (sum, a) => sum + a.excessAmount,
-        0
-      );
-      const MAX_ITERATIONS = 10;
-      let iteration = 0;
-
-      while (remainingToAllocate > 0.01 && iteration < MAX_ITERATIONS) {
-        iteration++;
-
-        const sourcesWithHeadroom = allocations.filter(
-          (a) => a.allocation < a.source.maxUsableUsd
-        );
-
-        if (sourcesWithHeadroom.length === 0) break;
-        const totalHeadroom = sourcesWithHeadroom.reduce(
-          (sum, a) => sum + (a.source.maxUsableUsd - a.allocation),
-          0
-        );
-
-        if (totalHeadroom <= 0) break;
-
-        const toDistribute = Math.min(remainingToAllocate, totalHeadroom);
-        for (const alloc of sourcesWithHeadroom) {
-          const headroom = alloc.source.maxUsableUsd - alloc.allocation;
-          const share = headroom / totalHeadroom;
-          const additional = toDistribute * share;
-          alloc.allocation = Math.min(
-            alloc.allocation + additional,
-            alloc.source.maxUsableUsd
-          );
-        }
-
-        remainingToAllocate = Math.max(0, remainingToAllocate - toDistribute);
-      }
-
-      const fromArray = allocations
-        .filter(({ allocation }) => allocation > 0.001)
-        .map(({ source, allocation }) => {
-          const rate = exchangeRate?.[source.symbol.toUpperCase()] ?? 1;
-          const tokenAmount = rate > 0 ? allocation / rate : 0;
-
-          const parsed = nexusSDK.utils.parseUnits(
-            tokenAmount.toString(),
-            source.decimals
-          );
-
-          return {
-            chainId: source.chainId as SUPPORTED_CHAINS_IDS,
-            tokenAddress: source.tokenAddress,
-            amount: parsed,
-          };
-        })
-        .filter((item) => item.amount > BigInt(0));
-
-      if (fromArray.length === 0) {
-        dispatch({
-          type: "setError",
-          payload: "Unable to allocate amount across selected sources",
-        });
-        return;
-      }
-
-      const newInputs: SwapInputs = {
-        from: fromArray,
-        toChainId: destination.chainId,
-        toTokenAddress: destination.tokenAddress,
-        toTokenSymbol: destination.tokenSymbol,
-      };
-
-      dispatch({ type: "setInputs", payload: newInputs });
-      dispatch({ type: "setStatus", payload: "view-breakdown" });
-      dispatch({ type: "setSimulationLoading", payload: true });
-      initiateSwapIntent(newInputs);
-    },
-    [nexusSDK, state.selectedSources, destination, exchangeRate]
-  );
-
   const handleSingleSourceAmount = useCallback(
     (totalAmountUsd: number) => {
-      if (!nexusSDK || state.selectedSources.length === 0 || !exchangeRate)
+      if (
+        !nexusSDK ||
+        state.selectedSources.length === 0 ||
+        !exchangeRate ||
+        !address
+      )
         return;
-      const source = state.selectedSources[0];
-      const tokenAmount = totalAmountUsd / exchangeRate[source.symbol];
-      const tokenAmountStr = tokenAmount.toFixed(source.decimals);
-      const parsed = parseUnits(tokenAmountStr, source.decimals);
-      console.log("% SEND AMOUNT", {
-        totalAmountUsd,
-        tokenAmount,
-        exchangeRate: exchangeRate[source.symbol],
-        decimals: source.decimals,
-        symbol: source.symbol,
+      const tokenAmount =
+        totalAmountUsd / exchangeRate[destination.tokenSymbol];
+      const tokenAmountStr = tokenAmount.toFixed(destination.tokenDecimals);
+      const parsed = parseUnits(tokenAmountStr, destination.tokenDecimals);
+      const executeParams = executeDeposit(
+        destination.tokenSymbol,
+        destination.tokenAddress,
         parsed,
-      });
-      const newInputs: SwapInputs = {
-        from: [
-          {
-            amount: parsed,
-            tokenAddress: source.tokenAddress,
-            chainId: source.chainId,
-          },
-        ],
+        destination.chainId,
+        address,
+      );
+      const newInputs: SwapAndExecuteParams = {
         toChainId: destination.chainId,
         toTokenAddress: destination.tokenAddress,
-        toTokenSymbol: destination.tokenSymbol,
+        toAmount: parsed,
+        execute: {
+          gas: BigInt(200_000),
+          to: executeParams.to,
+          data: executeParams.data,
+        },
       };
       dispatch({ type: "setInputs", payload: newInputs });
       dispatch({ type: "setStatus", payload: "view-breakdown" });
@@ -694,7 +474,7 @@ const useSwapDeposit = ({
       destination,
       initiateSwapIntent,
       exchangeRate,
-    ]
+    ],
   );
 
   const handleAmountContinue = useCallback(
@@ -702,7 +482,7 @@ const useSwapDeposit = ({
       if (!nexusSDK || state.selectedSources.length === 0) return;
       handleSingleSourceAmount(totalAmountUsd);
     },
-    [nexusSDK, state.selectedSources, handleSingleSourceAmount]
+    [nexusSDK, state.selectedSources, handleSingleSourceAmount],
   );
 
   const handleConfirmOrder = useCallback(() => {
@@ -747,8 +527,13 @@ const useSwapDeposit = ({
       const updated = await swapIntent.current?.refresh();
       if (updated) {
         swapIntent.current!.intent = updated;
+        dispatch({
+          type: "setSimulation",
+          payload: {
+            swapIntent: swapIntent.current!,
+          },
+        });
       }
-      await simulateDeposit();
     } catch (e) {
       console.error(e);
     } finally {
@@ -758,7 +543,6 @@ const useSwapDeposit = ({
     }
   };
 
-  // Poll for swapIntent to be available for initial simulation only
   useEffect(() => {
     // Only run when we're waiting for initial simulation
     if (
@@ -773,7 +557,7 @@ const useSwapDeposit = ({
       if (swapIntent.current && !initialSimulationDone.current) {
         clearInterval(checkInterval);
         initialSimulationDone.current = true;
-        void simulateDeposit().then(() => {
+        void refreshSimulation().then(() => {
           dispatch({ type: "setSimulationLoading", payload: false });
           stopwatch.reset();
           lastSimulationTime.current = Date.now();
@@ -810,7 +594,7 @@ const useSwapDeposit = ({
     async () => {
       await refreshSimulation();
     },
-    15000
+    15000,
   );
 
   return {

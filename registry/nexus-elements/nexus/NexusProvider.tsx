@@ -64,7 +64,7 @@ const NexusProvider = ({
 }: NexusProviderProps) => {
   const stableConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config]
+    [config],
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
@@ -78,10 +78,10 @@ const NexusProvider = ({
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null
+    null,
   );
   const [bridgableBalance, setBridgableBalance] = useState<UserAsset[] | null>(
-    null
+    null,
   );
   const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
@@ -92,7 +92,7 @@ const NexusProvider = ({
 
   const setupNexus = useCallback(async () => {
     const list = sdk.utils.getSupportedChains(
-      config?.network === "testnet" ? 0 : undefined
+      config?.network === "testnet" ? 0 : undefined,
     );
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
@@ -183,6 +183,7 @@ const NexusProvider = ({
       /**
        * Same behaviour and function as setOnIntentHook, except this one is for swaps exclusively
        */
+      console.log("SWAP INTENT", data);
       swapIntent.current = data;
     });
   };
@@ -261,7 +262,7 @@ const NexusProvider = ({
       loading,
       fetchBridgableBalance,
       fetchSwapBalance,
-    ]
+    ],
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>
