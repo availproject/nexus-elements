@@ -164,6 +164,7 @@ export function useDepositWidget(props?: UseDepositWidgetProps): DepositWidgetCo
 
   const reset = useCallback(() => {
     dispatch({ type: "reset" });
+    setAssetSelectionState(createInitialAssetSelection());
   }, []);
 
   const handleTransaction = useCallback(async () => {
