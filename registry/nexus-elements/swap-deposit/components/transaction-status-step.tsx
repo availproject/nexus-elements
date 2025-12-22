@@ -53,7 +53,7 @@ const TransactionStatusStep = ({
   const [open, setOpen] = useState(false);
   const isSuccessView = status === "success";
   const headerTitle = isSuccessView
-    ? details.successTitle ?? details.sourceLabel
+    ? (details.successTitle ?? details.sourceLabel)
     : details.sourceLabel;
   const processingTitle =
     status === "swapping"
@@ -69,7 +69,6 @@ const TransactionStatusStep = ({
     : processingSubtitle;
   const isSwap = status === "swapping";
   const currentStep = isSwap ? 1 : 2;
-
   return (
     <div className="flex h-full flex-col bg-background no-scrollbar">
       <DepositHeader
@@ -161,7 +160,7 @@ const TransactionStatusStep = ({
                       size="sm"
                       className={cn(
                         "last:mr-0",
-                        index !== (details.sources?.length ?? 0) - 1 && "-mr-3"
+                        index !== (details.sources?.length ?? 0) - 1 && "-mr-3",
                       )}
                     />
                   ))}

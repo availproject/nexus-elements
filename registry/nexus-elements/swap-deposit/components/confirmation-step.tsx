@@ -96,7 +96,7 @@ export const ConfirmationStep = ({
               <div className="flex items-center gap-2 py-1.5">
                 {details.sources?.map((source, index) => (
                   <TokenIcon
-                    key={source?.balance + source?.chainLogo!}
+                    key={`${source?.balance + source?.chainLogo! + source?.balanceInFiat}`}
                     symbol={source?.symbol}
                     tokenLogo={source?.tokenLogo}
                     chainLogo={source?.chainLogo}

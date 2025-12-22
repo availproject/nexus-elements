@@ -2,7 +2,6 @@ import {
   NEXUS_EVENTS,
   type OnSwapIntentHookData,
   type SwapStepType,
-  type ExactInSwapInput,
   type ExecuteParams,
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
@@ -38,10 +37,6 @@ export type TransactionStatus =
   | "depositing"
   | "success"
   | "error";
-
-interface SwapInputs extends ExactInSwapInput {
-  toTokenSymbol: string;
-}
 
 interface DestinationConfig {
   chainId: SUPPORTED_CHAINS_IDS;
@@ -132,7 +127,7 @@ function reducer(state: SwapDepositState, action: Action): SwapDepositState {
       ) {
         let newStatus = state.status;
         const hasSourceAssets =
-          merged.sources !== undefined && merged.sources.length > 0;
+          merged.fromSources !== undefined && merged.fromSources.length > 0;
         const hasAmount =
           merged.toAmount !== undefined && merged.toAmount > BigInt(0);
 
@@ -426,7 +421,7 @@ const useSwapDeposit = ({
     dispatch({
       type: "setInputs",
       payload: {
-        sources: fromArray,
+        fromSources: fromArray,
         toChainId: destination.chainId,
         toTokenAddress: destination.tokenAddress,
       },
