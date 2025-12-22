@@ -70,16 +70,14 @@
     --breakpoint-xs: 375px;
     --breakpoint-3xl: 1600px;
     --breakpoint-4xl: 2000px;
-    --font-sans: var(--font-sans);
-    --font-mono: var(--font-mono);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
     --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
   --font-display: "Delight", sans-serif;           
   --font-display-medium: var(--font-delight-medium);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -732,7 +730,7 @@
     }
 
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground font-sans;
     }
 }
 

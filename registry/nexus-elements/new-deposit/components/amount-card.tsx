@@ -141,7 +141,7 @@ function AmountCard({
       {/* Hidden span to measure text width */}
       <span
         ref={measureRef}
-        className="absolute invisible whitespace-pre font-display text-[36px] font-medium tracking-[0.8px]"
+        className="absolute invisible whitespace-pre font-display text-[32px] font-medium tracking-[0.8px]"
         aria-hidden="true"
       >
         {measureText}
@@ -162,7 +162,7 @@ function AmountCard({
                 key={animationKey}
                 value={displayValue}
                 previousValue={`$${previousAmount}`}
-                className={`font-display text-[36px] font-medium tracking-[0.8px] whitespace-nowrap ${
+                className={`font-display text-[32px] font-medium tracking-[0.8px] whitespace-nowrap ${
                   amount ? "text-card-foreground" : "text-muted-foreground"
                 }`}
               />
@@ -183,7 +183,7 @@ function AmountCard({
               width: inputWidth > 0 ? Math.min(inputWidth + 4, 300) : undefined,
               maxWidth: "calc(100vw - 100px)",
             }}
-            className={`font-display text-[36px] font-medium tracking-[0.8px] bg-transparent border-none outline-none min-w-[40px] ${
+            className={`font-display text-[32px] font-medium tracking-[0.8px] bg-transparent border-none outline-none min-w-[40px] ${
               isAnimating && !userInteracted ? "opacity-0" : ""
             } ${
               amount ? "text-card-foreground" : "text-muted-foreground"
