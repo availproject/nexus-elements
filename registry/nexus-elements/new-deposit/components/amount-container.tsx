@@ -56,6 +56,7 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
               filter={filter}
             />
             <Button
+              className="rounded-t-none"
               onClick={() => widget.goToStep("confirmation")}
               disabled={widget.isProcessing || hasAmountError || !widget.inputs.amount}
             >

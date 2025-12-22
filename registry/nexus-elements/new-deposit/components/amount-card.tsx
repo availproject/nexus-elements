@@ -137,11 +137,11 @@ function AmountCard({
   );
 
   return (
-    <div className="py-8 min-h-[212px] w-full border bg-base text-muted-foreground shadow-[0_1px_12px_0_rgba(91,91,91,0.05)]">
+    <div className="py-8 min-h-[212px] w-full rounded-lg border bg-base text-muted-foreground shadow-[0_1px_12px_0_rgba(91,91,91,0.05)]">
       {/* Hidden span to measure text width */}
       <span
         ref={measureRef}
-        className="absolute invisible whitespace-pre font-display text-[32px] font-medium tracking-[0.8px]"
+        className="absolute invisible whitespace-pre font-display text-[32px] font-medium tracking-[0.8px] tabular-nums"
         aria-hidden="true"
       >
         {measureText}
@@ -183,7 +183,7 @@ function AmountCard({
               width: inputWidth > 0 ? Math.min(inputWidth + 4, 300) : undefined,
               maxWidth: "calc(100vw - 100px)",
             }}
-            className={`font-display text-[32px] font-medium tracking-[0.8px] bg-transparent border-none outline-none min-w-[40px] ${
+            className={`font-display text-[32px] font-medium tracking-[0.8px] tabular-nums bg-transparent border-none outline-none min-w-[40px] ${
               isAnimating && !userInteracted ? "opacity-0" : ""
             } ${
               amount ? "text-card-foreground" : "text-muted-foreground"

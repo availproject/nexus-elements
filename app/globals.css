@@ -972,11 +972,8 @@
   /* Scrolling digit animations */
   @keyframes digit-scroll-up {
     0% {
-      transform: translateY(30%);
-      opacity: 0;
-    }
-    50% {
-      opacity: 0.8;
+      transform: translateY(8px);
+      opacity: 0.5;
     }
     100% {
       transform: translateY(0);
@@ -986,11 +983,8 @@
   
   @keyframes digit-scroll-down {
     0% {
-      transform: translateY(-30%);
-      opacity: 0;
-    }
-    50% {
-      opacity: 0.8;
+      transform: translateY(-8px);
+      opacity: 0.5;
     }
     100% {
       transform: translateY(0);
@@ -999,11 +993,11 @@
   }
   
   .animate-digit-up {
-    animation: digit-scroll-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: digit-scroll-up 0.2s ease-out forwards;
   }
   
   .animate-digit-down {
-    animation: digit-scroll-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: digit-scroll-down 0.2s ease-out forwards;
   }
   
   /* Transfer indicator wave animation */

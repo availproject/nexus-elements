@@ -191,8 +191,8 @@ const AssetSelectionContainer = ({
             {/* Scrollable container */}
             <div className="w-full overflow-y-auto max-h-[300px] scrollbar-hide">
               {/* Main tokens list */}
-              <div className="w-full border">
-                {sortedTokens.map((token) => (
+              <div className="w-full rounded-lg border overflow-hidden">
+                {sortedTokens.map((token, index) => (
                   <TokenRow
                     key={token.id}
                     token={token}
@@ -201,46 +201,53 @@ const AssetSelectionContainer = ({
                     onToggleExpand={() => toggleExpanded(token.id)}
                     onToggleToken={() => toggleTokenSelection(token.id)}
                     onToggleChain={toggleChainSelection}
+                    isFirst={index === 0}
+                    isLast={index === sortedTokens.length - 1}
                   />
                 ))}
               </div>
 
-              {/* Others section header */}
-              <div
-                className="py-4 flex justify-between items-center cursor-pointer"
-                onClick={() => toggleExpanded("others-section")}
-              >
-                <span className="font-sans text-sm text-muted-foreground">
-                  Others ({MEMECOINS.length})
-                </span>
-                <ChevronDownIcon
-                  className={`text-muted-foreground transition-transform duration-200 ${
-                    expandedTokens.has("others-section") ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-
-              {/* Memecoins list (expanded) */}
-              {expandedTokens.has("others-section") && (
-                <div className="w-full border">
-                  {MEMECOINS.map((token) => (
-                    <TokenRow
-                      key={token.id}
-                      token={token}
-                      selectedChainIds={selectedChainIds}
-                      isExpanded={expandedTokens.has(token.id)}
-                      onToggleExpand={() => toggleExpanded(token.id)}
-                      onToggleToken={() => toggleTokenSelection(token.id)}
-                      onToggleChain={toggleChainSelection}
-                    />
-                  ))}
+              {/* Others section */}
+              <div className="w-full bg-base rounded-t-lg border overflow-hidden mt-4">
+                {/* Others section header */}
+                <div
+                  className="p-5 flex justify-between items-center cursor-pointer"
+                  onClick={() => toggleExpanded("others-section")}
+                >
+                  <span className="font-sans text-sm text-muted-foreground">
+                    Others ({MEMECOINS.length})
+                  </span>
+                  <ChevronDownIcon
+                    className={`text-muted-foreground transition-transform duration-200 ${
+                      expandedTokens.has("others-section") ? "rotate-180" : ""
+                    }`}
+                  />
                 </div>
-              )}
+
+                {/* Memecoins list (expanded) */}
+                {expandedTokens.has("others-section") && (
+                  <div className="w-full border-t">
+                    {MEMECOINS.map((token, index) => (
+                      <TokenRow
+                        key={token.id}
+                        token={token}
+                        selectedChainIds={selectedChainIds}
+                        isExpanded={expandedTokens.has(token.id)}
+                        onToggleExpand={() => toggleExpanded(token.id)}
+                        onToggleToken={() => toggleTokenSelection(token.id)}
+                        onToggleChain={toggleChainSelection}
+                        isFirst={false}
+                        isLast={false}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Done button */}
             <Button
-              className="w-full"
+              className="w-full rounded-t-none"
               onClick={() => widget.goToStep("amount")}
             >
               Done

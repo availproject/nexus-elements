@@ -64,14 +64,14 @@ function TabsList({
       ref={listRef}
       data-slot="tabs-list"
       className={cn(
-        "bg-muted text-muted-foreground inline-flex h-[42px] items-center p-1 relative",
+        "bg-muted text-muted-foreground inline-flex h-[42px] items-center p-1 relative rounded-lg",
         className
       )}
       {...props}
     >
       {/* Sliding indicator */}
       <div
-        className="absolute top-1 bottom-1 bg-base shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] transition-all duration-200 ease-out pointer-events-none"
+        className="absolute top-1 bottom-1 bg-base rounded-md shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] transition-all duration-200 ease-out pointer-events-none"
         style={indicatorStyle}
       />
       {props.children}

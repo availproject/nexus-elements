@@ -96,6 +96,7 @@ function AnimatedDigit({ char, direction, delay }: AnimatedDigitProps) {
       style={{
         animationDelay: direction !== "none" ? `${delay}ms` : undefined,
         animationFillMode: "both",
+        willChange: direction !== "none" ? "transform, opacity" : undefined,
       }}
     >
       {char}
@@ -122,11 +123,11 @@ export function AnimatedAmount({
   let animatingIndex = 0;
 
   return (
-    <span className={className}>
+    <span className={`${className} tabular-nums`}>
       {currAligned.map((char, index) => {
         const prevChar = prevAligned[index];
         const direction = getCharDirection(prevChar, char);
-        const delay = direction !== "none" ? animatingIndex * 40 : 0;
+        const delay = direction !== "none" ? animatingIndex * 20 : 0;
         if (direction !== "none") animatingIndex++;
 
         return (

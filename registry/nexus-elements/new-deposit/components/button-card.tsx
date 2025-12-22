@@ -8,6 +8,7 @@ interface ButtonCardProps {
   rightIconClassName?: string;
   onClick?: () => void;
   disabled?: boolean;
+  roundedBottom?: boolean;
 }
 
 function ButtonCard({
@@ -18,11 +19,13 @@ function ButtonCard({
   rightIconClassName,
   onClick,
   disabled = false,
+  roundedBottom = true,
 }: ButtonCardProps) {
   return (
     <div
       className={cn(
         "p-5 border flex justify-between group/button-card transition-all duration-200 h-[88px]",
+        roundedBottom ? "rounded-lg" : "rounded-t-lg",
         disabled
           ? "cursor-default opacity-70"
           : "bg-base shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] hover:shadow-[0_1px_12px_0_rgba(91,91,91,0.08)] cursor-pointer"

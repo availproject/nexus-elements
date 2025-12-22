@@ -81,7 +81,7 @@ const TransactionStatusContainer = ({
     <>
       <WidgetHeader title="Deposit USDC" onClose={onClose} />
       <CardContent>
-        <div className="flex flex-col bg-base border border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] py-8">
+        <div className="flex flex-col bg-base rounded-lg border border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] py-8">
           <div className="flex w-full mt-2 items-end justify-center">
             <div className="flex gap-7 items-center">
               <AmountDisplay

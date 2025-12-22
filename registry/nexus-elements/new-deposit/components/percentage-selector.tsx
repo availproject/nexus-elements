@@ -37,7 +37,7 @@ export function PercentageSelector({
   return (
     <div className="relative">
       <div className="mt-[35px] h-px w-full bg-border" />
-      <div className="absolute flex top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-base h-9 w-[256px] border">
+      <div className="absolute flex top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-base h-9 w-[256px] rounded-lg border">
         {PERCENTAGE_OPTIONS.map((option, index) => (
           <PercentageButton
             key={option.label}

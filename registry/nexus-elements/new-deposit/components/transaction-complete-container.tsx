@@ -36,7 +36,7 @@ const TransactionCompleteContainer = ({
       <WidgetHeader title="Deposit USDC" onClose={onClose} />
       <CardContent>
         <div className="flex flex-col">
-          <div className="bg-base border-t border-l border-r border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-6 pb-1 flex flex-col items-center gap-5">
+          <div className="bg-base rounded-t-lg border-t border-l border-r border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-6 pb-1 flex flex-col items-center gap-5">
             <ReceiveAmountDisplay
               label="You received"
               amount={MOCK_DEMO_VALUES.receiveAmountFormatted}
@@ -88,10 +88,10 @@ const TransactionCompleteContainer = ({
             </div>
           </div>
           <div className="flex w-full">
-            <Button className="w-1/2" onClick={handleNewDeposit}>
+            <Button className="w-1/2 rounded-t-none rounded-br-none" onClick={handleNewDeposit}>
               New Deposit
             </Button>
-            <Button className="w-1/2" variant="secondary" onClick={handleClose}>
+            <Button className="w-1/2 rounded-t-none rounded-bl-none" variant="secondary" onClick={handleClose}>
               Close
             </Button>
           </div>

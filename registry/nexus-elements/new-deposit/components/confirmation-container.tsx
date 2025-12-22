@@ -20,7 +20,7 @@ const ConfirmationContainer = ({ widget, onClose }: ConfirmationContainerProps) 
       <WidgetHeader title="Deposit USDC" onBack={widget.goBack} onClose={onClose} />
       <CardContent>
         <div className="flex flex-col">
-          <div className="bg-base border-t border-l border-r shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-10 pb-1 flex flex-col gap-10">
+          <div className="bg-base rounded-t-lg border-t border-l border-r shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-10 pb-1 flex flex-col gap-10">
             <ReceiveAmountDisplay
               amount={MOCK_DEMO_VALUES.receiveAmountFormatted}
               timeLabel={MOCK_TIME_ESTIMATES.confirmation}
@@ -45,6 +45,7 @@ const ConfirmationContainer = ({ widget, onClose }: ConfirmationContainerProps) 
             </div>
           </div>
           <Button
+            className="rounded-t-none"
             onClick={() => {
               widget.startTransaction();
               widget.goToStep("transaction-status");

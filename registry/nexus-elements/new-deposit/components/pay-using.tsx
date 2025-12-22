@@ -73,6 +73,7 @@ function PayUsing({ onClick, selectedChainIds, filter }: PayUsingProps) {
         </div>
       }
       onClick={onClick}
+      roundedBottom={false}
     />
   );
 }

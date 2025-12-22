@@ -16,6 +16,8 @@ interface TokenRowProps {
   onToggleExpand: () => void;
   onToggleToken: () => void;
   onToggleChain: (chainId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export function TokenRow({
@@ -25,12 +27,14 @@ export function TokenRow({
   onToggleExpand,
   onToggleToken,
   onToggleChain,
+  isFirst = false,
+  isLast = false,
 }: TokenRowProps) {
   const hasMultipleChains = token.chains.length > 1;
   const tokenCheckState = getTokenCheckState(token, selectedChainIds);
 
   return (
-    <div className="border-b bg-base relative">
+    <div className={`border-b bg-base relative ${isFirst ? "rounded-t-lg" : ""} ${isLast ? "rounded-b-lg border-b-0" : ""}`}>
       {/* Main token row */}
       <div
         className="p-5 flex justify-between items-center cursor-pointer"
