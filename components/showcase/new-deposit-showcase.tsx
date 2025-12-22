@@ -5,8 +5,7 @@ import NexusDeposit from "@/registry/nexus-elements/new-deposit/nexus-deposit";
 const NewDepositShowcase = () => {
   return (
     <ShowcaseWrapper
-      connectLabel="Connect wallet to use Nexus Deposit"
-      type="new-deposit"
+      connectLabel="Connect wallet to use New Deposit Widget"
     >
       <NexusDeposit />
     </ShowcaseWrapper>

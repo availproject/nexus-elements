@@ -14,6 +14,22 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/app/docs/[[...slug]]": ["registry/**", "public/r/**"],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "coin-images.coingecko.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "assets.coingecko.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 const withMDX = createMDX({});
