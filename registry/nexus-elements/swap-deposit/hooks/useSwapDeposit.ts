@@ -449,6 +449,7 @@ const useSwapDeposit = ({
         address
       );
       const newInputs: SwapAndExecuteParams = {
+        fromSources: state.selectedSources,
         toChainId: destination.chainId,
         toTokenAddress: destination.tokenAddress,
         toAmount: parsed,
