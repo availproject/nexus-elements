@@ -13,7 +13,7 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: github:availproject/nexus-sdk#feat/swap-and-execute
+        specifier: github:availproject/nexus-sdk#dec821c558e3a7563fa293bffdab83fc2f5e8889
         version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/dec821c558e3a7563fa293bffdab83fc2f5e8889(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
