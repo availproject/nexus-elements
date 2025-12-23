@@ -36,7 +36,7 @@ interface NexusContextType {
   loading: boolean;
   handleInit: (provider: EthereumProvider) => Promise<void>;
   fetchBridgableBalance: () => Promise<void>;
-  fetchSwapBalance: () => Promise<void>;
+  fetchSwapBalance: (onlyNativesAndStables?: boolean) => Promise<void>;
   getFiatValue: (amount: number, token: string) => number;
   initializeNexus: (provider: EthereumProvider) => Promise<void>;
   deinitializeNexus: () => Promise<void>;
@@ -64,7 +64,7 @@ const NexusProvider = ({
 }: NexusProviderProps) => {
   const stableConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config],
+    [config]
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
@@ -78,10 +78,10 @@ const NexusProvider = ({
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null,
+    null
   );
   const [bridgableBalance, setBridgableBalance] = useState<UserAsset[] | null>(
-    null,
+    null
   );
   const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
@@ -92,7 +92,7 @@ const NexusProvider = ({
 
   const setupNexus = useCallback(async () => {
     const list = sdk.utils.getSupportedChains(
-      config?.network === "testnet" ? 0 : undefined,
+      config?.network === "testnet" ? 0 : undefined
     );
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
@@ -209,9 +209,11 @@ const NexusProvider = ({
     }
   };
 
-  const fetchSwapBalance = async () => {
+  const fetchSwapBalance = async (onlyNativesAndStables = false) => {
     try {
-      const updatedBalance = await sdk.getBalancesForSwap();
+      const updatedBalance = await sdk.getBalancesForSwap(
+        onlyNativesAndStables
+      );
       setSwapBalance(updatedBalance);
     } catch (error) {
       console.error("Error fetching swap balance:", error);
@@ -262,7 +264,7 @@ const NexusProvider = ({
       loading,
       fetchBridgableBalance,
       fetchSwapBalance,
-    ],
+    ]
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>

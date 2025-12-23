@@ -368,7 +368,7 @@ const useSwapDeposit = ({
         onSwapComplete?.(swapIntent.current?.intent?.destination?.amount);
         onDepositComplete?.();
         dispatch({ type: "setStatus", payload: "success" });
-        return fetchSwapBalance();
+        return fetchSwapBalance(true);
       })
       .catch((error) => {
         const { message } = handleNexusError(error);
@@ -574,7 +574,7 @@ const useSwapDeposit = ({
     if (!nexusSDK) return;
 
     if (!swapBalance) {
-      void fetchSwapBalance();
+      void fetchSwapBalance(true);
       return;
     }
 
