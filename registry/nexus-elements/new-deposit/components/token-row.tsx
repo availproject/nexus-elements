@@ -34,7 +34,11 @@ export function TokenRow({
   const tokenCheckState = getTokenCheckState(token, selectedChainIds);
 
   return (
-    <div className={`border-b bg-base relative ${isFirst ? "rounded-t-lg" : ""} ${isLast ? "rounded-b-lg border-b-0" : ""}`}>
+    <div
+      className={`border-b bg-base relative ${isFirst ? "rounded-t-lg" : ""} ${
+        isLast ? "rounded-b-lg border-b-0" : ""
+      }`}
+    >
       {/* Main token row */}
       <div
         className="p-5 flex justify-between items-center cursor-pointer"
@@ -73,12 +77,14 @@ export function TokenRow({
               {token.amount}
             </span>
           </div>
-          {hasMultipleChains && (
+          {hasMultipleChains ? (
             <ChevronDownIcon
               className={`text-muted-foreground transition-transform duration-200 ${
                 isExpanded ? "rotate-180" : ""
               }`}
             />
+          ) : (
+            <div className="w-4 h-4"></div>
           )}
         </div>
       </div>
@@ -116,7 +122,7 @@ export function TokenRow({
                         {chain.name}
                       </span>
                     </div>
-                    <div className="flex flex-col gap-1 items-end">
+                    <div className="flex flex-col gap-1 items-end mr-8">
                       <span className="text-[13px] leading-4.5 text-muted-foreground">
                         {chain.usdValue}
                       </span>

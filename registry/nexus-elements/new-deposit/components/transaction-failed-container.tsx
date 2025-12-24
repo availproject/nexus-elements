@@ -1,0 +1,72 @@
+"use client";
+
+import { CardContent, CardFooter } from "./ui/card";
+import { Button } from "./ui/button";
+import WidgetHeader from "./widget-header";
+import { ReceiveAmountDisplay } from "./receive-amount-display";
+import { MOCK_DEMO_VALUES } from "../constants";
+import type { DepositWidgetContextValue } from "../types";
+
+interface TransactionFailedContainerProps {
+  widget: DepositWidgetContextValue;
+  onClose?: () => void;
+}
+
+const TransactionFailedContainer = ({
+  widget,
+  onClose,
+}: TransactionFailedContainerProps) => {
+  const handleRetry = () => {
+    widget.setTxError(null);
+    widget.startTransaction();
+  };
+
+  const handleClose = () => {
+    widget.reset();
+    onClose?.();
+  };
+
+  return (
+    <>
+      <WidgetHeader title="Deposit USDC" onClose={onClose} />
+      <CardContent>
+        <div className="flex flex-col">
+          <div className="bg-base rounded-t-lg border-t border-l border-r border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-6 pb-6 flex flex-col items-center gap-5">
+            <ReceiveAmountDisplay
+              label="Transaction failed"
+              amount={MOCK_DEMO_VALUES.receiveAmountFormatted}
+              timeLabel=""
+            />
+            <div className="w-full bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-4">
+              <p className="font-sans text-sm leading-5 text-destructive">
+                It's not you, it's us. Everything seems to be in order from your
+                side, our engineers might have broken something.
+              </p>
+              <p className="font-sans text-sm leading-5 text-destructive mt-3">
+                Retry in a bit?
+              </p>
+            </div>
+          </div>
+          <div className="flex w-full">
+            <Button
+              className="w-1/2 rounded-t-none rounded-br-none"
+              onClick={handleRetry}
+            >
+              Retry
+            </Button>
+            <Button
+              className="w-1/2 rounded-t-none rounded-bl-none"
+              variant="secondary"
+              onClick={handleClose}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter />
+    </>
+  );
+};
+
+export default TransactionFailedContainer;

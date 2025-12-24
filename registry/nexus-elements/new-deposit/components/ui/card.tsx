@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { cn } from "../../utils";
+import { AvailLogo } from "../icons";
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -82,11 +83,14 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center gap-2 mt-4 justify-center font-sans text-sm leading-4.5 text-muted-foreground",
+        "flex items-center gap-2 justify-center font-sans text-sm leading-4.5 text-muted-foreground",
         className
       )}
       {...props}
-    />
+    >
+      Powered by
+      <AvailLogo className="text-muted-foreground" />
+    </div>
   );
 }
 

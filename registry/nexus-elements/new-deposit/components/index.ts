@@ -1,5 +1,4 @@
 // Screen components
-export { default as DepositOptionsContainer } from "./deposit-options-container";
 export { default as AmountContainer } from "./amount-container";
 export { default as ConfirmationContainer } from "./confirmation-container";
 export { default as TransactionStatusContainer } from "./transaction-status-container";

@@ -10,17 +10,23 @@ const PERCENTAGE_OPTIONS = [
 interface PercentageButtonProps {
   label: string;
   onClick: () => void;
+  isFirst?: boolean;
   isLast?: boolean;
 }
 
-function PercentageButton({ label, onClick, isLast }: PercentageButtonProps) {
+function PercentageButton({
+  label,
+  onClick,
+  isFirst,
+  isLast,
+}: PercentageButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`py-2 flex items-center justify-center w-full px-4 font-sans text-sm leading-4.5 hover:bg-muted transition-colors cursor-pointer ${
         !isLast ? "border-r border-border" : ""
-      }`}
+      } ${isFirst ? "rounded-l-lg" : ""} ${isLast ? "rounded-r-lg" : ""}`}
     >
       {label}
     </button>
@@ -43,6 +49,7 @@ export function PercentageSelector({
             key={option.label}
             label={option.label}
             onClick={() => onPercentageClick(option.value)}
+            isFirst={index === 0}
             isLast={index === PERCENTAGE_OPTIONS.length - 1}
           />
         ))}
@@ -50,4 +57,3 @@ export function PercentageSelector({
     </div>
   );
 }
-

@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { ChevronDownIcon } from "./icons";
 import WidgetHeader from "./widget-header";
 import TokenRow from "./token-row";
-import type { DepositWidgetContextValue } from "../types";
+import type { DepositWidgetContextValue, AssetFilterType } from "../types";
 import { TOKENS, MEMECOINS } from "../data/tokens";
 import {
   getChainIdsForFilter,
@@ -27,7 +27,22 @@ const AssetSelectionContainer = ({
   onClose,
 }: AssetSelectionContainerProps) => {
   const { assetSelection, setAssetSelection } = widget;
-  const { selectedChainIds, filter, expandedTokens } = assetSelection;
+
+  // Local state - changes are only committed on "Done"
+  const [localSelectedChainIds, setLocalSelectedChainIds] = useState<
+    Set<string>
+  >(() => new Set(assetSelection.selectedChainIds));
+  const [localFilter, setLocalFilter] = useState<AssetFilterType>(
+    assetSelection.filter
+  );
+  const [localExpandedTokens, setLocalExpandedTokens] = useState<Set<string>>(
+    () => new Set(assetSelection.expandedTokens)
+  );
+
+  // Use local state for display
+  const selectedChainIds = localSelectedChainIds;
+  const filter = localFilter;
+  const expandedTokens = localExpandedTokens;
 
   // Sort tokens by balance (highest first)
   const sortedTokens = useMemo(() => sortTokensByValue(TOKENS), []);
@@ -50,29 +65,24 @@ const AssetSelectionContainer = ({
       ? Math.min((selectedAmount / requiredAmount) * 100, 100)
       : 0;
 
-  // Handle tab/preset change
+  // Handle tab/preset change (local state)
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
       const newChainIds = getChainIdsForFilter(preset);
-      setAssetSelection({
-        selectedChainIds: newChainIds,
-        filter: preset,
-      });
+      setLocalSelectedChainIds(newChainIds);
+      setLocalFilter(preset);
     },
-    [setAssetSelection]
+    []
   );
 
-  // Toggle token selection (all chains)
-  const toggleTokenSelection = useCallback(
-    (tokenId: string) => {
-      const token = findTokenById(tokenId);
-      if (!token) return;
+  // Toggle token selection (all chains) - local state
+  const toggleTokenSelection = useCallback((tokenId: string) => {
+    const token = findTokenById(tokenId);
+    if (!token) return;
 
-      const allChainsSelected = token.chains.every((c) =>
-        selectedChainIds.has(c.id)
-      );
-
-      const newChainIds = new Set(selectedChainIds);
+    setLocalSelectedChainIds((prev) => {
+      const allChainsSelected = token.chains.every((c) => prev.has(c.id));
+      const newChainIds = new Set(prev);
 
       if (allChainsSelected) {
         token.chains.forEach((chain) => newChainIds.delete(chain.id));
@@ -80,18 +90,15 @@ const AssetSelectionContainer = ({
         token.chains.forEach((chain) => newChainIds.add(chain.id));
       }
 
-      setAssetSelection({
-        selectedChainIds: newChainIds,
-        filter: checkIfMatchesPreset(newChainIds),
-      });
-    },
-    [selectedChainIds, setAssetSelection]
-  );
+      setLocalFilter(checkIfMatchesPreset(newChainIds));
+      return newChainIds;
+    });
+  }, []);
 
-  // Toggle individual chain selection
-  const toggleChainSelection = useCallback(
-    (chainId: string) => {
-      const newChainIds = new Set(selectedChainIds);
+  // Toggle individual chain selection - local state
+  const toggleChainSelection = useCallback((chainId: string) => {
+    setLocalSelectedChainIds((prev) => {
+      const newChainIds = new Set(prev);
 
       if (newChainIds.has(chainId)) {
         newChainIds.delete(chainId);
@@ -99,18 +106,15 @@ const AssetSelectionContainer = ({
         newChainIds.add(chainId);
       }
 
-      setAssetSelection({
-        selectedChainIds: newChainIds,
-        filter: checkIfMatchesPreset(newChainIds),
-      });
-    },
-    [selectedChainIds, setAssetSelection]
-  );
+      setLocalFilter(checkIfMatchesPreset(newChainIds));
+      return newChainIds;
+    });
+  }, []);
 
-  // Toggle expanded state
-  const toggleExpanded = useCallback(
-    (tokenId: string) => {
-      const newExpanded = new Set(expandedTokens);
+  // Toggle expanded state - local state
+  const toggleExpanded = useCallback((tokenId: string) => {
+    setLocalExpandedTokens((prev) => {
+      const newExpanded = new Set(prev);
 
       if (tokenId === "others-section") {
         // Toggle others section independently
@@ -119,35 +123,42 @@ const AssetSelectionContainer = ({
         } else {
           newExpanded.add("others-section");
         }
-        setAssetSelection({ expandedTokens: newExpanded });
+        return newExpanded;
       } else {
         // For individual tokens, only one can be expanded at a time
         const othersExpanded = newExpanded.has("others-section");
         if (newExpanded.has(tokenId)) {
-          setAssetSelection({
-            expandedTokens: othersExpanded
-              ? new Set(["others-section"])
-              : new Set(),
-          });
+          return othersExpanded ? new Set(["others-section"]) : new Set();
         } else {
-          setAssetSelection({
-            expandedTokens: othersExpanded
-              ? new Set(["others-section", tokenId])
-              : new Set([tokenId]),
-          });
+          return othersExpanded
+            ? new Set(["others-section", tokenId])
+            : new Set([tokenId]);
         }
       }
-    },
-    [expandedTokens, setAssetSelection]
-  );
-
-  // Deselect all
-  const handleDeselectAll = useCallback(() => {
-    setAssetSelection({
-      selectedChainIds: new Set(),
-      filter: "custom",
     });
-  }, [setAssetSelection]);
+  }, []);
+
+  // Deselect all - local state
+  const handleDeselectAll = useCallback(() => {
+    setLocalSelectedChainIds(new Set());
+    setLocalFilter("custom");
+  }, []);
+
+  // Commit changes to widget state
+  const handleDone = useCallback(() => {
+    setAssetSelection({
+      selectedChainIds: localSelectedChainIds,
+      filter: localFilter,
+      expandedTokens: localExpandedTokens,
+    });
+    widget.goToStep("amount");
+  }, [
+    setAssetSelection,
+    localSelectedChainIds,
+    localFilter,
+    localExpandedTokens,
+    widget,
+  ]);
 
   return (
     <>
@@ -169,7 +180,7 @@ const AssetSelectionContainer = ({
               }}
             >
               <TabsList>
-                <TabsTrigger value="all">All tokens</TabsTrigger>
+                <TabsTrigger value="all">Any token</TabsTrigger>
                 <TabsTrigger value="stablecoins">Stablecoins</TabsTrigger>
                 <TabsTrigger value="native">Native</TabsTrigger>
                 {filter === "custom" && (
@@ -188,68 +199,83 @@ const AssetSelectionContainer = ({
           </div>
 
           <div className="flex flex-col">
-            {/* Scrollable container */}
-            <div className="w-full overflow-y-auto max-h-[300px] scrollbar-hide">
-              {/* Main tokens list */}
-              <div className="w-full rounded-lg border overflow-hidden">
-                {sortedTokens.map((token, index) => (
-                  <TokenRow
-                    key={token.id}
-                    token={token}
-                    selectedChainIds={selectedChainIds}
-                    isExpanded={expandedTokens.has(token.id)}
-                    onToggleExpand={() => toggleExpanded(token.id)}
-                    onToggleToken={() => toggleTokenSelection(token.id)}
-                    onToggleChain={toggleChainSelection}
-                    isFirst={index === 0}
-                    isLast={index === sortedTokens.length - 1}
-                  />
-                ))}
-              </div>
-
-              {/* Others section */}
-              <div className="w-full bg-base rounded-t-lg border overflow-hidden mt-4">
-                {/* Others section header */}
-                <div
-                  className="p-5 flex justify-between items-center cursor-pointer"
-                  onClick={() => toggleExpanded("others-section")}
-                >
-                  <span className="font-sans text-sm text-muted-foreground">
-                    Others ({MEMECOINS.length})
-                  </span>
-                  <ChevronDownIcon
-                    className={`text-muted-foreground transition-transform duration-200 ${
-                      expandedTokens.has("others-section") ? "rotate-180" : ""
-                    }`}
-                  />
+            {/* Scrollable container with fade effect */}
+            <div className="relative">
+              <div className="w-full overflow-y-auto max-h-[300px] scrollbar-hide">
+                {/* Main tokens list */}
+                <div className="w-full rounded-lg border overflow-hidden">
+                  {sortedTokens.map((token, index) => (
+                    <TokenRow
+                      key={token.id}
+                      token={token}
+                      selectedChainIds={selectedChainIds}
+                      isExpanded={expandedTokens.has(token.id)}
+                      onToggleExpand={() => toggleExpanded(token.id)}
+                      onToggleToken={() => toggleTokenSelection(token.id)}
+                      onToggleChain={toggleChainSelection}
+                      isFirst={index === 0}
+                      isLast={index === sortedTokens.length - 1}
+                    />
+                  ))}
                 </div>
 
-                {/* Memecoins list (expanded) */}
-                {expandedTokens.has("others-section") && (
-                  <div className="w-full border-t">
-                    {MEMECOINS.map((token, index) => (
-                      <TokenRow
-                        key={token.id}
-                        token={token}
-                        selectedChainIds={selectedChainIds}
-                        isExpanded={expandedTokens.has(token.id)}
-                        onToggleExpand={() => toggleExpanded(token.id)}
-                        onToggleToken={() => toggleTokenSelection(token.id)}
-                        onToggleChain={toggleChainSelection}
-                        isFirst={false}
-                        isLast={false}
-                      />
-                    ))}
+                {/* Others section */}
+                <div className="w-full bg-base rounded-t-lg border overflow-hidden mt-4">
+                  {/* Others section header */}
+                  <div
+                    className="p-5 flex justify-between items-center cursor-pointer"
+                    onClick={() => toggleExpanded("others-section")}
+                  >
+                    <span className="font-sans text-sm text-muted-foreground">
+                      Others ({MEMECOINS.length})
+                    </span>
+                    <ChevronDownIcon
+                      className={`text-muted-foreground transition-transform duration-200 ${
+                        expandedTokens.has("others-section") ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
-                )}
+
+                  {/* Memecoins list (expanded) */}
+                  {expandedTokens.has("others-section") && (
+                    <div className="w-full border-t">
+                      {MEMECOINS.map((token, index) => (
+                        <TokenRow
+                          key={token.id}
+                          token={token}
+                          selectedChainIds={selectedChainIds}
+                          isExpanded={expandedTokens.has(token.id)}
+                          onToggleExpand={() => toggleExpanded(token.id)}
+                          onToggleToken={() => toggleTokenSelection(token.id)}
+                          onToggleChain={toggleChainSelection}
+                          isFirst={false}
+                          isLast={false}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+              {/* Fade overlay - light mode */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none dark:hidden"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--background) 100%)",
+                }}
+              />
+              {/* Fade overlay - dark mode */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none hidden dark:block"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--background) 100%)",
+                }}
+              />
             </div>
 
             {/* Done button */}
-            <Button
-              className="w-full rounded-t-none"
-              onClick={() => widget.goToStep("amount")}
-            >
+            <Button className="w-full rounded-t-none" onClick={handleDone}>
               Done
             </Button>
           </div>

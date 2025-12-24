@@ -14,13 +14,20 @@ interface ConfirmationContainerProps {
   onClose?: () => void;
 }
 
-const ConfirmationContainer = ({ widget, onClose }: ConfirmationContainerProps) => {
+const ConfirmationContainer = ({
+  widget,
+  onClose,
+}: ConfirmationContainerProps) => {
   return (
     <>
-      <WidgetHeader title="Deposit USDC" onBack={widget.goBack} onClose={onClose} />
+      <WidgetHeader
+        title="Deposit USDC"
+        onBack={widget.goBack}
+        onClose={onClose}
+      />
       <CardContent>
         <div className="flex flex-col">
-          <div className="bg-base rounded-t-lg border-t border-l border-r shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-10 pb-1 flex flex-col gap-10">
+          <div className="bg-base rounded-t-lg border-t border-l border-r shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-10 pb-1 flex flex-col gap-6">
             <ReceiveAmountDisplay
               amount={MOCK_DEMO_VALUES.receiveAmountFormatted}
               timeLabel={MOCK_TIME_ESTIMATES.confirmation}
@@ -29,9 +36,9 @@ const ConfirmationContainer = ({ widget, onClose }: ConfirmationContainerProps) 
               <SummaryCard
                 icon={<CoinIcon className="w-5 h-5 text-muted-foreground" />}
                 title="You spend"
-                subtitle={MOCK_DEMO_VALUES.assetSummary}
+                subtitle={MOCK_DEMO_VALUES.tokenNamesSummary}
                 value={MOCK_DEMO_VALUES.receiveAmount}
-                valueSuffix="USDC"
+                valueSuffix="USD"
                 showBreakdown
               />
               <SummaryCard
@@ -52,7 +59,9 @@ const ConfirmationContainer = ({ widget, onClose }: ConfirmationContainerProps) 
             }}
             disabled={widget.isProcessing}
           >
-            {widget.isProcessing ? "Processing..." : "Confirm transaction"}
+            {widget.isProcessing
+              ? "Processing..."
+              : "Confirm and deposit to Aave"}
           </Button>
         </div>
       </CardContent>

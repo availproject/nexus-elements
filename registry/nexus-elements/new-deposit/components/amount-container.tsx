@@ -31,16 +31,13 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
     [widget.setInputs]
   );
 
-  const handleErrorStateChange = useCallback(
-    (hasError: boolean) => {
-      setHasAmountError(hasError);
-    },
-    []
-  );
+  const handleErrorStateChange = useCallback((hasError: boolean) => {
+    setHasAmountError(hasError);
+  }, []);
 
   return (
     <>
-      <WidgetHeader title="Deposit USDC" onBack={widget.goBack} onClose={onClose} />
+      <WidgetHeader title="Deposit USDC" onClose={onClose} />
       <CardContent>
         <div className="flex flex-col gap-4">
           <AmountCard
@@ -54,13 +51,16 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
               onClick={() => widget.goToStep("asset-selection")}
               selectedChainIds={selectedChainIds}
               filter={filter}
+              amount={widget.inputs.amount}
             />
             <Button
               className="rounded-t-none"
               onClick={() => widget.goToStep("confirmation")}
-              disabled={widget.isProcessing || hasAmountError || !widget.inputs.amount}
+              disabled={
+                widget.isProcessing || hasAmountError || !widget.inputs.amount
+              }
             >
-              Deposit to Aave
+              Continue
             </Button>
           </div>
         </div>

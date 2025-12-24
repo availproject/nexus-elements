@@ -1,5 +1,4 @@
 export type WidgetStep =
-  | "deposit-options"
   | "amount"
   | "confirmation"
   | "transaction-status"

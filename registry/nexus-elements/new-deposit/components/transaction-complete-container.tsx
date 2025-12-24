@@ -1,6 +1,7 @@
 "use client";
 
-import { CardContent } from "./ui/card";
+import { useState } from "react";
+import { CardContent, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import WidgetHeader from "./widget-header";
 import { ReceiveAmountDisplay } from "./receive-amount-display";
@@ -11,6 +12,7 @@ import {
   MOCK_TRANSACTION,
 } from "../constants";
 import type { DepositWidgetContextValue } from "../types";
+import { ArrowBoxUpRightIcon, ChevronDownIcon } from "./icons";
 
 interface TransactionCompleteContainerProps {
   widget: DepositWidgetContextValue;
@@ -21,9 +23,11 @@ const TransactionCompleteContainer = ({
   widget,
   onClose,
 }: TransactionCompleteContainerProps) => {
+  const [showSourceDetails, setShowSourceDetails] = useState(false);
+
   const handleNewDeposit = () => {
     widget.reset();
-    widget.goToStep("deposit-options");
+    widget.goToStep("amount");
   };
 
   const handleClose = () => {
@@ -46,26 +50,68 @@ const TransactionCompleteContainer = ({
               Transaction successful
             </span>
             <div className="w-full">
-              <div className="border-t py-5 flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-sans text-sm leading-4.5 text-card-foreground">
-                    EVM transaction
-                  </span>
-                  <a
-                    href={widget.explorerUrls?.intentUrl || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-sans text-muted-foreground text-sm leading-4.5 underline cursor-pointer hover:text-primary transition-colors"
+              <div className="border-t py-5 flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-sans text-sm leading-4.5 text-card-foreground">
+                      Collected on sources
+                    </span>
+                    {!showSourceDetails && (
+                      <button
+                        className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer items-center"
+                        onClick={() => setShowSourceDetails(true)}
+                      >
+                        view details
+                        <ChevronDownIcon
+                          size={16}
+                          className="text-muted-foreground"
+                        />
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      showSourceDetails
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
+                    }`}
                   >
-                    {MOCK_TRANSACTION.txHash}
-                  </a>
+                    <div className="overflow-hidden">
+                      <div className="flex gap-3 flex-wrap pt-2 pb-3">
+                        {MOCK_TRANSACTION.sourceChains.map((chain, index) => (
+                          <a
+                            key={chain.name}
+                            href={chain.explorerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
+                            style={{
+                              animationDelay: showSourceDetails
+                                ? `${index * 50}ms`
+                                : "0ms",
+                            }}
+                          >
+                            {chain.name}
+                            <ArrowBoxUpRightIcon
+                              size={16}
+                              className="text-muted-foreground transition-colors"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-sans text-sm leading-4.5 text-card-foreground">
                     Deposit transaction
                   </span>
-                  <span className="font-sans text-muted-foreground text-sm leading-4.5 underline cursor-pointer">
+                  <span className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer">
                     {MOCK_TRANSACTION.depositTxHash}
+                    <ArrowBoxUpRightIcon
+                      size={16}
+                      className="text-muted-foreground"
+                    />
                   </span>
                 </div>
               </div>
@@ -88,15 +134,23 @@ const TransactionCompleteContainer = ({
             </div>
           </div>
           <div className="flex w-full">
-            <Button className="w-1/2 rounded-t-none rounded-br-none" onClick={handleNewDeposit}>
+            <Button
+              className="w-1/2 rounded-t-none rounded-br-none"
+              onClick={handleNewDeposit}
+            >
               New Deposit
             </Button>
-            <Button className="w-1/2 rounded-t-none rounded-bl-none" variant="secondary" onClick={handleClose}>
+            <Button
+              className="w-1/2 rounded-t-none rounded-bl-none"
+              variant="secondary"
+              onClick={handleClose}
+            >
               Close
             </Button>
           </div>
         </div>
       </CardContent>
+      <CardFooter />
     </>
   );
 };

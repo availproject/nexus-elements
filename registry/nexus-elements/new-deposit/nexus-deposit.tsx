@@ -1,16 +1,9 @@
 "use client";
 
 import { cn } from "./utils";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "./components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { useDepositWidget } from "./hooks/use-deposit-widget";
 import {
-  DepositOptionsContainer,
   AmountContainer,
   ConfirmationContainer,
   TransactionStatusContainer,
@@ -37,9 +30,6 @@ type ScreenRenderer = (
 ) => React.ReactNode;
 
 const SCREENS: Record<WidgetStep, ScreenRenderer> = {
-  "deposit-options": (widget, onClose) => (
-    <DepositOptionsContainer widget={widget} onClose={onClose} />
-  ),
   amount: (widget, onClose) => (
     <AmountContainer widget={widget} onClose={onClose} />
   ),
@@ -68,10 +58,6 @@ const NexusDeposit = ({
   const widget = useDepositWidget({ onSuccess, onError });
   const animationClass = getAnimationClass(widget.navigationDirection);
 
-  const showFooter =
-    widget.step === "transaction-status" ||
-    widget.step === "transaction-complete";
-
   if (embed) {
     return (
       <Card
@@ -88,7 +74,6 @@ const NexusDeposit = ({
             {SCREENS[widget.step](widget)}
           </div>
         </CardContent>
-        {showFooter && <CardFooter />}
       </Card>
     );
   }
@@ -106,7 +91,6 @@ const NexusDeposit = ({
       >
         {SCREENS[widget.step](widget, onClose)}
       </div>
-      {showFooter && <CardFooter />}
     </Card>
   );
 };

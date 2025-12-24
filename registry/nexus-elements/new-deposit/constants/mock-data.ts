@@ -31,21 +31,31 @@ export const MOCK_WALLETS = {
 export const MOCK_TRANSACTION = {
   /** Simulated transaction delay in milliseconds */
   simulationDelayMs: 12500,
-  
+
   /** Total duration for transaction steps animation */
   stepsDurationMs: 12000,
-  
+
   /** Mock transaction hash */
   txHash: "0x1e2...c253",
-  
+
   /** Mock deposit transaction hash */
   depositTxHash: "4xfe2...u248",
-  
+
   /** Mock explorer URLs */
   explorerUrls: {
     bridge: "https://explorer.example.com/bridge/123",
     execute: "https://explorer.example.com/tx/456",
   },
+
+  /** Source chain collection transactions */
+  sourceChains: [
+    { name: "Arbitrum", explorerUrl: "https://arbiscan.io/tx/0x123" },
+    { name: "Polygon", explorerUrl: "https://polygonscan.com/tx/0x456" },
+    {
+      name: "Optimism",
+      explorerUrl: "https://optimistic.etherscan.io/tx/0x789",
+    },
+  ],
 } as const;
 
 // ============================================================================
@@ -55,24 +65,27 @@ export const MOCK_TRANSACTION = {
 export const MOCK_DEMO_VALUES = {
   /** Amount user spends (before fees) */
   spendAmount: "1,901.37",
-  
+
   /** Amount user receives (after fees) */
   receiveAmount: "1,901.22",
-  
+
   /** Formatted receive amount with currency symbol */
-  receiveAmountFormatted: "$1,901.22",
-  
+  receiveAmountFormatted: "1,901.22",
+
   /** Total wallet balance display */
   totalWalletBalance: "$3,259.37",
-  
+
   /** Number of assets being used */
   assetCount: 8,
-  
+
   /** Number of chains being used */
   chainCount: 4,
-  
+
   /** Asset summary label */
   assetSummary: "8 Assets; 4 Chains",
+
+  /** Token names summary (for confirmation screen) */
+  tokenNamesSummary: "USDC, ETH + 2 more",
 } as const;
 
 // ============================================================================
@@ -82,12 +95,12 @@ export const MOCK_DEMO_VALUES = {
 export const MOCK_FEES = {
   /** Total fees in USD */
   totalUsd: "0.15",
-  
+
   /** Total fees formatted */
-  totalFormatted: "0.15 USDC",
-  
+  totalFormatted: "0.15 USD",
+
   /** Fee description */
-  description: "Network & protocol fees",
+  description: "Network & protocol",
 } as const;
 
 // ============================================================================
@@ -96,10 +109,10 @@ export const MOCK_FEES = {
 
 export const MOCK_TIME_ESTIMATES = {
   /** Estimated time for confirmation screen */
-  confirmation: "In about 10s",
-  
+  confirmation: "in about 10s",
+
   /** Actual time taken for completion screen */
-  completion: "In 12s",
+  completion: "in 12s",
 } as const;
 
 // ============================================================================
@@ -107,10 +120,13 @@ export const MOCK_TIME_ESTIMATES = {
 // ============================================================================
 
 export const TRANSACTION_STEPS = [
-  { id: "intent-verification", label: "Intent verification" },
+  {
+    id: "intent-verification",
+    label: "Intent verification",
+    groupWithNext: true,
+  },
   { id: "collection-on-sources", label: "Collecting on sources" },
   { id: "deposit-transaction", label: "Deposit transaction" },
 ] as const;
 
 export type TransactionStep = (typeof TRANSACTION_STEPS)[number];
-

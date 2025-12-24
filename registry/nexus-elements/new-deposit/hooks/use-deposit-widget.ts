@@ -36,8 +36,7 @@ type Action =
 
 // Navigation history for back button
 const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
-  "deposit-options": null,
-  amount: "deposit-options",
+  amount: null,
   confirmation: "amount",
   "transaction-status": null,
   "transaction-complete": null,
@@ -50,7 +49,7 @@ interface UseDepositWidgetProps {
 }
 
 const createInitialState = (): WidgetState => ({
-  step: "deposit-options",
+  step: "amount",
   inputs: {
     amount: undefined,
     selectedToken: "USDC",

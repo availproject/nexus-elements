@@ -23,13 +23,16 @@ function TabsList({
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List>) {
   const listRef = React.useRef<HTMLDivElement>(null);
-  const [indicatorStyle, setIndicatorStyle] = React.useState<React.CSSProperties>({});
+  const [indicatorStyle, setIndicatorStyle] =
+    React.useState<React.CSSProperties>({});
 
   React.useEffect(() => {
     const updateIndicator = () => {
       if (!listRef.current) return;
-      
-      const activeTab = listRef.current.querySelector('[data-state="active"]') as HTMLElement;
+
+      const activeTab = listRef.current.querySelector(
+        '[data-state="active"]'
+      ) as HTMLElement;
       if (activeTab) {
         setIndicatorStyle({
           left: activeTab.offsetLeft,
@@ -43,19 +46,19 @@ function TabsList({
     // Observe for changes in the active tab
     const observer = new MutationObserver(updateIndicator);
     if (listRef.current) {
-      observer.observe(listRef.current, { 
-        attributes: true, 
+      observer.observe(listRef.current, {
+        attributes: true,
         subtree: true,
-        attributeFilter: ['data-state']
+        attributeFilter: ["data-state"],
       });
     }
 
     // Also update on resize
-    window.addEventListener('resize', updateIndicator);
+    window.addEventListener("resize", updateIndicator);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', updateIndicator);
+      window.removeEventListener("resize", updateIndicator);
     };
   }, []);
 
@@ -87,7 +90,7 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "py-2 px-4 text-[13px] leading-4.5 font-sans text-muted-foreground inline-flex items-center justify-center whitespace-nowrap transition-colors duration-200 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground relative z-10",
+        "py-2 px-3 text-[13px] leading-4.5 font-sans text-muted-foreground inline-flex items-center justify-center whitespace-nowrap transition-colors duration-200 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground relative z-10",
         className
       )}
       {...props}

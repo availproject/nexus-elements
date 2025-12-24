@@ -7,6 +7,7 @@ import { ErrorBanner } from "./ui/error-banner";
 import { AnimatedAmount } from "./animated-amount";
 import { PercentageSelector } from "./percentage-selector";
 import { formatCurrency, parseCurrencyInput } from "../utils";
+import { UpDownArrows } from "./icons";
 
 interface AmountCardProps {
   amount?: string;
@@ -35,8 +36,15 @@ function AmountCard({
   const [animationKey, setAnimationKey] = useState(0);
   const [userInteracted, setUserInteracted] = useState(false);
 
-  const displayValue = amount ? `$${amount}` : "";
-  const measureText = displayValue || "$0";
+  const displayValue = amount || "";
+  const measureText = displayValue || "0";
+
+  // Calculate numeric amount for USD equivalent
+  const numericAmount = useMemo(() => {
+    if (!amount) return 0;
+    const parsed = parseFloat(amount.replace(/,/g, ""));
+    return isNaN(parsed) ? 0 : parsed;
+  }, [amount]);
 
   // Check if amount exceeds wallet balance
   const exceedsBalance = useMemo(() => {
@@ -161,7 +169,7 @@ function AmountCard({
               <AnimatedAmount
                 key={animationKey}
                 value={displayValue}
-                previousValue={`$${previousAmount}`}
+                previousValue={previousAmount}
                 className={`font-display text-[32px] font-medium tracking-[0.8px] whitespace-nowrap ${
                   amount ? "text-card-foreground" : "text-muted-foreground"
                 }`}
@@ -178,7 +186,7 @@ function AmountCard({
             onClick={handleInputClick}
             onDoubleClick={handleDoubleClick}
             onKeyDown={handleKeyDown}
-            placeholder="$0"
+            placeholder="0"
             style={{
               width: inputWidth > 0 ? Math.min(inputWidth + 4, 300) : undefined,
               maxWidth: "calc(100vw - 100px)",
@@ -192,11 +200,32 @@ function AmountCard({
         </div>
       </div>
 
+      {/* USD Equivalent - animated height reveal */}
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          numericAmount > 0
+            ? "grid-rows-[1fr] opacity-100 mt-2"
+            : "grid-rows-[0fr] opacity-0 mt-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="flex items-center justify-center gap-1 text-muted-foreground h-5">
+            <span
+              key={numericAmount}
+              className="text-[13px] animate-glare-shine"
+            >
+              ~ ${formatCurrency(numericAmount)}
+            </span>
+            <UpDownArrows className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
       {/* Percentage Selector */}
       <PercentageSelector onPercentageClick={handlePercentageClick} />
 
       {/* Balance Display */}
-      <div className="mt-8.5 font-sans text-[13px] leading-4.5 text-muted-foreground text-center">
+      <div className="mt-8.5 font-sans text-[13px] leading-4.5 text-base-foreground-2 text-center">
         Balance: ${formatCurrency(MOCK_WALLET_BALANCE)}
       </div>
 

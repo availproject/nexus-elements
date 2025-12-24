@@ -1,6 +1,6 @@
 "use client";
 
-import { CardContent } from "./ui/card";
+import { CardContent, CardFooter } from "./ui/card";
 import WidgetHeader from "./widget-header";
 import { TransactionSteps } from "./transaction-steps";
 import { AmountDisplay } from "./amount-display";
@@ -81,7 +81,7 @@ const TransactionStatusContainer = ({
     <>
       <WidgetHeader title="Deposit USDC" onClose={onClose} />
       <CardContent>
-        <div className="flex flex-col bg-base rounded-lg border border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] py-8">
+        <div className="flex flex-col bg-base rounded-lg border border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] pt-8 pb-7">
           <div className="flex w-full mt-2 items-end justify-center">
             <div className="flex gap-7 items-center">
               <AmountDisplay
@@ -94,8 +94,8 @@ const TransactionStatusContainer = ({
               </div>
               <AmountDisplay
                 amount={MOCK_DEMO_VALUES.receiveAmount}
-                suffix="USD"
-                label="USDC on Aave"
+                suffix="USDC"
+                label="on Arbitrum"
               />
             </div>
           </div>
@@ -118,6 +118,7 @@ const TransactionStatusContainer = ({
           />
         </div>
       </CardContent>
+      <CardFooter />
     </>
   );
 };

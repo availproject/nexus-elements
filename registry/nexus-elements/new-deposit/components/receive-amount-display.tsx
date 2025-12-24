@@ -5,13 +5,17 @@ import { DEPOSIT_WIDGET_ASSETS } from "../constants";
 interface ReceiveAmountDisplayProps {
   label?: string;
   amount: string;
-  timeLabel: string;
+  timeLabel?: string;
+  showUsdValue?: boolean;
+  showClockIcon?: boolean;
 }
 
 export function ReceiveAmountDisplay({
   label = "You receive",
   amount,
   timeLabel,
+  showUsdValue = true,
+  showClockIcon = true,
 }: ReceiveAmountDisplayProps) {
   return (
     <div className="w-full flex flex-col items-center gap-2">
@@ -28,11 +32,12 @@ export function ReceiveAmountDisplay({
           {amount}
         </h3>
       </div>
-      <span className="font-sans flex gap-1 text-sm leading-4.5 text-muted-foreground mt-1">
-        {timeLabel}
-        <ClockIcon className="w-4 h-4" />
-      </span>
+      {(showUsdValue || showClockIcon) && (
+        <span className="font-sans flex items-center gap-1 text-sm leading-4.5 text-muted-foreground mt-1">
+          {showUsdValue && `$${amount} ${timeLabel ?? ""}`}
+          {showClockIcon && <ClockIcon className="w-4 h-4" />}
+        </span>
+      )}
     </div>
   );
 }
-

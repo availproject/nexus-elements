@@ -43,8 +43,8 @@ function SummaryCard({
         </div>
         {showBreakdown && (
           <div className="flex gap-0.5 cursor-pointer">
-            <span className="font-sans text-[13px] underline leading-4.5 text-muted-foreground">
-              view breakdown
+            <span className="font-sans text-[13px] underline leading-4.5 text-muted-foreground underline-offset-2 ">
+              view details
             </span>
             <ChevronDownIcon size={16} className="text-muted-foreground" />
           </div>

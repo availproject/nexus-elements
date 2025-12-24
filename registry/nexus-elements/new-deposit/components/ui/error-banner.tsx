@@ -2,12 +2,15 @@ import { InfoIcon } from "../icons";
 
 interface ErrorBannerProps {
   message: string;
+  icon?: boolean;
 }
 
-export function ErrorBanner({ message }: ErrorBannerProps) {
+export function ErrorBanner({ message, icon = true }: ErrorBannerProps) {
   return (
     <div className="py-2 px-3 bg-destructive rounded-lg flex items-center gap-2 justify-center">
-      <InfoIcon className="h-5 w-5 text-destructive-foreground flex-shrink-0" />
+      {icon && (
+        <InfoIcon className="h-5 w-5 text-destructive-foreground shrink-0" />
+      )}
       <span className="font-sans text-[14px] leading-[22px] text-destructive-foreground">
         {message}
       </span>
