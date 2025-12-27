@@ -41,7 +41,9 @@ export function TokenRow({
     >
       {/* Main token row */}
       <div
-        className="p-5 flex justify-between items-center cursor-pointer"
+        className={`${
+          isExpanded ? "pt-5 px-5 pb-4" : "pt-5 px-5 pb-5"
+        } flex justify-between items-center cursor-pointer`}
         onClick={hasMultipleChains ? onToggleExpand : undefined}
       >
         <div className="flex gap-6 items-center">
@@ -70,7 +72,7 @@ export function TokenRow({
         </div>
         <div className="flex gap-4 items-center">
           <div className="flex flex-col gap-1 items-end">
-            <span className="text-[13px] leading-4.5 text-muted-foreground">
+            <span className="text-[13px] leading-4.5 text-card-foreground">
               {token.usdValue}
             </span>
             <span className="text-[13px] leading-4.5 text-muted-foreground">
@@ -95,10 +97,10 @@ export function TokenRow({
           <div className="w-full">
             {/* Vertical line */}
             <div
-              className="bg-border shrink-0 absolute left-[26.5px] w-0.5"
+              className="bg-border shrink-0 absolute left-[26px] w-0.5"
               style={{
                 top: `${VERTICAL_LINE_TOP_OFFSET}px`,
-                height: `${token.chains.length * CHAIN_ITEM_HEIGHT + 8.5}px`,
+                height: `${token.chains.length * CHAIN_ITEM_HEIGHT + 4}px`,
               }}
             />
             {/* Chain items */}
@@ -110,7 +112,7 @@ export function TokenRow({
                   style={{ height: `${CHAIN_ITEM_HEIGHT}px` }}
                 >
                   {/* Horizontal line */}
-                  <div className="bg-border shrink-0 ml-2 w-[37px] h-0.5" />
+                  <div className="bg-border shrink-0 ml-1.5 w-[37px] h-0.5" />
                   {/* Chain content */}
                   <div className="flex items-center justify-between flex-1 pr-5">
                     <div className="flex items-center gap-3">

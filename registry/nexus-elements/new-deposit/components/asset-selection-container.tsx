@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
@@ -38,6 +38,10 @@ const AssetSelectionContainer = ({
   const [localExpandedTokens, setLocalExpandedTokens] = useState<Set<string>>(
     () => new Set(assetSelection.expandedTokens)
   );
+  const [isProgressBarVisible, setIsProgressBarVisible] = useState(false);
+  const [isProgressBarEntering, setIsProgressBarEntering] = useState(false);
+  const [isProgressBarExiting, setIsProgressBarExiting] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Use local state for display
   const selectedChainIds = localSelectedChainIds;
@@ -64,6 +68,27 @@ const AssetSelectionContainer = ({
     requiredAmount > 0
       ? Math.min((selectedAmount / requiredAmount) * 100, 100)
       : 0;
+
+  // Handle progress bar animation
+  useEffect(() => {
+    if (showProgressBar) {
+      setIsProgressBarVisible(true);
+      setIsProgressBarExiting(false);
+      setIsProgressBarEntering(true);
+      // Trigger enter animation after mounting
+      const timer = setTimeout(() => {
+        setIsProgressBarEntering(false);
+      }, 50); // Small delay to ensure element is mounted
+      return () => clearTimeout(timer);
+    } else if (isProgressBarVisible) {
+      setIsProgressBarExiting(true);
+      const timer = setTimeout(() => {
+        setIsProgressBarVisible(false);
+        setIsProgressBarExiting(false);
+      }, 300); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [showProgressBar, isProgressBarVisible]);
 
   // Handle tab/preset change (local state)
   const handlePresetClick = useCallback(
@@ -118,10 +143,21 @@ const AssetSelectionContainer = ({
 
       if (tokenId === "others-section") {
         // Toggle others section independently
+        const willExpand = !newExpanded.has("others-section");
         if (newExpanded.has("others-section")) {
           newExpanded.delete("others-section");
         } else {
           newExpanded.add("others-section");
+          // Auto-scroll down when expanding others section
+          setTimeout(() => {
+            if (scrollContainerRef.current && willExpand) {
+              const currentScrollTop = scrollContainerRef.current.scrollTop;
+              scrollContainerRef.current.scrollTo({
+                top: currentScrollTop + 70,
+                behavior: "smooth",
+              });
+            }
+          }, 100); // Small delay to ensure DOM is updated
         }
         return newExpanded;
       } else {
@@ -201,7 +237,10 @@ const AssetSelectionContainer = ({
           <div className="flex flex-col">
             {/* Scrollable container with fade effect */}
             <div className="relative">
-              <div className="w-full overflow-y-auto max-h-[300px] scrollbar-hide">
+              <div
+                ref={scrollContainerRef}
+                className="w-full overflow-y-auto max-h-[300px] scrollbar-hide"
+              >
                 {/* Main tokens list */}
                 <div className="w-full rounded-lg border overflow-hidden">
                   {sortedTokens.map((token, index) => (
@@ -257,21 +296,25 @@ const AssetSelectionContainer = ({
                 </div>
               </div>
               {/* Fade overlay - light mode */}
-              <div
-                className="absolute bottom-0 left-[1px] right-[1px] h-12 pointer-events-none dark:hidden"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--background) 100%)",
-                }}
-              />
+              {!showProgressBar && (
+                <div
+                  className="absolute bottom-0 left-[1px] right-[1px] h-12 pointer-events-none dark:hidden"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--background) 100%)",
+                  }}
+                />
+              )}
               {/* Fade overlay - dark mode */}
-              <div
-                className="absolute bottom-0 left-[1px] right-[1px] h-12 pointer-events-none hidden dark:block"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--background) 100%)",
-                }}
-              />
+              {!showProgressBar && (
+                <div
+                  className="absolute bottom-0 left-[1px] right-[1px] h-12 pointer-events-none hidden dark:block"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--background) 100%)",
+                  }}
+                />
+              )}
             </div>
 
             {/* Done button */}
@@ -283,8 +326,14 @@ const AssetSelectionContainer = ({
       </CardContent>
 
       {/* Progress bar overlay */}
-      {showProgressBar && (
-        <div className="absolute -bottom-6 left-0 right-0 z-20 flex flex-col gap-2 pt-5 pb-8 px-7 bg-base border-t shadow-[0_-11px_12px_0_rgba(91,91,91,0.05)]">
+      {isProgressBarVisible && (
+        <div
+          className={`absolute -bottom-6 left-0 right-0 z-20 flex flex-col gap-2 pt-5 pb-8 px-7 bg-base border-t shadow-[0_-11px_12px_0_rgba(91,91,91,0.05)] transform transition-transform duration-300 ease-out ${
+            isProgressBarEntering || isProgressBarExiting
+              ? "translate-y-full"
+              : "translate-y-0"
+          }`}
+        >
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
               Selected / Required
