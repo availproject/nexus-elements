@@ -89,6 +89,35 @@ export function sortTokensByValue(tokens: Token[]): Token[] {
 }
 
 /**
+ * Sort tokens by filter preset (matching tokens first, then by USD value)
+ */
+export function sortTokensByFilter(tokens: Token[], filter: AssetFilterType): Token[] {
+  if (filter === "custom") {
+    // For custom, keep original order (sorted by value)
+    return sortTokensByValue(tokens);
+  }
+
+  return [...tokens].sort((a, b) => {
+    const aMatches = 
+      (filter === "all" && AUTO_SELECTED_SYMBOLS.includes(a.symbol)) ||
+      (filter === "stablecoins" && a.category === "stablecoin") ||
+      (filter === "native" && a.symbol === "ETH");
+    
+    const bMatches = 
+      (filter === "all" && AUTO_SELECTED_SYMBOLS.includes(b.symbol)) ||
+      (filter === "stablecoins" && b.category === "stablecoin") ||
+      (filter === "native" && b.symbol === "ETH");
+
+    // If one matches and other doesn't, prioritize the matching one
+    if (aMatches && !bMatches) return -1;
+    if (!aMatches && bMatches) return 1;
+    
+    // If both match or both don't match, sort by USD value
+    return parseUsdValue(b.usdValue) - parseUsdValue(a.usdValue);
+  });
+}
+
+/**
  * Get checkbox state for a token based on selected chains
  */
 export function getTokenCheckState(

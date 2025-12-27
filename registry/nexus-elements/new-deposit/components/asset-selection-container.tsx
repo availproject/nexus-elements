@@ -14,6 +14,7 @@ import {
   checkIfMatchesPreset,
   calculateSelectedAmount,
   sortTokensByValue,
+  sortTokensByFilter,
   findTokenById,
 } from "../utils/asset-helpers";
 
@@ -48,8 +49,8 @@ const AssetSelectionContainer = ({
   const filter = localFilter;
   const expandedTokens = localExpandedTokens;
 
-  // Sort tokens by balance (highest first)
-  const sortedTokens = useMemo(() => sortTokensByValue(TOKENS), []);
+  // Sort tokens by filter preset (matching tokens first, then by balance)
+  const sortedTokens = useMemo(() => sortTokensByFilter(TOKENS, filter), [filter]);
 
   // Calculate total selected USD value
   const selectedAmount = useMemo(
