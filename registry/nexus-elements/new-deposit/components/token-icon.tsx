@@ -4,7 +4,7 @@ import { cn } from "../utils";
 type TokenIconSize = "sm" | "md" | "lg";
 
 const SIZE_MAP: Record<TokenIconSize, { token: number; protocol: number }> = {
-  sm: { token: 24, protocol: 12 },
+  sm: { token: 24, protocol: 16 },
   md: { token: 32, protocol: 16 },
   lg: { token: 40, protocol: 20 },
 };
@@ -23,7 +23,7 @@ export function TokenIcon({
   protocolSrc,
   tokenAlt = "Token",
   protocolAlt = "Protocol",
-  size = "md",
+  size = "sm",
   className,
 }: TokenIconProps) {
   const dimensions = SIZE_MAP[size];
@@ -42,7 +42,7 @@ export function TokenIcon({
         alt={protocolAlt}
         width={dimensions.protocol}
         height={dimensions.protocol}
-        className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-base object-cover"
+        className="absolute -bottom-0.5 -right-0.5 translate-x-1/5 translate-y-1/5 rounded-full border-2 border-base object-cover"
       />
     </div>
   );

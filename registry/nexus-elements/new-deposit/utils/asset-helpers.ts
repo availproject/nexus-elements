@@ -20,6 +20,12 @@ export function getAllChainIds(): Set<string> {
 }
 
 /**
+ * Auto-selected token symbols for "any token" mode
+ * These are the top tokens selected by default
+ */
+export const AUTO_SELECTED_SYMBOLS = ["USDC", "ETH", "SOL"];
+
+/**
  * Get chain IDs for a specific filter preset
  */
 export function getChainIdsForFilter(
@@ -28,7 +34,7 @@ export function getChainIdsForFilter(
   const ids = new Set<string>();
   TOKENS.forEach((token) => {
     const shouldInclude =
-      filter === "all" ||
+      (filter === "all" && AUTO_SELECTED_SYMBOLS.includes(token.symbol)) ||
       (filter === "stablecoins" && token.category === "stablecoin") ||
       (filter === "native" && token.symbol === "ETH");
 

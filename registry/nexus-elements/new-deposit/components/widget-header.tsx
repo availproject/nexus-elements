@@ -11,13 +11,13 @@ interface WidgetHeaderProps {
 
 const WidgetHeader = ({ title, onBack, onClose }: WidgetHeaderProps) => {
   return (
-    <div className="flex items-center justify-between px-10">
+    <div className="flex items-center justify-between px-6">
       {onBack ? (
         <button
           onClick={onBack}
-          className="h-5 w-5 flex items-center justify-center group"
+          className="h-5 w-5 flex items-center justify-center group/back"
         >
-          <LeftChevronIcon className="h-5 w-5 text-muted-foreground group-hover:text-foreground" />
+          <LeftChevronIcon className="h-5 w-5 text-muted-foreground group-hover/back:text-foreground" />
         </button>
       ) : (
         <Image
@@ -33,9 +33,9 @@ const WidgetHeader = ({ title, onBack, onClose }: WidgetHeaderProps) => {
       </h2>
       <button
         onClick={onClose}
-        className="h-5 w-5 flex items-center justify-center group"
+        className="h-5 w-5 flex items-center justify-center group/close"
       >
-        <CloseIcon className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+        <CloseIcon className="h-5 w-5 text-muted-foreground group-hover/close:text-foreground transition-colors" />
       </button>
     </div>
   );

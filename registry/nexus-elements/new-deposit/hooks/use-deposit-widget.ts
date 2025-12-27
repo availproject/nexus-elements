@@ -9,7 +9,7 @@ import type {
   NavigationDirection,
   AssetSelectionState,
 } from "../types";
-import { getAllChainIds } from "../utils/asset-helpers";
+import { getChainIdsForFilter } from "../utils/asset-helpers";
 import { MOCK_TRANSACTION } from "../constants";
 
 interface WidgetState {
@@ -109,7 +109,7 @@ function reducer(state: WidgetState, action: Action): WidgetState {
 }
 
 const createInitialAssetSelection = (): AssetSelectionState => ({
-  selectedChainIds: getAllChainIds(),
+  selectedChainIds: getChainIdsForFilter("all"),
   filter: "all",
   expandedTokens: new Set(),
 });

@@ -7,7 +7,7 @@ import type { Token } from "../types";
 import { getTokenCheckState } from "../utils/asset-helpers";
 
 const CHAIN_ITEM_HEIGHT = 49;
-const VERTICAL_LINE_TOP_OFFSET = 52;
+const VERTICAL_LINE_TOP_OFFSET = 48;
 
 interface TokenRowProps {
   token: Token;
@@ -95,10 +95,10 @@ export function TokenRow({
           <div className="w-full">
             {/* Vertical line */}
             <div
-              className="bg-border shrink-0 absolute left-[28px] w-0.5"
+              className="bg-border shrink-0 absolute left-[26.5px] w-0.5"
               style={{
                 top: `${VERTICAL_LINE_TOP_OFFSET}px`,
-                height: `${token.chains.length * CHAIN_ITEM_HEIGHT}px`,
+                height: `${token.chains.length * CHAIN_ITEM_HEIGHT + 8.5}px`,
               }}
             />
             {/* Chain items */}

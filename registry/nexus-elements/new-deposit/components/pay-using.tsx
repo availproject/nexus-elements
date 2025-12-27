@@ -105,7 +105,7 @@ function PayUsing({
 
   return (
     <ButtonCard
-      title="Pay Using"
+      title="Pay using"
       subtitle={renderSubtitle()}
       icon={<CoinIcon className="w-6 h-6 text-muted-foreground" />}
       rightIcon={

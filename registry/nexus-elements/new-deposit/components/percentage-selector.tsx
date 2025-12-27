@@ -24,7 +24,7 @@ function PercentageButton({
     <button
       type="button"
       onClick={onClick}
-      className={`py-2 flex items-center justify-center w-full px-4 font-sans text-sm leading-4.5 hover:bg-muted transition-colors cursor-pointer ${
+      className={`py-2 max-w-[60px] h-[34px] flex items-center justify-center w-full px-4 font-sans text-sm leading-4.5 hover:bg-muted transition-colors cursor-pointer ${
         !isLast ? "border-r border-border" : ""
       } ${isFirst ? "rounded-l-lg" : ""} ${isLast ? "rounded-r-lg" : ""}`}
     >
@@ -41,9 +41,9 @@ export function PercentageSelector({
   onPercentageClick,
 }: PercentageSelectorProps) {
   return (
-    <div className="relative">
-      <div className="mt-[35px] h-px w-full bg-border" />
-      <div className="absolute flex top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-base h-9 w-[256px] rounded-lg border">
+    <div className="relative mt-[42px]">
+      <div className="h-px w-full bg-border" />
+      <div className="absolute flex top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-base h-9 rounded-lg border">
         {PERCENTAGE_OPTIONS.map((option, index) => (
           <PercentageButton
             key={option.label}

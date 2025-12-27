@@ -258,7 +258,7 @@ const AssetSelectionContainer = ({
               </div>
               {/* Fade overlay - light mode */}
               <div
-                className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none dark:hidden"
+                className="absolute bottom-0 left-[1px] right-[1px] h-12 pointer-events-none dark:hidden"
                 style={{
                   background:
                     "linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--background) 100%)",
@@ -266,7 +266,7 @@ const AssetSelectionContainer = ({
               />
               {/* Fade overlay - dark mode */}
               <div
-                className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none hidden dark:block"
+                className="absolute bottom-0 left-[1px] right-[1px] h-12 pointer-events-none hidden dark:block"
                 style={{
                   background:
                     "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--background) 100%)",

@@ -24,7 +24,7 @@ function ButtonCard({
   return (
     <div
       className={cn(
-        "p-5 border flex justify-between group/button-card transition-all duration-200 h-[88px]",
+        "p-5 border flex justify-between group/button-card transition-all duration-200",
         roundedBottom ? "rounded-lg" : "rounded-t-lg",
         disabled
           ? "cursor-default opacity-70"
@@ -34,18 +34,20 @@ function ButtonCard({
     >
       <div className="flex gap-4 items-center justify-start">
         {/* Icon */}
-        <div className="w-8 h-8 flex items-center justify-center">{icon}</div>
+        <div className="w-5 h-5 flex items-center justify-center">{icon}</div>
 
         {/* Text Content */}
         <div className="flex flex-col gap-1.5">
           {typeof title === "string" ? (
-            <span className="text-sm leading-4.5 font-sans">{title}</span>
+            <span className="text-sm text-card-foreground leading-4.5 font-sans">
+              {title}
+            </span>
           ) : (
             title
           )}
           {subtitle &&
             (typeof subtitle === "string" ? (
-              <span className="text-[13px] leading-4.5 text-muted-foreground font-sans">
+              <span className="text-sm leading-4.5 text-muted-foreground font-sans">
                 {subtitle}
               </span>
             ) : (

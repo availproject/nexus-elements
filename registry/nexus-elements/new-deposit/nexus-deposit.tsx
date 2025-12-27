@@ -81,7 +81,7 @@ const NexusDeposit = ({
   return (
     <Card
       className={cn(
-        "relative w-full max-w-md overflow-hidden gap-0 transition-[height] duration-200 ease-out",
+        "relative w-full max-w-[400px] overflow-hidden gap-0 transition-[height] duration-200 ease-out",
         className
       )}
     >

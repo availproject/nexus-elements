@@ -4,7 +4,6 @@ import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 import { TokenIcon } from "./token-icon";
 import { MOCK_WALLET_BALANCE } from "../constants";
 import { ErrorBanner } from "./ui/error-banner";
-import { AnimatedAmount } from "./animated-amount";
 import { PercentageSelector } from "./percentage-selector";
 import { formatCurrency, parseCurrencyInput } from "../utils";
 import { UpDownArrows } from "./icons";
@@ -27,17 +26,45 @@ function AmountCard({
   const setAmount = onAmountChange ?? setInternalAmount;
 
   const [inputWidth, setInputWidth] = useState(0);
+  const [isShining, setIsShining] = useState(false);
+  const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(
+    new Set()
+  );
+  const prevAmountRef = useRef<string>("");
+  const prevLengthRef = useRef(0);
   const measureRef = useRef<HTMLSpanElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Track previous amount for animation direction
-  const [previousAmount, setPreviousAmount] = useState("");
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0);
-  const [userInteracted, setUserInteracted] = useState(false);
-
   const displayValue = amount || "";
   const measureText = displayValue || "0";
+
+  // Split display value into characters for animation
+  const displayChars = displayValue.split("");
+
+  // Track which characters should animate (newly added ones)
+  useEffect(() => {
+    const currentLength = displayValue.length;
+    const prevLength = prevLengthRef.current;
+
+    // Only animate when characters are added (not removed)
+    if (currentLength > prevLength) {
+      const newIndices = new Set<number>();
+      for (let i = prevLength; i < currentLength; i++) {
+        newIndices.add(i);
+      }
+      setAnimatingIndices(newIndices);
+
+      // Clear animation after it completes
+      const timer = setTimeout(() => {
+        setAnimatingIndices(new Set());
+      }, 400); // Match animation duration
+
+      prevLengthRef.current = currentLength;
+      return () => clearTimeout(timer);
+    }
+
+    prevLengthRef.current = currentLength;
+  }, [displayValue]);
 
   // Calculate numeric amount for USD equivalent
   const numericAmount = useMemo(() => {
@@ -70,6 +97,19 @@ function AmountCard({
     }
   }, [measureText]);
 
+  // Trigger shine effect when USD amount changes
+  useEffect(() => {
+    if (amount && amount !== prevAmountRef.current && numericAmount > 0) {
+      setIsShining(true);
+      const timer = setTimeout(() => {
+        setIsShining(false);
+      }, 500); // Match animation duration
+      prevAmountRef.current = amount;
+      return () => clearTimeout(timer);
+    }
+    prevAmountRef.current = amount;
+  }, [amount, numericAmount]);
+
   // Notify parent of error state changes
   useEffect(() => {
     const hasError = exceedsBalance || exceedsSelectedTokens;
@@ -82,8 +122,6 @@ function AmountCard({
 
       // Validate numeric input (allow unlimited decimals)
       if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
-        setIsAnimating(false);
-        setUserInteracted(true);
         setAmount(rawValue);
       }
     },
@@ -94,35 +132,12 @@ function AmountCard({
     (percentage: number) => {
       const calculatedAmount = MOCK_WALLET_BALANCE * percentage;
       const newAmount = formatCurrency(calculatedAmount);
-
-      // Store previous amount and trigger animation
-      setPreviousAmount(amount || "0");
-      setIsAnimating(true);
-      setUserInteracted(false);
-      setAnimationKey((prev) => prev + 1);
       setAmount(newAmount);
-
-      // Clear animation much faster to allow immediate editing
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 300);
     },
-    [setAmount, amount]
+    [setAmount]
   );
 
-  const handleInputFocus = useCallback(() => {
-    setIsAnimating(false);
-    setUserInteracted(true);
-  }, []);
-
-  const handleInputClick = useCallback(() => {
-    setIsAnimating(false);
-    setUserInteracted(true);
-  }, []);
-
   const handleDoubleClick = useCallback(() => {
-    setIsAnimating(false);
-    setUserInteracted(true);
     // Select all text on double click
     if (inputRef.current) {
       inputRef.current.select();
@@ -134,8 +149,6 @@ function AmountCard({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.ctrlKey && e.key === "a") {
         e.preventDefault();
-        setIsAnimating(false);
-        setUserInteracted(true);
         if (inputRef.current) {
           inputRef.current.select();
         }
@@ -156,34 +169,49 @@ function AmountCard({
       </span>
 
       {/* Amount Input Section */}
-      <div className="mt-1.5 w-full flex items-center justify-center gap-3">
+      <div
+        className={`w-full flex items-center justify-center gap-3 transition-all duration-300 ease-out ${
+          numericAmount > 0 ? "-mt-0.5" : "mt-1.5"
+        }`}
+      >
         <TokenIcon
           tokenSrc="/usdc.svg"
           protocolSrc="/aave.svg"
           tokenAlt="USDC"
         />
         <div className="relative">
-          {/* Animated display layer - shown when animating from button click */}
-          {isAnimating && !userInteracted && displayValue && (
-            <div className="absolute inset-0">
-              <AnimatedAmount
-                key={animationKey}
-                value={displayValue}
-                previousValue={previousAmount}
-                className={`font-display text-[32px] font-medium tracking-[0.8px] whitespace-nowrap ${
-                  amount ? "text-card-foreground" : "text-muted-foreground"
+          {/* Animated digits layer (behind input) */}
+          <div
+            className="flex items-center pointer-events-none"
+            aria-hidden="true"
+          >
+            {displayChars.map((char, index) => (
+              <span
+                key={`${index}-${char}-${
+                  animatingIndices.has(index) ? "anim" : "static"
                 }`}
-              />
-            </div>
-          )}
-          {/* Input layer */}
+                className={`font-display text-[32px] font-medium tracking-[0.8px] tabular-nums inline-block ${
+                  animatingIndices.has(index) ? "animate-digit-in" : ""
+                } ${amount ? "text-card-foreground" : "text-muted-foreground"}`}
+              >
+                {char}
+              </span>
+            ))}
+            {/* Placeholder when empty */}
+            {displayValue.length === 0 && (
+              <span className="text-muted-foreground font-display text-[32px] font-medium tracking-[0.8px] tabular-nums">
+                0
+              </span>
+            )}
+          </div>
+
+          {/* Real input overlaid with transparent text (for cursor positioning) */}
           <input
             ref={inputRef}
             type="text"
+            inputMode="decimal"
             value={displayValue}
             onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onClick={handleInputClick}
             onDoubleClick={handleDoubleClick}
             onKeyDown={handleKeyDown}
             placeholder="0"
@@ -191,11 +219,7 @@ function AmountCard({
               width: inputWidth > 0 ? Math.min(inputWidth + 4, 300) : undefined,
               maxWidth: "calc(100vw - 100px)",
             }}
-            className={`font-display text-[32px] font-medium tracking-[0.8px] tabular-nums bg-transparent border-none outline-none min-w-[40px] ${
-              isAnimating && !userInteracted ? "opacity-0" : ""
-            } ${
-              amount ? "text-card-foreground" : "text-muted-foreground"
-            } placeholder:text-muted-foreground`}
+            className="absolute inset-0 font-display text-[32px] font-medium tracking-[0.8px] tabular-nums bg-transparent border-none outline-none min-w-[22px] text-transparent caret-card-foreground placeholder:text-transparent"
           />
         </div>
       </div>
@@ -204,15 +228,17 @@ function AmountCard({
       <div
         className={`grid transition-all duration-300 ease-out ${
           numericAmount > 0
-            ? "grid-rows-[1fr] opacity-100 mt-2"
-            : "grid-rows-[0fr] opacity-0 mt-0"
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0 mt-2"
         }`}
       >
         <div className="overflow-hidden">
           <div className="flex items-center justify-center gap-1 text-muted-foreground h-5">
             <span
-              key={numericAmount}
-              className="text-[13px] animate-glare-shine"
+              key={isShining ? "shining" : "static"}
+              className={`text-[13px] ${
+                isShining ? "animate-glare-shine" : ""
+              }`}
             >
               ~ ${formatCurrency(numericAmount)}
             </span>
@@ -222,10 +248,12 @@ function AmountCard({
       </div>
 
       {/* Percentage Selector */}
-      <PercentageSelector onPercentageClick={handlePercentageClick} />
+      <div className={numericAmount > 0 ? "-mt-px" : ""}>
+        <PercentageSelector onPercentageClick={handlePercentageClick} />
+      </div>
 
       {/* Balance Display */}
-      <div className="mt-8.5 font-sans text-[13px] leading-4.5 text-base-foreground-2 text-center">
+      <div className="mt-[33px] font-sans text-sm leading-4.5 text-base-foreground-2 text-center">
         Balance: ${formatCurrency(MOCK_WALLET_BALANCE)}
       </div>
 
