@@ -13,16 +13,9 @@ type ElementType =
   | "fast-bridge"
   | "unified-balance"
   | "fast-transfer"
-  | "view-history"
-  | "swap-deposit"
-  | "new-deposit";
+  | "view-history";
 
-const disabledTestnet = new Set<ElementType>([
-  "new-deposit",
-  "deposit",
-  "swaps",
-  "swap-deposit",
-]);
+const disabledTestnet = new Set<ElementType>(["deposit", "swaps"]);
 
 type ToggleControlProps = Omit<
   React.ComponentProps<typeof Toggle>,
