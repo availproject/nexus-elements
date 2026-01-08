@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "skeleton",
+  "type": "registry:component",
+  "title": "Skeleton",
+  "description": "UI primitive: Skeleton",
+  "registryDependencies": [
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
+  ],
+  "files": [
+    {
+      "path": "registry/nexus-elements/ui/skeleton.tsx",
+      "content": "import { cn } from \"@/lib/utils\"\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"skeleton\"\n      className={cn(\"bg-accent animate-pulse rounded-md\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Skeleton }\n",
+      "type": "registry:component",
+      "target": "components/ui/skeleton.tsx"
+    }
+  ]
+}
