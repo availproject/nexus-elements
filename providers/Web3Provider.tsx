@@ -17,6 +17,7 @@ import {
   optimismSepolia,
   polygonAmoy,
   monadTestnet,
+  sophon,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Chain, defineChain } from "viem";
@@ -35,28 +36,6 @@ const hyperEVM = defineChain({
   },
   blockExplorers: {
     default: { name: "HyperEVM Scan", url: "https://hyperevmscan.io" },
-  },
-});
-
-const sophon = defineChain({
-  id: 50104,
-  name: "Sophon",
-  nativeCurrency: {
-    decimals: 18,
-    name: "Sophon",
-    symbol: "SOPH",
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://rpc.sophon.xyz"],
-      webSocket: ["wss://rpc.sophon.xyz/ws"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "Sophon Block Explorer",
-      url: "https://explorer.sophon.xyz",
-    },
   },
 });
 
@@ -85,15 +64,7 @@ const monad = {
 const hyperEVMWithIcon: ConnectKitChain = {
   ...hyperEVM,
   iconUrl:
-    "https://assets.coingecko.com/coins/images/50882/standard/hyperliquid.jpg?1729431300",
-  iconBackground: "#0a3cff",
-};
-
-const sophonWithIcon: ConnectKitChain = {
-  ...sophon,
-  iconUrl:
-    "https://assets.coingecko.com/coins/images/38680/standard/sophon_logo_200.png?1747898236",
-  iconBackground: "#6b5cff",
+    "https://assets.coingecko.com/coins/images/38927/standard/monad.png?1764042736",
 };
 
 const WALLET_CONNECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!;
@@ -106,7 +77,7 @@ const defaultConfig = getDefaultConfig({
   chains: [
     mainnet,
     base,
-    sophonWithIcon,
+    sophon,
     hyperEVMWithIcon,
     bsc,
     kaia,

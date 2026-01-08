@@ -75,7 +75,7 @@ const FastTransfer: FC<FastTransferProps> = ({
     status,
   } = useTransfer({
     prefill,
-    network: network ?? "mainnet",
+    network,
     nexusSDK,
     intent,
     bridgableBalance,

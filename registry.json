@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "nexus-elements",
   "namespace": "nexus-elements",
-  "homepage": "https://elements.nexus.availproject.org",
+  "homepage": "https://develop.elements.nexus.availproject.org",
   "items": [
     {
       "name": "fast-bridge",
@@ -17,25 +17,24 @@
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
         "@radix-ui/react-tooltip",
+        "@radix-ui/react-tooltip",
         "class-variance-authority",
         "clsx",
         "lucide-react",
         "tailwind-merge"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/input.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/select.json",
-        "https://elements.nexus.availproject.org/r/skeleton.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/badge.json",
-        "https://elements.nexus.availproject.org/r/separator.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/input.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/select.json",
+        "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+        "https://develop.elements.nexus.availproject.org/r/tooltip.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -46,11 +45,6 @@
         {
           "path": "registry/nexus-elements/view-history/view-history.tsx",
           "target": "components/view-history/view-history.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
-          "target": "components/view-history/hooks/useViewHistory.ts",
           "type": "registry:component"
         },
         {
@@ -173,25 +167,24 @@
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
         "@radix-ui/react-tooltip",
+        "@radix-ui/react-tooltip",
         "class-variance-authority",
         "clsx",
         "lucide-react",
         "tailwind-merge"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/input.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/select.json",
-        "https://elements.nexus.availproject.org/r/skeleton.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/badge.json",
-        "https://elements.nexus.availproject.org/r/separator.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/input.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/select.json",
+        "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+        "https://develop.elements.nexus.availproject.org/r/tooltip.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -202,11 +195,6 @@
         {
           "path": "registry/nexus-elements/view-history/view-history.tsx",
           "target": "components/view-history/view-history.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
-          "target": "components/view-history/hooks/useViewHistory.ts",
           "type": "registry:component"
         },
         {
@@ -336,7 +324,7 @@
       "title": "Accordion",
       "description": "UI primitive: Accordion",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -352,7 +340,7 @@
       "title": "Collapsible",
       "description": "UI primitive: Collapsible",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -368,7 +356,7 @@
       "title": "Button",
       "description": "UI primitive: Button",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -384,7 +372,7 @@
       "title": "Card",
       "description": "UI primitive: Card",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -400,7 +388,7 @@
       "title": "Dialog",
       "description": "UI primitive: Dialog",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -416,7 +404,7 @@
       "title": "Input",
       "description": "UI primitive: Input",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -432,7 +420,7 @@
       "title": "Badge",
       "description": "UI primitive: Badge",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -448,7 +436,7 @@
       "title": "Label",
       "description": "UI primitive: Label",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -464,7 +452,7 @@
       "title": "Select",
       "description": "UI primitive: Select",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -481,7 +469,7 @@
       "description": "UI primitive: Tooltip",
       "dependencies": ["@radix-ui/react-tooltip"],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -497,7 +485,7 @@
       "title": "Separator",
       "description": "UI primitive: Separator",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -513,7 +501,7 @@
       "title": "Skeleton",
       "description": "UI primitive: Skeleton",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -529,7 +517,7 @@
       "title": "Tabs",
       "description": "UI primitive: Tabs",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -545,7 +533,7 @@
       "title": "Checkbox",
       "description": "UI primitive: Checkbox",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -561,7 +549,7 @@
       "title": "Popover",
       "description": "UI primitive: Popover",
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
@@ -598,12 +586,12 @@
         "@radix-ui/react-tabs"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/separator.json",
-        "https://elements.nexus.availproject.org/r/tabs.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/separator.json",
+        "https://develop.elements.nexus.availproject.org/r/tabs.json"
       ],
       "files": [
         {
@@ -625,13 +613,13 @@
         "@radix-ui/react-slot"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/badge.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/separator.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/card.json"
+        "https://develop.elements.nexus.availproject.org/r/badge.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/separator.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json"
       ],
       "files": [
         {
@@ -664,19 +652,19 @@
         "@radix-ui/react-collapsible"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/collapsible.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/input.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/skeleton.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/popover.json",
-        "https://elements.nexus.availproject.org/r/checkbox.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/collapsible.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/input.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+        "https://develop.elements.nexus.availproject.org/r/tooltip.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json",
+        "https://develop.elements.nexus.availproject.org/r/popover.json",
+        "https://develop.elements.nexus.availproject.org/r/checkbox.json"
       ],
       "files": [
         {
@@ -984,15 +972,15 @@
         "tailwind-merge"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/collapsible.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/checkbox.json",
-        "https://elements.nexus.availproject.org/r/badge.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
-        "https://elements.nexus.availproject.org/r/separator.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/collapsible.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/checkbox.json",
+        "https://develop.elements.nexus.availproject.org/r/badge.json",
+        "https://develop.elements.nexus.availproject.org/r/tooltip.json",
+        "https://develop.elements.nexus.availproject.org/r/separator.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {

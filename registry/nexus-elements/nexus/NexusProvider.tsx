@@ -32,7 +32,7 @@ interface NexusContextType {
   exchangeRate: Record<string, number> | null;
   supportedChainsAndTokens: SupportedChainsAndTokensResult | null;
   swapSupportedChainsAndTokens: SupportedChainsResult | null;
-  network?: NexusNetwork;
+  network: NexusNetwork;
   loading: boolean;
   handleInit: (provider: EthereumProvider) => Promise<void>;
   fetchBridgableBalance: () => Promise<void>;
@@ -245,7 +245,7 @@ const NexusProvider = ({
       swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
       bridgableBalance,
       swapBalance: swapBalance,
-      network: config?.network,
+      network: config?.network ?? defaultConfig?.network,
       loading,
       fetchBridgableBalance,
       fetchSwapBalance,

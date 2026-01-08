@@ -32,6 +32,7 @@ export type TransactionStatus =
   | "idle"
   | "set-source-assets"
   | "set-amount"
+  | "simulating"
   | "view-breakdown"
   | "swapping"
   | "depositing"

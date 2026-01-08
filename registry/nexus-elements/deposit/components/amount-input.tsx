@@ -97,6 +97,11 @@ const AmountInput = ({
                 No sources selected
               </p>
             )}
+            {bridgableBalance && !hasSelectedSources && (
+              <p className="text-sm text-muted-foreground min-w-max">
+                No sources selected
+              </p>
+            )}
             {loading && !bridgableBalance && (
               <LoaderCircle className="size-4 animate-spin" />
             )}

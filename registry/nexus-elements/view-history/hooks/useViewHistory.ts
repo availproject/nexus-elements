@@ -1,4 +1,4 @@
-import { type RFF } from "@avail-project/nexus-core";
+import { type RequestForFunds } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useCallback, useEffect, useState } from "react";
 
@@ -16,8 +16,10 @@ function formatExpiryDate(timestamp: number) {
 
 const useViewHistory = () => {
   const { nexusSDK } = useNexus();
-  const [history, setHistory] = useState<RFF[] | null>(null);
-  const [displayedHistory, setDisplayedHistory] = useState<RFF[]>([]);
+  const [history, setHistory] = useState<RequestForFunds[] | null>(null);
+  const [displayedHistory, setDisplayedHistory] = useState<RequestForFunds[]>(
+    []
+  );
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -92,7 +94,7 @@ const useViewHistory = () => {
     };
   }, [sentinelNode, loadMore, hasMore, isLoadingMore, displayedHistory.length]);
 
-  const getStatus = (pastIntent: RFF) => {
+  const getStatus = (pastIntent: RequestForFunds) => {
     if (pastIntent?.fulfilled) {
       return "Fulfilled";
     } else if (pastIntent?.deposited) {
