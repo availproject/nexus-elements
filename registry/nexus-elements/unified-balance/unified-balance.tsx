@@ -151,7 +151,7 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
     return bridgableBalance
       .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
       .toFixed(2);
-  }, [bridgableBalance, swapBalance]);
+  }, [bridgableBalance]);
 
   const swapTotalFiat = useMemo(() => {
     if (!swapBalance) return "0.00";

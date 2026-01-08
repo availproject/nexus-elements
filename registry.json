@@ -648,7 +648,8 @@
         "@radix-ui/react-popover",
         "@radix-ui/react-checkbox",
         "@radix-ui/react-slot",
-        "@radix-ui/react-tooltip"
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-collapsible"
       ],
       "registryDependencies": [
         "https://develop.elements.nexus.availproject.org/r/accordion.json",
@@ -809,29 +810,22 @@
         "@radix-ui/react-label",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
-        "@radix-ui/react-tabs",
-        "@radix-ui/react-tabs",
-        "@radix-ui/react-popover",
         "class-variance-authority",
         "clsx",
         "tailwind-merge"
       ],
       "registryDependencies": [
-        "https://develop.elements.nexus.availproject.org/r/button.json",
-        "https://develop.elements.nexus.availproject.org/r/card.json",
-        "https://develop.elements.nexus.availproject.org/r/dialog.json",
-        "https://develop.elements.nexus.availproject.org/r/input.json",
-        "https://develop.elements.nexus.availproject.org/r/label.json",
-        "https://develop.elements.nexus.availproject.org/r/select.json",
-        "https://develop.elements.nexus.availproject.org/r/tabs.json",
-        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://develop.elements.nexus.availproject.org/r/utils.json",
-        "https://develop.elements.nexus.availproject.org/r/tooltip.json"
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/select.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/nexus-elements/swaps/swaps.tsx",
-          "target": "components/swaps/swaps.tsx",
+          "path": "registry/nexus-elements/swaps/swap-widget.tsx",
+          "target": "components/swaps/swap-widget.tsx",
           "type": "registry:component"
         },
         {
@@ -895,16 +889,6 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/swaps/exact-in/exact-in.tsx",
-          "target": "components/swaps/exact-in/exact-in.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/swaps/exact-out/exact-out.tsx",
-          "target": "components/swaps/exact-out/exact-out.tsx",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/nexus-elements/swaps/components/source-asset-select.tsx",
           "target": "components/swaps/components/source-asset-select.tsx",
           "type": "registry:component"
@@ -915,24 +899,48 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/swaps/components/source-container.tsx",
+          "target": "components/swaps/components/source-container.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/destination-container.tsx",
+          "target": "components/swaps/components/destination-container.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/swaps/components/amount-input.tsx",
           "target": "components/swaps/components/amount-input.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/swaps/components/swap-source-breakdown.tsx",
-          "target": "components/swaps/components/swap-source-breakdown.tsx",
-          "type": "registry:component"
-        },
-
-        {
-          "path": "registry/nexus-elements/swaps/exact-in/hooks/useExactIn.ts",
-          "target": "components/swaps/exact-in/hooks/useExactIn.ts",
+          "path": "registry/nexus-elements/swaps/components/step-flow.tsx",
+          "target": "components/swaps/components/step-flow.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/swaps/exact-out/hooks/useExactOut.ts",
-          "target": "components/swaps/exact-out/hooks/useExactOut.ts",
+          "path": "registry/nexus-elements/swaps/components/view-transaction.tsx",
+          "target": "components/swaps/components/view-transaction.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/token-icon.tsx",
+          "target": "components/swaps/components/token-icon.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/components/stacked-token-icons.tsx",
+          "target": "components/swaps/components/stacked-token-icons.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/hooks/useSwaps.ts",
+          "target": "components/swaps/hooks/useSwaps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/swaps/hooks/useHover.ts",
+          "target": "components/swaps/hooks/useHover.ts",
           "type": "registry:component"
         },
         {
@@ -943,11 +951,6 @@
         {
           "path": "registry/nexus-elements/swaps/components/transaction-progress.tsx",
           "target": "components/swaps/components/transaction-progress.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/swaps/utils/prefill.ts",
-          "target": "components/swaps/utils/prefill.ts",
           "type": "registry:component"
         }
       ]

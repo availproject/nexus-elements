@@ -10,7 +10,7 @@ export function useStableCallback<Args extends readonly unknown[], Return>(
   const fnRef = useRef<(...args: Args) => Return>(fn);
   fnRef.current = fn;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   const stable = useCallback(
     ((...args: Args) => {
       return fnRef.current(...args);

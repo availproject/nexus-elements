@@ -77,10 +77,10 @@ export function OnThisPage({
   toc: tocProp,
   variant = "list",
   className,
-}: OnThisPageProps) {
+}: Readonly<OnThisPageProps>) {
   const routeToc = useRouteToc();
   const toc = React.useMemo<TocEntry[]>(
-    () => (tocProp && tocProp.length ? tocProp : routeToc),
+    () => (tocProp?.length ? tocProp : routeToc),
     [tocProp, routeToc]
   );
   const [open, setOpen] = React.useState(false);

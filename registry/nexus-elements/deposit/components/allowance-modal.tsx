@@ -16,6 +16,7 @@ import {
   type OnAllowanceHookData,
 } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
+import { Loader2 } from "lucide-react";
 
 interface AllowanceModalProps {
   allowance: RefObject<OnAllowanceHookData | null>;
@@ -111,6 +112,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   const { nexusSDK } = useNexus();
   const [selectedOption, setSelectedOption] = useState<AllowanceChoice[]>([]);
   const [customValues, setCustomValues] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const { sources, allow, deny } = allowance.current ?? {
     sources: [],
@@ -166,14 +168,16 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       if (!Number.isFinite(parsed) || parsed < 0) return "min";
       return rawValue;
     });
+    setLoading(true);
     try {
       allow(processed);
-      allowance.current = null;
       callback?.();
     } catch (error) {
       console.error("AllowanceModal onApprove error", error);
-      allowance.current = null;
       onCloseCallback?.();
+    } finally {
+      allowance.current = null;
+      setLoading(false);
     }
   };
 
@@ -330,9 +334,13 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
         <Button
           onClick={onApprove}
           className="w-full sm:w-auto font-semibold"
-          disabled={hasValidationErrors}
+          disabled={hasValidationErrors || loading}
         >
-          Approve Selected
+          {loading ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            "Approve Selected"
+          )}
         </Button>
       </div>
     </>

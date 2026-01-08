@@ -59,7 +59,7 @@ export const AmountStep = ({
         percent === 100 ? token.maxAmount : (token.maxAmount * percent) / 100;
       setAmount(computed.toFixed(token.receiveTokenDecimals));
     },
-    [token.maxAmount]
+    [token.maxAmount],
   );
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,7 +142,7 @@ export const AmountStep = ({
                 "rounded-lg px-4 text-sm",
                 selectedPercent === percent
                   ? "bg-secondary text-foreground"
-                  : "bg-transparent text-muted-foreground hover:bg-secondary"
+                  : "bg-transparent text-muted-foreground hover:bg-secondary",
               )}
             >
               {percent === 100 ? "Max" : `${percent}%`}
@@ -157,7 +157,7 @@ export const AmountStep = ({
             <div className="max-w-40 overflow-x-scroll no-scrollbar flex items-center">
               {token.sources?.map((source, index) => (
                 <TokenIcon
-                  key={source.tokenAddress}
+                  key={source.chainId + source.tokenAddress + source.balance}
                   symbol={source.symbol}
                   tokenLogo={source.tokenLogo}
                   chainLogo={source.chainLogo}
@@ -168,7 +168,7 @@ export const AmountStep = ({
                       token?.sources?.length &&
                       token.sources.length > 5
                       ? "-mr-5"
-                      : "-mr-3"
+                      : "-mr-3",
                   )}
                 />
               ))}

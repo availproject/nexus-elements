@@ -94,6 +94,7 @@ const SwapDepositShowcase = () => {
     <ShowcaseWrapper
       connectLabel="Connect wallet to use Nexus Swap Deposit"
       type="swap-deposit"
+      banner="Multi Source Asset Select Coming Soon"
     >
       <SwapDeposit
         destination={{

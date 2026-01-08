@@ -14,6 +14,17 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/app/docs/[[...slug]]": ["registry/**", "public/r/**"],
   },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      crypto: false,
+    };
+    config.externals = config.externals || [];
+    config.externals.push({
+      'node:crypto': 'crypto',
+    });
+    return config;
+  },
 };
 
 const withMDX = createMDX({});

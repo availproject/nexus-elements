@@ -26,7 +26,8 @@ const EXCLUDED_SECTIONS: string[] = [
   "view-components.mdx",
   "mcp.mdx",
 ];
-const EXCLUDED_PAGES: string[] = [];
+
+const EXCLUDED_PAGES: string[] = []; // "/docs/components/swap-deposit"
 
 export default function SidebarNav({
   tree,

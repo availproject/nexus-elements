@@ -19,9 +19,9 @@ import useViewHistory from "./hooks/useViewHistory";
 const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
   return (
     <div className="flex items-center">
-      {sources.map((source, index) => (
+      {sources?.map((source, index) => (
         <div
-          key={source.chain.id}
+          key={source?.chain?.id}
           className={cn(
             "rounded-full transition-transform hover:scale-110",
             index > 0 && "-ml-2"
@@ -29,8 +29,8 @@ const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
           style={{ zIndex: sources.length - index }}
         >
           <img
-            src={source.chain.logo}
-            alt={source.chain.name}
+            src={source?.chain?.logo}
+            alt={source?.chain?.name}
             width={24}
             height={24}
             className="rounded-full"
@@ -80,8 +80,8 @@ const DestinationToken = ({
           style={{ zIndex: destination.length - index }}
         >
           <img
-            src={TOKEN_METADATA[dest.token.symbol].icon || "/placeholder.svg"}
-            alt={TOKEN_METADATA[dest.token.symbol].name}
+            src={TOKEN_METADATA[dest.token.symbol]?.icon ?? ""}
+            alt={TOKEN_METADATA[dest.token.symbol]?.name}
             width={24}
             height={24}
             className="rounded-full"
@@ -114,22 +114,22 @@ const ViewHistory = ({
     if (displayedHistory.length > 0) {
       return (
         <>
-          {displayedHistory.map((pastIntent) => (
+          {displayedHistory?.map((pastIntent) => (
             <Card
               key={pastIntent.id}
               className="p-4 hover:shadow-md transition-shadow duration-200 border-border/50 gap-3"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <DestinationToken destination={pastIntent.destinations} />
+                  <DestinationToken destination={pastIntent?.destinations} />
                   <div className="flex flex-col">
                     <p className="text-sm font-medium">
-                      {pastIntent.destinations
-                        .map((d) => d.token.symbol)
+                      {pastIntent?.destinations
+                        .map((d) => d?.token?.symbol)
                         .join(", ")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Intent #{pastIntent.id}
+                      Intent #{pastIntent?.id}
                     </p>
                   </div>
                 </div>
@@ -140,7 +140,7 @@ const ViewHistory = ({
 
               <div className="flex flex-col sm:flex-row  items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center justify-between gap-x-3 flex-1 w-full sm:min-w-fit">
-                  <SourceChains sources={pastIntent.sources} />
+                  <SourceChains sources={pastIntent?.sources} />
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <div className="h-px w-8 bg-border" />
                     <span className="text-xs">→</span>
@@ -148,10 +148,8 @@ const ViewHistory = ({
                   </div>
                   <div className="rounded-full hover:scale-110">
                     <img
-                      src={
-                        pastIntent.destinationChain.logo || "/placeholder.svg"
-                      }
-                      alt={pastIntent.destinationChain.name}
+                      src={pastIntent?.destinationChain?.logo ?? ""}
+                      alt={pastIntent?.destinationChain?.name}
                       width={24}
                       height={24}
                       className="rounded-full"
@@ -163,11 +161,11 @@ const ViewHistory = ({
                   <div className="text-left sm:text-right">
                     <p className="text-xs text-muted-foreground">Expiry</p>
                     <p className="text-xs font-medium">
-                      {formatExpiryDate(pastIntent.expiry)}
+                      {formatExpiryDate(pastIntent?.expiry)}
                     </p>
                   </div>
                   <a
-                    href={pastIntent.explorerUrl}
+                    href={pastIntent?.explorerUrl}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -191,7 +189,7 @@ const ViewHistory = ({
             </div>
           )}
 
-          {!hasMore && displayedHistory.length > ITEMS_PER_PAGE && (
+          {!hasMore && displayedHistory?.length > ITEMS_PER_PAGE && (
             <div className="flex justify-center py-4">
               <p className="text-sm text-muted-foreground">
                 No more transactions to load

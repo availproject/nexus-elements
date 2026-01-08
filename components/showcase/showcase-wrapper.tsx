@@ -1,11 +1,11 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import NetworkToggle from "../helpers/network-toggle";
-import { useSearchParams } from "next/navigation";
-import { NexusNetwork } from "@avail-project/nexus-core";
 import { PreviewPanel } from "../helpers/preview-panel";
 import { Toggle } from "../ui/toggle";
 import { Check, X } from "lucide-react";
+import { getItem } from "@/lib/local-storage";
+import { NETWORK_KEY } from "@/providers/Web3Provider";
 
 type ElementType =
   | "deposit"
@@ -33,6 +33,7 @@ interface ShowcaseWrapperProps extends ToggleControlProps {
   type: ElementType;
   toggleLabel?: string;
   toggle?: boolean;
+  banner?: string;
 }
 
 const ShowcaseWrapper = ({
@@ -46,10 +47,17 @@ const ShowcaseWrapper = ({
   pressed,
   defaultPressed,
   onPressedChange,
+  banner,
   ...toggleProps
 }: ShowcaseWrapperProps) => {
-  const searchParams = useSearchParams();
-  const urlNetwork = (searchParams.get("network") || "mainnet") as NexusNetwork;
+  const [currentNetwork, setCurrentNetwork] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Read from localStorage on client side only
+    const storedNetwork = getItem(NETWORK_KEY);
+    setCurrentNetwork(storedNetwork ?? "mainnet");
+  }, []);
+
   const resolvedToggle =
     typeof toggle === "boolean"
       ? toggle
@@ -62,10 +70,7 @@ const ShowcaseWrapper = ({
   return (
     <div className="w-full flex flex-col gap-y-4">
       <div className="flex items-center justify-between w-full">
-        {!disabledTestnet.has(type) && (
-          <NetworkToggle currentNetwork={urlNetwork ?? "mainnet"} />
-        )}
-
+        <NetworkToggle />
         {resolvedToggle && (
           <Toggle
             variant={variant}
@@ -84,8 +89,21 @@ const ShowcaseWrapper = ({
           </Toggle>
         )}
       </div>
-
-      <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+      <p className="text-sm font-medium">{banner}</p>
+      {disabledTestnet.has(type) && currentNetwork === "testnet" ? (
+        <div className="w-full h-64 flex flex-col gap-y-2 items-center justify-center">
+          <p className="text-lg font-medium">
+            This feature is not available on testnet
+          </p>
+          <p className="text-lg font-medium">Please switch to mainnet</p>
+          <p className="text-center text-base">
+            You can still view the source code or <br /> download the element
+            with the command below.
+          </p>
+        </div>
+      ) : (
+        <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+      )}
     </div>
   );
 };

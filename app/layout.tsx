@@ -19,12 +19,50 @@ const interMono = Inter({
   subsets: ["latin"],
 });
 
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://elements.nexus.availproject.org";
+
 export const metadata: Metadata = {
   title: "Nexus Elements",
   description: "Prebuilt React components powered by Avail Nexus",
   authors: [{ name: "decocereus", url: "https://github.com/decocereus" }],
+  metadataBase: new URL(APP_URL),
   icons: {
-    icon: "/avail-fav.svg",
+    icon: [
+      { url: "/avail-fav.svg", media: "(prefers-color-scheme: light)" },
+      { url: "/dark-avail-fav.png", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: APP_URL,
+    siteName: "Nexus Elements",
+    title: "Nexus Elements",
+    description: "Prebuilt React components powered by Avail Nexus",
+    images: [
+      {
+        url: "/1200x630.png",
+        width: 1200,
+        height: 630,
+        alt: "Nexus Elements",
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    creator: "@decocereus",
+    site: APP_URL,
+    title: "Nexus Elements",
+    description: "Prebuilt React components powered by Avail Nexus",
+    images: [
+      {
+        url: "/1200x630.png",
+        alt: "Nexus Elements",
+        type: "image/png",
+      },
+    ],
   },
 };
 

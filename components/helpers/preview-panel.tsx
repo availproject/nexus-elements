@@ -1,5 +1,5 @@
 "use client";
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { LoaderPinwheel } from "lucide-react";
 import { type EthereumProvider } from "@avail-project/nexus-core";
 import { useAccount, useConnectorClient } from "wagmi";
@@ -39,6 +39,12 @@ export function PreviewPanel({
       toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
     }
   };
+
+  useEffect(() => {
+    if (status === "connected" && !nexusSDK) {
+      initializeNexus();
+    }
+  }, [status, nexusSDK]);
   return (
     <div className="w-full">
       <div className="flex flex-col w-full items-center justify-center min-h-[450px] relative">
