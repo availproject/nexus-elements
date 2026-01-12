@@ -142,12 +142,21 @@ importers:
       '@types/react-dom':
         specifier: 19.1.2
         version: 19.1.2(@types/react@19.1.2)
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
+      crypto-browserify:
+        specifier: ^3.12.1
+        version: 3.12.1
       eslint:
         specifier: ^9.32.0
         version: 9.39.0(jiti@2.6.1)
       eslint-config-next:
         specifier: 15.3.1
         version: 15.3.1(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      stream-browserify:
+        specifier: ^3.0.0
+        version: 3.0.0
       tailwindcss:
         specifier: ^4.1.11
         version: 4.1.16
