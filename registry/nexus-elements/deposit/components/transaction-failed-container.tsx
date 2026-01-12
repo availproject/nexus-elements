@@ -4,7 +4,6 @@ import { CardContent, CardFooter } from "../../ui/card";
 import { Button } from "../../ui/button";
 import WidgetHeader from "./widget-header";
 import { ReceiveAmountDisplay } from "./receive-amount-display";
-import { MOCK_DEMO_VALUES } from "../constants";
 import type { DepositWidgetContextValue } from "../types";
 
 interface TransactionFailedContainerProps {
@@ -18,7 +17,8 @@ const TransactionFailedContainer = ({
 }: TransactionFailedContainerProps) => {
   const handleRetry = () => {
     widget.setTxError(null);
-    widget.startTransaction();
+    widget.reset();
+    widget.goToStep("amount");
   };
 
   const handleClose = () => {
@@ -34,7 +34,7 @@ const TransactionFailedContainer = ({
           <div className="bg-base rounded-t-lg border-t border-l border-r border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-6 pb-6 flex flex-col items-center gap-5">
             <ReceiveAmountDisplay
               label="Transaction failed"
-              amount={MOCK_DEMO_VALUES.receiveAmountFormatted}
+              amount="-$0.00"
               timeLabel=""
             />
             <div className="w-full bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-4">

@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 import { TokenIcon } from "./token-icon";
-import { MOCK_WALLET_BALANCE } from "../constants";
 import { ErrorBanner } from "./error-banner";
 import { PercentageSelector } from "./percentage-selector";
 import { parseCurrencyInput } from "../utils";
@@ -15,6 +14,10 @@ interface AmountCardProps {
   selectedTokenAmount?: number;
   onErrorStateChange?: (hasError: boolean) => void;
   totalSelectedBalance: number;
+  totalBalance: {
+    balance: number;
+    usdBalance: number;
+  };
 }
 
 function AmountCard({
@@ -23,6 +26,7 @@ function AmountCard({
   selectedTokenAmount = 0,
   onErrorStateChange,
   totalSelectedBalance,
+  totalBalance,
 }: AmountCardProps) {
   const [internalAmount, setInternalAmount] = useState("");
   const amount = externalAmount ?? internalAmount;
@@ -80,8 +84,8 @@ function AmountCard({
   const exceedsBalance = useMemo(() => {
     if (!amount) return false;
     const numericAmount = parseFloat(amount.replace(/,/g, ""));
-    return !isNaN(numericAmount) && numericAmount > MOCK_WALLET_BALANCE;
-  }, [amount]);
+    return !isNaN(numericAmount) && numericAmount > totalBalance?.usdBalance;
+  }, [amount, totalBalance?.usdBalance]);
 
   // Check if amount exceeds selected token amount but is within wallet balance
   const exceedsSelectedTokens = useMemo(() => {
@@ -90,9 +94,9 @@ function AmountCard({
     return (
       !isNaN(numericAmount) &&
       numericAmount > selectedTokenAmount &&
-      numericAmount <= MOCK_WALLET_BALANCE
+      numericAmount <= totalBalance?.usdBalance
     );
-  }, [amount, selectedTokenAmount]);
+  }, [amount, selectedTokenAmount, totalBalance?.usdBalance]);
 
   useEffect(() => {
     if (measureRef.current) {
@@ -133,11 +137,13 @@ function AmountCard({
 
   const handlePercentageClick = useCallback(
     (percentage: number) => {
-      const calculatedAmount = MOCK_WALLET_BALANCE * percentage;
+      // 8% safety margin - keep 92% of balance available
+      const safeBalance = totalBalance?.usdBalance * 0.92;
+      const calculatedAmount = safeBalance * percentage;
       const newAmount = usdFormatter.format(calculatedAmount).replace("$", "");
       setAmount(newAmount);
     },
-    [setAmount],
+    [setAmount, totalBalance?.usdBalance],
   );
 
   const handleDoubleClick = useCallback(() => {

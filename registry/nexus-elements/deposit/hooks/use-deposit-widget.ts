@@ -23,7 +23,6 @@ import {
   type SwapStepType,
   type ExecuteParams,
   type SwapAndExecuteParams,
-  CHAIN_METADATA,
   parseUnits,
 } from "@avail-project/nexus-core";
 import {
@@ -32,10 +31,17 @@ import {
   usePolling,
   useStopwatch,
   useTransactionSteps,
+  usdFormatter,
 } from "../../common";
-import { type Address } from "viem";
+import { type Address, type Hex } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
+
+interface SourceSwapInfo {
+  chainId: number;
+  chainName: string;
+  explorerUrl: string;
+}
 
 interface DepositState {
   step: WidgetStep;
@@ -45,6 +51,7 @@ interface DepositState {
     intentUrl: string | null;
     executeUrl: string | null;
   };
+  sourceSwaps: SourceSwapInfo[];
   error: string | null;
   lastResult: unknown;
   navigationDirection: NavigationDirection;
@@ -54,6 +61,7 @@ interface DepositState {
   simulationLoading: boolean;
   receiveAmount: string | null;
   skipSwap: boolean;
+  intentReady: boolean;
 }
 
 type Action =
@@ -75,6 +83,8 @@ type Action =
   | { type: "setSimulationLoading"; payload: boolean }
   | { type: "setReceiveAmount"; payload: string | null }
   | { type: "setSkipSwap"; payload: boolean }
+  | { type: "setIntentReady"; payload: boolean }
+  | { type: "addSourceSwap"; payload: SourceSwapInfo }
   | { type: "reset" };
 
 const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
@@ -82,6 +92,7 @@ const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
   confirmation: "amount",
   "transaction-status": null,
   "transaction-complete": null,
+  "transaction-failed": null,
   "asset-selection": "amount",
 } as const;
 
@@ -109,6 +120,7 @@ const createInitialState = (): DepositState => ({
     intentUrl: null,
     executeUrl: null,
   },
+  sourceSwaps: [],
   error: null,
   lastResult: null,
   navigationDirection: null,
@@ -116,6 +128,7 @@ const createInitialState = (): DepositState => ({
   simulationLoading: false,
   receiveAmount: null,
   skipSwap: false,
+  intentReady: false,
 });
 
 function reducer(state: DepositState, action: Action): DepositState {
@@ -142,7 +155,8 @@ function reducer(state: DepositState, action: Action): DepositState {
       ) {
         newStatus = "idle";
       }
-      return { ...state, inputs: newInputs, status: newStatus };
+      // Clear error when user changes inputs
+      return { ...state, inputs: newInputs, status: newStatus, error: null };
     }
     case "setStatus":
       return { ...state, status: action.payload };
@@ -166,6 +180,10 @@ function reducer(state: DepositState, action: Action): DepositState {
       return { ...state, receiveAmount: action.payload };
     case "setSkipSwap":
       return { ...state, skipSwap: action.payload };
+    case "setIntentReady":
+      return { ...state, intentReady: action.payload };
+    case "addSourceSwap":
+      return { ...state, sourceSwaps: [...state.sourceSwaps, action.payload] };
     case "reset":
       return createInitialState();
     default:
@@ -219,6 +237,28 @@ export function useDepositWidget(
 
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
+
+  useEffect(() => {
+    if (swapBalance && assetSelection.selectedChainIds.size === 0) {
+      const allChainIds = new Set<string>();
+      swapBalance.forEach((asset) => {
+        if (asset.breakdown) {
+          asset.breakdown.forEach((b) => {
+            if (b.chain && b.balance) {
+              allChainIds.add(`${asset.symbol}-${b.chain.id}`);
+            }
+          });
+        }
+      });
+      if (allChainIds.size > 0) {
+        setAssetSelectionState({
+          selectedChainIds: allChainIds,
+          filter: "all",
+          expandedTokens: new Set(),
+        });
+      }
+    }
+  }, [swapBalance, assetSelection.selectedChainIds.size]);
 
   const setAssetSelection = useCallback(
     (update: Partial<AssetSelectionState>) => {
@@ -282,12 +322,30 @@ export function useDepositWidget(
 
   const totalSelectedBalance = useMemo(
     () =>
-      availableAssets.reduce(
-        (sum, asset) => sum + (asset.balanceInFiat ?? 0),
-        0,
-      ),
-    [availableAssets],
+      availableAssets.reduce((sum, asset) => {
+        const key = `${asset.symbol}-${asset.chainId}`;
+        if (assetSelection.selectedChainIds.has(key)) {
+          return sum + (asset.balanceInFiat ?? 0);
+        }
+        return sum;
+      }, 0),
+    [availableAssets, assetSelection.selectedChainIds],
   );
+
+  const totalBalance = useMemo(() => {
+    const balance =
+      swapBalance?.reduce(
+        (acc, balance) => acc + parseFloat(balance.balance),
+        0,
+      ) ?? 0;
+    const usdBalance =
+      swapBalance?.reduce((acc, balance) => acc + balance.balanceInFiat, 0) ??
+      0;
+    return {
+      balance,
+      usdBalance,
+    };
+  }, [swapBalance]);
 
   const confirmationDetails = useMemo(() => {
     if (!activeIntent || !nexusSDK) return null;
@@ -340,63 +398,113 @@ export function useDepositWidget(
   }, [activeIntent, nexusSDK, destination, availableAssets]);
 
   const feeBreakdown = useMemo(() => {
-    if (!nexusSDK || !state.simulation || !state.inputs) {
+    if (!activeIntent?.intent?.destination?.gas) {
       return { totalGasFee: 0, gasUsd: 0, gasFormatted: "0" };
     }
+    //FIX: Fix type in SDK
+    const gas = (activeIntent.intent.destination as any).gas;
+    const gasAmount = parseFloat(gas.amount);
+    const gasSymbol = gas.token?.symbol ?? destination.gasTokenSymbol;
 
-    const native = CHAIN_METADATA[destination.chainId]?.nativeCurrency;
-    const nativeSymbol = native?.symbol;
-    const nativeDecimals = native?.decimals;
+    // Convert gas amount to USD using getFiatValue
+    const gasUsd = getFiatValue(gasAmount, gasSymbol);
 
-    const gasFormatted =
-      nexusSDK.utils.formatTokenBalance(BigInt(200000), {
-        symbol: nativeSymbol,
-        decimals: nativeDecimals,
-      }) ?? "0";
-    const gasUnits = Number.parseFloat(
-      nexusSDK.utils.formatUnits(BigInt(200000), nativeDecimals),
-    );
-    const gasUsd = getFiatValue(gasUnits, nativeSymbol ?? "ETH");
+    // Format the gas amount for display (show USD value)
+    const gasFormatted = usdFormatter.format(gasUsd);
 
     return { totalGasFee: gasUsd, gasUsd, gasFormatted };
-  }, [
-    nexusSDK,
-    getFiatValue,
-    state.simulation,
-    state.inputs,
-    destination.chainId,
-  ]); // getFiatValue is stable from useNexus
+  }, [activeIntent, getFiatValue]); // getFiatValue is stable from useNexus
 
-  const start = useCallback((inputs: SwapAndExecuteParams) => {
+  const start = useCallback(
+    (inputs: SwapAndExecuteParams) => {
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
 
+      const fromSources: Array<{ tokenAddress: Hex; chainId: number }> = [];
+      assetSelection.selectedChainIds.forEach((key) => {
+        // Key format is "${symbol}-${chainId}", e.g. "USDC-1"
+        const lastDashIndex = key.lastIndexOf("-");
+        const symbol = key.substring(0, lastDashIndex);
+        const chainId = parseInt(key.substring(lastDashIndex + 1), 10);
+
+        // Look up the actual token address from availableAssets
+        const asset = availableAssets.find(
+          (a) => a.symbol === symbol && a.chainId === chainId,
+        );
+        if (asset?.tokenAddress) {
+          fromSources.push({
+            tokenAddress: asset.tokenAddress,
+            chainId,
+          });
+        }
+      });
+
+      const inputsWithSources = {
+        ...inputs,
+        fromSources: fromSources.length > 0 ? fromSources : undefined,
+      };
+
       nexusSDK
-        .swapAndExecute(inputs, {
+        .swapAndExecute(inputsWithSources, {
           onEvent: (event) => {
-            console.log("SWAP_STEP_COMPLETE_OUTSIDE", event);
-            console.log("====================");
             if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-              console.log("SWAP_STEP_COMPLETE", event);
               const step = event.args as SwapStepType & {
                 explorerURL?: string;
                 completed?: boolean;
+                data?: {
+                  chain?: { id?: number; name?: string };
+                  explorerURL?: string;
+                };
               };
               if (step?.type === "DETERMINING_SWAP" && step?.completed) {
                 determiningSwapComplete.current = true;
                 stopwatch.start();
+                // Trigger state update to re-check swapIntent in effect
+                dispatch({ type: "setIntentReady", payload: true });
               }
-              if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
+              // Capture source swap transactions from SOURCE_SWAP_HASH
+              // SOURCE_SWAP_HASH has: chain: { id, name }, explorerURL at top level
+              if (step?.type === "SOURCE_SWAP_HASH") {
+                const typedStep = step as {
+                  type: "SOURCE_SWAP_HASH";
+                  chain: { id: number; name: string };
+                  explorerURL: string;
+                };
                 dispatch({
-                  type: "setExplorerUrls",
-                  payload: { intentUrl: step.explorerURL },
+                  type: "addSourceSwap",
+                  payload: {
+                    chainId: typedStep.chain.id,
+                    chainName: typedStep.chain.name,
+                    explorerUrl: typedStep.explorerURL,
+                  },
                 });
               }
-              if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
+              // DESTINATION_SWAP_HASH has: chain: { id, name }, explorerURL at top level
+              if (step?.type === "DESTINATION_SWAP_HASH") {
+                const typedStep = step as {
+                  type: "DESTINATION_SWAP_HASH";
+                  chain: { id: number; name: string };
+                  explorerURL: string;
+                };
                 dispatch({
                   type: "setExplorerUrls",
-                  payload: { executeUrl: step.explorerURL },
+                  payload: { executeUrl: typedStep.explorerURL },
+                });
+              }
+              // BRIDGE_DEPOSIT has: data: { chain, hash, explorerURL }
+              if (step?.type === "BRIDGE_DEPOSIT") {
+                const typedStep = step as {
+                  type: "BRIDGE_DEPOSIT";
+                  data: {
+                    chain: { id: number; name: string };
+                    hash: string;
+                    explorerURL: string;
+                  };
+                };
+                dispatch({
+                  type: "setExplorerUrls",
+                  payload: { executeUrl: typedStep.data.explorerURL },
                 });
               }
               onStepComplete(step);
@@ -410,15 +518,33 @@ export function useDepositWidget(
           });
           onSuccess?.();
           dispatch({ type: "setStatus", payload: "success" });
+          dispatch({
+            type: "setStep",
+            payload: { step: "transaction-complete", direction: "forward" },
+          });
         })
         .catch((error) => {
           const { message } = handleNexusError(error);
           dispatch({ type: "setError", payload: message });
           dispatch({ type: "setStatus", payload: "error" });
+          // If we're already on transaction-status, go to failed screen
+          // Otherwise (error during intent creation), go back to amount
+          if (initialSimulationDone.current) {
+            dispatch({
+              type: "setStep",
+              payload: { step: "transaction-failed", direction: "forward" },
+            });
+          } else {
+            dispatch({
+              type: "setStep",
+              payload: { step: "amount", direction: "backward" },
+            });
+          }
           onError?.(message);
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [
       nexusSDK,
       isProcessing,
       seed,
@@ -427,11 +553,20 @@ export function useDepositWidget(
       onSuccess,
       onError,
       handleNexusError,
-    ]); // stopwatch is stable from useStopwatch
+      assetSelection.selectedChainIds,
+      availableAssets,
+    ],
+  ); // stopwatch is stable from useStopwatch
 
   const handleAmountContinue = useCallback(
     (totalAmountUsd: number) => {
       if (!nexusSDK || !address || !exchangeRate) return;
+
+      // Reset state and refs for a fresh simulation
+      dispatch({ type: "setIntentReady", payload: false });
+      initialSimulationDone.current = false;
+      determiningSwapComplete.current = false;
+      swapIntent.current = null;
 
       const tokenAmount =
         totalAmountUsd / (exchangeRate[destination.tokenSymbol] ?? 1);
@@ -473,12 +608,17 @@ export function useDepositWidget(
       destination,
       executeDeposit,
       start,
+      swapIntent,
     ],
   );
 
   const handleConfirmOrder = useCallback(() => {
     if (!activeIntent) return;
     dispatch({ type: "setStatus", payload: "executing" });
+    dispatch({
+      type: "setStep",
+      payload: { step: "transaction-status", direction: "forward" },
+    });
     activeIntent.allow();
   }, [activeIntent]);
 
@@ -554,50 +694,42 @@ export function useDepositWidget(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopwatch]);
 
-  // swapIntent is a stable RefObject
+  // Handle swap intent when it arrives - triggered by intentReady state change
   useEffect(() => {
-    if (
-      initialSimulationDone.current ||
-      !state.simulationLoading ||
-      (state.status !== "previewing" && state.status !== "simulation-loading")
-    ) {
+    // Only run when intent is ready and we haven't processed it yet
+    if (!state.intentReady || initialSimulationDone.current) {
       return;
     }
 
-    const checkInterval = setInterval(() => {
-      if (swapIntent.current && !initialSimulationDone.current) {
-        clearInterval(checkInterval);
-        initialSimulationDone.current = true;
+    // Check if intent is available
+    if (!swapIntent.current) {
+      return;
+    }
 
-        const intent = swapIntent.current.intent;
-        const destinationToken = intent.destination.token.symbol;
+    // Process the intent
+    initialSimulationDone.current = true;
 
-        const allSourcesMatchDestination = intent.sources.every(
-          (source) => source.token.symbol === destinationToken,
-        );
-        const isDirectDeposit = allSourcesMatchDestination;
+    const intent = swapIntent.current.intent;
+    const destinationToken = intent.destination.token.symbol;
 
-        dispatch({ type: "setSkipSwap", payload: isDirectDeposit });
+    const allSourcesMatchDestination = intent.sources.every(
+      (source) => source.token.symbol === destinationToken,
+    );
+    const isDirectDeposit = allSourcesMatchDestination;
 
-        if (isDirectDeposit) {
-          dispatch({ type: "setStatus", payload: "executing" });
-          dispatch({ type: "setSimulationLoading", payload: false });
-          swapIntent.current.allow();
-        } else {
-          void refreshSimulation().then(() => {
-            dispatch({ type: "setSimulationLoading", payload: false });
-            dispatch({ type: "setStatus", payload: "previewing" });
-            stopwatch.reset();
-            lastSimulationTime.current = Date.now();
-            setPollingEnabled(true);
-          });
-        }
-      }
-    }, 100);
+    dispatch({ type: "setSkipSwap", payload: isDirectDeposit });
 
-    return () => clearInterval(checkInterval);
+    // Always show confirmation screen - user must review and confirm
+    dispatch({
+      type: "setSimulation",
+      payload: { swapIntent: swapIntent.current! },
+    });
+    dispatch({ type: "setSimulationLoading", payload: false });
+    dispatch({ type: "setStatus", payload: "previewing" });
+    lastSimulationTime.current = Date.now();
+    setPollingEnabled(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.simulationLoading, state.status, refreshSimulation, stopwatch]); // swapIntent is stable
+  }, [state.intentReady]); // Triggered when DETERMINING_SWAP completes
 
   useEffect(() => {
     if (!nexusSDK) return;
@@ -634,6 +766,7 @@ export function useDepositWidget(
     setInputs,
     status: state.status,
     explorerUrls: state.explorerUrls,
+    sourceSwaps: state.sourceSwaps,
     isProcessing,
     isSuccess,
     isError,
@@ -658,5 +791,6 @@ export function useDepositWidget(
     totalSelectedBalance,
     skipSwap: state.skipSwap,
     simulationLoading: state.simulationLoading,
+    totalBalance,
   };
 }

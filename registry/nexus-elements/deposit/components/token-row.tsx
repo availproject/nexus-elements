@@ -7,6 +7,7 @@ import { getTokenCheckState } from "../utils/asset-helpers";
 import { Checkbox } from "../../ui/checkbox";
 import { usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
+import { TOKEN_IMAGES } from "../constants/assets";
 
 const CHAIN_ITEM_HEIGHT = 49;
 const VERTICAL_LINE_TOP_OFFSET = 48;
@@ -17,7 +18,7 @@ interface TokenRowProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onToggleToken: () => void;
-  onToggleChain: (tokenId: string, chainId: number) => void;
+  onToggleChain: (chainId: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
 }
@@ -56,7 +57,7 @@ export function TokenRow({
           />
           <div className="flex items-center gap-3">
             <Image
-              src={token.logo}
+              src={TOKEN_IMAGES[token.symbol]}
               alt={token.symbol}
               width={24}
               height={24}
@@ -120,9 +121,7 @@ export function TokenRow({
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={selectedChainIds.has(chain.id)}
-                        onCheckedChange={() =>
-                          onToggleChain(chain.name, Number(chain.id))
-                        }
+                        onCheckedChange={() => onToggleChain(chain.id)}
                       />
                       <span className="font-sans text-sm leading-4.5 text-card-foreground">
                         {chain.name}

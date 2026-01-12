@@ -20,15 +20,11 @@ import {
   type UserAsset,
 } from "@avail-project/nexus-core";
 import { usdFormatter } from "../../common";
-import { assertCurrentChain } from "viem";
+import { isStablecoin, checkIfMatchesPreset } from "../utils/asset-helpers";
 
 interface AssetSelectionContainerProps {
   widget: DepositWidgetContextValue;
   onClose?: () => void;
-}
-
-function isStablecoin(symbol: string): boolean {
-  return ["USDC", "USDT", "DAI", "TUSD", "USDP"].includes(symbol);
 }
 
 function isNative(symbol: string): boolean {
@@ -41,7 +37,7 @@ function transformSwapBalanceToTokens(
   swapBalance: UserAsset[] | null,
 ): Token[] {
   if (!swapBalance) return [];
-
+  console.log("SWAP_BALANCE", swapBalance);
   return swapBalance
     .filter((asset) => asset.breakdown && asset.breakdown.length > 0)
     .map((asset) => {
@@ -98,96 +94,32 @@ const AssetSelectionContainer = ({
 }: AssetSelectionContainerProps) => {
   const { assetSelection, setAssetSelection, swapBalance } = widget;
 
-  const [localSelectedChainIds, setLocalSelectedChainIds] = useState<
-    Set<string>
-  >(() => {
-    if (swapBalance) {
-      const initial = new Set<string>();
-      swapBalance.forEach((asset) => {
-        if (asset.breakdown) {
-          asset.breakdown.forEach((b) => {
-            if (b.chain && b.balance) {
-              initial.add(`${asset.symbol}-${b.chain.id}`);
-            }
-          });
-        }
-      });
-      return initial;
-    }
-    return new Set<string>();
-  });
-
-  const [localFilter, setLocalFilter] = useState<AssetFilterType>(
-    assetSelection.filter,
-  );
-  const [localExpandedTokens, setLocalExpandedTokens] = useState<Set<string>>(
-    () => new Set(assetSelection.expandedTokens),
-  );
   const [isProgressBarVisible, setIsProgressBarVisible] = useState(false);
   const [isProgressBarEntering, setIsProgressBarEntering] = useState(false);
   const [isProgressBarExiting, setIsProgressBarExiting] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const selectedChainIds = localSelectedChainIds;
-  const filter = localFilter;
-  const expandedTokens = localExpandedTokens;
+  const selectedChainIds = assetSelection.selectedChainIds;
+  const filter = assetSelection.filter;
+  const expandedTokens = assetSelection.expandedTokens;
 
   const tokens = useMemo(
     () => transformSwapBalanceToTokens(swapBalance),
     [swapBalance],
   );
 
-  console.log("TRANSFORMED TOKENS", tokens);
-
   const mainTokens = useMemo(
     () =>
-      tokens
-        .filter((t) => t.category === "stablecoin" || t.category === "native")
-        .sort(
-          (a, b) =>
-            parseFloat(b.usdValue.replace(/[$,]/g, "")) -
-            parseFloat(a.usdValue.replace(/[$,]/g, "")),
-        ),
+      tokens.filter(
+        (t) => t.category === "stablecoin" || t.category === "native",
+      ),
     [tokens],
   );
 
   const otherTokens = useMemo(
-    () =>
-      tokens
-        .filter((t) => t.category === "memecoin")
-        .sort(
-          (a, b) =>
-            parseFloat(b.usdValue.replace(/[$,]/g, "")) -
-            parseFloat(a.usdValue.replace(/[$,]/g, "")),
-        ),
+    () => tokens.filter((t) => t.category === "memecoin"),
     [tokens],
   );
-
-  const sortedMainTokens = useMemo(() => {
-    if (filter === "custom") {
-      return mainTokens;
-    }
-
-    const autoSelectedSymbols = ["USDC", "ETH", "SOL"];
-    return [...mainTokens].sort((a, b) => {
-      const aMatches =
-        (filter === "all" && autoSelectedSymbols.includes(a.symbol)) ||
-        (filter === "stablecoins" && a.category === "stablecoin") ||
-        (filter === "native" && a.symbol === "ETH");
-
-      const bMatches =
-        (filter === "all" && autoSelectedSymbols.includes(b.symbol)) ||
-        (filter === "stablecoins" && b.category === "stablecoin") ||
-        (filter === "native" && b.symbol === "ETH");
-
-      if (aMatches && !bMatches) return -1;
-      if (!aMatches && bMatches) return 1;
-      return (
-        parseFloat(b.usdValue.replace(/[$,]/g, "")) -
-        parseFloat(a.usdValue.replace(/[$,]/g, ""))
-      );
-    });
-  }, [mainTokens, filter]);
 
   const selectedAmount = useMemo(() => {
     let total = 0;
@@ -235,19 +167,20 @@ const AssetSelectionContainer = ({
       const newChainIds = new Set<string>();
       tokens.forEach((token) => {
         const shouldInclude =
-          (preset === "all" &&
-            (token.symbol === "USDC" || token.symbol === "ETH")) ||
+          preset === "all" ||
           (preset === "stablecoins" && token.category === "stablecoin") ||
-          (preset === "native" && token.symbol === "ETH");
+          (preset === "native" && token.category === "native");
 
         if (shouldInclude) {
           token.chains.forEach((chain) => newChainIds.add(chain.id));
         }
       });
-      setLocalSelectedChainIds(newChainIds);
-      setLocalFilter(preset);
+      setAssetSelection({
+        selectedChainIds: newChainIds,
+        filter: preset,
+      });
     },
-    [tokens],
+    [tokens, setAssetSelection],
   );
 
   const toggleTokenSelection = useCallback(
@@ -255,44 +188,52 @@ const AssetSelectionContainer = ({
       const token = tokens.find((t) => t.id === tokenId);
       if (!token) return;
 
-      setLocalSelectedChainIds((prev) => {
-        const allChainsSelected = token.chains.every((c) => prev.has(c.id));
-        const newChainIds = new Set(prev);
+      const allChainsSelected = token.chains.every((c) =>
+        selectedChainIds.has(c.id),
+      );
+      const newChainIds = new Set(selectedChainIds);
 
-        if (allChainsSelected) {
-          token.chains.forEach((chain) => newChainIds.delete(chain.id));
-        } else {
-          token.chains.forEach((chain) => newChainIds.add(chain.id));
-        }
-        return newChainIds;
+      if (allChainsSelected) {
+        token.chains.forEach((chain) => newChainIds.delete(chain.id));
+      } else {
+        token.chains.forEach((chain) => newChainIds.add(chain.id));
+      }
+
+      const newFilter = checkIfMatchesPreset(tokens, newChainIds);
+      setAssetSelection({
+        selectedChainIds: newChainIds,
+        filter: newFilter,
       });
     },
-    [tokens],
+    [tokens, selectedChainIds, setAssetSelection],
   );
 
   const toggleChainSelection = useCallback(
-    (tokenId: string, chainId: number) => {
-      const key = `${tokenId}-${chainId}`;
-      setLocalSelectedChainIds((prev) => {
-        const newChainIds = new Set(prev);
-        if (newChainIds.has(key)) {
-          newChainIds.delete(key);
-        } else {
-          newChainIds.add(key);
-        }
-        return newChainIds;
+    (chainId: string) => {
+      const newChainIds = new Set(selectedChainIds);
+      if (newChainIds.has(chainId)) {
+        newChainIds.delete(chainId);
+      } else {
+        newChainIds.add(chainId);
+      }
+
+      const newFilter = checkIfMatchesPreset(tokens, newChainIds);
+      setAssetSelection({
+        selectedChainIds: newChainIds,
+        filter: newFilter,
       });
     },
-    [],
+    [tokens, selectedChainIds, setAssetSelection],
   );
 
-  const toggleExpanded = useCallback((tokenId: string) => {
-    setLocalExpandedTokens((prev) => {
-      const newExpanded = new Set(prev);
+  const toggleExpanded = useCallback(
+    (tokenId: string) => {
+      let newExpanded = new Set(expandedTokens);
       if (tokenId === "others-section") {
         if (newExpanded.has("others-section")) {
           newExpanded.delete("others-section");
         } else {
+          newExpanded = new Set(newExpanded);
           newExpanded.add("others-section");
           setTimeout(() => {
             if (scrollContainerRef.current) {
@@ -304,39 +245,33 @@ const AssetSelectionContainer = ({
             }
           }, 100);
         }
-        return newExpanded;
       } else {
         const othersExpanded = newExpanded.has("others-section");
         if (newExpanded.has(tokenId)) {
-          return othersExpanded ? new Set(["others-section"]) : new Set();
+          newExpanded = othersExpanded
+            ? new Set(["others-section"])
+            : new Set();
         } else {
-          return othersExpanded
+          newExpanded = othersExpanded
             ? new Set(["others-section", tokenId])
             : new Set([tokenId]);
         }
       }
-    });
-  }, []);
+      setAssetSelection({ expandedTokens: newExpanded });
+    },
+    [expandedTokens, setAssetSelection],
+  );
 
   const handleDeselectAll = useCallback(() => {
-    setLocalSelectedChainIds(new Set());
-    setLocalFilter("custom");
-  }, []);
+    setAssetSelection({
+      selectedChainIds: new Set(),
+      filter: "custom",
+    });
+  }, [setAssetSelection]);
 
   const handleDone = useCallback(() => {
-    setAssetSelection({
-      selectedChainIds: localSelectedChainIds,
-      filter: localFilter,
-      expandedTokens: localExpandedTokens,
-    });
     widget.goToStep("amount");
-  }, [
-    setAssetSelection,
-    localSelectedChainIds,
-    localFilter,
-    localExpandedTokens,
-    widget,
-  ]);
+  }, [widget]);
 
   return (
     <>
@@ -382,7 +317,7 @@ const AssetSelectionContainer = ({
                 className="w-full overflow-y-auto max-h-[300px] scrollbar-hide"
               >
                 <div className="w-full rounded-lg border overflow-hidden">
-                  {sortedMainTokens.map((token, index) => (
+                  {mainTokens.map((token, index) => (
                     <TokenRow
                       key={token.id}
                       token={token}
@@ -392,7 +327,7 @@ const AssetSelectionContainer = ({
                       onToggleToken={() => toggleTokenSelection(token.id)}
                       onToggleChain={toggleChainSelection}
                       isFirst={index === 0}
-                      isLast={index === sortedMainTokens.length - 1}
+                      isLast={index === mainTokens.length - 1}
                     />
                   ))}
                 </div>
@@ -465,7 +400,7 @@ const AssetSelectionContainer = ({
 
       {isProgressBarVisible && (
         <div
-          className={`absolute -bottom-6 left-0 right-0 z-20 flex flex-col gap-2 pt-5 pb-8 px-7 bg-base border-t shadow-[0_-11px_12px_0_rgba(91,91,91,0.05)] transform transition-transform duration-300 ease-out ${
+          className={`absolute -bottom-6 left-0 right-0 z-20 flex flex-col gap-2 pt-5 pb-8 px-7 bg-card border-t shadow-[0_-11px_12px_0_rgba(91,91,91,0.05)] transform transition-transform duration-300 ease-out ${
             isProgressBarEntering || isProgressBarExiting
               ? "translate-y-full"
               : "translate-y-0"

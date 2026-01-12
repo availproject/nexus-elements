@@ -1,4 +1,5 @@
-import { ChevronDownIcon } from "./icons";
+import { ChevronDownIcon, ChevronUpIcon } from "./icons";
+import { Skeleton } from "../../ui/skeleton";
 
 interface SummaryCardProps {
   icon: React.ReactNode;
@@ -7,6 +8,10 @@ interface SummaryCardProps {
   value: string;
   valueSuffix?: string;
   showBreakdown?: boolean;
+  loading?: boolean;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+  children?: React.ReactNode;
 }
 
 function SummaryCard({
@@ -16,40 +21,62 @@ function SummaryCard({
   value,
   valueSuffix,
   showBreakdown,
+  loading = false,
+  expanded = false,
+  onToggleExpand,
+  children,
 }: SummaryCardProps) {
   return (
-    <div className="flex justify-between border-t border-border py-5">
-      <div className="flex gap-4 items-center">
-        {icon}
-        <div className="flex-col flex gap-2">
-          <span className="font-sans text-sm leading-4.5 text-card-foreground">
-            {title}
-          </span>
-          <span className="font-sans text-[13px] leading-4.5 text-muted-foreground">
-            {subtitle}
-          </span>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 items-end">
-        <div className="flex gap-1 items-end">
-          <span className="font-display text-card-foreground tracking-[0.36px] leading-4.5 font-medium">
-            {value}
-          </span>
-          {valueSuffix && (
-            <span className="text-muted-foreground text-[13px] leading-4.5">
-              {valueSuffix}
+    <div className="border-t border-border py-5">
+      <div className="flex justify-between">
+        <div className="flex gap-4 items-center">
+          {icon}
+          <div className="flex-col flex gap-2">
+            <span className="font-sans text-sm leading-4.5 text-card-foreground">
+              {title}
             </span>
+            <span className="font-sans text-[13px] leading-4.5 text-muted-foreground">
+              {subtitle}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 items-end">
+          <div className="flex gap-1 items-end">
+            {loading ? (
+              <Skeleton className="h-5 w-16" />
+            ) : (
+              <>
+                <span className="font-display text-card-foreground tracking-[0.36px] leading-4.5 font-medium">
+                  {value}
+                </span>
+                {valueSuffix && (
+                  <span className="text-muted-foreground text-[13px] leading-4.5">
+                    {valueSuffix}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          {showBreakdown && (
+            <button
+              className="flex gap-0.5 cursor-pointer"
+              onClick={onToggleExpand}
+            >
+              <span className="font-sans text-[13px] underline leading-4.5 text-muted-foreground underline-offset-2">
+                view details
+              </span>
+              {expanded ? (
+                <ChevronUpIcon size={16} className="text-muted-foreground" />
+              ) : (
+                <ChevronDownIcon size={16} className="text-muted-foreground" />
+              )}
+            </button>
           )}
         </div>
-        {showBreakdown && (
-          <div className="flex gap-0.5 cursor-pointer">
-            <span className="font-sans text-[13px] underline leading-4.5 text-muted-foreground underline-offset-2 ">
-              view details
-            </span>
-            <ChevronDownIcon size={16} className="text-muted-foreground" />
-          </div>
-        )}
       </div>
+      {expanded && children && (
+        <div className="mt-4 p-4 bg-background/30">{children}</div>
+      )}
     </div>
   );
 }

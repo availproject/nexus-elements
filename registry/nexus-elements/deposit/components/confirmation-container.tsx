@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import SummaryCard from "./summary-card";
-import { GasPumpIcon, CoinIcon, ChevronDownIcon, ChevronUpIcon } from "./icons";
+import { GasPumpIcon, CoinIcon } from "./icons";
 import WidgetHeader from "./widget-header";
 import { ReceiveAmountDisplay } from "./receive-amount-display";
 import { ErrorBanner } from "./error-banner";
 import type { DepositWidgetContextValue } from "../types";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
+import { usdFormatter } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-core";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface ConfirmationContainerProps {
   widget: DepositWidgetContextValue;
@@ -19,11 +23,24 @@ const ConfirmationContainer = ({
   widget,
   onClose,
 }: ConfirmationContainerProps) => {
-  const [showDetails, setShowDetails] = useState(false);
-  const { confirmationDetails, feeBreakdown, handleConfirmOrder, isProcessing, txError, activeIntent } =
-    widget;
+  const [showSpendDetails, setShowSpendDetails] = useState(false);
+  const [showFeeDetails, setShowFeeDetails] = useState(false);
+  const { getFiatValue } = useNexus();
 
-  const receiveAmount = confirmationDetails?.receiveAmountAfterSwap ?? "0";
+  const {
+    confirmationDetails,
+    feeBreakdown,
+    handleConfirmOrder,
+    isProcessing,
+    txError,
+    activeIntent,
+    simulationLoading,
+  } = widget;
+
+  const isLoading = simulationLoading || !activeIntent;
+
+  const receiveAmount =
+    confirmationDetails?.receiveAmountAfterSwapUsd?.toFixed(2) ?? "0";
   const timeLabel = confirmationDetails?.estimatedTime ?? "~30s";
   const amountSpent = confirmationDetails?.amountSpent ?? "0";
   const tokenNames = confirmationDetails?.sources
@@ -39,9 +56,10 @@ const ConfirmationContainer = ({
   const sourceDetails = useMemo(() => {
     if (!activeIntent?.intent.sources) return [];
     return activeIntent.intent.sources.map((source) => ({
-      chain: source.chain.name,
+      chainName: source.chain.name,
       chainLogo: source.chain.logo,
-      token: source.token.symbol,
+      tokenSymbol: source.token.symbol,
+      tokenDecimals: source.token.decimals,
       amount: source.amount,
     }));
   }, [activeIntent]);
@@ -59,68 +77,91 @@ const ConfirmationContainer = ({
             <ReceiveAmountDisplay
               amount={receiveAmount}
               timeLabel={timeLabel}
+              loading={isLoading}
             />
             <div>
               <SummaryCard
                 icon={<CoinIcon className="w-5 h-5 text-muted-foreground" />}
                 title="You spend"
-                subtitle={tokenNamesSummary || "Selected assets"}
+                subtitle={
+                  isLoading
+                    ? "Calculating..."
+                    : tokenNamesSummary || "Selected assets"
+                }
                 value={amountSpent}
                 valueSuffix="USD"
-                showBreakdown
-              />
+                showBreakdown={!isLoading && sourceDetails.length > 0}
+                loading={isLoading}
+                expanded={showSpendDetails}
+                onToggleExpand={() => setShowSpendDetails(!showSpendDetails)}
+              >
+                <div className="space-y-4">
+                  {sourceDetails.map((source, index) => {
+                    const amountUsd = getFiatValue(
+                      parseFloat(source.amount),
+                      source.tokenSymbol,
+                    );
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          {source.chainLogo && (
+                            <Image
+                              src={source.chainLogo}
+                              alt={source.chainName}
+                              width={20}
+                              height={20}
+                              className="rounded-full"
+                            />
+                          )}
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-sans text-sm text-card-foreground">
+                              {source.tokenSymbol}
+                            </span>
+                            <span className="font-sans text-[13px] text-muted-foreground">
+                              {source.chainName}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-0.5 items-end">
+                          <span className="font-sans text-sm text-card-foreground">
+                            {usdFormatter.format(amountUsd)}
+                          </span>
+                          <span className="font-sans text-[13px] text-muted-foreground">
+                            {formatTokenBalance(parseFloat(source.amount), {
+                              decimals: source.tokenDecimals,
+                              symbol: source.tokenSymbol,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </SummaryCard>
               <SummaryCard
                 icon={<GasPumpIcon className="w-5 h-5 text-muted-foreground" />}
                 title="Total fees"
                 subtitle="Network & protocol"
                 value={feeBreakdown.gasFormatted}
                 valueSuffix="USD"
-                showBreakdown
-              />
+                showBreakdown={!isLoading}
+                loading={isLoading}
+                expanded={showFeeDetails}
+                onToggleExpand={() => setShowFeeDetails(!showFeeDetails)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-sans text-sm text-muted-foreground">
+                    Gas fee
+                  </span>
+                  <span className="font-sans text-sm text-card-foreground">
+                    {usdFormatter.format(feeBreakdown.gasUsd)}
+                  </span>
+                </div>
+              </SummaryCard>
             </div>
-
-            {sourceDetails.length > 0 && (
-              <div className="border-t pt-4">
-                <button
-                  className="flex items-center justify-between w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setShowDetails(!showDetails)}
-                >
-                  <span>View details</span>
-                  {showDetails ? (
-                    <ChevronUpIcon className="w-4 h-4" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4" />
-                  )}
-                </button>
-
-                {showDetails && (
-                  <div className="mt-4 space-y-3">
-                    {sourceDetails.map((source, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          {source.chainLogo && (
-                            <img
-                              src={source.chainLogo}
-                              alt={source.chain}
-                              className="w-5 h-5 rounded-full"
-                            />
-                          )}
-                          <span>{source.chain}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {Number(source.amount).toFixed(6)} {source.token}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
           {txError && widget.status === "error" && (
             <ErrorBanner message={txError} />
@@ -128,16 +169,18 @@ const ConfirmationContainer = ({
           <Button
             className="rounded-t-none"
             onClick={handleConfirmOrder}
-            disabled={isProcessing}
+            disabled={isProcessing || isLoading}
           >
             {isProcessing
               ? "Processing..."
-              : "Confirm and deposit"}
+              : isLoading
+                ? "Loading..."
+                : "Confirm and deposit"}
           </Button>
         </div>
       </CardContent>
     </>
   );
-}
+};
 
 export default ConfirmationContainer;

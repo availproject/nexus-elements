@@ -1,6 +1,8 @@
 import { TokenIcon } from "./token-icon";
 import { ClockIcon } from "./icons";
-import { DEPOSIT_WIDGET_ASSETS } from "../constants";
+import { DEPOSIT_WIDGET_ASSETS } from "../constants/assets";
+import { Skeleton } from "../../ui/skeleton";
+import { usdFormatter } from "../../common";
 
 interface ReceiveAmountDisplayProps {
   label?: string;
@@ -8,6 +10,7 @@ interface ReceiveAmountDisplayProps {
   timeLabel?: string;
   showUsdValue?: boolean;
   showClockIcon?: boolean;
+  loading?: boolean;
 }
 
 export function ReceiveAmountDisplay({
@@ -16,6 +19,7 @@ export function ReceiveAmountDisplay({
   timeLabel,
   showUsdValue = true,
   showClockIcon = true,
+  loading = false,
 }: ReceiveAmountDisplayProps) {
   return (
     <div className="w-full flex flex-col items-center gap-2">
@@ -28,15 +32,30 @@ export function ReceiveAmountDisplay({
           protocolSrc={DEPOSIT_WIDGET_ASSETS.protocols.aave}
           tokenAlt="USDC"
         />
-        <h3 className="font-display text-[32px] tracking-[0.64px] font-medium">
-          {amount}
-        </h3>
+        {loading ? (
+          <Skeleton className="h-10 w-24" />
+        ) : (
+          <h3 className="font-display text-[32px] tracking-[0.64px] font-medium">
+            {amount}
+          </h3>
+        )}
       </div>
       {(showUsdValue || showClockIcon) && (
-        <span className="font-sans flex items-center gap-1 text-sm leading-4.5 text-muted-foreground mt-1">
-          {showUsdValue && `$${amount} ${timeLabel ?? ""}`}
-          {showClockIcon && <ClockIcon className="w-4 h-4" />}
-        </span>
+        <div className="font-sans flex items-center gap-x-1 text-sm leading-4.5 text-muted-foreground mt-1">
+          {loading ? (
+            <Skeleton className="h-4 w-20" />
+          ) : (
+            <div className="flex items-center gap-x-1">
+              {showUsdValue && `${usdFormatter.format(parseFloat(amount))} in`}
+              {showClockIcon && (
+                <span className="flex items-center gap-x-1">
+                  {timeLabel}s
+                  <ClockIcon className="w-4 h-4" />
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

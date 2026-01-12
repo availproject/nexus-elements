@@ -24,7 +24,7 @@ function PercentageButton({
     <button
       type="button"
       onClick={onClick}
-      className={`py-2 max-w-[60px] h-[34px] flex items-center justify-center w-full px-4 font-sans text-sm leading-4.5 hover:bg-muted transition-colors cursor-pointer ${
+      className={`py-2 bg-card max-w-[60px] h-[34px] flex items-center justify-center w-full px-4 font-sans text-sm leading-4.5 hover:bg-muted transition-colors cursor-pointer ${
         !isLast ? "border-r border-border" : ""
       } ${isFirst ? "rounded-l-lg" : ""} ${isLast ? "rounded-r-lg" : ""}`}
     >

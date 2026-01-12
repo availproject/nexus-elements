@@ -12,6 +12,7 @@ export type WidgetStep =
   | "confirmation"
   | "transaction-status"
   | "transaction-complete"
+  | "transaction-failed"
   | "asset-selection";
 
 export type TransactionStatus =
@@ -110,6 +111,13 @@ export interface DepositWidgetContextValue {
     executeUrl: string | null;
   };
 
+  // Source swap transactions (from BRIDGE_DEPOSIT events)
+  sourceSwaps: Array<{
+    chainId: number;
+    chainName: string;
+    explorerUrl: string;
+  }>;
+
   // Derived state
   isProcessing: boolean;
   isSuccess: boolean;
@@ -179,6 +187,12 @@ export interface DepositWidgetContextValue {
   totalSelectedBalance: number;
   skipSwap: boolean;
   simulationLoading: boolean;
+  totalBalance:
+    | {
+        balance: number;
+        usdBalance: number;
+      }
+    | undefined;
 }
 
 export interface BaseDepositWidgetProps {

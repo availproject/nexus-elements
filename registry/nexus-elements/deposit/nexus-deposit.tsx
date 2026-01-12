@@ -5,9 +5,9 @@ import { useDepositWidget } from "./hooks/use-deposit-widget";
 import {
   AmountContainer,
   ConfirmationContainer,
-  ConfirmationLoading,
   TransactionStatusContainer,
   TransactionCompleteContainer,
+  TransactionFailedContainer,
   AssetSelectionContainer,
 } from "./components";
 import type {
@@ -35,17 +35,16 @@ const SCREENS: Record<WidgetStep, ScreenRenderer> = {
     <AmountContainer widget={widget} onClose={onClose} />
   ),
   confirmation: (widget, onClose) => (
-    widget.simulationLoading ? (
-      <ConfirmationLoading onClose={onClose} />
-    ) : (
-      <ConfirmationContainer widget={widget} onClose={onClose} />
-    )
+    <ConfirmationContainer widget={widget} onClose={onClose} />
   ),
   "transaction-status": (widget, onClose) => (
     <TransactionStatusContainer widget={widget} onClose={onClose} />
   ),
   "transaction-complete": (widget, onClose) => (
     <TransactionCompleteContainer widget={widget} onClose={onClose} />
+  ),
+  "transaction-failed": (widget, onClose) => (
+    <TransactionFailedContainer widget={widget} onClose={onClose} />
   ),
   "asset-selection": (widget, onClose) => (
     <AssetSelectionContainer widget={widget} onClose={onClose} />
@@ -62,7 +61,12 @@ const NexusDeposit = ({
   executeDeposit,
   destination,
 }: DepositWidgetProps) => {
-  const widget = useDepositWidget({ executeDeposit, destination, onSuccess, onError });
+  const widget = useDepositWidget({
+    executeDeposit,
+    destination,
+    onSuccess,
+    onError,
+  });
   const animationClass = getAnimationClass(widget.navigationDirection);
 
   if (embed) {

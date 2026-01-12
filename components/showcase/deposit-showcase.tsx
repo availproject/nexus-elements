@@ -66,8 +66,9 @@ const DepositShowcase = () => {
     return {
       to: contractAddress,
       data: encoded,
+      gasPriceSelector: "medium",
       tokenApproval: {
-        token: tokenSymbol,
+        token: tokenAddress,
         amount: amount,
         spender: contractAddress,
       },

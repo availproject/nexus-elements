@@ -4,6 +4,7 @@ export { default as ConfirmationContainer } from "./confirmation-container";
 export { default as ConfirmationLoading } from "./confirmation-loading";
 export { default as TransactionStatusContainer } from "./transaction-status-container";
 export { default as TransactionCompleteContainer } from "./transaction-complete-container";
+export { default as TransactionFailedContainer } from "./transaction-failed-container";
 export { default as AssetSelectionContainer } from "./asset-selection-container";
 
 // Shared components

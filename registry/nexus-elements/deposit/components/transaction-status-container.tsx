@@ -2,10 +2,12 @@
 
 import { CardContent, CardFooter } from "../../ui/card";
 import WidgetHeader from "./widget-header";
-import { TransactionSteps } from "./transaction-steps";
 import { AmountDisplay } from "./amount-display";
+import { TransactionSteps, type SimplifiedStep } from "./transaction-steps";
 import type { DepositWidgetContextValue } from "../types";
 import { useMemo } from "react";
+import { usdFormatter } from "../../common";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface TransactionStatusContainerProps {
   widget: DepositWidgetContextValue;
@@ -57,37 +59,68 @@ const TransactionStatusContainer = ({
   widget,
   onClose,
 }: TransactionStatusContainerProps) => {
-  const { steps, timer, confirmationDetails, isProcessing, isSuccess, isError, txError } = widget;
+  const { getFiatValue } = useNexus();
+  const { steps, confirmationDetails, activeIntent, isProcessing } = widget;
 
-  const handleComplete = () => {
-    setTimeout(() => {
-      widget.goToStep("transaction-complete");
-    }, 1000);
-  };
+  // Calculate total spent in USD from sources
+  const spendAmountUsd = useMemo(() => {
+    if (!activeIntent?.intent?.sources) return 0;
+    return activeIntent.intent.sources.reduce((total, source) => {
+      const amount = parseFloat(source.amount);
+      const usdValue = getFiatValue(amount, source.token.symbol);
+      return total + usdValue;
+    }, 0);
+  }, [activeIntent, getFiatValue]);
 
-  const getStatusMessage = () => {
-    if (isError && txError) {
-      return <span className="text-destructive">{txError}</span>;
-    }
-    if (isSuccess) return "Transaction complete";
-    if (isProcessing) return "Processing transaction...";
-    return "Verifying intent";
-  };
-
-  const formattedTimer = useMemo(() => {
-    const minutes = Math.floor(timer / 60);
-    const seconds = Math.floor(timer % 60);
-    const ms = Math.floor((timer % 1) * 10);
-    if (minutes > 0) {
-      return `${minutes}:${seconds.toString().padStart(2, "0")}.${ms}`;
-    }
-    return `${seconds}.${ms}s`;
-  }, [timer]);
-
-  const spendAmount = confirmationDetails?.amountSpent ?? "0";
   const receiveAmount = confirmationDetails?.receiveAmountAfterSwap ?? "0";
   const receiveTokenSymbol = confirmationDetails?.receiveTokenSymbol ?? "USDC";
-  const chainName = "destination";
+  const destinationChainName =
+    activeIntent?.intent?.destination?.chain?.name ?? "destination";
+  const sourceCount = activeIntent?.intent?.sources?.length ?? 0;
+
+  // Derive 3 simplified steps from actual SDK events
+  const simplifiedSteps = useMemo((): SimplifiedStep[] => {
+    const hasRffId = steps.some((s) => s.step.type === "RFF_ID" && s.completed);
+    const hasDestinationSwapHash = steps.some(
+      (s) => s.step.type === "DESTINATION_SWAP_HASH" && s.completed,
+    );
+    const hasBridgeDeposit = steps.some(
+      (s) => s.step.type === "BRIDGE_DEPOSIT" && s.completed,
+    );
+
+    return [
+      {
+        id: "intent-verification",
+        label: "Intent Verification",
+        completed: hasRffId,
+      },
+      {
+        id: "collecting-on-source",
+        label: "Collecting on Source",
+        completed: hasDestinationSwapHash,
+      },
+      {
+        id: "deposit-transaction",
+        label: "Deposit transaction",
+        completed: hasBridgeDeposit,
+      },
+    ];
+  }, [steps]);
+
+  // Calculate progress as 33% -> 66% -> 100%
+  const progress = useMemo(() => {
+    const completedCount = simplifiedSteps.filter((s) => s.completed).length;
+    return Math.round((completedCount / 3) * 100);
+  }, [simplifiedSteps]);
+
+  const getStatusMessage = () => {
+    if (widget.isError && widget.txError) {
+      return <span className="text-destructive">{widget.txError}</span>;
+    }
+    if (widget.isSuccess) return "Transaction complete";
+    if (widget.isProcessing) return "Processing transaction...";
+    return "Verifying intent";
+  };
 
   return (
     <>
@@ -95,19 +128,19 @@ const TransactionStatusContainer = ({
       <CardContent>
         <div className="flex flex-col bg-base rounded-lg border border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] pt-8 pb-7">
           <div className="flex w-full mt-2 items-end justify-center">
-            <div className="flex gap-7 items-center">
+            <div className="flex justify-between items-center w-full px-3 gap-x-3">
               <AmountDisplay
-                amount={spendAmount}
+                amount={usdFormatter.format(spendAmountUsd)}
                 suffix="USD"
-                label={`${confirmationDetails?.sources.filter(s => s).length ?? 0} assets`}
+                label={`${sourceCount} asset${sourceCount !== 1 ? "s" : ""}`}
               />
               <div className="flex w-16 gap-1.5 items-center justify-center">
                 <TransferIndicator isProcessing={isProcessing} />
               </div>
               <AmountDisplay
-                amount={receiveAmount}
+                amount={receiveAmount.split(" ")[0]}
                 suffix={receiveTokenSymbol}
-                label={`on ${chainName}`}
+                label={`on ${destinationChainName}`}
               />
             </div>
           </div>
@@ -123,11 +156,7 @@ const TransactionStatusContainer = ({
           <div className="py-5 mt-1 font-sans text-sm leading-4.5 text-muted-foreground text-center">
             {getStatusMessage()}
           </div>
-          <TransactionSteps
-            steps={steps}
-            timer={formattedTimer}
-            onComplete={handleComplete}
-          />
+          <TransactionSteps steps={simplifiedSteps} />
         </div>
       </CardContent>
       <CardFooter />
