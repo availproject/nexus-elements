@@ -3,30 +3,93 @@
 import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { ChevronDownIcon } from "./icons";
 import WidgetHeader from "./widget-header";
-import type { DepositWidgetContextValue, AssetFilterType } from "../types";
+import type {
+  DepositWidgetContextValue,
+  AssetFilterType,
+  Token,
+  TokenCategory,
+  ChainItem,
+} from "../types";
 import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
+import TokenRow from "./token-row";
+import {
+  CHAIN_METADATA,
+  formatTokenBalance,
+  type UserAsset,
+} from "@avail-project/nexus-core";
+import { usdFormatter } from "../../common";
+import { assertCurrentChain } from "viem";
 
 interface AssetSelectionContainerProps {
   widget: DepositWidgetContextValue;
   onClose?: () => void;
 }
 
-interface TokenListItem {
-  id: string;
-  symbol: string;
-  logo?: string;
-  totalBalance: string;
-  totalBalanceUsd: number;
-  chains: Array<{
-    id: number;
-    name: string;
-    logo?: string;
-    balance: string;
-    balanceUsd?: number;
-    contractAddress: string;
-  }>;
+function isStablecoin(symbol: string): boolean {
+  return ["USDC", "USDT", "DAI", "TUSD", "USDP"].includes(symbol);
+}
+
+function isNative(symbol: string): boolean {
+  return Object.values(CHAIN_METADATA).some(
+    (chain) => chain.nativeCurrency.symbol === symbol,
+  );
+}
+
+function transformSwapBalanceToTokens(
+  swapBalance: UserAsset[] | null,
+): Token[] {
+  if (!swapBalance) return [];
+
+  return swapBalance
+    .filter((asset) => asset.breakdown && asset.breakdown.length > 0)
+    .map((asset) => {
+      const chains: ChainItem[] = (asset.breakdown || [])
+        .filter((b) => b.chain && b.balance)
+        .map((b) => {
+          const balanceNum = parseFloat(b.balance);
+          return {
+            id: `${asset.symbol}-${b.chain.id}`,
+            name: b.chain.name,
+            usdValue: b.balanceInFiat,
+            amount: balanceNum,
+          };
+        })
+        .sort((a, b) => {
+          const aVal = a.usdValue;
+          const bVal = b.usdValue;
+          return bVal - aVal;
+        });
+
+      const totalUsdValue = chains.reduce((sum, c) => sum + c.usdValue, 0);
+
+      const totalAmount = chains.reduce((sum, c) => sum + c.amount, 0);
+
+      let category: TokenCategory;
+      if (isStablecoin(asset.symbol)) {
+        category = "stablecoin";
+      } else if (isNative(asset.symbol)) {
+        category = "native";
+      } else {
+        category = "memecoin";
+      }
+
+      return {
+        id: asset.symbol,
+        symbol: asset.symbol,
+        chainsLabel: `${chains.length} Chain${chains.length !== 1 ? "s" : ""}`,
+        usdValue: usdFormatter.format(totalUsdValue),
+        amount: formatTokenBalance(totalAmount, {
+          decimals: asset.decimals,
+          symbol: asset.symbol,
+        }),
+        decimals: asset.decimals,
+        logo: asset.icon || "",
+        category,
+        chains,
+      };
+    });
 }
 
 const AssetSelectionContainer = ({
@@ -37,82 +100,116 @@ const AssetSelectionContainer = ({
 
   const [localSelectedChainIds, setLocalSelectedChainIds] = useState<
     Set<string>
-  >(() => new Set(assetSelection.selectedChainIds));
+  >(() => {
+    if (swapBalance) {
+      const initial = new Set<string>();
+      swapBalance.forEach((asset) => {
+        if (asset.breakdown) {
+          asset.breakdown.forEach((b) => {
+            if (b.chain && b.balance) {
+              initial.add(`${asset.symbol}-${b.chain.id}`);
+            }
+          });
+        }
+      });
+      return initial;
+    }
+    return new Set<string>();
+  });
+
   const [localFilter, setLocalFilter] = useState<AssetFilterType>(
     assetSelection.filter,
   );
   const [localExpandedTokens, setLocalExpandedTokens] = useState<Set<string>>(
     () => new Set(assetSelection.expandedTokens),
   );
+  const [isProgressBarVisible, setIsProgressBarVisible] = useState(false);
+  const [isProgressBarEntering, setIsProgressBarEntering] = useState(false);
+  const [isProgressBarExiting, setIsProgressBarExiting] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const selectedChainIds = localSelectedChainIds;
   const filter = localFilter;
   const expandedTokens = localExpandedTokens;
 
-  const tokensFromBalance = useMemo((): TokenListItem[] => {
-    if (!swapBalance) return [];
+  const tokens = useMemo(
+    () => transformSwapBalanceToTokens(swapBalance),
+    [swapBalance],
+  );
 
-    return swapBalance
-      .filter((asset) => asset.breakdown && asset.breakdown.length > 0)
-      .map((asset) => {
-        const chains = asset.breakdown
-          ?.filter((b) => b.chain && b.balance)
-          .map((b) => ({
-            id: b.chain.id,
-            name: b.chain.name,
-            logo: b.chain.logo,
-            balance: b.balance,
-            balanceUsd: b.balanceInFiat,
-            contractAddress: b.contractAddress || "",
-          }))
-          .sort((a, b) => (b.balanceUsd ?? 0) - (a.balanceUsd ?? 0)) ?? [];
+  console.log("TRANSFORMED TOKENS", tokens);
 
-        const totalBalanceUsd = chains.reduce(
-          (sum, c) => sum + (c.balanceUsd ?? 0),
-          0,
-        );
+  const mainTokens = useMemo(
+    () =>
+      tokens
+        .filter((t) => t.category === "stablecoin" || t.category === "native")
+        .sort(
+          (a, b) =>
+            parseFloat(b.usdValue.replace(/[$,]/g, "")) -
+            parseFloat(a.usdValue.replace(/[$,]/g, "")),
+        ),
+    [tokens],
+  );
 
-        return {
-          id: asset.symbol,
-          symbol: asset.symbol,
-          logo: asset.icon,
-          totalBalance: chains
-            .map((c) => `${c.balance} ${asset.symbol}`)
-            .join(", "),
-          totalBalanceUsd,
-          chains,
-        };
-      })
-      .sort((a, b) => b.totalBalanceUsd - a.totalBalanceUsd);
-  }, [swapBalance]);
+  const otherTokens = useMemo(
+    () =>
+      tokens
+        .filter((t) => t.category === "memecoin")
+        .sort(
+          (a, b) =>
+            parseFloat(b.usdValue.replace(/[$,]/g, "")) -
+            parseFloat(a.usdValue.replace(/[$,]/g, "")),
+        ),
+    [tokens],
+  );
+
+  const sortedMainTokens = useMemo(() => {
+    if (filter === "custom") {
+      return mainTokens;
+    }
+
+    const autoSelectedSymbols = ["USDC", "ETH", "SOL"];
+    return [...mainTokens].sort((a, b) => {
+      const aMatches =
+        (filter === "all" && autoSelectedSymbols.includes(a.symbol)) ||
+        (filter === "stablecoins" && a.category === "stablecoin") ||
+        (filter === "native" && a.symbol === "ETH");
+
+      const bMatches =
+        (filter === "all" && autoSelectedSymbols.includes(b.symbol)) ||
+        (filter === "stablecoins" && b.category === "stablecoin") ||
+        (filter === "native" && b.symbol === "ETH");
+
+      if (aMatches && !bMatches) return -1;
+      if (!aMatches && bMatches) return 1;
+      return (
+        parseFloat(b.usdValue.replace(/[$,]/g, "")) -
+        parseFloat(a.usdValue.replace(/[$,]/g, ""))
+      );
+    });
+  }, [mainTokens, filter]);
 
   const selectedAmount = useMemo(() => {
     let total = 0;
-    tokensFromBalance.forEach((token) => {
+    tokens.forEach((token) => {
       token.chains.forEach((chain) => {
-        if (selectedChainIds.has(`${token.symbol}-${chain.id}`)) {
-          total += chain.balanceUsd ?? 0;
+        if (selectedChainIds.has(chain.id)) {
+          total += chain.usdValue;
         }
       });
     });
     return total;
-  }, [tokensFromBalance, selectedChainIds]);
+  }, [tokens, selectedChainIds]);
 
   const requiredAmount = widget.inputs.amount
     ? parseFloat(widget.inputs.amount.replace(/,/g, ""))
     : 0;
 
-  const showProgressBar =
-    requiredAmount > 0 && requiredAmount > selectedAmount;
+  const showProgressBar = requiredAmount > 0 && requiredAmount > selectedAmount;
   const progressPercent =
     requiredAmount > 0
       ? Math.min((selectedAmount / requiredAmount) * 100, 100)
       : 0;
-
-  const [isProgressBarVisible, setIsProgressBarVisible] = useState(false);
-  const [isProgressBarEntering, setIsProgressBarEntering] = useState(false);
-  const [isProgressBarExiting, setIsProgressBarExiting] = useState(false);
 
   useEffect(() => {
     if (showProgressBar) {
@@ -136,48 +233,42 @@ const AssetSelectionContainer = ({
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
       const newChainIds = new Set<string>();
-      tokensFromBalance.forEach((token) => {
-        const isStablecoin = ["USDC", "USDT", "DAI"].includes(token.symbol);
-        const isNative = token.symbol === "ETH";
+      tokens.forEach((token) => {
+        const shouldInclude =
+          (preset === "all" &&
+            (token.symbol === "USDC" || token.symbol === "ETH")) ||
+          (preset === "stablecoins" && token.category === "stablecoin") ||
+          (preset === "native" && token.symbol === "ETH");
 
-        token.chains.forEach((chain) => {
-          if (preset === "all") {
-            newChainIds.add(`${token.symbol}-${chain.id}`);
-          } else if (preset === "stablecoins" && isStablecoin) {
-            newChainIds.add(`${token.symbol}-${chain.id}`);
-          } else if (preset === "native" && isNative) {
-            newChainIds.add(`${token.symbol}-${chain.id}`);
-          }
-        });
+        if (shouldInclude) {
+          token.chains.forEach((chain) => newChainIds.add(chain.id));
+        }
       });
       setLocalSelectedChainIds(newChainIds);
       setLocalFilter(preset);
     },
-    [tokensFromBalance],
+    [tokens],
   );
 
-  const toggleTokenSelection = useCallback((tokenId: string) => {
-    const token = tokensFromBalance.find((t) => t.id === tokenId);
-    if (!token) return;
+  const toggleTokenSelection = useCallback(
+    (tokenId: string) => {
+      const token = tokens.find((t) => t.id === tokenId);
+      if (!token) return;
 
-    setLocalSelectedChainIds((prev) => {
-      const allChainsSelected = token.chains.every((c) =>
-        prev.has(`${token.id}-${c.id}`),
-      );
-      const newChainIds = new Set(prev);
+      setLocalSelectedChainIds((prev) => {
+        const allChainsSelected = token.chains.every((c) => prev.has(c.id));
+        const newChainIds = new Set(prev);
 
-      if (allChainsSelected) {
-        token.chains.forEach((chain) =>
-          newChainIds.delete(`${token.id}-${chain.id}`),
-        );
-      } else {
-        token.chains.forEach((chain) =>
-          newChainIds.add(`${token.id}-${chain.id}`),
-        );
-      }
-      return newChainIds;
-    });
-  }, [tokensFromBalance]);
+        if (allChainsSelected) {
+          token.chains.forEach((chain) => newChainIds.delete(chain.id));
+        } else {
+          token.chains.forEach((chain) => newChainIds.add(chain.id));
+        }
+        return newChainIds;
+      });
+    },
+    [tokens],
+  );
 
   const toggleChainSelection = useCallback(
     (tokenId: string, chainId: number) => {
@@ -198,12 +289,32 @@ const AssetSelectionContainer = ({
   const toggleExpanded = useCallback((tokenId: string) => {
     setLocalExpandedTokens((prev) => {
       const newExpanded = new Set(prev);
-      if (newExpanded.has(tokenId)) {
-        newExpanded.delete(tokenId);
+      if (tokenId === "others-section") {
+        if (newExpanded.has("others-section")) {
+          newExpanded.delete("others-section");
+        } else {
+          newExpanded.add("others-section");
+          setTimeout(() => {
+            if (scrollContainerRef.current) {
+              const currentScrollTop = scrollContainerRef.current.scrollTop;
+              scrollContainerRef.current.scrollTo({
+                top: currentScrollTop + 70,
+                behavior: "smooth",
+              });
+            }
+          }, 100);
+        }
+        return newExpanded;
       } else {
-        newExpanded.add(tokenId);
+        const othersExpanded = newExpanded.has("others-section");
+        if (newExpanded.has(tokenId)) {
+          return othersExpanded ? new Set(["others-section"]) : new Set();
+        } else {
+          return othersExpanded
+            ? new Set(["others-section", tokenId])
+            : new Set([tokenId]);
+        }
       }
-      return newExpanded;
     });
   }, []);
 
@@ -226,25 +337,6 @@ const AssetSelectionContainer = ({
     localExpandedTokens,
     widget,
   ]);
-
-  const isChainSelected = useCallback(
-    (tokenId: string, chainId: number) => {
-      return selectedChainIds.has(`${tokenId}-${chainId}`);
-    },
-    [selectedChainIds],
-  );
-
-  const getCheckState = useCallback(
-    (token: TokenListItem) => {
-      const selectedCount = token.chains.filter((c) =>
-        selectedChainIds.has(`${token.id}-${c.id}`),
-      ).length;
-      if (selectedCount === 0) return false;
-      if (selectedCount === token.chains.length) return true;
-      return "indeterminate";
-    },
-    [selectedChainIds],
-  );
 
   return (
     <>
@@ -290,127 +382,58 @@ const AssetSelectionContainer = ({
                 className="w-full overflow-y-auto max-h-[300px] scrollbar-hide"
               >
                 <div className="w-full rounded-lg border overflow-hidden">
-                  {tokensFromBalance.map((token, index) => {
-                    const checkState = getCheckState(token);
-                    const isExpanded = expandedTokens.has(token.id);
-                    const isLast = index === tokensFromBalance.length - 1;
-
-                    return (
-                      <div key={token.id}>
-                        <div
-                          className={`p-4 flex items-center gap-3 cursor-pointer ${
-                            !isLast ? "border-b" : ""
-                          }`}
-                          onClick={() => toggleExpanded(token.id)}
-                        >
-                          <div
-                            className="h-5 w-5 flex items-center justify-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleTokenSelection(token.id);
-                            }}
-                          >
-                            {checkState === true && (
-                              <svg
-                                className="w-4 h-4 text-primary"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            )}
-                            {checkState === false && (
-                              <div className="w-4 h-4 border-2 border-muted-foreground rounded-sm" />
-                            )}
-                            {checkState === "indeterminate" && (
-                              <svg
-                                className="w-4 h-4 text-primary"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4 10a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          {token.logo && (
-                            <img
-                              src={token.logo}
-                              alt={token.symbol}
-                              className="w-8 h-8 rounded-full"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="font-medium">{token.symbol}</div>
-                            <div className="text-sm text-muted-foreground">
-                              ${token.totalBalanceUsd.toFixed(2)}
-                            </div>
-                          </div>
-                          <ChevronDownIcon
-                            className={`w-4 h-4 text-muted-foreground transition-transform ${
-                              isExpanded ? "rotate-180" : ""
-                            }`}
-                          />
-                        </div>
-
-                        {isExpanded && (
-                          <div className="bg-muted/30">
-                            {token.chains.map((chain) => {
-                              const isSelected = isChainSelected(
-                                token.id,
-                                chain.id,
-                              );
-                              return (
-                                <div
-                                  key={chain.id}
-                                  className="pl-14 pr-4 py-3 flex items-center gap-3 border-t first:border-t-0"
-                                  onClick={() =>
-                                    toggleChainSelection(token.id, chain.id)
-                                  }
-                                >
-                                  <div
-                                    className={`h-4 w-4 border-2 rounded-full flex items-center justify-center ${
-                                      isSelected
-                                        ? "border-primary bg-primary"
-                                        : "border-muted-foreground"
-                                    }`}
-                                  >
-                                    {isSelected && (
-                                      <div className="w-2 h-2 bg-background rounded-full" />
-                                    )}
-                                  </div>
-                                  {chain.logo && (
-                                    <img
-                                      src={chain.logo}
-                                      alt={chain.name}
-                                      className="w-5 h-5 rounded-full"
-                                    />
-                                  )}
-                                  <div className="flex-1">
-                                    <div className="text-sm">{chain.name}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {chain.balance}{" "}
-                                      {token.symbol === chain.balance
-                                        ? ""
-                                        : token.symbol}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {sortedMainTokens.map((token, index) => (
+                    <TokenRow
+                      key={token.id}
+                      token={token}
+                      selectedChainIds={selectedChainIds}
+                      isExpanded={expandedTokens.has(token.id)}
+                      onToggleExpand={() => toggleExpanded(token.id)}
+                      onToggleToken={() => toggleTokenSelection(token.id)}
+                      onToggleChain={toggleChainSelection}
+                      isFirst={index === 0}
+                      isLast={index === sortedMainTokens.length - 1}
+                    />
+                  ))}
                 </div>
+
+                {otherTokens.length > 0 && (
+                  <div className="w-full bg-base rounded-t-lg border overflow-hidden mt-4">
+                    <div
+                      className="p-5 flex justify-between items-center cursor-pointer"
+                      onClick={() => toggleExpanded("others-section")}
+                    >
+                      <span className="font-sans text-sm text-muted-foreground">
+                        Others ({otherTokens.length})
+                      </span>
+                      <ChevronDownIcon
+                        className={`text-muted-foreground transition-transform duration-200 ${
+                          expandedTokens.has("others-section")
+                            ? "rotate-180"
+                            : ""
+                        }`}
+                      />
+                    </div>
+
+                    {expandedTokens.has("others-section") && (
+                      <div className="w-full border-t">
+                        {otherTokens.map((token, index) => (
+                          <TokenRow
+                            key={token.id}
+                            token={token}
+                            selectedChainIds={selectedChainIds}
+                            isExpanded={expandedTokens.has(token.id)}
+                            onToggleExpand={() => toggleExpanded(token.id)}
+                            onToggleToken={() => toggleTokenSelection(token.id)}
+                            onToggleChain={toggleChainSelection}
+                            isFirst={index === 0}
+                            isLast={index === otherTokens.length - 1}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {!showProgressBar && (

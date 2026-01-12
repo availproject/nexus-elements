@@ -17,13 +17,11 @@ import type {
   AssetSelectionState,
   DestinationConfig,
 } from "../types";
-import { getChainIdsForFilter } from "../utils/asset-helpers";
 import {
   NEXUS_EVENTS,
   type OnSwapIntentHookData,
   type SwapStepType,
   type ExecuteParams,
-  type SUPPORTED_CHAINS_IDS,
   type SwapAndExecuteParams,
   CHAIN_METADATA,
   parseUnits,
@@ -55,6 +53,7 @@ interface DepositState {
   } | null;
   simulationLoading: boolean;
   receiveAmount: string | null;
+  skipSwap: boolean;
 }
 
 type Action =
@@ -75,6 +74,7 @@ type Action =
     }
   | { type: "setSimulationLoading"; payload: boolean }
   | { type: "setReceiveAmount"; payload: string | null }
+  | { type: "setSkipSwap"; payload: boolean }
   | { type: "reset" };
 
 const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
@@ -115,6 +115,7 @@ const createInitialState = (): DepositState => ({
   simulation: null,
   simulationLoading: false,
   receiveAmount: null,
+  skipSwap: false,
 });
 
 function reducer(state: DepositState, action: Action): DepositState {
@@ -163,6 +164,8 @@ function reducer(state: DepositState, action: Action): DepositState {
       return { ...state, simulationLoading: action.payload };
     case "setReceiveAmount":
       return { ...state, receiveAmount: action.payload };
+    case "setSkipSwap":
+      return { ...state, skipSwap: action.payload };
     case "reset":
       return createInitialState();
     default:
@@ -195,6 +198,11 @@ export function useDepositWidget(
   const { address } = useAccount();
   const handleNexusError = useNexusError();
 
+  const hasAutoSelected = useRef(false);
+  const initialSimulationDone = useRef(false);
+  const determiningSwapComplete = useRef(false);
+  const lastSimulationTime = useRef(0);
+
   const {
     seed,
     onStepComplete,
@@ -203,13 +211,11 @@ export function useDepositWidget(
   } = useTransactionSteps<SwapStepType>();
 
   const stopwatch = useStopwatch({
-    running: state.status === "executing",
+    running:
+      state.status === "executing" ||
+      (state.status === "previewing" && determiningSwapComplete.current),
     intervalMs: 100,
   });
-
-  const hasAutoSelected = useRef(false);
-  const initialSimulationDone = useRef(false);
-  const lastSimulationTime = useRef(0);
 
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
@@ -232,35 +238,6 @@ export function useDepositWidget(
   const setTxError = useCallback((error: string | null) => {
     dispatch({ type: "setError", payload: error });
   }, []);
-
-  const goToStep = useCallback((newStep: WidgetStep) => {
-    dispatch({
-      type: "setStep",
-      payload: { step: newStep, direction: "forward" },
-    });
-  }, []);
-
-  const goBack = useCallback(() => {
-    const previousStep = STEP_HISTORY[state.step];
-    if (previousStep) {
-      dispatch({
-        type: "setStep",
-        payload: { step: previousStep, direction: "backward" },
-      });
-    }
-  }, [state.step]);
-
-  const reset = useCallback(() => {
-    dispatch({ type: "reset" });
-    setAssetSelectionState(createInitialAssetSelection());
-    resetSteps();
-    swapIntent.current = null;
-    initialSimulationDone.current = false;
-    lastSimulationTime.current = 0;
-    setPollingEnabled(false);
-    stopwatch.stop();
-    stopwatch.reset();
-  }, [resetSteps, swapIntent, stopwatch]);
 
   const activeIntent = state.simulation?.swapIntent ?? swapIntent.current;
 
@@ -359,6 +336,7 @@ export function useDepositWidget(
       receiveTokenLogo: destination.tokenLogo,
       receiveTokenChain: destination.chainId,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIntent, nexusSDK, destination, availableAssets]);
 
   const feeBreakdown = useMemo(() => {
@@ -387,10 +365,9 @@ export function useDepositWidget(
     state.simulation,
     state.inputs,
     destination.chainId,
-  ]);
+  ]); // getFiatValue is stable from useNexus
 
-  const initiateSwapIntent = useCallback(
-    (inputs: SwapAndExecuteParams) => {
+  const start = useCallback((inputs: SwapAndExecuteParams) => {
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
@@ -398,12 +375,18 @@ export function useDepositWidget(
       nexusSDK
         .swapAndExecute(inputs, {
           onEvent: (event) => {
+            console.log("SWAP_STEP_COMPLETE_OUTSIDE", event);
+            console.log("====================");
             if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
+              console.log("SWAP_STEP_COMPLETE", event);
               const step = event.args as SwapStepType & {
                 explorerURL?: string;
                 completed?: boolean;
               };
-              console.log("STEP_COMPLETE", event);
+              if (step?.type === "DETERMINING_SWAP" && step?.completed) {
+                determiningSwapComplete.current = true;
+                stopwatch.start();
+              }
               if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
                 dispatch({
                   type: "setExplorerUrls",
@@ -433,12 +416,9 @@ export function useDepositWidget(
           dispatch({ type: "setError", payload: message });
           dispatch({ type: "setStatus", payload: "error" });
           onError?.(message);
-        })
-        .finally(() => {
-          swapIntent.current = null;
         });
-    },
-    [
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
       nexusSDK,
       isProcessing,
       seed,
@@ -447,8 +427,7 @@ export function useDepositWidget(
       onSuccess,
       onError,
       handleNexusError,
-    ],
-  );
+    ]); // stopwatch is stable from useStopwatch
 
   const handleAmountContinue = useCallback(
     (totalAmountUsd: number) => {
@@ -483,9 +462,9 @@ export function useDepositWidget(
         type: "setInputs",
         payload: { amount: totalAmountUsd.toString() },
       });
-      dispatch({ type: "setStatus", payload: "previewing" });
+      dispatch({ type: "setStatus", payload: "simulation-loading" });
       dispatch({ type: "setSimulationLoading", payload: true });
-      initiateSwapIntent(newInputs);
+      start(newInputs);
     },
     [
       nexusSDK,
@@ -493,7 +472,7 @@ export function useDepositWidget(
       exchangeRate,
       destination,
       executeDeposit,
-      initiateSwapIntent,
+      start,
     ],
   );
 
@@ -503,6 +482,50 @@ export function useDepositWidget(
     activeIntent.allow();
   }, [activeIntent]);
 
+  const goToStep = useCallback(
+    (newStep: WidgetStep) => {
+      dispatch({
+        type: "setStep",
+        payload: { step: newStep, direction: "forward" },
+      });
+      if (state.step === "amount" && newStep === "confirmation") {
+        const amount = state.inputs.amount;
+        if (amount) {
+          const totalAmountUsd = parseFloat(amount.replace(/,/g, ""));
+          if (totalAmountUsd > 0) {
+            handleAmountContinue(totalAmountUsd);
+            return;
+          }
+        }
+      }
+    },
+    [state.step, state.inputs.amount, handleAmountContinue],
+  );
+
+  const goBack = useCallback(() => {
+    const previousStep = STEP_HISTORY[state.step];
+    if (previousStep) {
+      dispatch({ type: "setError", payload: null });
+      dispatch({
+        type: "setStep",
+        payload: { step: previousStep, direction: "backward" },
+      });
+    }
+  }, [state.step]);
+
+  const reset = useCallback(() => {
+    dispatch({ type: "reset" });
+    setAssetSelectionState(createInitialAssetSelection());
+    resetSteps();
+    swapIntent.current = null;
+    initialSimulationDone.current = false;
+    lastSimulationTime.current = 0;
+    setPollingEnabled(false);
+    stopwatch.stop();
+    stopwatch.reset();
+  }, [resetSteps, swapIntent, stopwatch]);
+
+  // swapIntent is a stable RefObject
   const refreshSimulation = useCallback(async () => {
     const timeSinceLastSimulation = Date.now() - lastSimulationTime.current;
     if (timeSinceLastSimulation < 5000) {
@@ -528,13 +551,15 @@ export function useDepositWidget(
       stopwatch.reset();
       lastSimulationTime.current = Date.now();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopwatch]);
 
+  // swapIntent is a stable RefObject
   useEffect(() => {
     if (
       initialSimulationDone.current ||
       !state.simulationLoading ||
-      state.status !== "previewing"
+      (state.status !== "previewing" && state.status !== "simulation-loading")
     ) {
       return;
     }
@@ -543,17 +568,36 @@ export function useDepositWidget(
       if (swapIntent.current && !initialSimulationDone.current) {
         clearInterval(checkInterval);
         initialSimulationDone.current = true;
-        void refreshSimulation().then(() => {
+
+        const intent = swapIntent.current.intent;
+        const destinationToken = intent.destination.token.symbol;
+
+        const allSourcesMatchDestination = intent.sources.every(
+          (source) => source.token.symbol === destinationToken,
+        );
+        const isDirectDeposit = allSourcesMatchDestination;
+
+        dispatch({ type: "setSkipSwap", payload: isDirectDeposit });
+
+        if (isDirectDeposit) {
+          dispatch({ type: "setStatus", payload: "executing" });
           dispatch({ type: "setSimulationLoading", payload: false });
-          stopwatch.reset();
-          lastSimulationTime.current = Date.now();
-          setPollingEnabled(true);
-        });
+          swapIntent.current.allow();
+        } else {
+          void refreshSimulation().then(() => {
+            dispatch({ type: "setSimulationLoading", payload: false });
+            dispatch({ type: "setStatus", payload: "previewing" });
+            stopwatch.reset();
+            lastSimulationTime.current = Date.now();
+            setPollingEnabled(true);
+          });
+        }
       }
     }, 100);
 
     return () => clearInterval(checkInterval);
-  }, [state.simulationLoading, state.status, refreshSimulation, stopwatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.simulationLoading, state.status, refreshSimulation, stopwatch]); // swapIntent is stable
 
   useEffect(() => {
     if (!nexusSDK) return;
@@ -611,5 +655,8 @@ export function useDepositWidget(
     timer: stopwatch.seconds,
     handleConfirmOrder,
     handleAmountContinue,
+    totalSelectedBalance,
+    skipSwap: state.skipSwap,
+    simulationLoading: state.simulationLoading,
   };
 }

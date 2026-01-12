@@ -5,6 +5,7 @@ import { useDepositWidget } from "./hooks/use-deposit-widget";
 import {
   AmountContainer,
   ConfirmationContainer,
+  ConfirmationLoading,
   TransactionStatusContainer,
   TransactionCompleteContainer,
   AssetSelectionContainer,
@@ -34,7 +35,11 @@ const SCREENS: Record<WidgetStep, ScreenRenderer> = {
     <AmountContainer widget={widget} onClose={onClose} />
   ),
   confirmation: (widget, onClose) => (
-    <ConfirmationContainer widget={widget} onClose={onClose} />
+    widget.simulationLoading ? (
+      <ConfirmationLoading onClose={onClose} />
+    ) : (
+      <ConfirmationContainer widget={widget} onClose={onClose} />
+    )
   ),
   "transaction-status": (widget, onClose) => (
     <TransactionStatusContainer widget={widget} onClose={onClose} />
@@ -111,5 +116,7 @@ export type {
   UseDepositWidgetProps,
   TransactionStatus,
   AssetFilterType,
+  DepositInputs,
+  AssetSelectionState,
 } from "./types";
 export { useDepositWidget } from "./hooks/use-deposit-widget";

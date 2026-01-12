@@ -14,6 +14,7 @@ interface AmountCardProps {
   onAmountChange?: (amount: string) => void;
   selectedTokenAmount?: number;
   onErrorStateChange?: (hasError: boolean) => void;
+  totalSelectedBalance: number;
 }
 
 function AmountCard({
@@ -21,6 +22,7 @@ function AmountCard({
   onAmountChange,
   selectedTokenAmount = 0,
   onErrorStateChange,
+  totalSelectedBalance,
 }: AmountCardProps) {
   const [internalAmount, setInternalAmount] = useState("");
   const amount = externalAmount ?? internalAmount;
@@ -255,7 +257,7 @@ function AmountCard({
 
       {/* Balance Display */}
       <div className="mt-[33px] font-sans text-sm leading-4.5 text-base-foreground-2 text-center">
-        Balance: {usdFormatter.format(MOCK_WALLET_BALANCE)}
+        Balance: {usdFormatter.format(totalSelectedBalance)}
       </div>
 
       {/* Error Banner */}

@@ -5,6 +5,8 @@ import { ChevronDownIcon } from "./icons";
 import type { Token } from "../types";
 import { getTokenCheckState } from "../utils/asset-helpers";
 import { Checkbox } from "../../ui/checkbox";
+import { usdFormatter } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-core";
 
 const CHAIN_ITEM_HEIGHT = 49;
 const VERTICAL_LINE_TOP_OFFSET = 48;
@@ -15,7 +17,7 @@ interface TokenRowProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onToggleToken: () => void;
-  onToggleChain: (chainId: string) => void;
+  onToggleChain: (tokenId: string, chainId: number) => void;
   isFirst?: boolean;
   isLast?: boolean;
 }
@@ -50,7 +52,7 @@ export function TokenRow({
           <Checkbox
             checked={tokenCheckState}
             onCheckedChange={onToggleToken}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: any) => e.stopPropagation()}
           />
           <div className="flex items-center gap-3">
             <Image
@@ -118,7 +120,9 @@ export function TokenRow({
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={selectedChainIds.has(chain.id)}
-                        onCheckedChange={() => onToggleChain(chain.id)}
+                        onCheckedChange={() =>
+                          onToggleChain(chain.name, Number(chain.id))
+                        }
                       />
                       <span className="font-sans text-sm leading-4.5 text-card-foreground">
                         {chain.name}
@@ -126,10 +130,13 @@ export function TokenRow({
                     </div>
                     <div className="flex flex-col gap-1 items-end mr-8">
                       <span className="text-[13px] leading-4.5 text-muted-foreground">
-                        {chain.usdValue}
+                        {usdFormatter.format(chain.usdValue)}
                       </span>
                       <span className="text-[13px] leading-4.5 text-muted-foreground">
-                        {chain.amount}
+                        {formatTokenBalance(chain.amount, {
+                          decimals: token.decimals,
+                          symbol: token.symbol,
+                        })}
                       </span>
                     </div>
                   </div>

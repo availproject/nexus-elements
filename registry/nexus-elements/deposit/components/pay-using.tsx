@@ -1,36 +1,41 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import ButtonCard from "./button-card";
 import { RightChevronIcon, CoinIcon } from "./icons";
-import type { AssetFilterType } from "../types";
-import { TOKENS } from "../data/tokens";
-import { parseUsdValue } from "../utils/asset-helpers";
 import { Skeleton } from "../../ui/skeleton";
 
 interface PayUsingProps {
   onClick?: () => void;
   selectedChainIds: Set<string>;
-  filter: AssetFilterType;
   amount?: string;
+  swapBalance: Array<{
+    symbol: string;
+    decimals: number;
+    icon?: string;
+    breakdown?: Array<{
+      chain: { id: number; name: string; logo?: string };
+      balance: string;
+      balanceInFiat?: number;
+      contractAddress?: `0x${string}`;
+    }>;
+  }> | null;
 }
 
 function PayUsing({
   onClick,
   selectedChainIds,
-  filter,
   amount,
+  swapBalance,
 }: PayUsingProps) {
   const [isLoading, setIsLoading] = useState(false);
   const previousAmountRef = useRef<string | undefined>(undefined);
   const hasAmount = Boolean(amount && amount.trim() !== "");
 
-  // Trigger loading state when amount changes from empty to non-empty
   useEffect(() => {
     const hadAmount = Boolean(
-      previousAmountRef.current && previousAmountRef.current.trim() !== ""
+      previousAmountRef.current && previousAmountRef.current.trim() !== "",
     );
 
     if (hasAmount && !hadAmount) {
-      // Amount just became non-empty, show loading
       setIsLoading(true);
       const timer = setTimeout(() => {
         setIsLoading(false);
@@ -41,28 +46,29 @@ function PayUsing({
     previousAmountRef.current = amount;
   }, [amount, hasAmount]);
 
-  // Calculate selection summary
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { subtitle, selectedCount, totalUsdValue } = useMemo(() => {
-    // Count selected tokens per symbol
     const tokenCounts: Record<string, number> = {};
     let total = 0;
 
-    TOKENS.forEach((token) => {
-      const selectedChains = token.chains.filter((c) =>
-        selectedChainIds.has(c.id)
-      );
-      if (selectedChains.length > 0) {
-        tokenCounts[token.symbol] = selectedChains.length;
-        selectedChains.forEach((c) => {
-          total += parseUsdValue(c.usdValue);
-        });
-      }
-    });
+    if (swapBalance) {
+      swapBalance.forEach((asset) => {
+        const selectedChains =
+          asset.breakdown?.filter((c) =>
+            selectedChainIds.has(`${asset.symbol}-${c.chain.id}`),
+          ) ?? [];
+        if (selectedChains.length > 0) {
+          tokenCounts[asset.symbol] = selectedChains.length;
+          selectedChains.forEach((c) => {
+            total += c.balanceInFiat ?? 0;
+          });
+        }
+      });
+    }
 
     const symbols = Object.keys(tokenCounts);
     const count = Object.values(tokenCounts).reduce((a, b) => a + b, 0);
 
-    // Generate subtitle - show token symbols like "USDC, ETH + 2 more"
     let text: string;
     if (count === 0) {
       text = "No tokens selected";
@@ -77,9 +83,8 @@ function PayUsing({
       selectedCount: count,
       totalUsdValue: total,
     };
-  }, [selectedChainIds, filter]);
+  }, [selectedChainIds, swapBalance]);
 
-  // Render subtitle based on state
   const renderSubtitle = () => {
     if (!hasAmount) {
       return (
@@ -100,7 +105,6 @@ function PayUsing({
     );
   };
 
-  // Only show edit button and chevron when amount is entered and not loading
   const showEditControls = hasAmount && !isLoading;
 
   return (

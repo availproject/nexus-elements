@@ -3,7 +3,6 @@ import type {
   ExecuteParams,
   OnSwapIntentHookData,
   SwapStepType,
-  SwapAndExecuteParams,
   UserAsset,
 } from "@avail-project/nexus-core";
 import type { Address } from "viem";
@@ -18,6 +17,7 @@ export type WidgetStep =
 export type TransactionStatus =
   | "idle"
   | "previewing"
+  | "simulation-loading"
   | "executing"
   | "success"
   | "error";
@@ -31,13 +31,14 @@ export type TokenCategory = "stablecoin" | "native" | "memecoin";
 export interface ChainItem {
   id: string;
   name: string;
-  usdValue: string;
-  amount: string;
+  usdValue: number;
+  amount: number;
 }
 
 export interface Token {
   id: string;
   symbol: string;
+  decimals: number;
   chainsLabel: string;
   usdValue: string;
   amount: string;
@@ -175,6 +176,9 @@ export interface DepositWidgetContextValue {
   timer: number;
   handleConfirmOrder: () => void;
   handleAmountContinue: (totalAmountUsd: number) => void;
+  totalSelectedBalance: number;
+  skipSwap: boolean;
+  simulationLoading: boolean;
 }
 
 export interface BaseDepositWidgetProps {
@@ -182,7 +186,9 @@ export interface BaseDepositWidgetProps {
   onError?: (error: string) => void;
 }
 
-export interface DepositWidgetProps extends UseDepositWidgetProps, BaseDepositWidgetProps {
+export interface DepositWidgetProps
+  extends UseDepositWidgetProps,
+    BaseDepositWidgetProps {
   heading?: string;
   embed?: boolean;
   className?: string;
