@@ -3,10 +3,11 @@
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 import { TokenIcon } from "./token-icon";
 import { MOCK_WALLET_BALANCE } from "../constants";
-import { ErrorBanner } from "./ui/error-banner";
+import { ErrorBanner } from "./error-banner";
 import { PercentageSelector } from "./percentage-selector";
-import { formatCurrency, parseCurrencyInput } from "../utils";
+import { parseCurrencyInput } from "../utils";
 import { UpDownArrows } from "./icons";
+import { usdFormatter } from "../../common";
 
 interface AmountCardProps {
   amount?: string;
@@ -28,7 +29,7 @@ function AmountCard({
   const [inputWidth, setInputWidth] = useState(0);
   const [isShining, setIsShining] = useState(false);
   const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const prevAmountRef = useRef<string>("");
   const prevLengthRef = useRef(0);
@@ -125,16 +126,16 @@ function AmountCard({
         setAmount(rawValue);
       }
     },
-    [setAmount]
+    [setAmount],
   );
 
   const handlePercentageClick = useCallback(
     (percentage: number) => {
       const calculatedAmount = MOCK_WALLET_BALANCE * percentage;
-      const newAmount = formatCurrency(calculatedAmount);
+      const newAmount = usdFormatter.format(calculatedAmount).replace("$", "");
       setAmount(newAmount);
     },
-    [setAmount]
+    [setAmount],
   );
 
   const handleDoubleClick = useCallback(() => {
@@ -154,7 +155,7 @@ function AmountCard({
         }
       }
     },
-    []
+    [],
   );
 
   return (
@@ -240,7 +241,7 @@ function AmountCard({
                 isShining ? "animate-glare-shine" : ""
               }`}
             >
-              ~ ${formatCurrency(numericAmount)}
+              ~ {usdFormatter.format(numericAmount)}
             </span>
             <UpDownArrows className="w-4 h-4" />
           </div>
@@ -254,7 +255,7 @@ function AmountCard({
 
       {/* Balance Display */}
       <div className="mt-[33px] font-sans text-sm leading-4.5 text-base-foreground-2 text-center">
-        Balance: ${formatCurrency(MOCK_WALLET_BALANCE)}
+        Balance: {usdFormatter.format(MOCK_WALLET_BALANCE)}
       </div>
 
       {/* Error Banner */}

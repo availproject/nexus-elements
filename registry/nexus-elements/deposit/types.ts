@@ -1,3 +1,13 @@
+import type {
+  SUPPORTED_CHAINS_IDS,
+  ExecuteParams,
+  OnSwapIntentHookData,
+  SwapStepType,
+  SwapAndExecuteParams,
+  UserAsset,
+} from "@avail-project/nexus-core";
+import type { Address } from "viem";
+
 export type WidgetStep =
   | "amount"
   | "confirmation"
@@ -5,7 +15,7 @@ export type WidgetStep =
   | "transaction-complete"
   | "asset-selection";
 
-export type DepositStatus =
+export type TransactionStatus =
   | "idle"
   | "previewing"
   | "executing"
@@ -16,7 +26,6 @@ export type NavigationDirection = "forward" | "backward" | null;
 
 export type AssetFilterType = "all" | "stablecoins" | "native" | "custom";
 
-// Token-related types
 export type TokenCategory = "stablecoin" | "native" | "memecoin";
 
 export interface ChainItem {
@@ -40,6 +49,9 @@ export interface Token {
 export interface DepositInputs {
   amount?: string;
   selectedToken: string;
+  toChainId?: number;
+  toTokenAddress?: `0x${string}`;
+  toAmount?: bigint;
 }
 
 export interface AssetSelectionState {
@@ -48,11 +60,45 @@ export interface AssetSelectionState {
   expandedTokens: Set<string>;
 }
 
+export interface DestinationConfig {
+  chainId: SUPPORTED_CHAINS_IDS;
+  tokenAddress: `0x${string}`;
+  tokenSymbol: string;
+  tokenDecimals: number;
+  tokenLogo?: string;
+  label?: string;
+  estimatedTime?: string;
+  gasTokenSymbol?: string;
+}
+
+export interface ExecuteDepositParams {
+  tokenSymbol: string;
+  tokenAddress: string;
+  amount: bigint;
+  chainId: number;
+  user: Address;
+}
+
+export type ExecuteDepositResult = Omit<ExecuteParams, "toChainId">;
+
+export interface UseDepositWidgetProps {
+  executeDeposit: (
+    tokenSymbol: string,
+    tokenAddress: string,
+    amount: bigint,
+    chainId: number,
+    user: Address,
+  ) => Omit<ExecuteParams, "toChainId">;
+  destination: DestinationConfig;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
+}
+
 export interface DepositWidgetContextValue {
   // Core state
   step: WidgetStep;
   inputs: DepositInputs;
-  status: DepositStatus;
+  status: TransactionStatus;
 
   // Input management
   setInputs: (inputs: Partial<DepositInputs>) => void;
@@ -87,15 +133,56 @@ export interface DepositWidgetContextValue {
   // Asset selection
   assetSelection: AssetSelectionState;
   setAssetSelection: (selection: Partial<AssetSelectionState>) => void;
+
+  // SDK integration
+  swapBalance: UserAsset[] | null;
+  activeIntent: OnSwapIntentHookData | null;
+  confirmationDetails: {
+    sourceLabel: string;
+    sources: Array<
+      | {
+          chainId: number;
+          tokenAddress: `0x${string}`;
+          decimals: number;
+          symbol: string;
+          balance: string;
+          balanceInFiat?: number;
+          tokenLogo?: string;
+          chainLogo?: string;
+          chainName?: string;
+        }
+      | undefined
+    >;
+    gasTokenSymbol?: string;
+    estimatedTime?: string;
+    amountSpent: string;
+    receiveTokenSymbol: string;
+    receiveAmountAfterSwap: string;
+    receiveAmountAfterSwapUsd: number;
+    receiveTokenLogo?: string;
+    receiveTokenChain: number;
+  } | null;
+  feeBreakdown: {
+    totalGasFee: number;
+    gasUsd: number;
+    gasFormatted: string;
+  };
+  steps: Array<{
+    id: number;
+    completed: boolean;
+    step: SwapStepType;
+  }>;
+  timer: number;
+  handleConfirmOrder: () => void;
+  handleAmountContinue: (totalAmountUsd: number) => void;
 }
 
-// Props interface for the main component (following nexus-elements pattern)
 export interface BaseDepositWidgetProps {
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
 
-export interface DepositWidgetProps extends BaseDepositWidgetProps {
+export interface DepositWidgetProps extends UseDepositWidgetProps, BaseDepositWidgetProps {
   heading?: string;
   embed?: boolean;
   className?: string;

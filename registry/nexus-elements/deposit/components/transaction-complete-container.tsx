@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CardContent, CardFooter } from "./ui/card";
-import { Button } from "./ui/button";
 import WidgetHeader from "./widget-header";
 import { ReceiveAmountDisplay } from "./receive-amount-display";
 import {
@@ -13,6 +11,8 @@ import {
 } from "../constants";
 import type { DepositWidgetContextValue } from "../types";
 import { ArrowBoxUpRightIcon, ChevronDownIcon } from "./icons";
+import { CardContent, CardFooter } from "../../ui/card";
+import { Button } from "../../ui/button";
 
 interface TransactionCompleteContainerProps {
   widget: DepositWidgetContextValue;

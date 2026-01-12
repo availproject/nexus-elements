@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { Checkbox } from "./ui/checkbox";
 import { ChevronDownIcon } from "./icons";
 import type { Token } from "../types";
 import { getTokenCheckState } from "../utils/asset-helpers";
+import { Checkbox } from "../../ui/checkbox";
 
 const CHAIN_ITEM_HEIGHT = 49;
 const VERTICAL_LINE_TOP_OFFSET = 48;

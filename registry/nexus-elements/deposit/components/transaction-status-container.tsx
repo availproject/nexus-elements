@@ -1,15 +1,11 @@
 "use client";
 
-import { CardContent, CardFooter } from "./ui/card";
+import { CardContent, CardFooter } from "../../ui/card";
 import WidgetHeader from "./widget-header";
 import { TransactionSteps } from "./transaction-steps";
 import { AmountDisplay } from "./amount-display";
-import {
-  MOCK_DEMO_VALUES,
-  MOCK_TRANSACTION,
-  TRANSACTION_STEPS,
-} from "../constants";
 import type { DepositWidgetContextValue } from "../types";
+import { useMemo } from "react";
 
 interface TransactionStatusContainerProps {
   widget: DepositWidgetContextValue;
@@ -20,7 +16,6 @@ function TransferIndicator({ isProcessing }: { isProcessing: boolean }) {
   const baseClasses = "w-2 h-2 transition-all duration-300";
 
   if (isProcessing) {
-    // Animated wave effect when processing
     return (
       <>
         <div
@@ -62,6 +57,8 @@ const TransactionStatusContainer = ({
   widget,
   onClose,
 }: TransactionStatusContainerProps) => {
+  const { steps, timer, confirmationDetails, isProcessing, isSuccess, isError, txError } = widget;
+
   const handleComplete = () => {
     setTimeout(() => {
       widget.goToStep("transaction-complete");
@@ -69,13 +66,28 @@ const TransactionStatusContainer = ({
   };
 
   const getStatusMessage = () => {
-    if (widget.isError && widget.txError) {
-      return <span className="text-destructive">{widget.txError}</span>;
+    if (isError && txError) {
+      return <span className="text-destructive">{txError}</span>;
     }
-    if (widget.isSuccess) return "Transaction complete";
-    if (widget.isProcessing) return "Processing transaction...";
+    if (isSuccess) return "Transaction complete";
+    if (isProcessing) return "Processing transaction...";
     return "Verifying intent";
   };
+
+  const formattedTimer = useMemo(() => {
+    const minutes = Math.floor(timer / 60);
+    const seconds = Math.floor(timer % 60);
+    const ms = Math.floor((timer % 1) * 10);
+    if (minutes > 0) {
+      return `${minutes}:${seconds.toString().padStart(2, "0")}.${ms}`;
+    }
+    return `${seconds}.${ms}s`;
+  }, [timer]);
+
+  const spendAmount = confirmationDetails?.amountSpent ?? "0";
+  const receiveAmount = confirmationDetails?.receiveAmountAfterSwap ?? "0";
+  const receiveTokenSymbol = confirmationDetails?.receiveTokenSymbol ?? "USDC";
+  const chainName = "destination";
 
   return (
     <>
@@ -85,17 +97,17 @@ const TransactionStatusContainer = ({
           <div className="flex w-full mt-2 items-end justify-center">
             <div className="flex gap-7 items-center">
               <AmountDisplay
-                amount={MOCK_DEMO_VALUES.spendAmount}
+                amount={spendAmount}
                 suffix="USD"
-                label={`${MOCK_DEMO_VALUES.assetCount} assets`}
+                label={`${confirmationDetails?.sources.filter(s => s).length ?? 0} assets`}
               />
-              <div className="flex w-[64px] gap-1.5 items-center justify-center">
-                <TransferIndicator isProcessing={widget.isProcessing} />
+              <div className="flex w-16 gap-1.5 items-center justify-center">
+                <TransferIndicator isProcessing={isProcessing} />
               </div>
               <AmountDisplay
-                amount={MOCK_DEMO_VALUES.receiveAmount}
-                suffix="USDC"
-                label="on Arbitrum"
+                amount={receiveAmount}
+                suffix={receiveTokenSymbol}
+                label={`on ${chainName}`}
               />
             </div>
           </div>
@@ -112,8 +124,8 @@ const TransactionStatusContainer = ({
             {getStatusMessage()}
           </div>
           <TransactionSteps
-            steps={[...TRANSACTION_STEPS]}
-            totalDuration={MOCK_TRANSACTION.stepsDurationMs}
+            steps={steps}
+            timer={formattedTimer}
             onComplete={handleComplete}
           />
         </div>

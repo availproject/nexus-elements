@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { CardContent } from "./ui/card";
 import WidgetHeader from "./widget-header";
 import type { DepositWidgetContextValue } from "../types";
 import AmountCard from "./amount-card";
 import PayUsing from "./pay-using";
-import { Button } from "./ui/button";
 import { calculateSelectedAmount } from "../utils/asset-helpers";
+import { Button } from "../../ui/button";
+import { CardContent } from "../../ui/card";
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
@@ -21,14 +21,14 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
   // Calculate total selected token amount
   const selectedTokenAmount = useMemo(
     () => calculateSelectedAmount(selectedChainIds),
-    [selectedChainIds]
+    [selectedChainIds],
   );
 
   const handleAmountChange = useCallback(
     (amount: string) => {
       widget.setInputs({ amount });
     },
-    [widget.setInputs]
+    [widget.setInputs],
   );
 
   const handleErrorStateChange = useCallback((hasError: boolean) => {

@@ -1,4 +1,4 @@
-import { InfoIcon } from "../icons";
+import { InfoIcon } from "./icons";
 
 interface ErrorBannerProps {
   message: string;

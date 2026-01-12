@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "./utils";
-import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { useDepositWidget } from "./hooks/use-deposit-widget";
 import {
   AmountContainer,
@@ -15,6 +14,7 @@ import type {
   DepositWidgetProps,
   NavigationDirection,
 } from "./types";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 const ANIMATION_CLASSES: Record<NonNullable<NavigationDirection>, string> = {
   forward: "animate-slide-in-from-right",
@@ -26,7 +26,7 @@ const getAnimationClass = (direction: NavigationDirection): string =>
 
 type ScreenRenderer = (
   widget: ReturnType<typeof useDepositWidget>,
-  onClose?: () => void
+  onClose?: () => void,
 ) => React.ReactNode;
 
 const SCREENS: Record<WidgetStep, ScreenRenderer> = {
@@ -54,8 +54,10 @@ const NexusDeposit = ({
   onClose,
   onSuccess,
   onError,
+  executeDeposit,
+  destination,
 }: DepositWidgetProps) => {
-  const widget = useDepositWidget({ onSuccess, onError });
+  const widget = useDepositWidget({ executeDeposit, destination, onSuccess, onError });
   const animationClass = getAnimationClass(widget.navigationDirection);
 
   if (embed) {
@@ -63,7 +65,7 @@ const NexusDeposit = ({
       <Card
         className={cn(
           "relative w-full max-w-md overflow-hidden transition-[height] duration-200 ease-out",
-          className
+          className,
         )}
       >
         <CardHeader className="px-3">
@@ -82,7 +84,7 @@ const NexusDeposit = ({
     <Card
       className={cn(
         "relative w-full max-w-[400px] overflow-hidden gap-0 transition-[height] duration-200 ease-out",
-        className
+        className,
       )}
     >
       <div
@@ -103,5 +105,11 @@ export type {
   DepositWidgetContextValue,
   DepositWidgetProps,
   BaseDepositWidgetProps,
+  DestinationConfig,
+  ExecuteDepositParams,
+  ExecuteDepositResult,
+  UseDepositWidgetProps,
+  TransactionStatus,
+  AssetFilterType,
 } from "./types";
 export { useDepositWidget } from "./hooks/use-deposit-widget";

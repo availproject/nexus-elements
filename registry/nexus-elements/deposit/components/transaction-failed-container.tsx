@@ -1,7 +1,7 @@
 "use client";
 
-import { CardContent, CardFooter } from "./ui/card";
-import { Button } from "./ui/button";
+import { CardContent, CardFooter } from "../../ui/card";
+import { Button } from "../../ui/button";
 import WidgetHeader from "./widget-header";
 import { ReceiveAmountDisplay } from "./receive-amount-display";
 import { MOCK_DEMO_VALUES } from "../constants";
