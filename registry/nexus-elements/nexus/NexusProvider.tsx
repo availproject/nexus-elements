@@ -64,12 +64,22 @@ const NexusProvider = ({
 }: NexusProviderProps) => {
   const stableConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config]
+    [config],
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
   sdkRef.current ??= new NexusSDK({
-    ...stableConfig,
+    network: {
+      NETWORK_HINT: 1,
+      COSMOS_GRPC_URL: "https://debugnet.availproject.org/grpc-web/",
+      COSMOS_REST_URL: "https://debugnet.availproject.org",
+      COSMOS_RPC_URL: "https://debugnet.availproject.org:26650",
+      COSMOS_WS_URL: "wss://debugnet.availproject.org:26650/websocket",
+      INTENT_EXPLORER_URL: "https://explorer.nexus-cerise.availproject.org",
+      VSC_BASE_URL: "https://vsc-debugnet.availproject.org",
+      VSC_WS_URL: "wss://vsc-debugnet.availproject.org",
+    },
+    debug: true,
   });
   const sdk = sdkRef.current;
 
@@ -78,10 +88,10 @@ const NexusProvider = ({
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null
+    null,
   );
   const [bridgableBalance, setBridgableBalance] = useState<UserAsset[] | null>(
-    null
+    null,
   );
   const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
@@ -92,7 +102,7 @@ const NexusProvider = ({
 
   const setupNexus = useCallback(async () => {
     const list = sdk.utils.getSupportedChains(
-      config?.network === "testnet" ? 0 : undefined
+      config?.network === "testnet" ? 0 : undefined,
     );
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
@@ -261,7 +271,7 @@ const NexusProvider = ({
       loading,
       fetchBridgableBalance,
       fetchSwapBalance,
-    ]
+    ],
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>
