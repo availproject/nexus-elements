@@ -36,6 +36,8 @@ const TransactionFailedContainer = ({
               label="Transaction failed"
               amount="-$0.00"
               timeLabel=""
+              showClockIcon={false}
+              showUsdValue={false}
             />
             <div className="w-full bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-4">
               <p className="font-sans text-sm leading-5 text-destructive">

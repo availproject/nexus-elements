@@ -5,7 +5,6 @@ import { ChevronDownIcon } from "./icons";
 import WidgetHeader from "./widget-header";
 import type {
   DepositWidgetContextValue,
-  AssetFilterType,
   Token,
   TokenCategory,
   ChainItem,
@@ -21,6 +20,7 @@ import {
 } from "@avail-project/nexus-core";
 import { usdFormatter } from "../../common";
 import { isStablecoin, checkIfMatchesPreset } from "../utils/asset-helpers";
+import { X } from "lucide-react";
 
 interface AssetSelectionContainerProps {
   widget: DepositWidgetContextValue;
@@ -46,7 +46,9 @@ function transformSwapBalanceToTokens(
         .map((b) => {
           const balanceNum = parseFloat(b.balance);
           return {
-            id: `${asset.symbol}-${b.chain.id}`,
+            id: `${b.contractAddress}-${b.chain.id}`,
+            tokenAddress: b.contractAddress as `0x${string}`,
+            chainId: b.chain.id,
             name: b.chain.name,
             usdValue: b.balanceInFiat,
             amount: balanceNum,
@@ -74,7 +76,10 @@ function transformSwapBalanceToTokens(
       return {
         id: asset.symbol,
         symbol: asset.symbol,
-        chainsLabel: `${chains.length} Chain${chains.length !== 1 ? "s" : ""}`,
+        chainsLabel:
+          chains.length > 1
+            ? `${chains.length} Chain${chains.length !== 1 ? "s" : ""}`
+            : chains[0].name,
         usdValue: usdFormatter.format(totalUsdValue),
         amount: formatTokenBalance(totalAmount, {
           decimals: asset.decimals,
@@ -97,7 +102,9 @@ const AssetSelectionContainer = ({
   const [isProgressBarVisible, setIsProgressBarVisible] = useState(false);
   const [isProgressBarEntering, setIsProgressBarEntering] = useState(false);
   const [isProgressBarExiting, setIsProgressBarExiting] = useState(false);
+  const [showStickyPopular, setShowStickyPopular] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const popularSectionRef = useRef<HTMLDivElement>(null);
 
   const selectedChainIds = assetSelection.selectedChainIds;
   const filter = assetSelection.filter;
@@ -161,6 +168,26 @@ const AssetSelectionContainer = ({
       return () => clearTimeout(timer);
     }
   }, [showProgressBar, isProgressBarVisible]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollTop = container.scrollTop;
+      setShowStickyPopular(scrollTop > 50);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToPopular = useCallback(() => {
+    scrollContainerRef.current?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, []);
 
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
@@ -300,37 +327,53 @@ const AssetSelectionContainer = ({
                 )}
               </TabsList>
             </Tabs>
-            {filter !== "custom" && (
-              <button
-                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                onClick={handleDeselectAll}
-              >
-                Deselect all
-              </button>
-            )}
+            <button
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              onClick={handleDeselectAll}
+            >
+              {filter === "custom" ? <X className="size-4" /> : "Deselect all"}
+            </button>
           </div>
 
           <div className="flex flex-col">
             <div className="relative">
+              {showStickyPopular && mainTokens.length > 0 && (
+                <button
+                  className="absolute top-2 left-1/2 -translate-x-1/2 z-10 text-xs font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer border border-primary/10 px-2 py-1 bg-background"
+                  onClick={scrollToPopular}
+                >
+                  Popular
+                </button>
+              )}
               <div
                 ref={scrollContainerRef}
                 className="w-full overflow-y-auto max-h-[300px] scrollbar-hide"
               >
-                <div className="w-full rounded-lg border overflow-hidden">
-                  {mainTokens.map((token, index) => (
-                    <TokenRow
-                      key={token.id}
-                      token={token}
-                      selectedChainIds={selectedChainIds}
-                      isExpanded={expandedTokens.has(token.id)}
-                      onToggleExpand={() => toggleExpanded(token.id)}
-                      onToggleToken={() => toggleTokenSelection(token.id)}
-                      onToggleChain={toggleChainSelection}
-                      isFirst={index === 0}
-                      isLast={index === mainTokens.length - 1}
-                    />
-                  ))}
-                </div>
+                {mainTokens.length > 0 && (
+                  <div
+                    ref={popularSectionRef}
+                    className="w-full rounded-lg border overflow-hidden"
+                  >
+                    <div className="px-5 py-2 bg-muted/30 border-b">
+                      <span className="font-sans text-xs font-medium text-muted-foreground">
+                        Popular
+                      </span>
+                    </div>
+                    {mainTokens.map((token, index) => (
+                      <TokenRow
+                        key={token.id}
+                        token={token}
+                        selectedChainIds={selectedChainIds}
+                        isExpanded={expandedTokens.has(token.id)}
+                        onToggleExpand={() => toggleExpanded(token.id)}
+                        onToggleToken={() => toggleTokenSelection(token.id)}
+                        onToggleChain={toggleChainSelection}
+                        isFirst={false}
+                        isLast={index === mainTokens.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {otherTokens.length > 0 && (
                   <div className="w-full bg-base rounded-t-lg border overflow-hidden mt-4">

@@ -42,7 +42,9 @@ const ConfirmationContainer = ({
   const receiveAmount =
     confirmationDetails?.receiveAmountAfterSwapUsd?.toFixed(2) ?? "0";
   const timeLabel = confirmationDetails?.estimatedTime ?? "~30s";
-  const amountSpent = confirmationDetails?.amountSpent ?? "0";
+  // This is in USD
+  const amountSpent = confirmationDetails?.amountSpent;
+  // TODO: Ensure unique names are displayed
   const tokenNames = confirmationDetails?.sources
     .filter((s) => s)
     .map((s) => s?.symbol)
@@ -54,15 +56,18 @@ const ConfirmationContainer = ({
     moreCount > 0 ? `${tokenNames} + ${moreCount} more` : tokenNames;
 
   const sourceDetails = useMemo(() => {
-    if (!activeIntent?.intent.sources) return [];
-    return activeIntent.intent.sources.map((source) => ({
-      chainName: source.chain.name,
-      chainLogo: source.chain.logo,
-      tokenSymbol: source.token.symbol,
-      tokenDecimals: source.token.decimals,
-      amount: source.amount,
-    }));
-  }, [activeIntent]);
+    if (!confirmationDetails?.sources) return [];
+    return confirmationDetails.sources
+      .filter((s) => s)
+      .map((source) => ({
+        chainName: source?.chainName ?? "",
+        chainLogo: source?.chainLogo,
+        tokenSymbol: source?.symbol ?? "",
+        tokenDecimals: source?.decimals ?? 6,
+        amount: source?.balance ?? "0",
+        isDestinationBalance: source?.isDestinationBalance ?? false,
+      }));
+  }, [confirmationDetails]);
 
   return (
     <>
@@ -88,7 +93,7 @@ const ConfirmationContainer = ({
                     ? "Calculating..."
                     : tokenNamesSummary || "Selected assets"
                 }
-                value={amountSpent}
+                value={String(amountSpent)}
                 valueSuffix="USD"
                 showBreakdown={!isLoading && sourceDetails.length > 0}
                 loading={isLoading}
@@ -127,7 +132,7 @@ const ConfirmationContainer = ({
                         </div>
                         <div className="flex flex-col gap-0.5 items-end">
                           <span className="font-sans text-sm text-card-foreground">
-                            {usdFormatter.format(amountUsd)}
+                            {usdFormatter.format(amountUsd)}USD
                           </span>
                           <span className="font-sans text-[13px] text-muted-foreground">
                             {formatTokenBalance(parseFloat(source.amount), {
@@ -141,26 +146,16 @@ const ConfirmationContainer = ({
                   })}
                 </div>
               </SummaryCard>
+
               <SummaryCard
                 icon={<GasPumpIcon className="w-5 h-5 text-muted-foreground" />}
                 title="Total fees"
-                subtitle="Network & protocol"
-                value={feeBreakdown.gasFormatted}
+                value={(confirmationDetails?.totalFeeUsd ?? 0).toFixed(2)}
                 valueSuffix="USD"
-                showBreakdown={!isLoading}
+                showBreakdown={false}
                 loading={isLoading}
-                expanded={showFeeDetails}
-                onToggleExpand={() => setShowFeeDetails(!showFeeDetails)}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-sans text-sm text-muted-foreground">
-                    Gas fee
-                  </span>
-                  <span className="font-sans text-sm text-card-foreground">
-                    {usdFormatter.format(feeBreakdown.gasUsd)}
-                  </span>
-                </div>
-              </SummaryCard>
+                expanded={false}
+              />
             </div>
           </div>
           {txError && widget.status === "error" && (
@@ -172,9 +167,9 @@ const ConfirmationContainer = ({
             disabled={isProcessing || isLoading}
           >
             {isProcessing
-              ? "Processing..."
+              ? "Fetching quote"
               : isLoading
-                ? "Loading..."
+                ? "Fetching quote"
                 : "Confirm and deposit"}
           </Button>
         </div>

@@ -274,7 +274,7 @@ function AmountCard({
       )}
       {exceedsSelectedTokens && (
         <div className="mt-4 mx-4">
-          <ErrorBanner message="Amount exceeds your selected token balance. Select more tokens or reduce amount to continue." />
+          <ErrorBanner message="Amount exceeds your selected token balance. Select more tokens or reduce the amount to continue." />
         </div>
       )}
     </div>

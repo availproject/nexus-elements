@@ -81,12 +81,12 @@ const TransactionStatusContainer = ({
   // Derive 3 simplified steps from actual SDK events
   const simplifiedSteps = useMemo((): SimplifiedStep[] => {
     const hasRffId = steps.some((s) => s.step.type === "RFF_ID" && s.completed);
-    const hasDestinationSwapHash = steps.some(
-      (s) => s.step.type === "DESTINATION_SWAP_HASH" && s.completed,
+    // Use SOURCE_SWAP_HASH for "Collecting on Source" step
+    const hasSourceSwapHash = steps.some(
+      (s) => s.step.type === "SOURCE_SWAP_HASH" && s.completed,
     );
-    const hasBridgeDeposit = steps.some(
-      (s) => s.step.type === "BRIDGE_DEPOSIT" && s.completed,
-    );
+    // Deposit transaction only completes when the entire transaction succeeds
+    const isTransactionComplete = widget.isSuccess;
 
     return [
       {
@@ -97,15 +97,15 @@ const TransactionStatusContainer = ({
       {
         id: "collecting-on-source",
         label: "Collecting on Source",
-        completed: hasDestinationSwapHash,
+        completed: hasSourceSwapHash,
       },
       {
         id: "deposit-transaction",
         label: "Deposit transaction",
-        completed: hasBridgeDeposit,
+        completed: isTransactionComplete,
       },
     ];
-  }, [steps]);
+  }, [steps, widget.isSuccess]);
 
   // Calculate progress as 33% -> 66% -> 100%
   const progress = useMemo(() => {
@@ -151,7 +151,12 @@ const TransactionStatusContainer = ({
                 "linear-gradient(0deg, rgba(0, 107, 244, 0.15) 0%, rgba(255, 255, 255, 0.00) 90.79%)",
             }}
           >
-            <div className="absolute bottom-0 left-0 h-1 bg-primary animate-progress" />
+            <div
+              className="absolute bottom-0 left-0 h-1 bg-primary " // animate-progress
+              style={{
+                width: `${progress}%`,
+              }}
+            />
           </div>
           <div className="py-5 mt-1 font-sans text-sm leading-4.5 text-muted-foreground text-center">
             {getStatusMessage()}

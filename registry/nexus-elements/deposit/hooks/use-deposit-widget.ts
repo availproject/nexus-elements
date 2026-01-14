@@ -19,11 +19,14 @@ import type {
 } from "../types";
 import {
   NEXUS_EVENTS,
+  CHAIN_METADATA,
   type OnSwapIntentHookData,
   type SwapStepType,
   type ExecuteParams,
   type SwapAndExecuteParams,
+  type SwapAndExecuteResult,
   parseUnits,
+  SWAP_STEPS,
 } from "@avail-project/nexus-core";
 import {
   SWAP_EXPECTED_STEPS,
@@ -33,7 +36,7 @@ import {
   useTransactionSteps,
   usdFormatter,
 } from "../../common";
-import { type Address, type Hex } from "viem";
+import { type Address, type Hex, formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
 
@@ -48,10 +51,13 @@ interface DepositState {
   inputs: DepositInputs;
   status: TransactionStatus;
   explorerUrls: {
-    intentUrl: string | null;
-    executeUrl: string | null;
+    sourceExplorerUrl: string | null;
+    destinationExplorerUrl: string | null;
   };
   sourceSwaps: SourceSwapInfo[];
+  nexusIntentUrl: string | null;
+  depositTxHash: string | null;
+  actualGasFeeUsd: number | null;
   error: string | null;
   lastResult: unknown;
   navigationDirection: NavigationDirection;
@@ -85,6 +91,9 @@ type Action =
   | { type: "setSkipSwap"; payload: boolean }
   | { type: "setIntentReady"; payload: boolean }
   | { type: "addSourceSwap"; payload: SourceSwapInfo }
+  | { type: "setNexusIntentUrl"; payload: string | null }
+  | { type: "setDepositTxHash"; payload: string | null }
+  | { type: "setActualGasFeeUsd"; payload: number | null }
   | { type: "reset" };
 
 const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
@@ -117,10 +126,13 @@ const createInitialState = (): DepositState => ({
   },
   status: "idle",
   explorerUrls: {
-    intentUrl: null,
-    executeUrl: null,
+    sourceExplorerUrl: null,
+    destinationExplorerUrl: null,
   },
   sourceSwaps: [],
+  nexusIntentUrl: null,
+  depositTxHash: null,
+  actualGasFeeUsd: null,
   error: null,
   lastResult: null,
   navigationDirection: null,
@@ -184,6 +196,12 @@ function reducer(state: DepositState, action: Action): DepositState {
       return { ...state, intentReady: action.payload };
     case "addSourceSwap":
       return { ...state, sourceSwaps: [...state.sourceSwaps, action.payload] };
+    case "setNexusIntentUrl":
+      return { ...state, nexusIntentUrl: action.payload };
+    case "setDepositTxHash":
+      return { ...state, depositTxHash: action.payload };
+    case "setActualGasFeeUsd":
+      return { ...state, actualGasFeeUsd: action.payload };
     case "reset":
       return createInitialState();
     default:
@@ -245,7 +263,7 @@ export function useDepositWidget(
         if (asset.breakdown) {
           asset.breakdown.forEach((b) => {
             if (b.chain && b.balance) {
-              allChainIds.add(`${asset.symbol}-${b.chain.id}`);
+              allChainIds.add(`${b.contractAddress}-${b.chain.id}`);
             }
           });
         }
@@ -323,7 +341,7 @@ export function useDepositWidget(
   const totalSelectedBalance = useMemo(
     () =>
       availableAssets.reduce((sum, asset) => {
-        const key = `${asset.symbol}-${asset.chainId}`;
+        const key = `${asset.tokenAddress}-${asset.chainId}`;
         if (assetSelection.selectedChainIds.has(key)) {
           return sum + (asset.balanceInFiat ?? 0);
         }
@@ -347,57 +365,171 @@ export function useDepositWidget(
     };
   }, [swapBalance]);
 
+  // Get user's existing balance on destination chain (SDK may use this instead of bridging)
+  const destinationBalance = useMemo(() => {
+    if (!nexusSDK || !swapBalance || !destination) return undefined;
+    return swapBalance
+      ?.find((token) => token.symbol === destination.tokenSymbol)
+      ?.breakdown?.find((chain) => chain.chain?.id === destination.chainId);
+  }, [swapBalance, nexusSDK, destination]);
+
   const confirmationDetails = useMemo(() => {
     if (!activeIntent || !nexusSDK) return null;
 
+    // Use user's requested amount (from input), not SDK's optimized bridge amount
+    const receiveAmountUsd = state.inputs.amount
+      ? parseFloat(state.inputs.amount.replace(/,/g, ""))
+      : 0;
+
+    // Convert USD amount to token amount for display
+    const tokenExchangeRate = exchangeRate?.[destination.tokenSymbol] ?? 1;
+    const receiveTokenAmount = receiveAmountUsd / tokenExchangeRate;
+
     const receiveAmountAfterSwap = nexusSDK.utils.formatTokenBalance(
-      activeIntent.intent.destination.amount,
-      {
-        symbol: activeIntent.intent.destination.token.symbol,
-        decimals: activeIntent.intent.destination.token.decimals,
-      },
-    );
-
-    const receiveAmountAfterSwapUsd = getFiatValue(
-      Number.parseFloat(activeIntent.intent.destination.amount),
-      destination.tokenSymbol,
-    );
-
-    const totalAmountSpent = nexusSDK.utils.formatTokenBalance(
-      activeIntent.intent.sources?.reduce((acc, source) => {
-        const amount = Number.parseFloat(source.amount);
-        return acc + amount;
-      }, 0),
+      receiveTokenAmount.toString(),
       {
         symbol: destination.tokenSymbol,
         decimals: destination.tokenDecimals,
       },
     );
 
-    const sources = activeIntent.intent.sources.map((source) =>
-      availableAssets.find(
+    // Build sources array from intent sources
+    const sources: Array<{
+      chainId: number;
+      tokenAddress: `0x${string}`;
+      decimals: number;
+      symbol: string;
+      balance: string;
+      balanceInFiat?: number;
+      tokenLogo?: string;
+      chainLogo?: string;
+      chainName?: string;
+      isDestinationBalance?: boolean;
+    }> = [];
+
+    activeIntent.intent.sources.forEach((source) => {
+      const matchingAsset = availableAssets.find(
         (asset) =>
           asset.chainId === source.chain.id &&
           asset.symbol === source.token.symbol,
-      ),
+      );
+      if (matchingAsset) {
+        // Use the actual amount from the intent source, not the full balance
+        const sourceAmountUsd = getFiatValue(
+          Number.parseFloat(source.amount),
+          source.token.symbol,
+        );
+        sources.push({
+          ...matchingAsset,
+          balance: source.amount,
+          balanceInFiat: sourceAmountUsd,
+          isDestinationBalance: false,
+        });
+      }
+    });
+
+    // Calculate total spent from cross-chain sources (what's being SENT)
+    const totalAmountSpentUsd = activeIntent.intent.sources?.reduce(
+      (acc, source) => {
+        const amount = Number.parseFloat(source.amount);
+        const usdAmount = getFiatValue(amount, source.token.symbol);
+        return acc + usdAmount;
+      },
+      0,
     );
+
+    // Get the actual amount arriving on destination (AFTER fees)
+    const destinationAmount = Number.parseFloat(
+      activeIntent.intent.destination?.amount ?? "0",
+    );
+    const destinationAmountUsd = getFiatValue(
+      destinationAmount,
+      activeIntent.intent.destination?.token?.symbol ?? destination.tokenSymbol,
+    );
+
+    // Calculate bridge/protocol fees (what's sent - what arrives)
+    const totalFeeUsd = Math.max(0, totalAmountSpentUsd - destinationAmountUsd);
+
+    // Calculate destination balance used (what user wants - what arrives from bridge)
+    const usedFromDestinationUsd = Math.max(
+      0,
+      receiveAmountUsd - destinationAmountUsd,
+    );
+
+    if (usedFromDestinationUsd > 0.01 && destinationBalance) {
+      // SDK is using existing destination balance
+      const usedTokenAmount = usedFromDestinationUsd / tokenExchangeRate;
+      const chainMeta =
+        CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
+
+      sources.push({
+        chainId: destination.chainId,
+        tokenAddress: destination.tokenAddress,
+        decimals: destination.tokenDecimals,
+        symbol: destination.tokenSymbol,
+        balance: usedTokenAmount.toString(),
+        balanceInFiat: usedFromDestinationUsd,
+        tokenLogo: destination.tokenLogo,
+        chainLogo: chainMeta?.logo,
+        chainName: chainMeta?.name,
+        isDestinationBalance: true,
+      });
+    }
+
+    // Actual amount spent = cross-chain sources + destination balance used
+    const actualAmountSpent = totalAmountSpentUsd + usedFromDestinationUsd;
+
+    console.log("[FEE_DEBUG]", {
+      receiveAmountUsd,
+      totalAmountSpentUsd,
+      destinationAmountUsd,
+      usedFromDestinationUsd,
+      actualAmountSpent,
+      totalFeeUsd,
+      destinationAmount,
+      sourcesFromIntent: activeIntent.intent.sources?.map((s) => ({
+        amount: s.amount,
+        symbol: s.token.symbol,
+        usd: getFiatValue(Number.parseFloat(s.amount), s.token.symbol),
+      })),
+    });
 
     return {
       sourceLabel: destination.label ?? "Deposit",
       sources,
       gasTokenSymbol: destination.gasTokenSymbol,
       estimatedTime: destination.estimatedTime ?? "~30s",
-      amountSpent: totalAmountSpent,
+      amountSpent: actualAmountSpent,
+      totalFeeUsd,
       receiveTokenSymbol: destination.tokenSymbol,
-      receiveAmountAfterSwapUsd,
+      receiveAmountAfterSwapUsd: receiveAmountUsd,
       receiveAmountAfterSwap,
       receiveTokenLogo: destination.tokenLogo,
       receiveTokenChain: destination.chainId,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIntent, nexusSDK, destination, availableAssets]);
+  }, [
+    activeIntent,
+    nexusSDK,
+    destination,
+    availableAssets,
+    state.inputs.amount,
+    exchangeRate,
+    getFiatValue,
+    destinationBalance,
+  ]);
 
   const feeBreakdown = useMemo(() => {
+    // Use actual gas fee from receipt if available (after transaction completes)
+    if (state.actualGasFeeUsd !== null) {
+      const gasFormatted = usdFormatter.format(state.actualGasFeeUsd);
+      return {
+        totalGasFee: state.actualGasFeeUsd,
+        gasUsd: state.actualGasFeeUsd,
+        gasFormatted,
+      };
+    }
+
+    // Otherwise use estimated gas from intent
     if (!activeIntent?.intent?.destination?.gas) {
       return { totalGasFee: 0, gasUsd: 0, gasFormatted: "0" };
     }
@@ -413,7 +545,7 @@ export function useDepositWidget(
     const gasFormatted = usdFormatter.format(gasUsd);
 
     return { totalGasFee: gasUsd, gasUsd, gasFormatted };
-  }, [activeIntent, getFiatValue]); // getFiatValue is stable from useNexus
+  }, [activeIntent, getFiatValue, state.actualGasFeeUsd]); // getFiatValue is stable from useNexus
 
   const start = useCallback(
     (inputs: SwapAndExecuteParams) => {
@@ -423,21 +555,11 @@ export function useDepositWidget(
 
       const fromSources: Array<{ tokenAddress: Hex; chainId: number }> = [];
       assetSelection.selectedChainIds.forEach((key) => {
-        // Key format is "${symbol}-${chainId}", e.g. "USDC-1"
+        // Key format is "${tokenAddress}-${chainId}", e.g. "0x123...-1"
         const lastDashIndex = key.lastIndexOf("-");
-        const symbol = key.substring(0, lastDashIndex);
+        const tokenAddress = key.substring(0, lastDashIndex) as Hex;
         const chainId = parseInt(key.substring(lastDashIndex + 1), 10);
-
-        // Look up the actual token address from availableAssets
-        const asset = availableAssets.find(
-          (a) => a.symbol === symbol && a.chainId === chainId,
-        );
-        if (asset?.tokenAddress) {
-          fromSources.push({
-            tokenAddress: asset.tokenAddress,
-            chainId,
-          });
-        }
+        fromSources.push({ tokenAddress, chainId });
       });
 
       const inputsWithSources = {
@@ -445,73 +567,109 @@ export function useDepositWidget(
         fromSources: fromSources.length > 0 ? fromSources : undefined,
       };
 
+      console.log("INPUTS WITH SOURCES IN START", inputsWithSources);
+
       nexusSDK
         .swapAndExecute(inputsWithSources, {
           onEvent: (event) => {
             if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
               const step = event.args as SwapStepType & {
-                explorerURL?: string;
                 completed?: boolean;
-                data?: {
-                  chain?: { id?: number; name?: string };
-                  explorerURL?: string;
-                };
               };
               if (step?.type === "DETERMINING_SWAP" && step?.completed) {
                 determiningSwapComplete.current = true;
                 stopwatch.start();
-                // Trigger state update to re-check swapIntent in effect
                 dispatch({ type: "setIntentReady", payload: true });
-              }
-              // Capture source swap transactions from SOURCE_SWAP_HASH
-              // SOURCE_SWAP_HASH has: chain: { id, name }, explorerURL at top level
-              if (step?.type === "SOURCE_SWAP_HASH") {
-                const typedStep = step as {
-                  type: "SOURCE_SWAP_HASH";
-                  chain: { id: number; name: string };
-                  explorerURL: string;
-                };
-                dispatch({
-                  type: "addSourceSwap",
-                  payload: {
-                    chainId: typedStep.chain.id,
-                    chainName: typedStep.chain.name,
-                    explorerUrl: typedStep.explorerURL,
-                  },
-                });
-              }
-              // DESTINATION_SWAP_HASH has: chain: { id, name }, explorerURL at top level
-              if (step?.type === "DESTINATION_SWAP_HASH") {
-                const typedStep = step as {
-                  type: "DESTINATION_SWAP_HASH";
-                  chain: { id: number; name: string };
-                  explorerURL: string;
-                };
-                dispatch({
-                  type: "setExplorerUrls",
-                  payload: { executeUrl: typedStep.explorerURL },
-                });
-              }
-              // BRIDGE_DEPOSIT has: data: { chain, hash, explorerURL }
-              if (step?.type === "BRIDGE_DEPOSIT") {
-                const typedStep = step as {
-                  type: "BRIDGE_DEPOSIT";
-                  data: {
-                    chain: { id: number; name: string };
-                    hash: string;
-                    explorerURL: string;
-                  };
-                };
-                dispatch({
-                  type: "setExplorerUrls",
-                  payload: { executeUrl: typedStep.data.explorerURL },
-                });
               }
               onStepComplete(step);
             }
           },
         })
-        .then(() => {
+        .then((data: SwapAndExecuteResult) => {
+          console.log("SWAP RESULT DATA", data);
+
+          // Extract source swaps from the result
+          const sourceSwapsFromResult = data.swapResult?.sourceSwaps ?? [];
+          sourceSwapsFromResult.forEach((sourceSwap) => {
+            const chainMeta =
+              CHAIN_METADATA[sourceSwap.chainId as keyof typeof CHAIN_METADATA];
+            const baseUrl = chainMeta?.blockExplorerUrls?.[0] ?? "";
+            const explorerUrl = baseUrl
+              ? `${baseUrl}/tx/${sourceSwap.txHash}`
+              : "";
+            dispatch({
+              type: "addSourceSwap",
+              payload: {
+                chainId: sourceSwap.chainId,
+                chainName: chainMeta?.name ?? `Chain ${sourceSwap.chainId}`,
+                explorerUrl,
+              },
+            });
+          });
+
+          // Set explorer URLs from the result
+          // Use first source swap for sourceExplorerUrl
+          if (sourceSwapsFromResult.length > 0) {
+            const firstSourceSwap = sourceSwapsFromResult[0];
+            const chainMeta =
+              CHAIN_METADATA[
+                firstSourceSwap.chainId as keyof typeof CHAIN_METADATA
+              ];
+            const baseUrl = chainMeta?.blockExplorerUrls?.[0] ?? "";
+            const sourceExplorerUrl = baseUrl
+              ? `${baseUrl}/tx/${firstSourceSwap.txHash}`
+              : "";
+            dispatch({
+              type: "setExplorerUrls",
+              payload: { sourceExplorerUrl },
+            });
+          }
+
+          // Use swapResult.explorerURL or build from executeResponse for destination
+          const destChainMeta =
+            CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
+          const destBaseUrl = destChainMeta?.blockExplorerUrls?.[0] ?? "";
+          const destinationExplorerUrl =
+            data.swapResult?.explorerURL ??
+            (data.executeResponse?.txHash && destBaseUrl
+              ? `${destBaseUrl}/tx/${data.executeResponse.txHash}`
+              : null);
+
+          if (destinationExplorerUrl) {
+            dispatch({
+              type: "setExplorerUrls",
+              payload: { destinationExplorerUrl },
+            });
+          }
+
+          // Store Nexus intent URL for when no source swaps
+          dispatch({
+            type: "setNexusIntentUrl",
+            payload: data.swapResult?.explorerURL ?? null,
+          });
+
+          // Store deposit tx hash
+          dispatch({
+            type: "setDepositTxHash",
+            payload: data.executeResponse?.txHash ?? null,
+          });
+
+          // Calculate actual gas fee from receipt
+          const receipt = data.executeResponse?.receipt;
+          if (receipt?.gasUsed && receipt?.effectiveGasPrice) {
+            const gasUsed = BigInt(receipt.gasUsed);
+            const effectiveGasPrice = BigInt(receipt.effectiveGasPrice);
+            const gasCostWei = gasUsed * effectiveGasPrice;
+            const gasCostNative = parseFloat(formatEther(gasCostWei));
+            // Convert to USD using destination's gas token symbol
+            const gasTokenSymbol = destination.gasTokenSymbol ?? "ETH";
+            const gasCostUsd = getFiatValue(gasCostNative, gasTokenSymbol);
+            dispatch({
+              type: "setActualGasFeeUsd",
+              payload: gasCostUsd,
+            });
+          }
+
           dispatch({
             type: "setReceiveAmount",
             payload: swapIntent.current?.intent?.destination?.amount ?? "",
@@ -554,14 +712,14 @@ export function useDepositWidget(
       onError,
       handleNexusError,
       assetSelection.selectedChainIds,
-      availableAssets,
+      destination,
+      getFiatValue,
     ],
   ); // stopwatch is stable from useStopwatch
 
   const handleAmountContinue = useCallback(
     (totalAmountUsd: number) => {
       if (!nexusSDK || !address || !exchangeRate) return;
-
       // Reset state and refs for a fresh simulation
       dispatch({ type: "setIntentReady", payload: false });
       initialSimulationDone.current = false;
@@ -650,6 +808,12 @@ export function useDepositWidget(
         type: "setStep",
         payload: { step: previousStep, direction: "backward" },
       });
+      swapIntent.current = null;
+      initialSimulationDone.current = false;
+      lastSimulationTime.current = 0;
+      setPollingEnabled(false);
+      stopwatch.stop();
+      stopwatch.reset();
     }
   }, [state.step]);
 
@@ -767,6 +931,9 @@ export function useDepositWidget(
     status: state.status,
     explorerUrls: state.explorerUrls,
     sourceSwaps: state.sourceSwaps,
+    nexusIntentUrl: state.nexusIntentUrl,
+    depositTxHash: state.depositTxHash,
+    destination,
     isProcessing,
     isSuccess,
     isError,

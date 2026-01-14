@@ -55,7 +55,7 @@ function PayUsing({
       swapBalance.forEach((asset) => {
         const selectedChains =
           asset.breakdown?.filter((c) =>
-            selectedChainIds.has(`${asset.symbol}-${c.chain.id}`),
+            selectedChainIds.has(`${c.contractAddress}-${c.chain.id}`),
           ) ?? [];
         if (selectedChains.length > 0) {
           tokenCounts[asset.symbol] = selectedChains.length;

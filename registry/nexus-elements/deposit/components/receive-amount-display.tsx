@@ -49,7 +49,7 @@ export function ReceiveAmountDisplay({
               {showUsdValue && `${usdFormatter.format(parseFloat(amount))} in`}
               {showClockIcon && (
                 <span className="flex items-center gap-x-1">
-                  {timeLabel}s
+                  {timeLabel}
                   <ClockIcon className="w-4 h-4" />
                 </span>
               )}

@@ -14,7 +14,7 @@ importers:
     dependencies:
       '@avail-project/nexus-core':
         specifier: github:availproject/nexus-sdk#fix/gas-amt-swap-intent
-        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/4f2219027c67b73a1b0785cc433af461dea8bbe0(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/457dbad516cd117bafc3e6e8b1953ef718ea771e(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -191,8 +191,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/4f2219027c67b73a1b0785cc433af461dea8bbe0':
-    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/4f2219027c67b73a1b0785cc433af461dea8bbe0}
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/457dbad516cd117bafc3e6e8b1953ef718ea771e':
+    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/457dbad516cd117bafc3e6e8b1953ef718ea771e}
     version: 1.0.0-beta.63
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
@@ -6594,7 +6594,7 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/4f2219027c67b73a1b0785cc433af461dea8bbe0(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/457dbad516cd117bafc3e6e8b1953ef718ea771e(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@avail-project/ca-common': 1.0.0-beta.8(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(axios@1.13.1)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.5)(viem@2.38.3(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.0

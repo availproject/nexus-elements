@@ -31,6 +31,8 @@ export type TokenCategory = "stablecoin" | "native" | "memecoin";
 
 export interface ChainItem {
   id: string;
+  tokenAddress: `0x${string}`;
+  chainId: number;
   name: string;
   usdValue: number;
   amount: number;
@@ -71,6 +73,7 @@ export interface DestinationConfig {
   label?: string;
   estimatedTime?: string;
   gasTokenSymbol?: string;
+  explorerUrl?: string;
 }
 
 export interface ExecuteDepositParams {
@@ -107,8 +110,8 @@ export interface DepositWidgetContextValue {
 
   // Explorer URLs
   explorerUrls: {
-    intentUrl: string | null;
-    executeUrl: string | null;
+    sourceExplorerUrl: string | null;
+    destinationExplorerUrl: string | null;
   };
 
   // Source swap transactions (from BRIDGE_DEPOSIT events)
@@ -117,6 +120,13 @@ export interface DepositWidgetContextValue {
     chainName: string;
     explorerUrl: string;
   }>;
+
+  // Transaction result data
+  nexusIntentUrl: string | null;
+  depositTxHash: string | null;
+
+  // Destination config (for building explorer URLs)
+  destination: DestinationConfig;
 
   // Derived state
   isProcessing: boolean;
@@ -159,12 +169,14 @@ export interface DepositWidgetContextValue {
           tokenLogo?: string;
           chainLogo?: string;
           chainName?: string;
+          isDestinationBalance?: boolean;
         }
       | undefined
     >;
     gasTokenSymbol?: string;
     estimatedTime?: string;
-    amountSpent: string;
+    amountSpent: number;
+    totalFeeUsd: number;
     receiveTokenSymbol: string;
     receiveAmountAfterSwap: string;
     receiveAmountAfterSwapUsd: number;

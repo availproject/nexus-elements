@@ -57,7 +57,11 @@ export function TokenRow({
           />
           <div className="flex items-center gap-3">
             <Image
-              src={TOKEN_IMAGES[token.symbol]}
+              src={
+                Object.keys(TOKEN_IMAGES).includes(token.symbol)
+                  ? TOKEN_IMAGES[token.symbol]
+                  : token.logo
+              }
               alt={token.symbol}
               width={24}
               height={24}

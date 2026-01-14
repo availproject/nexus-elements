@@ -69,7 +69,7 @@ const DepositShowcase = () => {
       gasPriceSelector: "medium",
       tokenApproval: {
         token: tokenAddress,
-        amount: amount,
+        amount,
         spender: contractAddress,
       },
     };
@@ -92,6 +92,8 @@ const DepositShowcase = () => {
           gasTokenSymbol:
             CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
+          explorerUrl:
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
         }}
         executeDeposit={executeDeposit}
       />

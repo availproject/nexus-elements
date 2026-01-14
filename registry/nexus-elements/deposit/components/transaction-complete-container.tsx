@@ -7,12 +7,12 @@ import type { DepositWidgetContextValue } from "../types";
 import { ArrowBoxUpRightIcon, ChevronDownIcon } from "./icons";
 import { CardContent, CardFooter } from "../../ui/card";
 import { Button } from "../../ui/button";
-import { useNexus } from "../../nexus/NexusProvider";
+import { ChevronUpIcon } from "lucide-react";
+import { usdFormatter } from "../../common";
 
 function formatTimer(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  const secs = Math.round(seconds);
+  return `${secs}s`;
 }
 
 function truncateHash(hash: string): string {
@@ -30,7 +30,7 @@ const TransactionCompleteContainer = ({
   onClose,
 }: TransactionCompleteContainerProps) => {
   const [showSourceDetails, setShowSourceDetails] = useState(false);
-  const { getFiatValue } = useNexus();
+
   const handleNewDeposit = () => {
     widget.reset();
     widget.goToStep("amount");
@@ -41,12 +41,18 @@ const TransactionCompleteContainer = ({
     onClose?.();
   };
 
-  const hasSourceSwaps = widget.sourceSwaps.length > 0;
-  const receiveAmountUsd = getFiatValue(
-    parseFloat(widget.activeIntent?.intent.destination.amount ?? "0"),
-    widget.confirmationDetails?.receiveTokenSymbol ?? "",
-  ).toFixed(4);
+  // Use user's requested amount
+  const receiveAmountUsd =
+    widget.confirmationDetails?.receiveAmountAfterSwapUsd?.toFixed(2) ?? "0";
   const completionTime = formatTimer(widget.timer);
+
+  const hasSourceSwaps = widget.sourceSwaps.length > 0;
+
+  // Build deposit transaction URL
+  const depositTxUrl =
+    widget.destination.explorerUrl && widget.depositTxHash
+      ? `${widget.destination.explorerUrl}/tx/${widget.depositTxHash}`
+      : null;
 
   return (
     <>
@@ -58,104 +64,107 @@ const TransactionCompleteContainer = ({
               label="You received"
               amount={receiveAmountUsd}
               timeLabel={completionTime}
-              showClockIcon={true}
             />
             <span className="font-sans text-sm w-full text-center leading-4.5 text-muted-foreground">
               Transaction successful
             </span>
             <div className="w-full">
-              {/* Source swaps and deposit transaction section */}
               <div className="border-t py-5 flex flex-col gap-5">
-                {/* Collected on sources - only show if there were source swaps */}
-                {hasSourceSwaps && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-sans text-sm leading-4.5 text-card-foreground">
-                        Collected on sources
-                      </span>
-                      <button
-                        className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer items-center"
-                        onClick={() => setShowSourceDetails(!showSourceDetails)}
-                      >
-                        {showSourceDetails ? "hide details" : "view details"}
-                        <ChevronDownIcon
-                          size={16}
-                          className={`text-muted-foreground transition-transform duration-300 ${
-                            showSourceDetails ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-                    </div>
-                    <div
-                      className={`grid transition-all duration-300 ease-out ${
-                        showSourceDetails
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0"
-                      }`}
+                {/* Collected on sources section */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-sans text-sm leading-4.5 text-card-foreground">
+                      Collected on sources
+                    </span>
+                    <button
+                      className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer items-center"
+                      onClick={() => setShowSourceDetails(!showSourceDetails)}
                     >
-                      <div className="overflow-hidden">
-                        <div className="flex gap-3 flex-wrap pt-2 pb-3">
-                          {widget.sourceSwaps.map((swap, index) => (
-                            <a
-                              key={`${swap.chainId}-${index}`}
-                              href={swap.explorerUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all hover:text-card-foreground"
-                              style={{
-                                animationDelay: showSourceDetails
-                                  ? `${index * 50}ms`
-                                  : "0ms",
-                              }}
-                            >
-                              {swap.chainName}
-                              <ArrowBoxUpRightIcon
-                                size={16}
-                                className="text-muted-foreground"
-                              />
-                            </a>
-                          ))}
-                        </div>
+                      {showSourceDetails ? (
+                        <>
+                          {" "}
+                          Hide details
+                          <ChevronUpIcon
+                            size={16}
+                            className="text-muted-foreground"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          {" "}
+                          View details
+                          <ChevronDownIcon
+                            size={16}
+                            className="text-muted-foreground"
+                          />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      showSourceDetails
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="flex gap-3 flex-wrap pt-2 pb-3">
+                        {hasSourceSwaps
+                          ? // Show individual source chain links
+                            widget.sourceSwaps.map((swap, index) => (
+                              <a
+                                key={`${swap.chainId}-${index}`}
+                                href={swap.explorerUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
+                                style={{
+                                  animationDelay: showSourceDetails
+                                    ? `${index * 50}ms`
+                                    : "0ms",
+                                }}
+                              >
+                                {swap.chainName}
+                                <ArrowBoxUpRightIcon
+                                  size={16}
+                                  className="text-muted-foreground transition-colors"
+                                />
+                              </a>
+                            ))
+                          : // No source swaps - show Nexus intent URL
+                            widget.nexusIntentUrl && (
+                              <a
+                                href={widget.nexusIntentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
+                              >
+                                View on Nexus Explorer
+                                <ArrowBoxUpRightIcon
+                                  size={16}
+                                  className="text-muted-foreground transition-colors"
+                                />
+                              </a>
+                            )}
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* Deposit transaction */}
-                {widget.explorerUrls.executeUrl && (
+                {depositTxUrl && (
                   <div className="flex justify-between items-center">
                     <span className="font-sans text-sm leading-4.5 text-card-foreground">
                       Deposit transaction
                     </span>
                     <a
-                      href={widget.explorerUrls.executeUrl}
+                      href={depositTxUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer hover:text-card-foreground"
+                      className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer"
                     >
-                      {truncateHash(
-                        widget.explorerUrls.executeUrl.split("/").pop() ?? "",
-                      )}
-                      <ArrowBoxUpRightIcon
-                        size={16}
-                        className="text-muted-foreground"
-                      />
-                    </a>
-                  </div>
-                )}
-
-                {/* View on Nexus Explorer */}
-                {widget.explorerUrls.intentUrl && (
-                  <div className="flex justify-between items-center">
-                    <span className="font-sans text-sm leading-4.5 text-card-foreground">
-                      View on Nexus Explorer
-                    </span>
-                    <a
-                      href={widget.explorerUrls.intentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer hover:text-card-foreground"
-                    >
+                      {truncateHash(widget.depositTxHash ?? "")}
                       <ArrowBoxUpRightIcon
                         size={16}
                         className="text-muted-foreground"
@@ -172,12 +181,13 @@ const TransactionCompleteContainer = ({
                     <span className="font-sans text-sm leading-4.5 text-card-foreground">
                       Total fees
                     </span>
-                    <span className="font-sans text-[13px] text-muted-foreground leading-4.5">
-                      Network & protocol
-                    </span>
                   </div>
                   <span className="font-sans text-muted-foreground text-sm leading-4.5">
-                    {widget.feeBreakdown.gasFormatted}
+                    {usdFormatter.format(
+                      widget.feeBreakdown.gasUsd +
+                        (widget?.confirmationDetails?.totalFeeUsd ?? 0),
+                    )}
+                    USD
                   </span>
                 </div>
               </div>
