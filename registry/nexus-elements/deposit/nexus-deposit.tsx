@@ -130,7 +130,7 @@ const NexusDeposit = ({
         )}
       >
         <div key={widget.step} className={animationClass}>
-          {SCREENS[widget.step](widget)}
+          {SCREENS[widget.step](widget, heading)}
         </div>
       </Card>
     );
@@ -151,7 +151,7 @@ const NexusDeposit = ({
           key={widget.step}
           className={cn("flex flex-col gap-4", animationClass)}
         >
-          {SCREENS[widget.step](widget, handleClose)}
+          {SCREENS[widget.step](widget, heading, handleClose)}
         </div>
       </DialogContent>
     </Dialog>
