@@ -11,6 +11,7 @@ import { useNexus } from "../../nexus/NexusProvider";
 
 interface TransactionStatusContainerProps {
   widget: DepositWidgetContextValue;
+  heading?: string;
   onClose?: () => void;
 }
 
@@ -57,6 +58,7 @@ function TransferIndicator({ isProcessing }: { isProcessing: boolean }) {
 
 const TransactionStatusContainer = ({
   widget,
+  heading,
   onClose,
 }: TransactionStatusContainerProps) => {
   const { steps, confirmationDetails, activeIntent, isProcessing } = widget;
@@ -130,7 +132,11 @@ const TransactionStatusContainer = ({
 
   return (
     <>
-      <WidgetHeader title="Deposit USDC" onClose={onClose} />
+      <WidgetHeader
+        title={heading ?? ""}
+        onClose={onClose}
+        depositTargetLogo={widget?.destination?.depositTargetLogo}
+      />
       <CardContent>
         <div className="flex flex-col bg-base rounded-lg border border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] pt-8 pb-7">
           <div className="flex w-full mt-2 items-end justify-center">

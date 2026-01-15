@@ -11,6 +11,8 @@ interface ReceiveAmountDisplayProps {
   showUsdValue?: boolean;
   showClockIcon?: boolean;
   loading?: boolean;
+  destinationTokenLogo?: string;
+  depositTargetLogo?: string;
 }
 
 export function ReceiveAmountDisplay({
@@ -20,6 +22,8 @@ export function ReceiveAmountDisplay({
   showUsdValue = true,
   showClockIcon = true,
   loading = false,
+  destinationTokenLogo,
+  depositTargetLogo,
 }: ReceiveAmountDisplayProps) {
   return (
     <div className="w-full flex flex-col items-center gap-2">
@@ -28,9 +32,11 @@ export function ReceiveAmountDisplay({
       </span>
       <div className="w-full flex items-center justify-center gap-3">
         <TokenIcon
-          tokenSrc={DEPOSIT_WIDGET_ASSETS.tokens.USDC}
-          protocolSrc={DEPOSIT_WIDGET_ASSETS.protocols.aave}
-          tokenAlt="USDC"
+          tokenSrc={destinationTokenLogo || DEPOSIT_WIDGET_ASSETS.tokens.USDC}
+          protocolSrc={
+            depositTargetLogo || DEPOSIT_WIDGET_ASSETS.protocols.aave
+          }
+          tokenAlt={destinationTokenLogo}
         />
         {loading ? (
           <Skeleton className="h-10 w-24" />

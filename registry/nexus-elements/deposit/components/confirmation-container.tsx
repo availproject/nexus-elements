@@ -16,11 +16,13 @@ import { useNexus } from "../../nexus/NexusProvider";
 
 interface ConfirmationContainerProps {
   widget: DepositWidgetContextValue;
+  heading?: string;
   onClose?: () => void;
 }
 
 const ConfirmationContainer = ({
   widget,
+  heading,
   onClose,
 }: ConfirmationContainerProps) => {
   const [showSpendDetails, setShowSpendDetails] = useState(false);
@@ -72,9 +74,10 @@ const ConfirmationContainer = ({
   return (
     <>
       <WidgetHeader
-        title="Deposit USDC"
+        title={heading ?? ""}
         onBack={widget.goBack}
         onClose={onClose}
+        depositTargetLogo={widget?.destination?.depositTargetLogo}
       />
       <CardContent>
         <div className="flex flex-col">
@@ -83,6 +86,8 @@ const ConfirmationContainer = ({
               amount={receiveAmount}
               timeLabel={timeLabel}
               loading={isLoading}
+              destinationTokenLogo={widget?.destination?.tokenLogo}
+              depositTargetLogo={widget?.destination?.depositTargetLogo}
             />
             <div>
               <SummaryCard

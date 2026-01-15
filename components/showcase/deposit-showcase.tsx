@@ -11,6 +11,7 @@ import {
 } from "@avail-project/nexus-core";
 
 const DepositShowcase = () => {
+  const [embed, setEmbed] = React.useState(false);
   const executeDeposit = (
     tokenSymbol: string,
     tokenAddress: string,
@@ -79,9 +80,14 @@ const DepositShowcase = () => {
     <ShowcaseWrapper
       type="deposit"
       connectLabel="Connect wallet to use Deposit Widget"
+      toggle={true}
+      toggleLabel="Embed"
+      pressed={embed}
+      onPressedChange={setEmbed}
     >
       <NexusDeposit
-        embed={false}
+        embed={embed}
+        heading={"Deposit USDC"}
         destination={{
           chainId: SUPPORTED_CHAINS.BASE,
           tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
@@ -94,6 +100,7 @@ const DepositShowcase = () => {
           estimatedTime: "≈ 30s",
           explorerUrl:
             CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
+          depositTargetLogo: "/aave.svg",
         }}
         executeDeposit={executeDeposit}
       />

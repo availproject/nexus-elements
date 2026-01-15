@@ -621,7 +621,14 @@ export function useDepositWidget(
     const gasFormatted = usdFormatter.format(gasUsd);
 
     return { totalGasFee: gasUsd, gasUsd, gasFormatted };
-  }, [activeIntent, getFiatValue, state.actualGasFeeUsd, state.swapSkippedData, state.skipSwap, destination.gasTokenSymbol]);
+  }, [
+    activeIntent,
+    getFiatValue,
+    state.actualGasFeeUsd,
+    state.swapSkippedData,
+    state.skipSwap,
+    destination.gasTokenSymbol,
+  ]);
 
   const start = useCallback(
     (inputs: SwapAndExecuteParams) => {
@@ -966,17 +973,6 @@ export function useDepositWidget(
 
     // Process the intent
     initialSimulationDone.current = true;
-
-    const intent = swapIntent.current.intent;
-    const destinationToken = intent.destination.token.symbol;
-
-    const allSourcesMatchDestination = intent.sources.every(
-      (source) => source.token.symbol === destinationToken,
-    );
-    const isDirectDeposit = allSourcesMatchDestination;
-
-    dispatch({ type: "setSkipSwap", payload: isDirectDeposit });
-
     // Always show confirmation screen - user must review and confirm
     dispatch({
       type: "setSimulation",

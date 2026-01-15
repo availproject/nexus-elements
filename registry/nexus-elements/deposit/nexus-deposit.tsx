@@ -16,7 +16,7 @@ import type {
   DepositWidgetProps,
   NavigationDirection,
 } from "./types";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card } from "../ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import { Button } from "../ui/button";
 
@@ -30,27 +30,48 @@ const getAnimationClass = (direction: NavigationDirection): string =>
 
 type ScreenRenderer = (
   widget: ReturnType<typeof useDepositWidget>,
+  heading?: string,
   onClose?: () => void,
 ) => React.ReactNode;
 
 const SCREENS: Record<WidgetStep, ScreenRenderer> = {
-  amount: (widget, onClose) => (
-    <AmountContainer widget={widget} onClose={onClose} />
+  amount: (widget, heading, onClose) => (
+    <AmountContainer widget={widget} heading={heading} onClose={onClose} />
   ),
-  confirmation: (widget, onClose) => (
-    <ConfirmationContainer widget={widget} onClose={onClose} />
+  confirmation: (widget, heading, onClose) => (
+    <ConfirmationContainer
+      widget={widget}
+      heading={heading}
+      onClose={onClose}
+    />
   ),
-  "transaction-status": (widget, onClose) => (
-    <TransactionStatusContainer widget={widget} onClose={onClose} />
+  "transaction-status": (widget, heading, onClose) => (
+    <TransactionStatusContainer
+      widget={widget}
+      heading={heading}
+      onClose={onClose}
+    />
   ),
-  "transaction-complete": (widget, onClose) => (
-    <TransactionCompleteContainer widget={widget} onClose={onClose} />
+  "transaction-complete": (widget, heading, onClose) => (
+    <TransactionCompleteContainer
+      widget={widget}
+      heading={heading}
+      onClose={onClose}
+    />
   ),
-  "transaction-failed": (widget, onClose) => (
-    <TransactionFailedContainer widget={widget} onClose={onClose} />
+  "transaction-failed": (widget, heading, onClose) => (
+    <TransactionFailedContainer
+      widget={widget}
+      heading={heading}
+      onClose={onClose}
+    />
   ),
-  "asset-selection": (widget, onClose) => (
-    <AssetSelectionContainer widget={widget} onClose={onClose} />
+  "asset-selection": (widget, heading, onClose) => (
+    <AssetSelectionContainer
+      widget={widget}
+      heading={"Pay using"}
+      onClose={onClose}
+    />
   ),
 };
 
@@ -108,14 +129,9 @@ const NexusDeposit = ({
           className,
         )}
       >
-        <CardHeader className="px-3">
-          <CardTitle>{heading}</CardTitle>
-        </CardHeader>
-        <CardContent className="px-3">
-          <div key={widget.step} className={animationClass}>
-            {SCREENS[widget.step](widget)}
-          </div>
-        </CardContent>
+        <div key={widget.step} className={animationClass}>
+          {SCREENS[widget.step](widget)}
+        </div>
       </Card>
     );
   }

@@ -28,7 +28,7 @@ function PayUsing({
 }: PayUsingProps) {
   const [isLoading, setIsLoading] = useState(false);
   const previousAmountRef = useRef<string | undefined>(undefined);
-  const hasAmount = Boolean(amount && amount.trim() !== "");
+  const hasAmount = Boolean(amount && amount.trim() !== "" && amount !== "0");
 
   useEffect(() => {
     const hadAmount = Boolean(

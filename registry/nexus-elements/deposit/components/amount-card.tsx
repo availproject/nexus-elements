@@ -186,7 +186,6 @@ function AmountCard({
           numericAmount > 0 ? "-mt-0.5" : "mt-1.5"
         }`}
       >
-        {destinationConfig.tokenLogo}
         <TokenIcon
           tokenSrc={destinationConfig.tokenLogo ?? "/usdc.svg"}
           protocolSrc={destinationConfig?.depositTargetLogo}

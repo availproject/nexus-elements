@@ -8,11 +8,13 @@ import type { DepositWidgetContextValue } from "../types";
 
 interface TransactionFailedContainerProps {
   widget: DepositWidgetContextValue;
+  heading?: string;
   onClose?: () => void;
 }
 
 const TransactionFailedContainer = ({
   widget,
+  heading,
   onClose,
 }: TransactionFailedContainerProps) => {
   const handleRetry = () => {
@@ -28,7 +30,11 @@ const TransactionFailedContainer = ({
 
   return (
     <>
-      <WidgetHeader title="Deposit USDC" onClose={onClose} />
+      <WidgetHeader
+        title={heading ?? ""}
+        onClose={onClose}
+        depositTargetLogo={widget?.destination?.depositTargetLogo}
+      />
       <CardContent>
         <div className="flex flex-col">
           <div className="bg-base rounded-t-lg border-t border-l border-r border-border shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] px-6 pt-6 pb-6 flex flex-col items-center gap-5">

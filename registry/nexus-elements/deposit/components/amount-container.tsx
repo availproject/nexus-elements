@@ -12,10 +12,15 @@ import { Skeleton } from "../../ui/skeleton";
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
+  heading?: string;
   onClose?: () => void;
 }
 
-const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
+const AmountContainer = ({
+  widget,
+  heading,
+  onClose,
+}: AmountContainerProps) => {
   const [hasAmountError, setHasAmountError] = useState(false);
   const selectedTokenAmount = useMemo(
     () => widget.totalSelectedBalance,
@@ -35,7 +40,11 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
 
   return (
     <>
-      <WidgetHeader title="Deposit USDC" onClose={onClose} />
+      <WidgetHeader
+        title={heading ?? ""}
+        onClose={onClose}
+        depositTargetLogo={widget?.destination?.depositTargetLogo}
+      />
       <CardContent>
         <div className="flex flex-col gap-4">
           {widget.totalBalance?.balance && widget?.totalBalance?.usdBalance ? (
@@ -66,7 +75,10 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
               className="rounded-t-none"
               onClick={() => widget.goToStep("confirmation")}
               disabled={
-                widget.isProcessing || hasAmountError || !widget.inputs.amount
+                widget.isProcessing ||
+                hasAmountError ||
+                !widget.inputs.amount ||
+                widget.inputs.amount === "0"
               }
             >
               Continue

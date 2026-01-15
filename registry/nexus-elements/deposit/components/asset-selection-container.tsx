@@ -24,6 +24,7 @@ import { X } from "lucide-react";
 
 interface AssetSelectionContainerProps {
   widget: DepositWidgetContextValue;
+  heading?: string;
   onClose?: () => void;
 }
 
@@ -95,6 +96,7 @@ function transformSwapBalanceToTokens(
 
 const AssetSelectionContainer = ({
   widget,
+  heading,
   onClose,
 }: AssetSelectionContainerProps) => {
   const { assetSelection, setAssetSelection, swapBalance } = widget;
@@ -303,9 +305,10 @@ const AssetSelectionContainer = ({
   return (
     <>
       <WidgetHeader
-        title="Pay using"
+        title={heading ?? ""}
         onBack={widget.goBack}
         onClose={onClose}
+        depositTargetLogo={widget?.destination?.depositTargetLogo}
       />
       <CardContent>
         <div className="flex flex-col gap-4">
