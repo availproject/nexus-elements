@@ -11,7 +11,7 @@ const DEFAULT_CONFIG: RegistryConfig = {
   outputPath: "registry.json",
   peerDependencies: ["react", "react-dom"],
   pinnedDependencies: {
-    "@avail-project/nexus-core": "1.0.0-beta.56",
+    "@avail-project/nexus-core": "1.0.0-beta.64",
   },
   aliases: {
     "@/lib/utils": "lib/utils.ts",
@@ -65,7 +65,7 @@ const DEFAULT_CONFIG: RegistryConfig = {
  */
 export function loadConfig(
   configPath?: string,
-  overrides?: Partial<RegistryConfig>
+  overrides?: Partial<RegistryConfig>,
 ): RegistryConfig {
   let config = { ...DEFAULT_CONFIG };
 

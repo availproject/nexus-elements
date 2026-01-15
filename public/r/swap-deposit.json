@@ -5,7 +5,7 @@
   "title": "Swap Deposit",
   "description": "Swap and Deposit tokens across chains and contracts",
   "dependencies": [
-    "@avail-project/nexus-core@1.0.0-beta.56",
+    "@avail-project/nexus-core@1.0.0-beta.64",
     "@radix-ui/react-collapsible",
     "@radix-ui/react-separator",
     "@radix-ui/react-tooltip",

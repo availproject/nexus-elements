@@ -342,7 +342,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "clsx",
         "lucide-react",
         "next",
@@ -500,7 +500,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "lucide-react",
         "viem"
       ],
@@ -567,7 +567,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "wagmi"
       ]
     },
@@ -780,7 +780,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -949,7 +949,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "lucide-react",
         "viem"
       ],
@@ -981,7 +981,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1088,7 +1088,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.56",
+        "@avail-project/nexus-core@1.0.0-beta.64",
         "lucide-react"
       ],
       "registryDependencies": [
