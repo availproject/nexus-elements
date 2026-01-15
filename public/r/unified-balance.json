@@ -6,19 +6,15 @@
   "description": "A simple component built with Nexus to display unified balance",
   "dependencies": [
     "@avail-project/nexus-core@1.0.0-beta.56",
-    "lucide-react",
-    "@radix-ui/react-accordion",
-    "@radix-ui/react-label",
-    "@radix-ui/react-slot",
-    "@radix-ui/react-tabs"
+    "lucide-react"
   ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/accordion.json",
-    "https://elements.nexus.availproject.org/r/button.json",
-    "https://elements.nexus.availproject.org/r/nexus-provider.json",
     "https://elements.nexus.availproject.org/r/label.json",
+    "https://elements.nexus.availproject.org/r/nexus-provider.json",
     "https://elements.nexus.availproject.org/r/separator.json",
-    "https://elements.nexus.availproject.org/r/tabs.json"
+    "https://elements.nexus.availproject.org/r/tabs.json",
+    "https://elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {

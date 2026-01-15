@@ -4,6 +4,10 @@
   "type": "registry:component",
   "title": "Select",
   "description": "UI primitive: Select",
+  "dependencies": [
+    "@radix-ui/react-select",
+    "lucide-react"
+  ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/utils.json"
   ],

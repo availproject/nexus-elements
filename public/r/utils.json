@@ -4,6 +4,10 @@
   "type": "registry:component",
   "title": "Utils (cn)",
   "description": "Utility helpers used by UI components",
+  "dependencies": [
+    "clsx",
+    "tailwind-merge"
+  ],
   "files": [
     {
       "path": "lib/utils.ts",

@@ -4,6 +4,10 @@
   "type": "registry:component",
   "title": "Accordion",
   "description": "UI primitive: Accordion",
+  "dependencies": [
+    "@radix-ui/react-accordion",
+    "lucide-react"
+  ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/utils.json"
   ],

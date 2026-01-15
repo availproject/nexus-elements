@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { cn } from "./utils";
 import { useDepositWidget } from "./hooks/use-deposit-widget";
 import {
@@ -16,6 +17,8 @@ import type {
   NavigationDirection,
 } from "./types";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
+import { Button } from "../ui/button";
 
 const ANIMATION_CLASSES: Record<NonNullable<NavigationDirection>, string> = {
   forward: "animate-slide-in-from-right",
@@ -60,7 +63,33 @@ const NexusDeposit = ({
   onError,
   executeDeposit,
   destination,
+  open: controlledOpen,
+  onOpenChange,
+  defaultOpen = false,
 }: DepositWidgetProps) => {
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+
+  // Use controlled or uncontrolled open state
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(open);
+      }
+      onOpenChange?.(open);
+      if (!open) {
+        onClose?.();
+      }
+    },
+    [isControlled, onOpenChange, onClose],
+  );
+
+  const handleClose = useCallback(() => {
+    handleOpenChange(false);
+  }, [handleOpenChange]);
+
   const widget = useDepositWidget({
     executeDeposit,
     destination,
@@ -69,6 +98,7 @@ const NexusDeposit = ({
   });
   const animationClass = getAnimationClass(widget.navigationDirection);
 
+  // Embed mode: render as inline Card
   if (embed) {
     return (
       <Card
@@ -90,19 +120,21 @@ const NexusDeposit = ({
   }
 
   return (
-    <Card
-      className={cn(
-        "relative w-full max-w-[400px] overflow-hidden gap-0 transition-[height] duration-200 ease-out",
-        className,
-      )}
-    >
-      <div
-        key={widget.step}
-        className={cn("flex flex-col gap-4", animationClass)}
-      >
-        {SCREENS[widget.step](widget, onClose)}
-      </div>
-    </Card>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogTrigger>
+        <Button variant="outline" size="sm">
+          Deposit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className={cn("px-0", className)} showCloseButton={false}>
+        <div
+          key={widget.step}
+          className={cn("flex flex-col gap-4", animationClass)}
+        >
+          {SCREENS[widget.step](widget, handleClose)}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

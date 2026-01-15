@@ -1,0 +1,57 @@
+{
+  "name": "nexus-elements",
+  "namespace": "nexus-elements",
+  "homepage": "https://elements.nexus.availproject.org",
+  "baseUrl": "https://elements.nexus.availproject.org/r",
+  "registryPath": "registry/nexus-elements",
+  "outputPath": "registry.json",
+  "peerDependencies": ["react", "react-dom"],
+  "pinnedDependencies": {
+    "@avail-project/nexus-core": "1.0.0-beta.56"
+  },
+  "aliases": {
+    "@/lib/utils": "lib/utils.ts",
+    "@/components/ui": "registry/nexus-elements/ui",
+    "@/components": "registry/nexus-elements"
+  },
+  "targetPrefix": "components",
+  "libTarget": "lib",
+  "componentOverrides": {
+    "fast-bridge": {
+      "title": "Fast Bridge",
+      "description": "A simple component built with Nexus to enable cross chain bridging"
+    },
+    "transfer": {
+      "title": "Fast Transfer",
+      "description": "A simple component built with Nexus to enable cross chain transfer"
+    },
+    "nexus": {
+      "name": "nexus-provider",
+      "title": "Nexus Provider",
+      "description": "Shared Nexus SDK provider and types for Nexus Elements"
+    },
+    "deposit": {
+      "title": "Deposit",
+      "description": "A simple component built with Nexus to enable deposits"
+    },
+    "swaps": {
+      "title": "Swaps",
+      "description": "Swap tokens across chains (Exact In)"
+    },
+    "unified-balance": {
+      "title": "Unified Balance",
+      "description": "A simple component built with Nexus to display unified balance"
+    },
+    "view-history": {
+      "title": "View History",
+      "description": "A simple component built with Nexus to display view history"
+    },
+    "utils": {
+      "title": "Utils (cn)",
+      "description": "Utility helpers used by UI components"
+    },
+    "common": {
+      "skip": true
+    }
+  }
+}

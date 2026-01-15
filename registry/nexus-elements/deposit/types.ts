@@ -220,4 +220,10 @@ export interface DepositWidgetProps
   embed?: boolean;
   className?: string;
   onClose?: () => void;
+  /** Control the dialog open state (non-embed mode only) */
+  open?: boolean;
+  /** Callback when dialog open state changes (non-embed mode only) */
+  onOpenChange?: (open: boolean) => void;
+  /** Default open state for uncontrolled usage (non-embed mode only) */
+  defaultOpen?: boolean;
 }
