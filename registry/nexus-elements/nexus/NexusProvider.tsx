@@ -80,7 +80,9 @@ const NexusProvider = ({
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
     null
   );
-  const bridgableBalance = useRef<UserAsset[] | null>(null);
+  const [bridgableBalance, setBridgableBalance] = useState<UserAsset[] | null>(
+    null
+  );
   const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
 
@@ -101,7 +103,7 @@ const NexusProvider = ({
     ]);
 
     if (bridgeAbleBalanceResult.status === "fulfilled") {
-      bridgableBalance.current = bridgeAbleBalanceResult.value;
+      setBridgableBalance(bridgeAbleBalanceResult.value);
     }
 
     if (rates?.status === "fulfilled") {
@@ -139,7 +141,7 @@ const NexusProvider = ({
       setNexusSDK(null);
       supportedChainsAndTokens.current = null;
       swapSupportedChainsAndTokens.current = null;
-      bridgableBalance.current = null;
+      setBridgableBalance(null);
       setSwapBalance(null);
       exchangeRate.current = null;
       intent.current = null;
@@ -200,7 +202,7 @@ const NexusProvider = ({
   const fetchBridgableBalance = async () => {
     try {
       const updatedBalance = await sdk.getBalancesForBridge();
-      bridgableBalance.current = updatedBalance;
+      setBridgableBalance(updatedBalance);
     } catch (error) {
       console.error("Error fetching bridgable balance:", error);
     }
@@ -238,7 +240,7 @@ const NexusProvider = ({
       handleInit,
       supportedChainsAndTokens: supportedChainsAndTokens.current,
       swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
-      bridgableBalance: bridgableBalance.current,
+      bridgableBalance,
       swapBalance: swapBalance,
       network: config?.network,
       loading,

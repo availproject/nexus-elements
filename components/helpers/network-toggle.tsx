@@ -1,7 +1,6 @@
 "use client";
 import { NexusNetwork } from "@avail-project/nexus-core";
-import React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import {
   Select,
@@ -10,26 +9,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/registry/nexus-elements/ui/select";
+import { getItem, setItem } from "@/lib/local-storage";
+import { NETWORK_KEY } from "@/providers/Web3Provider";
 
-interface NetworkToggleProps {
-  currentNetwork: NexusNetwork;
-}
-
-const NetworkToggle: React.FC<NetworkToggleProps> = ({ currentNetwork }) => {
-  const pathname = usePathname();
-  const router = useRouter();
+const NetworkToggle = () => {
   const { nexusSDK, deinitializeNexus } = useNexus();
+  const [currentNetwork, setCurrentNetwork] = useState<NexusNetwork>("mainnet");
 
-  const handleNetworkChange = async () => {
+  useEffect(() => {
+    // Read from localStorage on client side only
+    const storedNetwork = getItem(NETWORK_KEY) as NexusNetwork | null;
+    if (storedNetwork && (storedNetwork === "mainnet" || storedNetwork === "testnet")) {
+      setCurrentNetwork(storedNetwork);
+    } else {
+      setCurrentNetwork("mainnet");
+    }
+  }, []);
+
+  const handleNetworkChange = async (newValue: string) => {
     if (nexusSDK) {
       await deinitializeNexus();
     }
-    router.push(
-      `${pathname}?network=${
-        currentNetwork === "testnet" ? "mainnet" : "testnet"
-      }`
-    );
-    router.refresh();
+
+    setItem(NETWORK_KEY, newValue);
+    setCurrentNetwork(newValue as NexusNetwork);
+    window.location.reload();
   };
 
   return (

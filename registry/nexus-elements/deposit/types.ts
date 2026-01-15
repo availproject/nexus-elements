@@ -182,6 +182,7 @@ export interface DepositWidgetContextValue {
     receiveAmountAfterSwapUsd: number;
     receiveTokenLogo?: string;
     receiveTokenChain: number;
+    destinationChainName?: string;
   } | null;
   feeBreakdown: {
     totalGasFee: number;

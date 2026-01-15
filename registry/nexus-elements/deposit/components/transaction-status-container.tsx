@@ -64,12 +64,27 @@ const TransactionStatusContainer = ({
   const receiveAmount = confirmationDetails?.receiveAmountAfterSwap ?? "0";
   const receiveTokenSymbol = confirmationDetails?.receiveTokenSymbol ?? "USDC";
   const destinationChainName =
-    activeIntent?.intent?.destination?.chain?.name ?? "destination";
-  const sourceCount = activeIntent?.intent?.sources?.length ?? 0;
+    confirmationDetails?.destinationChainName ??
+    activeIntent?.intent?.destination?.chain?.name ??
+    "destination";
+  const sourceCount = widget.skipSwap
+    ? 0 // No source assets when using existing balance
+    : (activeIntent?.intent?.sources?.length ?? 0);
   const spendAmountUsd = widget?.confirmationDetails?.amountSpent ?? 0;
 
-  // Derive 3 simplified steps from actual SDK events
+  // Derive simplified steps from actual SDK events
   const simplifiedSteps = useMemo((): SimplifiedStep[] => {
+    // When swap is skipped, only show deposit transaction step
+    if (widget.skipSwap) {
+      return [
+        {
+          id: "deposit-transaction",
+          label: "Deposit transaction",
+          completed: widget.isSuccess,
+        },
+      ];
+    }
+
     const hasRffId = steps.some((s) => s.step.type === "RFF_ID" && s.completed);
     // Use SOURCE_SWAP_HASH for "Collecting on Source" step
     const hasSourceSwapHash = steps.some(
@@ -95,12 +110,13 @@ const TransactionStatusContainer = ({
         completed: isTransactionComplete,
       },
     ];
-  }, [steps, widget.isSuccess]);
+  }, [steps, widget.isSuccess, widget.skipSwap]);
 
-  // Calculate progress as 33% -> 66% -> 100%
+  // Calculate progress based on completed steps
   const progress = useMemo(() => {
     const completedCount = simplifiedSteps.filter((s) => s.completed).length;
-    return Math.round((completedCount / 3) * 100);
+    const totalSteps = simplifiedSteps.length;
+    return Math.round((completedCount / totalSteps) * 100);
   }, [simplifiedSteps]);
 
   const getStatusMessage = () => {
@@ -122,7 +138,11 @@ const TransactionStatusContainer = ({
               <AmountDisplay
                 amount={usdFormatter.format(spendAmountUsd)}
                 suffix="USD"
-                label={`${sourceCount} asset${sourceCount !== 1 ? "s" : ""}`}
+                label={
+                  widget.skipSwap
+                    ? "Existing balance"
+                    : `${sourceCount} asset${sourceCount !== 1 ? "s" : ""}`
+                }
               />
               <div className="flex w-16 gap-1.5 items-center justify-center">
                 <TransferIndicator isProcessing={isProcessing} />

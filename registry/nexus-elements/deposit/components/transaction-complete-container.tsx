@@ -70,87 +70,89 @@ const TransactionCompleteContainer = ({
             </span>
             <div className="w-full">
               <div className="border-t py-5 flex flex-col gap-5">
-                {/* Collected on sources section */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-sans text-sm leading-4.5 text-card-foreground">
-                      Collected on sources
-                    </span>
-                    <button
-                      className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer items-center"
-                      onClick={() => setShowSourceDetails(!showSourceDetails)}
+                {/* Collected on sources section - only show when swap was not skipped */}
+                {!widget.skipSwap && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-sans text-sm leading-4.5 text-card-foreground">
+                        Collected on sources
+                      </span>
+                      <button
+                        className="font-sans flex gap-0.5 text-muted-foreground text-sm leading-4.5 underline cursor-pointer items-center"
+                        onClick={() => setShowSourceDetails(!showSourceDetails)}
+                      >
+                        {showSourceDetails ? (
+                          <>
+                            {" "}
+                            Hide details
+                            <ChevronUpIcon
+                              size={16}
+                              className="text-muted-foreground"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            {" "}
+                            View details
+                            <ChevronDownIcon
+                              size={16}
+                              className="text-muted-foreground"
+                            />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div
+                      className={`grid transition-all duration-300 ease-out ${
+                        showSourceDetails
+                          ? "grid-rows-[1fr] opacity-100"
+                          : "grid-rows-[0fr] opacity-0"
+                      }`}
                     >
-                      {showSourceDetails ? (
-                        <>
-                          {" "}
-                          Hide details
-                          <ChevronUpIcon
-                            size={16}
-                            className="text-muted-foreground"
-                          />
-                        </>
-                      ) : (
-                        <>
-                          {" "}
-                          View details
-                          <ChevronDownIcon
-                            size={16}
-                            className="text-muted-foreground"
-                          />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div
-                    className={`grid transition-all duration-300 ease-out ${
-                      showSourceDetails
-                        ? "grid-rows-[1fr] opacity-100"
-                        : "grid-rows-[0fr] opacity-0"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="flex gap-3 flex-wrap pt-2 pb-3">
-                        {hasSourceSwaps
-                          ? // Show individual source chain links
-                            widget.sourceSwaps.map((swap, index) => (
-                              <a
-                                key={`${swap.chainId}-${index}`}
-                                href={swap.explorerUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
-                                style={{
-                                  animationDelay: showSourceDetails
-                                    ? `${index * 50}ms`
-                                    : "0ms",
-                                }}
-                              >
-                                {swap.chainName}
-                                <ArrowBoxUpRightIcon
-                                  size={16}
-                                  className="text-muted-foreground transition-colors"
-                                />
-                              </a>
-                            ))
-                          : // No source swaps - show Nexus intent URL
-                            widget.nexusIntentUrl && (
-                              <a
-                                href={widget.nexusIntentUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
-                              >
-                                View on Nexus Explorer
-                                <ArrowBoxUpRightIcon
-                                  size={16}
-                                  className="text-muted-foreground transition-colors"
-                                />
-                              </a>
-                            )}
+                      <div className="overflow-hidden">
+                        <div className="flex gap-3 flex-wrap pt-2 pb-3">
+                          {hasSourceSwaps
+                            ? // Show individual source chain links
+                              widget.sourceSwaps.map((swap, index) => (
+                                <a
+                                  key={`${swap.chainId}-${index}`}
+                                  href={swap.explorerUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
+                                  style={{
+                                    animationDelay: showSourceDetails
+                                      ? `${index * 50}ms`
+                                      : "0ms",
+                                  }}
+                                >
+                                  {swap.chainName}
+                                  <ArrowBoxUpRightIcon
+                                    size={16}
+                                    className="text-muted-foreground transition-colors"
+                                  />
+                                </a>
+                              ))
+                            : // No source swaps - show Nexus intent URL
+                              widget.nexusIntentUrl && (
+                                <a
+                                  href={widget.nexusIntentUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-sans flex gap-1 items-center text-muted-foreground text-sm leading-4.5 underline transition-all"
+                                >
+                                  View on Nexus Explorer
+                                  <ArrowBoxUpRightIcon
+                                    size={16}
+                                    className="text-muted-foreground transition-colors"
+                                  />
+                                </a>
+                              )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Deposit transaction */}
                 {depositTxUrl && (

@@ -46,6 +46,23 @@ interface SourceSwapInfo {
   explorerUrl: string;
 }
 
+interface SwapSkippedData {
+  destination: {
+    amount: string;
+    chain: { id: number; name: string };
+    token: { contractAddress: `0x${string}`; decimals: number; symbol: string };
+  };
+  input: {
+    amount: string;
+    token: { contractAddress: `0x${string}`; decimals: number; symbol: string };
+  };
+  gas: {
+    required: string;
+    price: string;
+    estimatedFee: string;
+  };
+}
+
 interface DepositState {
   step: WidgetStep;
   inputs: DepositInputs;
@@ -68,6 +85,7 @@ interface DepositState {
   receiveAmount: string | null;
   skipSwap: boolean;
   intentReady: boolean;
+  swapSkippedData: SwapSkippedData | null;
 }
 
 type Action =
@@ -90,6 +108,7 @@ type Action =
   | { type: "setReceiveAmount"; payload: string | null }
   | { type: "setSkipSwap"; payload: boolean }
   | { type: "setIntentReady"; payload: boolean }
+  | { type: "setSwapSkippedData"; payload: SwapSkippedData | null }
   | { type: "addSourceSwap"; payload: SourceSwapInfo }
   | { type: "setNexusIntentUrl"; payload: string | null }
   | { type: "setDepositTxHash"; payload: string | null }
@@ -141,6 +160,7 @@ const createInitialState = (): DepositState => ({
   receiveAmount: null,
   skipSwap: false,
   intentReady: false,
+  swapSkippedData: null,
 });
 
 function reducer(state: DepositState, action: Action): DepositState {
@@ -194,6 +214,8 @@ function reducer(state: DepositState, action: Action): DepositState {
       return { ...state, skipSwap: action.payload };
     case "setIntentReady":
       return { ...state, intentReady: action.payload };
+    case "setSwapSkippedData":
+      return { ...state, swapSkippedData: action.payload };
     case "addSourceSwap":
       return { ...state, sourceSwaps: [...state.sourceSwaps, action.payload] };
     case "setNexusIntentUrl":
@@ -374,6 +396,44 @@ export function useDepositWidget(
   }, [swapBalance, nexusSDK, destination]);
 
   const confirmationDetails = useMemo(() => {
+    // Handle swap skipped case - compute from swapSkippedData
+    if (state.swapSkippedData && state.skipSwap) {
+      const { destination: destData, input, gas } = state.swapSkippedData;
+
+      // Format the token amount from raw units
+      const rawAmount = Number.parseFloat(destData.amount);
+      const tokenAmount = rawAmount / Math.pow(10, destData.token.decimals);
+      const receiveAmountUsd = getFiatValue(tokenAmount, destData.token.symbol);
+
+      // Format for display
+      const receiveAmountAfterSwap = `${tokenAmount.toFixed(2)} ${destData.token.symbol}`;
+
+      // Gas fee calculation from swapSkippedData
+      const gasRequired = Number.parseFloat(gas.required);
+      const gasPrice = Number.parseFloat(gas.price);
+      const estimatedFeeWei = Number.parseFloat(gas.estimatedFee);
+      const estimatedFeeEth = estimatedFeeWei / 1e18;
+      const gasFeeUsd = getFiatValue(
+        estimatedFeeEth,
+        destination.gasTokenSymbol ?? "ETH",
+      );
+
+      return {
+        sourceLabel: destination.label ?? "Deposit",
+        sources: [], // No sources when swap is skipped
+        gasTokenSymbol: destination.gasTokenSymbol,
+        estimatedTime: destination.estimatedTime ?? "~30s",
+        amountSpent: receiveAmountUsd, // Using existing balance, so amount spent = receive amount
+        totalFeeUsd: gasFeeUsd,
+        receiveTokenSymbol: destData.token.symbol,
+        receiveAmountAfterSwapUsd: receiveAmountUsd,
+        receiveAmountAfterSwap,
+        receiveTokenLogo: destination.tokenLogo,
+        receiveTokenChain: destData.chain.id,
+        destinationChainName: destData.chain.name,
+      };
+    }
+
     if (!activeIntent || !nexusSDK) return null;
 
     // Use user's requested amount (from input), not SDK's optimized bridge amount
@@ -506,6 +566,7 @@ export function useDepositWidget(
       receiveAmountAfterSwap,
       receiveTokenLogo: destination.tokenLogo,
       receiveTokenChain: destination.chainId,
+      destinationChainName: activeIntent.intent.destination?.chain?.name,
     };
   }, [
     activeIntent,
@@ -516,6 +577,8 @@ export function useDepositWidget(
     exchangeRate,
     getFiatValue,
     destinationBalance,
+    state.swapSkippedData,
+    state.skipSwap,
   ]);
 
   const feeBreakdown = useMemo(() => {
@@ -527,6 +590,19 @@ export function useDepositWidget(
         gasUsd: state.actualGasFeeUsd,
         gasFormatted,
       };
+    }
+
+    // Use gas from swapSkippedData when swap is skipped
+    if (state.swapSkippedData && state.skipSwap) {
+      const { gas } = state.swapSkippedData;
+      const estimatedFeeWei = Number.parseFloat(gas.estimatedFee);
+      const estimatedFeeEth = estimatedFeeWei / 1e18;
+      const gasUsd = getFiatValue(
+        estimatedFeeEth,
+        destination.gasTokenSymbol ?? "ETH",
+      );
+      const gasFormatted = usdFormatter.format(gasUsd);
+      return { totalGasFee: gasUsd, gasUsd, gasFormatted };
     }
 
     // Otherwise use estimated gas from intent
@@ -545,7 +621,7 @@ export function useDepositWidget(
     const gasFormatted = usdFormatter.format(gasUsd);
 
     return { totalGasFee: gasUsd, gasUsd, gasFormatted };
-  }, [activeIntent, getFiatValue, state.actualGasFeeUsd]); // getFiatValue is stable from useNexus
+  }, [activeIntent, getFiatValue, state.actualGasFeeUsd, state.swapSkippedData, state.skipSwap, destination.gasTokenSymbol]);
 
   const start = useCallback(
     (inputs: SwapAndExecuteParams) => {
@@ -575,7 +651,25 @@ export function useDepositWidget(
             if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
               const step = event.args as SwapStepType & {
                 completed?: boolean;
+                data?: SwapSkippedData;
               };
+
+              // Handle SWAP_SKIPPED - go directly to transaction-status
+              if (step?.type === "SWAP_SKIPPED") {
+                console.log("SWAP_SKIPPED_EVENT", { event, step });
+                dispatch({ type: "setSkipSwap", payload: true });
+                dispatch({
+                  type: "setSwapSkippedData",
+                  payload: step.data ?? null,
+                });
+                dispatch({ type: "setStatus", payload: "executing" });
+                dispatch({
+                  type: "setStep",
+                  payload: { step: "transaction-status", direction: "forward" },
+                });
+                stopwatch.start();
+              }
+
               if (step?.type === "DETERMINING_SWAP" && step?.completed) {
                 determiningSwapComplete.current = true;
                 stopwatch.start();
