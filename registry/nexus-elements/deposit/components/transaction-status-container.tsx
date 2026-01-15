@@ -59,31 +59,21 @@ const TransactionStatusContainer = ({
   widget,
   onClose,
 }: TransactionStatusContainerProps) => {
-  const { getFiatValue } = useNexus();
   const { steps, confirmationDetails, activeIntent, isProcessing } = widget;
-
-  // Calculate total spent in USD from sources
-  const spendAmountUsd = useMemo(() => {
-    if (!activeIntent?.intent?.sources) return 0;
-    return activeIntent.intent.sources.reduce((total, source) => {
-      const amount = parseFloat(source.amount);
-      const usdValue = getFiatValue(amount, source.token.symbol);
-      return total + usdValue;
-    }, 0);
-  }, [activeIntent, getFiatValue]);
 
   const receiveAmount = confirmationDetails?.receiveAmountAfterSwap ?? "0";
   const receiveTokenSymbol = confirmationDetails?.receiveTokenSymbol ?? "USDC";
   const destinationChainName =
     activeIntent?.intent?.destination?.chain?.name ?? "destination";
   const sourceCount = activeIntent?.intent?.sources?.length ?? 0;
+  const spendAmountUsd = widget?.confirmationDetails?.amountSpent ?? 0;
 
   // Derive 3 simplified steps from actual SDK events
   const simplifiedSteps = useMemo((): SimplifiedStep[] => {
     const hasRffId = steps.some((s) => s.step.type === "RFF_ID" && s.completed);
     // Use SOURCE_SWAP_HASH for "Collecting on Source" step
     const hasSourceSwapHash = steps.some(
-      (s) => s.step.type === "SOURCE_SWAP_HASH" && s.completed,
+      (s) => s.step.type === "DESTINATION_SWAP_HASH" && s.completed,
     );
     // Deposit transaction only completes when the entire transaction succeeds
     const isTransactionComplete = widget.isSuccess;
@@ -152,7 +142,7 @@ const TransactionStatusContainer = ({
             }}
           >
             <div
-              className="absolute bottom-0 left-0 h-1 bg-primary " // animate-progress
+              className="absolute bottom-0 left-0 h-1 bg-primary animate-progress"
               style={{
                 width: `${progress}%`,
               }}

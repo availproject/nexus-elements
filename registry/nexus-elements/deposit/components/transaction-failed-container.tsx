@@ -41,8 +41,9 @@ const TransactionFailedContainer = ({
             />
             <div className="w-full bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-4">
               <p className="font-sans text-sm leading-5 text-destructive">
-                It's not you, it's us. Everything seems to be in order from your
-                side, our engineers might have broken something.
+                {widget?.txError ??
+                  `It's not you, it's us. Everything seems to be in order from your
+                side, our engineers might have broken something.`}
               </p>
               <p className="font-sans text-sm leading-5 text-destructive mt-3">
                 Retry in a bit?
