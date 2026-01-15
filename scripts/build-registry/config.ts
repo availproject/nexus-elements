@@ -6,7 +6,7 @@ const DEFAULT_CONFIG: RegistryConfig = {
   name: "nexus-elements",
   namespace: "nexus-elements",
   homepage: "https://elements.nexus.availproject.org",
-  baseUrl: "https://elements.nexus.availproject.org/r",
+  baseUrl: "https://develop.elements.nexus.availproject.org/r",
   registryPath: "registry/nexus-elements",
   outputPath: "registry.json",
   peerDependencies: ["react", "react-dom"],

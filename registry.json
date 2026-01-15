@@ -21,7 +21,7 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -54,7 +54,7 @@
         "class-variance-authority"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -74,7 +74,7 @@
         "class-variance-authority"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -90,7 +90,7 @@
         }
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -110,7 +110,7 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -351,15 +351,15 @@
         "wagmi"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/animated-spinner.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/checkbox.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/skeleton.json",
-        "https://elements.nexus.availproject.org/r/tabs.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/animated-spinner.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/checkbox.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+        "https://develop.elements.nexus.availproject.org/r/tabs.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -379,7 +379,7 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -505,18 +505,18 @@
         "viem"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/input.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/select.json",
-        "https://elements.nexus.availproject.org/r/skeleton.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
-        "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/view-history.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/input.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/select.json",
+        "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+        "https://develop.elements.nexus.availproject.org/r/tooltip.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json",
+        "https://develop.elements.nexus.availproject.org/r/view-history.json"
       ]
     },
     {
@@ -532,7 +532,7 @@
         }
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -551,7 +551,7 @@
         "@radix-ui/react-label"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -587,7 +587,7 @@
         "@radix-ui/react-popover"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -607,7 +607,7 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -623,7 +623,7 @@
         }
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -639,7 +639,7 @@
         }
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -784,13 +784,13 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/select.json",
-        "https://elements.nexus.availproject.org/r/separator.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/select.json",
+        "https://develop.elements.nexus.availproject.org/r/separator.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -809,7 +809,7 @@
         "@radix-ui/react-tabs"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -828,7 +828,7 @@
         "@radix-ui/react-tooltip"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -954,18 +954,18 @@
         "viem"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/input.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/select.json",
-        "https://elements.nexus.availproject.org/r/skeleton.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
-        "https://elements.nexus.availproject.org/r/utils.json",
-        "https://elements.nexus.availproject.org/r/view-history.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/input.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/select.json",
+        "https://develop.elements.nexus.availproject.org/r/skeleton.json",
+        "https://develop.elements.nexus.availproject.org/r/tooltip.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json",
+        "https://develop.elements.nexus.availproject.org/r/view-history.json"
       ]
     },
     {
@@ -985,12 +985,12 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/accordion.json",
-        "https://elements.nexus.availproject.org/r/label.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/separator.json",
-        "https://elements.nexus.availproject.org/r/tabs.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/accordion.json",
+        "https://develop.elements.nexus.availproject.org/r/label.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/separator.json",
+        "https://develop.elements.nexus.availproject.org/r/tabs.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     },
     {
@@ -1092,13 +1092,13 @@
         "lucide-react"
       ],
       "registryDependencies": [
-        "https://elements.nexus.availproject.org/r/badge.json",
-        "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/card.json",
-        "https://elements.nexus.availproject.org/r/dialog.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/separator.json",
-        "https://elements.nexus.availproject.org/r/utils.json"
+        "https://develop.elements.nexus.availproject.org/r/badge.json",
+        "https://develop.elements.nexus.availproject.org/r/button.json",
+        "https://develop.elements.nexus.availproject.org/r/card.json",
+        "https://develop.elements.nexus.availproject.org/r/dialog.json",
+        "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://develop.elements.nexus.availproject.org/r/separator.json",
+        "https://develop.elements.nexus.availproject.org/r/utils.json"
       ]
     }
   ]

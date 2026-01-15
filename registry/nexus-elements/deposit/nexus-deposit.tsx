@@ -67,6 +67,12 @@ const NexusDeposit = ({
   onOpenChange,
   defaultOpen = false,
 }: DepositWidgetProps) => {
+  const widget = useDepositWidget({
+    executeDeposit,
+    destination,
+    onSuccess,
+    onError,
+  });
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
 
   // Use controlled or uncontrolled open state
@@ -81,6 +87,7 @@ const NexusDeposit = ({
       onOpenChange?.(open);
       if (!open) {
         onClose?.();
+        widget.reset();
       }
     },
     [isControlled, onOpenChange, onClose],
@@ -90,12 +97,6 @@ const NexusDeposit = ({
     handleOpenChange(false);
   }, [handleOpenChange]);
 
-  const widget = useDepositWidget({
-    executeDeposit,
-    destination,
-    onSuccess,
-    onError,
-  });
   const animationClass = getAnimationClass(widget.navigationDirection);
 
   // Embed mode: render as inline Card
@@ -126,7 +127,10 @@ const NexusDeposit = ({
           Deposit
         </Button>
       </DialogTrigger>
-      <DialogContent className={cn("px-0", className)} showCloseButton={false}>
+      <DialogContent
+        className={cn("px-0 max-w-md!", className)}
+        showCloseButton={false}
+      >
         <div
           key={widget.step}
           className={cn("flex flex-col gap-4", animationClass)}

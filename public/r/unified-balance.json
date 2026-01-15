@@ -9,12 +9,12 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "https://elements.nexus.availproject.org/r/accordion.json",
-    "https://elements.nexus.availproject.org/r/label.json",
-    "https://elements.nexus.availproject.org/r/nexus-provider.json",
-    "https://elements.nexus.availproject.org/r/separator.json",
-    "https://elements.nexus.availproject.org/r/tabs.json",
-    "https://elements.nexus.availproject.org/r/utils.json"
+    "https://develop.elements.nexus.availproject.org/r/accordion.json",
+    "https://develop.elements.nexus.availproject.org/r/label.json",
+    "https://develop.elements.nexus.availproject.org/r/nexus-provider.json",
+    "https://develop.elements.nexus.availproject.org/r/separator.json",
+    "https://develop.elements.nexus.availproject.org/r/tabs.json",
+    "https://develop.elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
     {
