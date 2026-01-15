@@ -46,6 +46,7 @@ const AmountContainer = ({ widget, onClose }: AmountContainerProps) => {
               selectedTokenAmount={selectedTokenAmount}
               onErrorStateChange={handleErrorStateChange}
               totalSelectedBalance={widget.totalSelectedBalance}
+              destinationConfig={widget.destination}
             />
           ) : (
             <Skeleton className="min-h-[212px]" />

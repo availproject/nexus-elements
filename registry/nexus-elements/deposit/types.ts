@@ -66,6 +66,7 @@ export interface AssetSelectionState {
 
 export interface DestinationConfig {
   chainId: SUPPORTED_CHAINS_IDS;
+  depositTargetLogo?: string;
   tokenAddress: `0x${string}`;
   tokenSymbol: string;
   tokenDecimals: number;

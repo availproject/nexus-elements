@@ -113,7 +113,7 @@ const ConfirmationContainer = ({
                       >
                         <div className="flex items-center gap-3">
                           {source.chainLogo && (
-                            <Image
+                            <img
                               src={source.chainLogo}
                               alt={source.chainName}
                               width={20}

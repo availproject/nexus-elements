@@ -56,7 +56,7 @@ export function TokenRow({
             onClick={(e: any) => e.stopPropagation()}
           />
           <div className="flex items-center gap-3">
-            <Image
+            <img
               src={
                 Object.keys(TOKEN_IMAGES).includes(token.symbol)
                   ? TOKEN_IMAGES[token.symbol]

@@ -7,6 +7,7 @@ import { PercentageSelector } from "./percentage-selector";
 import { parseCurrencyInput } from "../utils";
 import { UpDownArrows } from "./icons";
 import { usdFormatter } from "../../common";
+import { DestinationConfig } from "../types";
 
 interface AmountCardProps {
   amount?: string;
@@ -18,6 +19,7 @@ interface AmountCardProps {
     balance: number;
     usdBalance: number;
   };
+  destinationConfig: DestinationConfig;
 }
 
 function AmountCard({
@@ -27,6 +29,7 @@ function AmountCard({
   onErrorStateChange,
   totalSelectedBalance,
   totalBalance,
+  destinationConfig,
 }: AmountCardProps) {
   const [internalAmount, setInternalAmount] = useState("");
   const amount = externalAmount ?? internalAmount;
@@ -183,9 +186,10 @@ function AmountCard({
           numericAmount > 0 ? "-mt-0.5" : "mt-1.5"
         }`}
       >
+        {destinationConfig.tokenLogo}
         <TokenIcon
-          tokenSrc="/usdc.svg"
-          protocolSrc="/aave.svg"
+          tokenSrc={destinationConfig.tokenLogo ?? "/usdc.svg"}
+          protocolSrc={destinationConfig?.depositTargetLogo}
           tokenAlt="USDC"
         />
         <div className="relative">

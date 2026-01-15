@@ -20,7 +20,7 @@ const WidgetHeader = ({ title, onBack, onClose }: WidgetHeaderProps) => {
           <LeftChevronIcon className="h-5 w-5 text-muted-foreground group-hover/back:text-foreground" />
         </button>
       ) : (
-        <Image
+        <img
           src="/aave.svg"
           alt="Aave"
           width={20}
