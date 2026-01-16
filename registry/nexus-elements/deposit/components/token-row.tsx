@@ -8,9 +8,10 @@ import { Checkbox } from "../../ui/checkbox";
 import { usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
 import { TOKEN_IMAGES } from "../constants/assets";
-
-const CHAIN_ITEM_HEIGHT = 49;
-const VERTICAL_LINE_TOP_OFFSET = 48;
+import {
+  CHAIN_ITEM_HEIGHT_PX,
+  VERTICAL_LINE_TOP_OFFSET_PX,
+} from "../constants/widget";
 
 interface TokenRowProps {
   token: Token;
@@ -106,8 +107,8 @@ export function TokenRow({
             <div
               className="bg-border shrink-0 absolute left-[26px] w-0.5"
               style={{
-                top: `${VERTICAL_LINE_TOP_OFFSET}px`,
-                height: `${token.chains.length * CHAIN_ITEM_HEIGHT + 4}px`,
+                top: `${VERTICAL_LINE_TOP_OFFSET_PX}px`,
+                height: `${token.chains.length * CHAIN_ITEM_HEIGHT_PX + 4}px`,
               }}
             />
             {/* Chain items */}
@@ -116,7 +117,7 @@ export function TokenRow({
                 <div
                   key={chain.id}
                   className="flex items-center"
-                  style={{ height: `${CHAIN_ITEM_HEIGHT}px` }}
+                  style={{ height: `${CHAIN_ITEM_HEIGHT_PX}px` }}
                 >
                   {/* Horizontal line */}
                   <div className="bg-border shrink-0 ml-1.5 w-[37px] h-0.5" />

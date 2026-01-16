@@ -1,32 +1,20 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   WidgetStep,
   DepositWidgetContextValue,
-  TransactionStatus,
   DepositInputs,
-  NavigationDirection,
-  AssetSelectionState,
   DestinationConfig,
 } from "../types";
 import {
   NEXUS_EVENTS,
   CHAIN_METADATA,
-  type OnSwapIntentHookData,
   type SwapStepType,
   type ExecuteParams,
   type SwapAndExecuteParams,
   type SwapAndExecuteResult,
   parseUnits,
-  SWAP_STEPS,
 } from "@avail-project/nexus-core";
 import {
   SWAP_EXPECTED_STEPS,
@@ -34,95 +22,23 @@ import {
   usePolling,
   useStopwatch,
   useTransactionSteps,
-  usdFormatter,
 } from "../../common";
 import { type Address, type Hex, formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
+import { SIMULATION_POLL_INTERVAL_MS } from "../constants/widget";
 
-interface SourceSwapInfo {
-  chainId: number;
-  chainName: string;
-  explorerUrl: string;
-}
-
-interface SwapSkippedData {
-  destination: {
-    amount: string;
-    chain: { id: number; name: string };
-    token: { contractAddress: `0x${string}`; decimals: number; symbol: string };
-  };
-  input: {
-    amount: string;
-    token: { contractAddress: `0x${string}`; decimals: number; symbol: string };
-  };
-  gas: {
-    required: string;
-    price: string;
-    estimatedFee: string;
-  };
-}
-
-interface DepositState {
-  step: WidgetStep;
-  inputs: DepositInputs;
-  status: TransactionStatus;
-  explorerUrls: {
-    sourceExplorerUrl: string | null;
-    destinationExplorerUrl: string | null;
-  };
-  sourceSwaps: SourceSwapInfo[];
-  nexusIntentUrl: string | null;
-  depositTxHash: string | null;
-  actualGasFeeUsd: number | null;
-  error: string | null;
-  lastResult: unknown;
-  navigationDirection: NavigationDirection;
-  simulation: {
-    swapIntent: OnSwapIntentHookData;
-  } | null;
-  simulationLoading: boolean;
-  receiveAmount: string | null;
-  skipSwap: boolean;
-  intentReady: boolean;
-  swapSkippedData: SwapSkippedData | null;
-}
-
-type Action =
-  | {
-      type: "setStep";
-      payload: { step: WidgetStep; direction: NavigationDirection };
-    }
-  | { type: "setInputs"; payload: Partial<DepositInputs> }
-  | { type: "setStatus"; payload: TransactionStatus }
-  | { type: "setExplorerUrls"; payload: Partial<DepositState["explorerUrls"]> }
-  | { type: "setError"; payload: string | null }
-  | { type: "setLastResult"; payload: unknown }
-  | {
-      type: "setSimulation";
-      payload: {
-        swapIntent: OnSwapIntentHookData;
-      };
-    }
-  | { type: "setSimulationLoading"; payload: boolean }
-  | { type: "setReceiveAmount"; payload: string | null }
-  | { type: "setSkipSwap"; payload: boolean }
-  | { type: "setIntentReady"; payload: boolean }
-  | { type: "setSwapSkippedData"; payload: SwapSkippedData | null }
-  | { type: "addSourceSwap"; payload: SourceSwapInfo }
-  | { type: "setNexusIntentUrl"; payload: string | null }
-  | { type: "setDepositTxHash"; payload: string | null }
-  | { type: "setActualGasFeeUsd"; payload: number | null }
-  | { type: "reset" };
-
-const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
-  amount: null,
-  confirmation: "amount",
-  "transaction-status": null,
-  "transaction-complete": null,
-  "transaction-failed": null,
-  "asset-selection": "amount",
-} as const;
+// Import extracted hooks
+import {
+  useDepositState,
+  STEP_HISTORY,
+  type SwapSkippedData,
+} from "./use-deposit-state";
+import {
+  useAssetSelection,
+  createInitialAssetSelection,
+} from "./use-asset-selection";
+import { useDepositComputed } from "./use-deposit-computed";
 
 interface UseDepositProps {
   executeDeposit: (
@@ -137,111 +53,16 @@ interface UseDepositProps {
   onError?: (error: string) => void;
 }
 
-const createInitialState = (): DepositState => ({
-  step: "amount",
-  inputs: {
-    amount: undefined,
-    selectedToken: "USDC",
-  },
-  status: "idle",
-  explorerUrls: {
-    sourceExplorerUrl: null,
-    destinationExplorerUrl: null,
-  },
-  sourceSwaps: [],
-  nexusIntentUrl: null,
-  depositTxHash: null,
-  actualGasFeeUsd: null,
-  error: null,
-  lastResult: null,
-  navigationDirection: null,
-  simulation: null,
-  simulationLoading: false,
-  receiveAmount: null,
-  skipSwap: false,
-  intentReady: false,
-  swapSkippedData: null,
-});
-
-function reducer(state: DepositState, action: Action): DepositState {
-  switch (action.type) {
-    case "setStep":
-      return {
-        ...state,
-        step: action.payload.step,
-        navigationDirection: action.payload.direction,
-      };
-    case "setInputs": {
-      const newInputs = { ...state.inputs, ...action.payload };
-      let newStatus = state.status;
-      if (
-        state.status === "idle" &&
-        newInputs.amount &&
-        Number.parseFloat(newInputs.amount) > 0
-      ) {
-        newStatus = "previewing";
-      }
-      if (
-        state.status === "previewing" &&
-        (!newInputs.amount || Number.parseFloat(newInputs.amount) <= 0)
-      ) {
-        newStatus = "idle";
-      }
-      // Clear error when user changes inputs
-      return { ...state, inputs: newInputs, status: newStatus, error: null };
-    }
-    case "setStatus":
-      return { ...state, status: action.payload };
-    case "setExplorerUrls":
-      return {
-        ...state,
-        explorerUrls: { ...state.explorerUrls, ...action.payload },
-      };
-    case "setError":
-      return { ...state, error: action.payload };
-    case "setLastResult":
-      return { ...state, lastResult: action.payload };
-    case "setSimulation":
-      return {
-        ...state,
-        simulation: action.payload,
-      };
-    case "setSimulationLoading":
-      return { ...state, simulationLoading: action.payload };
-    case "setReceiveAmount":
-      return { ...state, receiveAmount: action.payload };
-    case "setSkipSwap":
-      return { ...state, skipSwap: action.payload };
-    case "setIntentReady":
-      return { ...state, intentReady: action.payload };
-    case "setSwapSkippedData":
-      return { ...state, swapSkippedData: action.payload };
-    case "addSourceSwap":
-      return { ...state, sourceSwaps: [...state.sourceSwaps, action.payload] };
-    case "setNexusIntentUrl":
-      return { ...state, nexusIntentUrl: action.payload };
-    case "setDepositTxHash":
-      return { ...state, depositTxHash: action.payload };
-    case "setActualGasFeeUsd":
-      return { ...state, actualGasFeeUsd: action.payload };
-    case "reset":
-      return createInitialState();
-    default:
-      return state;
-  }
-}
-
-const createInitialAssetSelection = (): AssetSelectionState => ({
-  selectedChainIds: new Set<string>(),
-  filter: "all",
-  expandedTokens: new Set(),
-});
-
+/**
+ * Main deposit widget hook that orchestrates state, SDK integration,
+ * and computed values via smaller focused hooks.
+ */
 export function useDepositWidget(
   props: UseDepositProps,
 ): DepositWidgetContextValue {
   const { executeDeposit, destination, onSuccess, onError } = props;
 
+  // External dependencies
   const {
     nexusSDK,
     swapIntent,
@@ -250,17 +71,24 @@ export function useDepositWidget(
     getFiatValue,
     exchangeRate,
   } = useNexus();
-
-  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
-  const [pollingEnabled, setPollingEnabled] = useState(false);
   const { address } = useAccount();
   const handleNexusError = useNexusError();
 
+  // Core state management
+  const { state, dispatch } = useDepositState();
+  const [pollingEnabled, setPollingEnabled] = useState(false);
+
+  // Asset selection state
+  const { assetSelection, setAssetSelection, resetAssetSelection } =
+    useAssetSelection(swapBalance);
+
+  // Refs for tracking
   const hasAutoSelected = useRef(false);
   const initialSimulationDone = useRef(false);
   const determiningSwapComplete = useRef(false);
   const lastSimulationTime = useRef(0);
 
+  // Transaction steps tracking
   const {
     seed,
     onStepComplete,
@@ -268,6 +96,7 @@ export function useDepositWidget(
     steps,
   } = useTransactionSteps<SwapStepType>();
 
+  // Stopwatch for timing
   const stopwatch = useStopwatch({
     running:
       state.status === "executing" ||
@@ -275,370 +104,60 @@ export function useDepositWidget(
     intervalMs: 100,
   });
 
-  const [assetSelection, setAssetSelectionState] =
-    useState<AssetSelectionState>(createInitialAssetSelection);
-
-  useEffect(() => {
-    if (swapBalance && assetSelection.selectedChainIds.size === 0) {
-      const allChainIds = new Set<string>();
-      swapBalance.forEach((asset) => {
-        if (asset.breakdown) {
-          asset.breakdown.forEach((b) => {
-            if (b.chain && b.balance) {
-              allChainIds.add(`${b.contractAddress}-${b.chain.id}`);
-            }
-          });
-        }
-      });
-      if (allChainIds.size > 0) {
-        setAssetSelectionState({
-          selectedChainIds: allChainIds,
-          filter: "all",
-          expandedTokens: new Set(),
-        });
-      }
-    }
-  }, [swapBalance, assetSelection.selectedChainIds.size]);
-
-  const setAssetSelection = useCallback(
-    (update: Partial<AssetSelectionState>) => {
-      setAssetSelectionState((prev) => ({ ...prev, ...update }));
-    },
-    [],
-  );
-
+  // Derived state
   const isProcessing = state.status === "executing";
   const isSuccess = state.status === "success";
   const isError = state.status === "error";
-
-  const setInputs = useCallback((next: Partial<DepositInputs>) => {
-    dispatch({ type: "setInputs", payload: next });
-  }, []);
-
-  const setTxError = useCallback((error: string | null) => {
-    dispatch({ type: "setError", payload: error });
-  }, []);
-
   const activeIntent = state.simulation?.swapIntent ?? swapIntent.current;
 
-  const availableAssets = useMemo(() => {
-    if (!swapBalance) return [];
-    const items: Array<{
-      chainId: number;
-      tokenAddress: `0x${string}`;
-      decimals: number;
-      symbol: string;
-      balance: string;
-      balanceInFiat?: number;
-      tokenLogo?: string;
-      chainLogo?: string;
-      chainName?: string;
-    }> = [];
-
-    for (const asset of swapBalance) {
-      if (!asset?.breakdown?.length) continue;
-      for (const breakdown of asset.breakdown) {
-        if (!breakdown?.chain?.id || !breakdown.balance) continue;
-        const numericBalance = Number.parseFloat(breakdown.balance);
-        if (!Number.isFinite(numericBalance) || numericBalance <= 0) continue;
-
-        items.push({
-          chainId: breakdown.chain.id,
-          tokenAddress: breakdown.contractAddress as `0x${string}`,
-          decimals: breakdown.decimals ?? asset.decimals,
-          symbol: asset.symbol,
-          balance: breakdown.balance,
-          balanceInFiat: breakdown.balanceInFiat,
-          tokenLogo: asset.icon,
-          chainLogo: breakdown.chain.logo,
-          chainName: breakdown.chain.name,
-        });
-      }
-    }
-    return items.toSorted(
-      (a, b) => (b.balanceInFiat ?? 0) - (a.balanceInFiat ?? 0),
-    );
-  }, [swapBalance]);
-
-  const totalSelectedBalance = useMemo(
-    () =>
-      availableAssets.reduce((sum, asset) => {
-        const key = `${asset.tokenAddress}-${asset.chainId}`;
-        if (assetSelection.selectedChainIds.has(key)) {
-          return sum + (asset.balanceInFiat ?? 0);
-        }
-        return sum;
-      }, 0),
-    [availableAssets, assetSelection.selectedChainIds],
-  );
-
-  const totalBalance = useMemo(() => {
-    const balance =
-      swapBalance?.reduce(
-        (acc, balance) => acc + parseFloat(balance.balance),
-        0,
-      ) ?? 0;
-    const usdBalance =
-      swapBalance?.reduce((acc, balance) => acc + balance.balanceInFiat, 0) ??
-      0;
-    return {
-      balance,
-      usdBalance,
-    };
-  }, [swapBalance]);
-
-  // Get user's existing balance on destination chain (SDK may use this instead of bridging)
-  const destinationBalance = useMemo(() => {
-    if (!nexusSDK || !swapBalance || !destination) return undefined;
-    return swapBalance
-      ?.find((token) => token.symbol === destination.tokenSymbol)
-      ?.breakdown?.find((chain) => chain.chain?.id === destination.chainId);
-  }, [swapBalance, nexusSDK, destination]);
-
-  const confirmationDetails = useMemo(() => {
-    // Handle swap skipped case - compute from swapSkippedData
-    if (state.swapSkippedData && state.skipSwap) {
-      const { destination: destData, input, gas } = state.swapSkippedData;
-
-      // Format the token amount from raw units
-      const rawAmount = Number.parseFloat(destData.amount);
-      const tokenAmount = rawAmount / Math.pow(10, destData.token.decimals);
-      const receiveAmountUsd = getFiatValue(tokenAmount, destData.token.symbol);
-
-      // Format for display
-      const receiveAmountAfterSwap = `${tokenAmount.toFixed(2)} ${destData.token.symbol}`;
-
-      // Gas fee calculation from swapSkippedData
-      const gasRequired = Number.parseFloat(gas.required);
-      const gasPrice = Number.parseFloat(gas.price);
-      const estimatedFeeWei = Number.parseFloat(gas.estimatedFee);
-      const estimatedFeeEth = estimatedFeeWei / 1e18;
-      const gasFeeUsd = getFiatValue(
-        estimatedFeeEth,
-        destination.gasTokenSymbol ?? "ETH",
-      );
-
-      return {
-        sourceLabel: destination.label ?? "Deposit",
-        sources: [], // No sources when swap is skipped
-        gasTokenSymbol: destination.gasTokenSymbol,
-        estimatedTime: destination.estimatedTime ?? "~30s",
-        amountSpent: receiveAmountUsd, // Using existing balance, so amount spent = receive amount
-        totalFeeUsd: gasFeeUsd,
-        receiveTokenSymbol: destData.token.symbol,
-        receiveAmountAfterSwapUsd: receiveAmountUsd,
-        receiveAmountAfterSwap,
-        receiveTokenLogo: destination.tokenLogo,
-        receiveTokenChain: destData.chain.id,
-        destinationChainName: destData.chain.name,
-      };
-    }
-
-    if (!activeIntent || !nexusSDK) return null;
-
-    // Use user's requested amount (from input), not SDK's optimized bridge amount
-    const receiveAmountUsd = state.inputs.amount
-      ? parseFloat(state.inputs.amount.replace(/,/g, ""))
-      : 0;
-
-    // Convert USD amount to token amount for display
-    const tokenExchangeRate = exchangeRate?.[destination.tokenSymbol] ?? 1;
-    const receiveTokenAmount = receiveAmountUsd / tokenExchangeRate;
-
-    const receiveAmountAfterSwap = nexusSDK.utils.formatTokenBalance(
-      receiveTokenAmount.toString(),
-      {
-        symbol: destination.tokenSymbol,
-        decimals: destination.tokenDecimals,
-      },
-    );
-
-    // Build sources array from intent sources
-    const sources: Array<{
-      chainId: number;
-      tokenAddress: `0x${string}`;
-      decimals: number;
-      symbol: string;
-      balance: string;
-      balanceInFiat?: number;
-      tokenLogo?: string;
-      chainLogo?: string;
-      chainName?: string;
-      isDestinationBalance?: boolean;
-    }> = [];
-
-    activeIntent.intent.sources.forEach((source) => {
-      const matchingAsset = availableAssets.find(
-        (asset) =>
-          asset.chainId === source.chain.id &&
-          asset.symbol === source.token.symbol,
-      );
-      if (matchingAsset) {
-        // Use the actual amount from the intent source, not the full balance
-        const sourceAmountUsd = getFiatValue(
-          Number.parseFloat(source.amount),
-          source.token.symbol,
-        );
-        sources.push({
-          ...matchingAsset,
-          balance: source.amount,
-          balanceInFiat: sourceAmountUsd,
-          isDestinationBalance: false,
-        });
-      }
-    });
-
-    // Calculate total spent from cross-chain sources (what's being SENT)
-    const totalAmountSpentUsd = activeIntent.intent.sources?.reduce(
-      (acc, source) => {
-        const amount = Number.parseFloat(source.amount);
-        const usdAmount = getFiatValue(amount, source.token.symbol);
-        return acc + usdAmount;
-      },
-      0,
-    );
-
-    // Get the actual amount arriving on destination (AFTER fees)
-    const destinationAmount = Number.parseFloat(
-      activeIntent.intent.destination?.amount ?? "0",
-    );
-    const destinationAmountUsd = getFiatValue(
-      destinationAmount,
-      activeIntent.intent.destination?.token?.symbol ?? destination.tokenSymbol,
-    );
-
-    // Calculate bridge/protocol fees (what's sent - what arrives)
-    const totalFeeUsd = Math.max(0, totalAmountSpentUsd - destinationAmountUsd);
-
-    // Calculate destination balance used (what user wants - what arrives from bridge)
-    const usedFromDestinationUsd = Math.max(
-      0,
-      receiveAmountUsd - destinationAmountUsd,
-    );
-
-    if (usedFromDestinationUsd > 0.01 && destinationBalance) {
-      // SDK is using existing destination balance
-      const usedTokenAmount = usedFromDestinationUsd / tokenExchangeRate;
-      const chainMeta =
-        CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
-
-      sources.push({
-        chainId: destination.chainId,
-        tokenAddress: destination.tokenAddress,
-        decimals: destination.tokenDecimals,
-        symbol: destination.tokenSymbol,
-        balance: usedTokenAmount.toString(),
-        balanceInFiat: usedFromDestinationUsd,
-        tokenLogo: destination.tokenLogo,
-        chainLogo: chainMeta?.logo,
-        chainName: chainMeta?.name,
-        isDestinationBalance: true,
-      });
-    }
-
-    // Actual amount spent = cross-chain sources + destination balance used
-    const actualAmountSpent = totalAmountSpentUsd + usedFromDestinationUsd;
-
-    console.log("[FEE_DEBUG]", {
-      receiveAmountUsd,
-      totalAmountSpentUsd,
-      destinationAmountUsd,
-      usedFromDestinationUsd,
-      actualAmountSpent,
-      totalFeeUsd,
-      destinationAmount,
-      sourcesFromIntent: activeIntent.intent.sources?.map((s) => ({
-        amount: s.amount,
-        symbol: s.token.symbol,
-        usd: getFiatValue(Number.parseFloat(s.amount), s.token.symbol),
-      })),
-    });
-
-    return {
-      sourceLabel: destination.label ?? "Deposit",
-      sources,
-      gasTokenSymbol: destination.gasTokenSymbol,
-      estimatedTime: destination.estimatedTime ?? "~30s",
-      amountSpent: actualAmountSpent,
-      totalFeeUsd,
-      receiveTokenSymbol: destination.tokenSymbol,
-      receiveAmountAfterSwapUsd: receiveAmountUsd,
-      receiveAmountAfterSwap,
-      receiveTokenLogo: destination.tokenLogo,
-      receiveTokenChain: destination.chainId,
-      destinationChainName: activeIntent.intent.destination?.chain?.name,
-    };
-  }, [
-    activeIntent,
-    nexusSDK,
-    destination,
+  // Computed values
+  const {
     availableAssets,
-    state.inputs.amount,
+    totalSelectedBalance,
+    totalBalance,
+    confirmationDetails,
+    feeBreakdown,
+  } = useDepositComputed({
+    swapBalance,
+    assetSelection,
+    activeIntent,
+    destination,
+    inputAmount: state.inputs.amount,
     exchangeRate,
     getFiatValue,
-    destinationBalance,
-    state.swapSkippedData,
-    state.skipSwap,
-  ]);
+    actualGasFeeUsd: state.actualGasFeeUsd,
+    swapSkippedData: state.swapSkippedData,
+    skipSwap: state.skipSwap,
+    nexusSDK,
+  });
 
-  const feeBreakdown = useMemo(() => {
-    // Use actual gas fee from receipt if available (after transaction completes)
-    if (state.actualGasFeeUsd !== null) {
-      const gasFormatted = usdFormatter.format(state.actualGasFeeUsd);
-      return {
-        totalGasFee: state.actualGasFeeUsd,
-        gasUsd: state.actualGasFeeUsd,
-        gasFormatted,
-      };
-    }
+  // Action callbacks
+  const setInputs = useCallback(
+    (next: Partial<DepositInputs>) => {
+      dispatch({ type: "setInputs", payload: next });
+    },
+    [dispatch],
+  );
 
-    // Use gas from swapSkippedData when swap is skipped
-    if (state.swapSkippedData && state.skipSwap) {
-      const { gas } = state.swapSkippedData;
-      const estimatedFeeWei = Number.parseFloat(gas.estimatedFee);
-      const estimatedFeeEth = estimatedFeeWei / 1e18;
-      const gasUsd = getFiatValue(
-        estimatedFeeEth,
-        destination.gasTokenSymbol ?? "ETH",
-      );
-      const gasFormatted = usdFormatter.format(gasUsd);
-      return { totalGasFee: gasUsd, gasUsd, gasFormatted };
-    }
+  const setTxError = useCallback(
+    (error: string | null) => {
+      dispatch({ type: "setError", payload: error });
+    },
+    [dispatch],
+  );
 
-    // Otherwise use estimated gas from intent
-    if (!activeIntent?.intent?.destination?.gas) {
-      return { totalGasFee: 0, gasUsd: 0, gasFormatted: "0" };
-    }
-    //FIX: Fix type in SDK
-    const gas = (activeIntent.intent.destination as any).gas;
-    const gasAmount = parseFloat(gas.amount);
-    const gasSymbol = gas.token?.symbol ?? destination.gasTokenSymbol;
-
-    // Convert gas amount to USD using getFiatValue
-    const gasUsd = getFiatValue(gasAmount, gasSymbol);
-
-    // Format the gas amount for display (show USD value)
-    const gasFormatted = usdFormatter.format(gasUsd);
-
-    return { totalGasFee: gasUsd, gasUsd, gasFormatted };
-  }, [
-    activeIntent,
-    getFiatValue,
-    state.actualGasFeeUsd,
-    state.swapSkippedData,
-    state.skipSwap,
-    destination.gasTokenSymbol,
-  ]);
-
+  /**
+   * Start the swap and execute flow with the SDK
+   */
   const start = useCallback(
     (inputs: SwapAndExecuteParams) => {
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
 
+      // Build source list from selected assets
       const fromSources: Array<{ tokenAddress: Hex; chainId: number }> = [];
       assetSelection.selectedChainIds.forEach((key) => {
-        // Key format is "${tokenAddress}-${chainId}", e.g. "0x123...-1"
         const lastDashIndex = key.lastIndexOf("-");
         const tokenAddress = key.substring(0, lastDashIndex) as Hex;
         const chainId = parseInt(key.substring(lastDashIndex + 1), 10);
@@ -649,8 +168,6 @@ export function useDepositWidget(
         ...inputs,
         fromSources: fromSources.length > 0 ? fromSources : undefined,
       };
-
-      console.log("INPUTS WITH SOURCES IN START", inputsWithSources);
 
       nexusSDK
         .swapAndExecute(inputsWithSources, {
@@ -663,7 +180,6 @@ export function useDepositWidget(
 
               // Handle SWAP_SKIPPED - go directly to transaction-status
               if (step?.type === "SWAP_SKIPPED") {
-                console.log("SWAP_SKIPPED_EVENT", { event, step });
                 dispatch({ type: "setSkipSwap", payload: true });
                 dispatch({
                   type: "setSwapSkippedData",
@@ -687,8 +203,6 @@ export function useDepositWidget(
           },
         })
         .then((data: SwapAndExecuteResult) => {
-          console.log("SWAP RESULT DATA", data);
-
           // Extract source swaps from the result
           const sourceSwapsFromResult = data.swapResult?.sourceSwaps ?? [];
           sourceSwapsFromResult.forEach((sourceSwap) => {
@@ -709,7 +223,6 @@ export function useDepositWidget(
           });
 
           // Set explorer URLs from the result
-          // Use first source swap for sourceExplorerUrl
           if (sourceSwapsFromResult.length > 0) {
             const firstSourceSwap = sourceSwapsFromResult[0];
             const chainMeta =
@@ -726,7 +239,7 @@ export function useDepositWidget(
             });
           }
 
-          // Use swapResult.explorerURL or build from executeResponse for destination
+          // Destination explorer URL
           const destChainMeta =
             CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
           const destBaseUrl = destChainMeta?.blockExplorerUrls?.[0] ?? "";
@@ -743,13 +256,11 @@ export function useDepositWidget(
             });
           }
 
-          // Store Nexus intent URL for when no source swaps
+          // Store Nexus intent URL and deposit tx hash
           dispatch({
             type: "setNexusIntentUrl",
             payload: data.swapResult?.explorerURL ?? null,
           });
-
-          // Store deposit tx hash
           dispatch({
             type: "setDepositTxHash",
             payload: data.executeResponse?.txHash ?? null,
@@ -762,7 +273,6 @@ export function useDepositWidget(
             const effectiveGasPrice = BigInt(receipt.effectiveGasPrice);
             const gasCostWei = gasUsed * effectiveGasPrice;
             const gasCostNative = parseFloat(formatEther(gasCostWei));
-            // Convert to USD using destination's gas token symbol
             const gasTokenSymbol = destination.gasTokenSymbol ?? "ETH";
             const gasCostUsd = getFiatValue(gasCostNative, gasTokenSymbol);
             dispatch({
@@ -786,8 +296,7 @@ export function useDepositWidget(
           const { message } = handleNexusError(error);
           dispatch({ type: "setError", payload: message });
           dispatch({ type: "setStatus", payload: "error" });
-          // If we're already on transaction-status, go to failed screen
-          // Otherwise (error during intent creation), go back to amount
+
           if (initialSimulationDone.current) {
             dispatch({
               type: "setStep",
@@ -800,8 +309,10 @@ export function useDepositWidget(
             });
           }
           onError?.(message);
+        })
+        .finally(async () => {
+          await fetchSwapBalance();
         });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [
       nexusSDK,
@@ -815,12 +326,18 @@ export function useDepositWidget(
       assetSelection.selectedChainIds,
       destination,
       getFiatValue,
+      dispatch,
+      stopwatch,
     ],
-  ); // stopwatch is stable from useStopwatch
+  );
 
+  /**
+   * Handle amount input continue - starts simulation
+   */
   const handleAmountContinue = useCallback(
     (totalAmountUsd: number) => {
       if (!nexusSDK || !address || !exchangeRate) return;
+
       // Reset state and refs for a fresh simulation
       dispatch({ type: "setIntentReady", payload: false });
       initialSimulationDone.current = false;
@@ -868,9 +385,13 @@ export function useDepositWidget(
       executeDeposit,
       start,
       swapIntent,
+      dispatch,
     ],
   );
 
+  /**
+   * Handle order confirmation - allow intent to execute
+   */
   const handleConfirmOrder = useCallback(() => {
     if (!activeIntent) return;
     dispatch({ type: "setStatus", payload: "executing" });
@@ -879,8 +400,11 @@ export function useDepositWidget(
       payload: { step: "transaction-status", direction: "forward" },
     });
     activeIntent.allow();
-  }, [activeIntent]);
+  }, [activeIntent, dispatch]);
 
+  /**
+   * Navigate to a specific step
+   */
   const goToStep = useCallback(
     (newStep: WidgetStep) => {
       dispatch({
@@ -898,10 +422,13 @@ export function useDepositWidget(
         }
       }
     },
-    [state.step, state.inputs.amount, handleAmountContinue],
+    [state.step, state.inputs.amount, handleAmountContinue, dispatch],
   );
 
-  const goBack = useCallback(() => {
+  /**
+   * Navigate back to previous step
+   */
+  const goBack = useCallback(async () => {
     const previousStep = STEP_HISTORY[state.step];
     if (previousStep) {
       dispatch({ type: "setError", payload: null });
@@ -915,12 +442,16 @@ export function useDepositWidget(
       setPollingEnabled(false);
       stopwatch.stop();
       stopwatch.reset();
+      await fetchSwapBalance();
     }
-  }, [state.step]);
+  }, [state.step, swapIntent, stopwatch, dispatch]);
 
-  const reset = useCallback(() => {
+  /**
+   * Reset widget to initial state
+   */
+  const reset = useCallback(async () => {
     dispatch({ type: "reset" });
-    setAssetSelectionState(createInitialAssetSelection());
+    resetAssetSelection();
     resetSteps();
     swapIntent.current = null;
     initialSimulationDone.current = false;
@@ -928,9 +459,12 @@ export function useDepositWidget(
     setPollingEnabled(false);
     stopwatch.stop();
     stopwatch.reset();
-  }, [resetSteps, swapIntent, stopwatch]);
+    await fetchSwapBalance();
+  }, [resetSteps, swapIntent, stopwatch, dispatch, resetAssetSelection]);
 
-  // swapIntent is a stable RefObject
+  /**
+   * Refresh simulation data
+   */
   const refreshSimulation = useCallback(async () => {
     const timeSinceLastSimulation = Date.now() - lastSimulationTime.current;
     if (timeSinceLastSimulation < 5000) {
@@ -956,24 +490,24 @@ export function useDepositWidget(
       stopwatch.reset();
       lastSimulationTime.current = Date.now();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stopwatch]);
+  }, [stopwatch, swapIntent, dispatch]);
 
-  // Handle swap intent when it arrives - triggered by intentReady state change
+  const startTransaction = useCallback(() => {
+    if (isProcessing) return;
+    dispatch({ type: "setError", payload: null });
+  }, [isProcessing, dispatch]);
+
+  // Effect: Handle swap intent when it arrives
   useEffect(() => {
-    // Only run when intent is ready and we haven't processed it yet
     if (!state.intentReady || initialSimulationDone.current) {
       return;
     }
 
-    // Check if intent is available
     if (!swapIntent.current) {
       return;
     }
 
-    // Process the intent
     initialSimulationDone.current = true;
-    // Always show confirmation screen - user must review and confirm
     dispatch({
       type: "setSimulation",
       payload: { swapIntent: swapIntent.current! },
@@ -982,9 +516,9 @@ export function useDepositWidget(
     dispatch({ type: "setStatus", payload: "previewing" });
     lastSimulationTime.current = Date.now();
     setPollingEnabled(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.intentReady]); // Triggered when DETERMINING_SWAP completes
+  }, [state.intentReady, swapIntent, dispatch]);
 
+  // Effect: Fetch swap balance on mount
   useEffect(() => {
     if (!nexusSDK) return;
 
@@ -998,6 +532,7 @@ export function useDepositWidget(
     }
   }, [nexusSDK, swapBalance, availableAssets, fetchSwapBalance]);
 
+  // Polling for simulation refresh
   usePolling(
     pollingEnabled &&
       state.status === "previewing" &&
@@ -1006,14 +541,10 @@ export function useDepositWidget(
     async () => {
       await refreshSimulation();
     },
-    15000,
+    SIMULATION_POLL_INTERVAL_MS,
   );
 
-  const startTransaction = useCallback(() => {
-    if (isProcessing) return;
-    dispatch({ type: "setError", payload: null });
-  }, [isProcessing]);
-
+  // Return the full context value
   return {
     step: state.step,
     inputs: state.inputs,

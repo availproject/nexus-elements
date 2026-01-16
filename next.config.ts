@@ -4,6 +4,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: false,
+  // Optimize barrel file imports (bundle-barrel-imports)
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.plugins = config.plugins || [];

@@ -57,18 +57,29 @@ const ConfirmationContainer = ({
   const tokenNamesSummary =
     moreCount > 0 ? `${tokenNames} + ${moreCount} more` : tokenNames;
 
+  // Combined filter + map into single iteration (js-combine-iterations)
   const sourceDetails = useMemo(() => {
     if (!confirmationDetails?.sources) return [];
-    return confirmationDetails.sources
-      .filter((s) => s)
-      .map((source) => ({
-        chainName: source?.chainName ?? "",
-        chainLogo: source?.chainLogo,
-        tokenSymbol: source?.symbol ?? "",
-        tokenDecimals: source?.decimals ?? 6,
-        amount: source?.balance ?? "0",
-        isDestinationBalance: source?.isDestinationBalance ?? false,
-      }));
+    const result: Array<{
+      chainName: string;
+      chainLogo: string | undefined;
+      tokenSymbol: string;
+      tokenDecimals: number;
+      amount: string;
+      isDestinationBalance: boolean;
+    }> = [];
+    for (const source of confirmationDetails.sources) {
+      if (!source) continue;
+      result.push({
+        chainName: source.chainName ?? "",
+        chainLogo: source.chainLogo,
+        tokenSymbol: source.symbol ?? "",
+        tokenDecimals: source.decimals ?? 6,
+        amount: source.balance ?? "0",
+        isDestinationBalance: source.isDestinationBalance ?? false,
+      });
+    }
+    return result;
   }, [confirmationDetails]);
 
   return (

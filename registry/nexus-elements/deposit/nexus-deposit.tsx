@@ -19,6 +19,7 @@ import type {
 import { Card } from "../ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { WidgetErrorBoundary } from "../common";
 
 const ANIMATION_CLASSES: Record<NonNullable<NavigationDirection>, string> = {
   forward: "animate-slide-in-from-right",
@@ -129,9 +130,11 @@ const NexusDeposit = ({
           className,
         )}
       >
-        <div key={widget.step} className={animationClass}>
-          {SCREENS[widget.step](widget, heading)}
-        </div>
+        <WidgetErrorBoundary widgetName="Deposit" onReset={widget.reset}>
+          <div key={widget.step} className={animationClass}>
+            {SCREENS[widget.step](widget, heading)}
+          </div>
+        </WidgetErrorBoundary>
       </Card>
     );
   }
@@ -147,12 +150,14 @@ const NexusDeposit = ({
         className={cn("px-0 max-w-md!", className)}
         showCloseButton={false}
       >
-        <div
-          key={widget.step}
-          className={cn("flex flex-col gap-4", animationClass)}
-        >
-          {SCREENS[widget.step](widget, heading, handleClose)}
-        </div>
+        <WidgetErrorBoundary widgetName="Deposit" onReset={widget.reset}>
+          <div
+            key={widget.step}
+            className={cn("flex flex-col gap-4", animationClass)}
+          >
+            {SCREENS[widget.step](widget, heading, handleClose)}
+          </div>
+        </WidgetErrorBoundary>
       </DialogContent>
     </Dialog>
   );

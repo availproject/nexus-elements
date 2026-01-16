@@ -45,8 +45,8 @@ const TransactionFailedContainer = ({
               showClockIcon={false}
               showUsdValue={false}
             />
-            <div className="w-full bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-4">
-              <p className="font-sans text-sm leading-5 text-destructive">
+            <div className="w-full bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-4 overflow-hidden">
+              <p className="font-sans text-sm leading-5 text-destructive break-all">
                 {widget?.txError ??
                   `It's not you, it's us. Everything seems to be in order from your
                 side, our engineers might have broken something.`}

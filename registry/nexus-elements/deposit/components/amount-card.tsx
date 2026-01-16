@@ -8,6 +8,15 @@ import { parseCurrencyInput } from "../utils";
 import { UpDownArrows } from "./icons";
 import { usdFormatter } from "../../common";
 import { DestinationConfig } from "../types";
+import {
+  BALANCE_SAFETY_MARGIN,
+  CHARACTER_ANIMATION_DURATION_MS,
+  SHINE_ANIMATION_DURATION_MS,
+  MAX_INPUT_WIDTH_PX,
+} from "../constants/widget";
+
+// Hoisted RegExp to avoid recreation on every render (js-hoist-regexp)
+const NUMERIC_INPUT_REGEX = /^\d*\.?\d*$/;
 
 interface AmountCardProps {
   amount?: string;
@@ -67,7 +76,7 @@ function AmountCard({
       // Clear animation after it completes
       const timer = setTimeout(() => {
         setAnimatingIndices(new Set());
-      }, 400); // Match animation duration
+      }, CHARACTER_ANIMATION_DURATION_MS);
 
       prevLengthRef.current = currentLength;
       return () => clearTimeout(timer);
@@ -113,7 +122,7 @@ function AmountCard({
       setIsShining(true);
       const timer = setTimeout(() => {
         setIsShining(false);
-      }, 500); // Match animation duration
+      }, SHINE_ANIMATION_DURATION_MS);
       prevAmountRef.current = amount;
       return () => clearTimeout(timer);
     }
@@ -131,7 +140,7 @@ function AmountCard({
       const rawValue = parseCurrencyInput(e.target.value);
 
       // Validate numeric input (allow unlimited decimals)
-      if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
+      if (rawValue === "" || NUMERIC_INPUT_REGEX.test(rawValue)) {
         setAmount(rawValue);
       }
     },
@@ -140,8 +149,7 @@ function AmountCard({
 
   const handlePercentageClick = useCallback(
     (percentage: number) => {
-      // 8% safety margin - keep 92% of balance available
-      const safeBalance = totalBalance?.usdBalance * 0.92;
+      const safeBalance = totalBalance?.usdBalance * BALANCE_SAFETY_MARGIN;
       const calculatedAmount = safeBalance * percentage;
       const newAmount = usdFormatter.format(calculatedAmount).replace("$", "");
       setAmount(newAmount);
@@ -228,7 +236,10 @@ function AmountCard({
             onKeyDown={handleKeyDown}
             placeholder="0"
             style={{
-              width: inputWidth > 0 ? Math.min(inputWidth + 4, 300) : undefined,
+              width:
+                inputWidth > 0
+                  ? Math.min(inputWidth + 4, MAX_INPUT_WIDTH_PX)
+                  : undefined,
               maxWidth: "calc(100vw - 100px)",
             }}
             className="absolute inset-0 font-display text-[32px] font-medium tracking-[0.8px] tabular-nums bg-transparent border-none outline-none min-w-[22px] text-transparent caret-card-foreground placeholder:text-transparent"

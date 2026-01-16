@@ -1,6 +1,14 @@
 "use client";
 
-import { useMemo, useCallback, useState, useEffect, useRef } from "react";
+import {
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+  startTransition,
+  useDeferredValue,
+} from "react";
 import { ChevronDownIcon } from "./icons";
 import WidgetHeader from "./widget-header";
 import type {
@@ -19,19 +27,22 @@ import {
   type UserAsset,
 } from "@avail-project/nexus-core";
 import { usdFormatter } from "../../common";
-import { isStablecoin, checkIfMatchesPreset } from "../utils/asset-helpers";
+import {
+  isStablecoin,
+  checkIfMatchesPreset,
+  isNative,
+} from "../utils/asset-helpers";
 import { X } from "lucide-react";
+import {
+  SCROLL_THRESHOLD_PX,
+  PROGRESS_BAR_ANIMATION_DELAY_MS,
+  PROGRESS_BAR_EXIT_DURATION_MS,
+} from "../constants/widget";
 
 interface AssetSelectionContainerProps {
   widget: DepositWidgetContextValue;
   heading?: string;
   onClose?: () => void;
-}
-
-function isNative(symbol: string): boolean {
-  return Object.values(CHAIN_METADATA).some(
-    (chain) => chain.nativeCurrency.symbol === symbol,
-  );
 }
 
 function transformSwapBalanceToTokens(
@@ -112,9 +123,18 @@ const AssetSelectionContainer = ({
   const filter = assetSelection.filter;
   const expandedTokens = assetSelection.expandedTokens;
 
+  // Defer expensive token transformation to avoid blocking UI
+  const deferredSwapBalance = useDeferredValue(swapBalance);
+
   const tokens = useMemo(
-    () => transformSwapBalanceToTokens(swapBalance),
-    [swapBalance],
+    () => transformSwapBalanceToTokens(deferredSwapBalance),
+    [deferredSwapBalance],
+  );
+
+  // Build index Map for O(1) token lookups (js-index-maps)
+  const tokensById = useMemo(
+    () => new Map(tokens.map((t) => [t.id, t])),
+    [tokens],
   );
 
   const mainTokens = useMemo(
@@ -159,14 +179,14 @@ const AssetSelectionContainer = ({
       setIsProgressBarEntering(true);
       const timer = setTimeout(() => {
         setIsProgressBarEntering(false);
-      }, 50);
+      }, PROGRESS_BAR_ANIMATION_DELAY_MS);
       return () => clearTimeout(timer);
     } else if (isProgressBarVisible) {
       setIsProgressBarExiting(true);
       const timer = setTimeout(() => {
         setIsProgressBarVisible(false);
         setIsProgressBarExiting(false);
-      }, 300);
+      }, PROGRESS_BAR_EXIT_DURATION_MS);
       return () => clearTimeout(timer);
     }
   }, [showProgressBar, isProgressBarVisible]);
@@ -175,12 +195,15 @@ const AssetSelectionContainer = ({
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    // Use startTransition for non-urgent scroll updates (rerender-transitions)
     const handleScroll = () => {
       const scrollTop = container.scrollTop;
-      setShowStickyPopular(scrollTop > 50);
+      startTransition(() => {
+        setShowStickyPopular(scrollTop > SCROLL_THRESHOLD_PX);
+      });
     };
 
-    container.addEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -214,7 +237,7 @@ const AssetSelectionContainer = ({
 
   const toggleTokenSelection = useCallback(
     (tokenId: string) => {
-      const token = tokens.find((t) => t.id === tokenId);
+      const token = tokensById.get(tokenId); // O(1) lookup instead of O(n)
       if (!token) return;
 
       const allChainsSelected = token.chains.every((c) =>
@@ -234,7 +257,7 @@ const AssetSelectionContainer = ({
         filter: newFilter,
       });
     },
-    [tokens, selectedChainIds, setAssetSelection],
+    [tokens, tokensById, selectedChainIds, setAssetSelection],
   );
 
   const toggleChainSelection = useCallback(

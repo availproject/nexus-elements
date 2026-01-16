@@ -4,10 +4,9 @@ import { useState } from "react";
 import WidgetHeader from "./widget-header";
 import { ReceiveAmountDisplay } from "./receive-amount-display";
 import type { DepositWidgetContextValue } from "../types";
-import { ArrowBoxUpRightIcon, ChevronDownIcon } from "./icons";
+import { ArrowBoxUpRightIcon, ChevronDownIcon, ChevronUpIcon } from "./icons";
 import { CardContent, CardFooter } from "../../ui/card";
 import { Button } from "../../ui/button";
-import { ChevronUpIcon } from "lucide-react";
 import { usdFormatter } from "../../common";
 
 function formatTimer(seconds: number): string {

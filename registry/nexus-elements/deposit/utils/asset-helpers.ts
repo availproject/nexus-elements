@@ -1,13 +1,17 @@
 import type { Token, AssetFilterType } from "../types";
-
-const STABLECOIN_SYMBOLS = ["USDC", "USDT", "DAI", "TUSD", "USDP"];
+import { STABLECOIN_SYMBOLS } from "../constants/widget";
+import { CHAIN_METADATA } from "@avail-project/nexus-core";
 
 export function isStablecoin(symbol: string): boolean {
-  return STABLECOIN_SYMBOLS.includes(symbol);
+  return STABLECOIN_SYMBOLS.includes(
+    symbol as (typeof STABLECOIN_SYMBOLS)[number],
+  );
 }
 
 export function isNative(symbol: string): boolean {
-  return false;
+  return Object.values(CHAIN_METADATA).some(
+    (chain) => chain.nativeCurrency.symbol === symbol,
+  );
 }
 
 /**

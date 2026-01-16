@@ -251,6 +251,26 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/deposit/constants/widget.ts",
+          "target": "components/deposit/constants/widget.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/hooks/use-asset-selection.ts",
+          "target": "components/deposit/hooks/use-asset-selection.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/hooks/use-deposit-computed.ts",
+          "target": "components/deposit/hooks/use-deposit-computed.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/hooks/use-deposit-state.ts",
+          "target": "components/deposit/hooks/use-deposit-state.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/deposit/hooks/use-deposit-widget.ts",
           "target": "components/deposit/hooks/use-deposit-widget.ts",
           "type": "registry:component"
@@ -281,6 +301,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
           "target": "components/common/hooks/useDebouncedCallback.ts",
           "type": "registry:component"
@@ -293,6 +318,11 @@
         {
           "path": "registry/nexus-elements/common/hooks/useInterval.ts",
           "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
           "type": "registry:component"
         },
         {
@@ -439,6 +469,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
           "target": "components/common/hooks/useDebouncedCallback.ts",
           "type": "registry:component"
@@ -451,6 +486,11 @@
         {
           "path": "registry/nexus-elements/common/hooks/useInterval.ts",
           "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
           "type": "registry:component"
         },
         {
@@ -719,6 +759,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
           "target": "components/common/hooks/useDebouncedCallback.ts",
           "type": "registry:component"
@@ -731,6 +776,11 @@
         {
           "path": "registry/nexus-elements/common/hooks/useInterval.ts",
           "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
           "type": "registry:component"
         },
         {
@@ -888,6 +938,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
           "target": "components/common/hooks/useDebouncedCallback.ts",
           "type": "registry:component"
@@ -900,6 +955,11 @@
         {
           "path": "registry/nexus-elements/common/hooks/useInterval.ts",
           "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
           "type": "registry:component"
         },
         {
@@ -1027,6 +1087,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
           "target": "components/common/hooks/useDebouncedCallback.ts",
           "type": "registry:component"
@@ -1039,6 +1104,11 @@
         {
           "path": "registry/nexus-elements/common/hooks/useInterval.ts",
           "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
           "type": "registry:component"
         },
         {
