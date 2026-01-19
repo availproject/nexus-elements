@@ -7,7 +7,7 @@ import { PercentageSelector } from "./percentage-selector";
 import { parseCurrencyInput } from "../utils";
 import { UpDownArrows } from "./icons";
 import { usdFormatter } from "../../common";
-import { DestinationConfig } from "../types";
+import { type DestinationConfig } from "../types";
 import {
   BALANCE_SAFETY_MARGIN,
   CHARACTER_ANIMATION_DURATION_MS,

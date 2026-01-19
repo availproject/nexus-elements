@@ -22,9 +22,9 @@ const TOP_LEVEL_SECTIONS = [
 ];
 
 const EXCLUDED_SECTIONS: string[] = [
-  "get-started.mdx",
-  "view-components.mdx",
-  "mcp.mdx",
+  "root:get-started.mdx",
+  "root:view-components.mdx",
+  "root:mcp.mdx",
 ];
 
 const EXCLUDED_PAGES: string[] = ["/docs/components/swap-deposit"];
@@ -73,6 +73,7 @@ export default function SidebarNav({
           </SidebarGroupContent>
         </SidebarGroup>
         {tree.children.map((item: any) => {
+          console.log("TREE", item.$id);
           if (EXCLUDED_SECTIONS.includes(item.$id ?? "")) {
             return null;
           }
