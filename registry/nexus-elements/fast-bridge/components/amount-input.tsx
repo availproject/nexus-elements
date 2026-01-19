@@ -1,7 +1,7 @@
 import { type FC, Fragment, useEffect, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { type UserAsset } from "@avail-project/nexus-core";
+import { SUPPORTED_CHAINS, type UserAsset } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type FastBridgeState } from "../hooks/useBridge";
 import {
@@ -96,7 +96,8 @@ const AmountInput: FC<AmountInputProps> = ({
           {bridgableBalance && (
             <p className="text-base font-medium min-w-max">
               {nexusSDK?.utils?.formatTokenBalance(bridgableBalance?.balance, {
-                symbol: bridgableBalance?.displaySymbol ?? bridgableBalance?.symbol,
+                symbol:
+                  bridgableBalance?.displaySymbol ?? bridgableBalance?.symbol,
                 decimals: bridgableBalance?.decimals,
               })}
             </p>
@@ -127,6 +128,11 @@ const AmountInput: FC<AmountInputProps> = ({
             <div className="space-y-1 py-2">
               {bridgableBalance?.breakdown.map((chain) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
+                if (
+                  bridgableBalance.symbol === "USDM" &&
+                  chain.chain.id === SUPPORTED_CHAINS.MEGAETH
+                )
+                  return null;
                 return (
                   <Fragment key={chain.chain.id}>
                     <div className="flex items-center justify-between px-2 py-1 rounded-md">
@@ -149,7 +155,9 @@ const AmountInput: FC<AmountInputProps> = ({
                       </div>
                       <p className="text-sm font-light text-right">
                         {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
-                          symbol: bridgableBalance?.displaySymbol ?? bridgableBalance?.symbol,
+                          symbol:
+                            bridgableBalance?.displaySymbol ??
+                            bridgableBalance?.symbol,
                           decimals: bridgableBalance?.decimals,
                         })}
                       </p>

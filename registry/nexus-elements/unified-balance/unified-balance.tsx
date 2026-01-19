@@ -80,7 +80,7 @@ const BalanceBreakdown = ({
                     </div>
                     <div className="text-left">
                       <h3 className="font-semibold sm:block hidden">
-                        {token.displaySymbol ?? token.symbol}
+                        {token.symbol ?? token.displaySymbol}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {chainsLabel}
@@ -91,7 +91,7 @@ const BalanceBreakdown = ({
                     <div className="flex flex-col items-end">
                       <p className="text-base font-medium">
                         {nexusSDK?.utils?.formatTokenBalance(token.balance, {
-                          symbol: token.displaySymbol ?? token.symbol,
+                          symbol: token.symbol ?? token.displaySymbol,
                           decimals: token.decimals,
                         })}
                       </p>
@@ -127,7 +127,7 @@ const BalanceBreakdown = ({
                             {nexusSDK?.utils?.formatTokenBalance(
                               chain.balance,
                               {
-                                symbol: token.displaySymbol ?? token.symbol,
+                                symbol: token.symbol ?? token.displaySymbol,
                                 decimals: token.decimals,
                               },
                             )}
