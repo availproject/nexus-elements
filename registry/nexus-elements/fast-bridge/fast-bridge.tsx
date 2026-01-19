@@ -88,6 +88,10 @@ const FastBridge: FC<FastBridgeProps> = ({
     onError,
     fetchBalance: fetchBridgableBalance,
   });
+  const receiveSymbol =
+    intent?.current?.intent?.token.symbol ??
+    intent?.current?.intent?.token.displaySymbol ??
+    filteredBridgableBalance?.symbol;
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6 relative">
@@ -143,7 +147,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                       connectedAddress === inputs?.recipient
                         ? intent?.current?.intent?.destination?.amount
                         : inputs.amount
-                    } ${filteredBridgableBalance?.symbol}`}
+                    } ${receiveSymbol}`}
                   </p>
                 )}
                 {refreshing ? (

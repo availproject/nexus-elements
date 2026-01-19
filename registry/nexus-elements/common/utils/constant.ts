@@ -1,27 +1,27 @@
+import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
 import { formatUnits, parseUnits } from "viem";
 
 export const SHORT_CHAIN_NAME: Record<number, string> = {
-  1: "Ethereum",
-  8453: "Base",
-  42161: "Arbitrum",
-  10: "Optimism",
-  137: "Polygon",
-  43114: "Avalanche",
-  534352: "Scroll",
-  50104: "Sophon",
-  8217: "Kaia",
-  56: "BNB",
-  143: "Monad",
-  999: "HyperEVM",
-  728126428: "Tron",
-  11155111: "Sepolia",
-  84532: "Base Sepolia",
-  421614: "Arbitrum Sepolia",
-  11155420: "Optimism Sepolia",
-  80002: "Polygon Amoy",
-  10143: "Monad Testnet",
-  2494104990: "Tron Shasta",
-  567: "Validium Testnet",
+  [SUPPORTED_CHAINS.ETHEREUM]: "Ethereum",
+  [SUPPORTED_CHAINS.BASE]: "Base",
+  [SUPPORTED_CHAINS.ARBITRUM]: "Arbitrum",
+  [SUPPORTED_CHAINS.OPTIMISM]: "Optimism",
+  [SUPPORTED_CHAINS.POLYGON]: "Polygon",
+  [SUPPORTED_CHAINS.AVALANCHE]: "Avalanche",
+  [SUPPORTED_CHAINS.SCROLL]: "Scroll",
+  [SUPPORTED_CHAINS.SOPHON]: "Sophon",
+  [SUPPORTED_CHAINS.KAIA]: "Kaia",
+  [SUPPORTED_CHAINS.BNB]: "BNB",
+  [SUPPORTED_CHAINS.MONAD]: "Monad",
+  [SUPPORTED_CHAINS.HYPEREVM]: "HyperEVM",
+  [SUPPORTED_CHAINS.MEGAETH]: "MegaETH",
+
+  [SUPPORTED_CHAINS.SEPOLIA]: "Sepolia",
+  [SUPPORTED_CHAINS.BASE_SEPOLIA]: "Base Sepolia",
+  [SUPPORTED_CHAINS.ARBITRUM_SEPOLIA]: "Arbitrum Sepolia",
+  [SUPPORTED_CHAINS.OPTIMISM_SEPOLIA]: "Optimism Sepolia",
+  [SUPPORTED_CHAINS.POLYGON_AMOY]: "Polygon Amoy",
+  [SUPPORTED_CHAINS.MONAD_TESTNET]: "Monad Testnet",
 } as const;
 
 const DEFAULT_SAFETY_MARGIN = 0.01; // 1%

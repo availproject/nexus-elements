@@ -96,7 +96,7 @@ const AmountInput: FC<AmountInputProps> = ({
           {bridgableBalance && (
             <p className="text-base font-medium min-w-max">
               {nexusSDK?.utils?.formatTokenBalance(bridgableBalance?.balance, {
-                symbol: bridgableBalance?.symbol,
+                symbol: bridgableBalance?.displaySymbol ?? bridgableBalance?.symbol,
                 decimals: bridgableBalance?.decimals,
               })}
             </p>
@@ -149,7 +149,7 @@ const AmountInput: FC<AmountInputProps> = ({
                       </div>
                       <p className="text-sm font-light text-right">
                         {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
-                          symbol: bridgableBalance?.symbol,
+                          symbol: bridgableBalance?.displaySymbol ?? bridgableBalance?.symbol,
                           decimals: bridgableBalance?.decimals,
                         })}
                       </p>

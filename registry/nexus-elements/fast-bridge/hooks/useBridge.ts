@@ -71,7 +71,7 @@ const buildInitialInputs = (
     chainId: number;
     amount?: string;
     recipient?: Address;
-  }
+  },
 ): FastBridgeState => {
   return {
     chain:
@@ -167,7 +167,7 @@ const useBridge = ({
       const formattedAmount = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs?.amount,
         inputs?.token,
-        inputs?.chain
+        inputs?.chain,
       );
       const bridgeTxn = await nexusSDK.bridge(
         {
@@ -186,7 +186,7 @@ const useBridge = ({
               onStepComplete(event.args);
             }
           },
-        }
+        },
       );
       if (!bridgeTxn) {
         throw new Error("Transaction rejected by user");
@@ -206,6 +206,8 @@ const useBridge = ({
       dispatch({ type: "setStatus", payload: "error" });
     }
   };
+  console.log("INTENT", intent?.current);
+  console.log("BALANCE", bridgableBalance);
 
   const onSuccess = async () => {
     // Close dialog and stop timer on success

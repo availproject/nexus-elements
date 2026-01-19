@@ -18,6 +18,7 @@ interface FeeBreakdownProps {
 
 const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent, isLoading = false }) => {
   const { nexusSDK } = useNexus();
+  const feeSymbol = intent.token?.displaySymbol ?? intent.token?.symbol ?? "USDC";
 
   const feeRows = [
     {
@@ -61,7 +62,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent, isLoading = false }) => {
             ) : (
               <p className="font-light text-base min-w-max">
                 {nexusSDK?.utils?.formatTokenBalance(intent.fees?.total, {
-                  symbol: intent.token?.symbol,
+                  symbol: feeSymbol,
                   decimals: intent?.token?.decimals,
                 })}
               </p>
@@ -93,7 +94,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent, isLoading = false }) => {
                     ) : (
                       <p className="text-sm font-light">
                         {nexusSDK?.utils?.formatTokenBalance(value, {
-                          symbol: intent.token?.symbol,
+                          symbol: feeSymbol,
                           decimals: intent?.token?.decimals,
                         })}
                       </p>

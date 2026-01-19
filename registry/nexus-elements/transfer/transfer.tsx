@@ -85,6 +85,10 @@ const FastTransfer: FC<FastTransferProps> = ({
     allowance,
     fetchBalance: fetchBridgableBalance,
   });
+  const receiveSymbol =
+    intent?.current?.intent?.token.symbol ??
+    intent?.current?.intent?.token.displaySymbol ??
+    filteredBridgableBalance?.symbol;
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
@@ -138,7 +142,7 @@ const FastTransfer: FC<FastTransferProps> = ({
                   <Skeleton className="h-5 w-28" />
                 ) : (
                   <p className="text-base font-semibold text-right">
-                    {inputs?.amount} {filteredBridgableBalance?.symbol}
+                    {inputs?.amount} {receiveSymbol}
                   </p>
                 )}
                 {refreshing ? (

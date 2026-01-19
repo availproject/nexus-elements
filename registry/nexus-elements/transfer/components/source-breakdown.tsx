@@ -33,6 +33,8 @@ const SourceBreakdown = ({
   requiredAmount,
 }: SourceBreakdownProps) => {
   const { nexusSDK } = useNexus();
+  const spendSymbol =
+    intent?.token?.displaySymbol ?? intent?.token?.symbol ?? tokenSymbol;
 
   const fundsOnDestination = useMemo(() => {
     if (!bridgableBalance || !chain) return 0;
@@ -124,7 +126,7 @@ const SourceBreakdown = ({
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-light">
                     {nexusSDK?.utils?.formatTokenBalance(amountSpend, {
-                      symbol: tokenSymbol,
+                      symbol: spendSymbol,
                       decimals: intent?.token?.decimals,
                     })}
                   </p>
@@ -162,7 +164,7 @@ const SourceBreakdown = ({
 
                   <p className="text-sm font-light">
                     {nexusSDK?.utils?.formatTokenBalance(source.amount, {
-                      symbol: tokenSymbol,
+                      symbol: spendSymbol,
                       decimals: intent?.token?.decimals,
                     })}
                   </p>
