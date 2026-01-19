@@ -90,13 +90,21 @@ const BalanceBreakdown = ({
                   <div className="flex items-center gap-3">
                     <div className="flex flex-col items-end">
                       <p className="text-base font-medium">
-                        {nexusSDK?.utils?.formatTokenBalance(token.balance, {
-                          symbol: token.symbol ?? token.displaySymbol,
-                          decimals: token.decimals,
-                        })}
+                        {nexusSDK?.utils?.formatTokenBalance(
+                          token.symbol === "USDM"
+                            ? filteredBreakdown[0]?.balance
+                            : token.balance,
+                          {
+                            symbol: token.symbol ?? token.displaySymbol,
+                            decimals: token.decimals,
+                          },
+                        )}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        ${token.balanceInFiat.toFixed(2)}
+                        $
+                        {token.symbol === "USDM"
+                          ? filteredBreakdown[0]?.balanceInFiat.toFixed(2)
+                          : token.balanceInFiat.toFixed(2)}
                       </p>
                     </div>
                   </div>
