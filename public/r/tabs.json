@@ -4,6 +4,9 @@
   "type": "registry:component",
   "title": "Tabs",
   "description": "UI primitive: Tabs",
+  "dependencies": [
+    "@radix-ui/react-tabs"
+  ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/utils.json"
   ],

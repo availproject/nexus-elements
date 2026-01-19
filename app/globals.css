@@ -904,3 +904,207 @@
         font-size: 0.8rem;
     }
 }
+@layer utilities {
+    @keyframes progress {
+        0% {
+            width: 0%;
+        }
+        100% {
+            width: 100%;
+        }
+    }
+
+    .animate-progress {
+        animation: progress 12s ease-in-out forwards;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Slide animations for screen transitions */
+@keyframes slide-in-from-right {
+    0% {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slide-in-from-left {
+    0% {
+        opacity: 0;
+        transform: translateX(-24px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in-from-right {
+    animation: slide-in-from-right 0.2s ease-out forwards;
+}
+
+.animate-slide-in-from-left {
+    animation: slide-in-from-left 0.2s ease-out forwards;
+}
+
+/* Scrolling digit animations */
+@keyframes digit-scroll-up {
+    0% {
+        transform: translateY(5px);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes digit-scroll-down {
+    0% {
+        transform: translateY(-5px);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-digit-up {
+    animation: digit-scroll-up 0.2s ease-out forwards;
+}
+
+.animate-digit-down {
+    animation: digit-scroll-down 0.2s ease-out forwards;
+}
+
+/* Transfer indicator wave animation */
+@keyframes transfer-wave {
+    0%,
+    100% {
+        opacity: 0.15;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-transfer-wave {
+    animation: transfer-wave 1.2s ease-in-out infinite;
+}
+
+/* Glare shine effect for USD value */
+@keyframes glare-shine {
+    0% {
+        mask-position: -150% 0;
+        -webkit-mask-position: -150% 0;
+    }
+    100% {
+        mask-position: 250% 0;
+        -webkit-mask-position: 250% 0;
+    }
+}
+
+@keyframes glare-shine-overlay {
+    0% {
+        left: -100%;
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
+
+.animate-glare-shine {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.animate-glare-shine::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--base) 40%, transparent) 25%,
+        color-mix(in srgb, var(--base) 80%, transparent) 50%,
+        color-mix(in srgb, var(--base) 40%, transparent) 75%,
+        transparent 100%
+    );
+    animation: glare-shine-overlay 0.5s ease-out forwards;
+    pointer-events: none;
+}
+
+/* Slide down fade animation for USD value entry */
+@keyframes slide-down-fade {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-down-fade {
+    animation: slide-down-fade 0.25s ease-out forwards;
+}
+
+/* Digit input animation for amount field */
+@keyframes digit-in {
+    0% {
+        transform: translateY(12px);
+        opacity: 0;
+        filter: blur(0.5px);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+@keyframes pulse-cursor {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+.animate-digit-in {
+    animation: digit-in 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-pulse-cursor {
+    animation: pulse-cursor 1s ease-in-out infinite;
+}

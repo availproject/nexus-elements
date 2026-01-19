@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,12 +10,13 @@ const Web3Provider = dynamic(() => import("@/providers/Web3Provider"), {
   loading: () => <Skeleton className="w-full h-full" />,
 });
 
-const inter = Inter({
-  variable: "--font-serif",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
 });
-const interMono = Inter({
-  variable: "--font-mono",
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -73,7 +74,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${interMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

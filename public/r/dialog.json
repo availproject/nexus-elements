@@ -4,6 +4,10 @@
   "type": "registry:component",
   "title": "Dialog",
   "description": "UI primitive: Dialog",
+  "dependencies": [
+    "@radix-ui/react-dialog",
+    "lucide-react"
+  ],
   "registryDependencies": [
     "https://elements.nexus.availproject.org/r/utils.json"
   ],
