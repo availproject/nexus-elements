@@ -14,7 +14,7 @@ const NexusDeposit = dynamic(
   {
     ssr: false,
     loading: () => <Skeleton className="w-full h-full" />,
-  }
+  },
 );
 
 const DepositShowcase = () => {
@@ -72,10 +72,10 @@ const DepositShowcase = () => {
           const amountWei = parseUnits(amount, 6);
           if (token === "ETH") {
             throw new Error(
-              "ETH is native and not supported for this execute builder"
+              "ETH is native and not supported for this execute builder",
             );
           }
-          const chainMap = TOKEN_CONTRACT_ADDRESSES[token];
+          const chainMap = TOKEN_CONTRACT_ADDRESSES["USDC"];
           if (!(_chainId in chainMap)) {
             throw new Error("Selected chain is not supported for this token");
           }
