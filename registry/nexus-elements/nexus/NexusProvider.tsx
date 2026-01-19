@@ -104,6 +104,7 @@ const NexusProvider = ({
     const list = sdk.utils.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined,
     );
+    console.log("SUPPORTED_CHAINS_AND_TOKENS", list);
     supportedChainsAndTokens.current = list ?? null;
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
     swapSupportedChainsAndTokens.current = swapList ?? null;
