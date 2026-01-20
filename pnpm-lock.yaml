@@ -3391,8 +3391,8 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
-  diff@5.2.0:
-    resolution: {integrity: sha512-uIFDxqpRZGZ6ThOk84hEfqWoHx2devRFvpTZcTHur85vImfaxUbTW9Ryh4CpCuDnToOP1CEtXKIgytHBPVff5A==}
+  diff@5.2.2:
+    resolution: {integrity: sha512-vtcDfH3TOjP8UekytvnHH1o1P4FcUdt4eQ1Y+Abap1tk/OB2MWQvcwS2ClCd1zuIhc3JKOx6p3kod8Vfys3E+A==}
     engines: {node: '>=0.3.1'}
 
   diffie-hellman@5.0.3:
@@ -10971,7 +10971,7 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  diff@5.2.0: {}
+  diff@5.2.2: {}
 
   diffie-hellman@5.0.3:
     dependencies:
@@ -14102,7 +14102,7 @@ snapshots:
       commander: 10.0.1
       cosmiconfig: 8.3.6(typescript@5.9.3)
       deepmerge: 4.3.1
-      diff: 5.2.0
+      diff: 5.2.2
       execa: 7.2.0
       fast-glob: 3.3.3
       fs-extra: 11.3.3
