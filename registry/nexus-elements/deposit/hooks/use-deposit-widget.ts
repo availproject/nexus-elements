@@ -34,16 +34,13 @@ import {
   STEP_HISTORY,
   type SwapSkippedData,
 } from "./use-deposit-state";
-import {
-  useAssetSelection,
-  createInitialAssetSelection,
-} from "./use-asset-selection";
+import { useAssetSelection } from "./use-asset-selection";
 import { useDepositComputed } from "./use-deposit-computed";
 
 interface UseDepositProps {
   executeDeposit: (
     tokenSymbol: string,
-    tokenAddress: string,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     chainId: number,
     user: Address,
@@ -365,6 +362,11 @@ export function useDepositWidget(
           to: executeParams.to,
           value: executeParams.value,
           data: executeParams.data,
+          tokenApproval: executeParams.tokenApproval as {
+            token: `0x${string}`;
+            amount: bigint;
+            spender: Hex;
+          },
           gas: BigInt(200_000),
         },
       };

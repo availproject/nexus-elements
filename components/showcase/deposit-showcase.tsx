@@ -14,7 +14,7 @@ const DepositShowcase = () => {
   const [embed, setEmbed] = React.useState(false);
   const executeDeposit = (
     tokenSymbol: string,
-    tokenAddress: string,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     _chainId: number,
     user: Address,

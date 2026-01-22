@@ -90,7 +90,7 @@ export type ExecuteDepositResult = Omit<ExecuteParams, "toChainId">;
 export interface UseDepositWidgetProps {
   executeDeposit: (
     tokenSymbol: string,
-    tokenAddress: string,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     chainId: number,
     user: Address,
