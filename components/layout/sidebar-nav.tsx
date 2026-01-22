@@ -22,9 +22,9 @@ const TOP_LEVEL_SECTIONS = [
 ];
 
 const EXCLUDED_SECTIONS: string[] = [
-  "get-started.mdx",
-  "view-components.mdx",
-  "mcp.mdx",
+  "root:get-started.mdx",
+  "root:view-components.mdx",
+  "root:mcp.mdx",
 ];
 
 const EXCLUDED_PAGES: string[] = ["/docs/components/swap-deposit"];
