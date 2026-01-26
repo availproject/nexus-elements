@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: github:availproject/nexus-sdk#feat/add-citrea
-        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/89583a7d5e3dbf6ab33a3571680d26f82ddf6513(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        specifier: github:availproject/nexus-sdk#feat/add-citrea-main
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/a82acc125bf4aaf5570ceb323ac44e2051dd03a4(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.2(react@19.2.2))(react@19.2.2)
@@ -186,8 +186,8 @@ packages:
     resolution: {integrity: sha512-C90iyzm/jLV7Lomv2UzwWUzRv9WZr1oRsFRKsX5HjQL4EXrbi9H/RtBkjCP+NF+ABZXUKpAa4F1dkoTaea4zHg==}
     hasBin: true
 
-  '@avail-project/ca-common@1.0.0-beta12':
-    resolution: {integrity: sha512-FsrvLAllow+CdgMo+LfIpEOt2ttmXTM8xqFW0gnpvi2e700F8J9pevFsWCA+ehaZ1YnKTJVD1+pAZa75Zb/Zxw==}
+  '@avail-project/ca-common@1.0.0-beta.15':
+    resolution: {integrity: sha512-eJrSACZOagN1E0HGfgdTZ+xIEgVn6tEcTbD8Powdi46JOWhzqOwgS8Gp966VD1EPysp9Yh83eFX4mZC7jYGl1A==}
     peerDependencies:
       '@cosmjs/proto-signing': ^0.34.0
       '@cosmjs/stargate': ^0.34.0
@@ -197,8 +197,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/89583a7d5e3dbf6ab33a3571680d26f82ddf6513':
-    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/89583a7d5e3dbf6ab33a3571680d26f82ddf6513}
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/a82acc125bf4aaf5570ceb323ac44e2051dd03a4':
+    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/a82acc125bf4aaf5570ceb323ac44e2051dd03a4}
     version: 1.0.0-beta.64
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
@@ -6860,7 +6860,7 @@ snapshots:
 
   '@antfu/ni@23.3.1': {}
 
-  '@avail-project/ca-common@1.0.0-beta12(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@avail-project/ca-common@1.0.0-beta.15(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@bufbuild/protobuf': 2.10.2
       '@cosmjs/proto-signing': 0.34.0
@@ -6878,9 +6878,9 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/89583a7d5e3dbf6ab33a3571680d26f82ddf6513(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/a82acc125bf4aaf5570ceb323ac44e2051dd03a4(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@avail-project/ca-common': 1.0.0-beta12(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@avail-project/ca-common': 1.0.0-beta.15(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.2)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.0
       '@cosmjs/stargate': 0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@metamask/safe-event-emitter': 3.1.2
