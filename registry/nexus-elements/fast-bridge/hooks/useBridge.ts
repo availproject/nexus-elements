@@ -71,7 +71,7 @@ const buildInitialInputs = (
     chainId: number;
     amount?: string;
     recipient?: Address;
-  }
+  },
 ): FastBridgeState => {
   return {
     chain:
@@ -159,6 +159,7 @@ const useBridge = ({
     dispatch({ type: "setStatus", payload: "executing" });
     setTxError(null);
     onStart?.();
+    setLastExplorerUrl("");
 
     try {
       if (!nexusSDK) {
@@ -167,7 +168,7 @@ const useBridge = ({
       const formattedAmount = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs?.amount,
         inputs?.token,
-        inputs?.chain
+        inputs?.chain,
       );
       const bridgeTxn = await nexusSDK.bridge(
         {
@@ -183,10 +184,13 @@ const useBridge = ({
               onStepsList(list);
             }
             if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+              if (event.args.type === "INTENT_HASH_SIGNED") {
+                stopwatch.start();
+              }
               onStepComplete(event.args);
             }
           },
-        }
+        },
       );
       if (!bridgeTxn) {
         throw new Error("Transaction rejected by user");
@@ -266,7 +270,7 @@ const useBridge = ({
 
   usePolling(Boolean(intent.current) && !isDialogOpen, refreshIntent, 15000);
 
-  const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
+  const stopwatch = useStopwatch({ intervalMs: 100 });
 
   useEffect(() => {
     if (intent.current) {

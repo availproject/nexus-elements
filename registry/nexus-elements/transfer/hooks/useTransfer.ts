@@ -68,7 +68,7 @@ const buildInitialInputs = (
     chainId: number;
     amount?: string;
     recipient?: Address;
-  }
+  },
 ): FastTransferState => {
   return {
     chain:
@@ -165,7 +165,7 @@ const useTransfer = ({
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs?.amount,
         inputs?.token,
-        inputs?.chain
+        inputs?.chain,
       );
       const transferTxn = await nexusSDK.bridgeAndTransfer(
         {
@@ -181,10 +181,13 @@ const useTransfer = ({
               onStepsList(list);
             }
             if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+              if (event.args.type === "INTENT_HASH_SIGNED") {
+                stopwatch.start();
+              }
               onStepComplete(event.args);
             }
           },
-        }
+        },
       );
       if (!transferTxn) {
         throw new Error("Transaction rejected by user");
@@ -264,7 +267,7 @@ const useTransfer = ({
 
   usePolling(Boolean(intent.current) && !isDialogOpen, refreshIntent, 15000);
 
-  const stopwatch = useStopwatch({ running: isDialogOpen, intervalMs: 100 });
+  const stopwatch = useStopwatch({ intervalMs: 100 });
 
   useEffect(() => {
     if (intent.current) {
