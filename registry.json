@@ -58,6 +58,170 @@
       ]
     },
     {
+      "name": "bridge-deposit",
+      "type": "registry:component",
+      "title": "Bridge Deposit",
+      "description": "A component built with Nexus for bridge deposit functionality",
+      "files": [
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/allowance-modal.tsx",
+          "target": "components/bridge-deposit/components/allowance-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/amount-input.tsx",
+          "target": "components/bridge-deposit/components/amount-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/container.tsx",
+          "target": "components/bridge-deposit/components/container.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/deposit-modal.tsx",
+          "target": "components/bridge-deposit/components/deposit-modal.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/fee-breakdown.tsx",
+          "target": "components/bridge-deposit/components/fee-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/info.tsx",
+          "target": "components/bridge-deposit/components/info.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/simple-deposit.tsx",
+          "target": "components/bridge-deposit/components/simple-deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/source-breakdown.tsx",
+          "target": "components/bridge-deposit/components/source-breakdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/source-select.tsx",
+          "target": "components/bridge-deposit/components/source-select.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/step-indicator.tsx",
+          "target": "components/bridge-deposit/components/step-indicator.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/components/transaction-status-step.tsx",
+          "target": "components/bridge-deposit/components/transaction-status-step.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/deposit.tsx",
+          "target": "components/bridge-deposit/deposit.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/bridge-deposit/hooks/useDeposit.ts",
+          "target": "components/bridge-deposit/hooks/useDeposit.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [
+        "@avail-project/nexus-core@1.0.0-beta.64",
+        "lucide-react",
+        "viem"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
+        "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
+        "https://elements.nexus.availproject.org/r/collapsible.json",
+        "https://elements.nexus.availproject.org/r/dialog.json",
+        "https://elements.nexus.availproject.org/r/input.json",
+        "https://elements.nexus.availproject.org/r/label.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/popover.json",
+        "https://elements.nexus.availproject.org/r/skeleton.json",
+        "https://elements.nexus.availproject.org/r/tabs.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
+        "https://elements.nexus.availproject.org/r/utils.json"
+      ]
+    },
+    {
       "name": "button",
       "type": "registry:component",
       "title": "Button",
