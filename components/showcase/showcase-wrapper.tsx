@@ -102,7 +102,12 @@ const ShowcaseWrapper = ({
           </p>
         </div>
       ) : (
-        <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>
+        <PreviewPanel
+          connectLabel={connectLabel}
+          allowDisconnected={type === "fast-bridge"}
+        >
+          {children}
+        </PreviewPanel>
       )}
     </div>
   );

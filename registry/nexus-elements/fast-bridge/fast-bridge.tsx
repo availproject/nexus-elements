@@ -1,5 +1,5 @@
 "use client";
-import { type FC } from "react";
+import { type FC, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
@@ -23,13 +23,21 @@ import {
   type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
 } from "@avail-project/nexus-core";
-import { type Address } from "viem";
+import { type Address, isAddress } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
 import ViewHistory from "../view-history/view-history";
+interface FastBridgeMockIntent {
+  totalAmount?: string;
+  receiveAmount?: string;
+  totalGas?: string;
+}
 
 interface FastBridgeProps {
-  connectedAddress: Address;
+  connectedAddress?: Address;
+  isWalletConnected?: boolean;
+  onConnectWallet?: () => void;
+  mockIntent?: FastBridgeMockIntent;
   prefill?: {
     token: SUPPORTED_TOKENS;
     chainId: SUPPORTED_CHAINS_IDS;
@@ -43,6 +51,9 @@ interface FastBridgeProps {
 
 const FastBridge: FC<FastBridgeProps> = ({
   connectedAddress,
+  isWalletConnected,
+  onConnectWallet,
+  mockIntent,
   onComplete,
   onStart,
   onError,
@@ -55,6 +66,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     allowance,
     network,
     fetchBridgableBalance,
+    supportedChainsAndTokens,
   } = useNexus();
 
   const {
@@ -88,10 +100,92 @@ const FastBridge: FC<FastBridgeProps> = ({
     onError,
     fetchBalance: fetchBridgableBalance,
   });
+
+  const isConnected =
+    typeof isWalletConnected === "boolean"
+      ? isWalletConnected
+      : Boolean(connectedAddress);
+  const canUseSdk = isConnected && Boolean(nexusSDK);
+
+  const selectedChainMeta = useMemo(() => {
+    return supportedChainsAndTokens?.find((chain) => chain.id === inputs?.chain);
+  }, [supportedChainsAndTokens, inputs?.chain]);
+
+  const hasValidInputs = useMemo(() => {
+    const hasToken = inputs?.token !== undefined && inputs?.token !== null;
+    const hasChain = inputs?.chain !== undefined && inputs?.chain !== null;
+    const hasAmount = Boolean(inputs?.amount) && Number(inputs?.amount) > 0;
+    const hasValidRecipient =
+      Boolean(inputs?.recipient) && isAddress(inputs?.recipient as string);
+    return hasToken && hasChain && hasAmount && hasValidRecipient;
+  }, [inputs]);
+
+  const autoIntentTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (isConnected && connectedAddress && !inputs?.recipient) {
+      setInputs({ ...inputs, recipient: connectedAddress });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, connectedAddress, inputs?.recipient]);
+
+  useEffect(() => {
+    if (!canUseSdk) {
+      autoIntentTriggeredRef.current = false;
+      return;
+    }
+    if (!hasValidInputs || loading || refreshing || intent.current) return;
+    if (autoIntentTriggeredRef.current) return;
+    autoIntentTriggeredRef.current = true;
+    void handleTransaction();
+  }, [
+    canUseSdk,
+    hasValidInputs,
+    loading,
+    refreshing,
+    handleTransaction,
+    intent,
+  ]);
+
+  useEffect(() => {
+    autoIntentTriggeredRef.current = false;
+  }, [inputs?.amount, inputs?.chain, inputs?.token, inputs?.recipient, canUseSdk]);
+
+  const tokenSuffix = inputs?.token ? ` ${inputs.token}` : "";
+  const numericAmount = Number(inputs?.amount);
+  const canComputeMock =
+    Number.isFinite(numericAmount) && numericAmount > 0 && !mockIntent;
+  const mockFeeBps = 10;
+  const mockFeeRate = mockFeeBps / 10_000;
+  const computedGas = canComputeMock ? numericAmount * mockFeeRate : 0;
+  const computedReceive = canComputeMock ? numericAmount : 0;
+  const computedSpend = canComputeMock ? numericAmount + computedGas : 0;
+  const mockDecimals = numericAmount >= 1 ? 2 : 4;
+  const formatMockAmount = (value: number) =>
+    value.toLocaleString("en-US", {
+      minimumFractionDigits: mockDecimals,
+      maximumFractionDigits: mockDecimals,
+    });
+  const mockSpend = mockIntent?.totalAmount
+    ? mockIntent.totalAmount
+    : canComputeMock
+      ? formatMockAmount(computedSpend)
+      : "—";
+  const mockReceive = mockIntent?.receiveAmount
+    ? mockIntent.receiveAmount
+    : canComputeMock
+      ? formatMockAmount(computedReceive)
+      : "—";
+  const mockGas = mockIntent?.totalGas
+    ? mockIntent.totalGas
+    : canComputeMock
+      ? `${formatMockAmount(computedGas)}${tokenSuffix}`
+      : "—";
+
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6 relative">
-        <ViewHistory className="absolute -top-2 right-3" />
+        {canUseSdk && <ViewHistory className="absolute -top-2 right-3" />}
         <ChainSelect
           selectedChain={inputs?.chain}
           handleSelect={(chain) =>
@@ -113,9 +207,10 @@ const FastBridge: FC<FastBridgeProps> = ({
           amount={inputs?.amount}
           onChange={(amount) => setInputs({ ...inputs, amount })}
           bridgableBalance={filteredBridgableBalance}
-          onCommit={() => void commitAmount()}
+          onCommit={canUseSdk ? () => void commitAmount() : undefined}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
+          showBalance={canUseSdk}
         />
         <RecipientAddress
           address={inputs?.recipient}
@@ -124,7 +219,40 @@ const FastBridge: FC<FastBridgeProps> = ({
           }
           disabled={!!prefill?.recipient}
         />
-        {intent?.current?.intent && (
+
+        {!isConnected &&
+          Number.isFinite(Number(inputs?.amount)) &&
+          Number(inputs?.amount) > 0 && (
+          <>
+            <div className="w-full flex items-start justify-between gap-x-4">
+              <p className="text-base font-light">You spend</p>
+              <p className="text-base font-light text-right">
+                {mockSpend}
+                {tokenSuffix}
+              </p>
+            </div>
+            <div className="w-full flex items-start justify-between gap-x-4">
+              <p className="text-base font-light">You receive</p>
+              <div className="flex flex-col gap-y-1 min-w-fit">
+                <p className="text-base font-light text-right">
+                  {mockReceive}
+                  {tokenSuffix}
+                </p>
+                {selectedChainMeta?.name && (
+                  <p className="text-sm font-light text-right">
+                    on {selectedChainMeta?.name}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="w-full flex items-start justify-between gap-x-4">
+              <p className="text-base font-light">Total gas</p>
+              <p className="text-base font-light text-right">{mockGas}</p>
+            </div>
+          </>
+        )}
+
+        {canUseSdk && intent?.current?.intent && (
           <>
             <SourceBreakdown
               intent={intent?.current?.intent}
@@ -164,19 +292,26 @@ const FastBridge: FC<FastBridgeProps> = ({
 
         {!intent.current && (
           <Button
-            onClick={handleTransaction}
-            disabled={
-              !inputs?.amount ||
-              !inputs?.recipient ||
-              !inputs?.chain ||
-              !inputs?.token ||
-              loading
-            }
+            onClick={() => {
+              if (!isConnected) {
+                onConnectWallet?.();
+              }
+            }}
+            disabled={!isConnected ? !onConnectWallet : true}
           >
-            {loading ? (
-              <LoaderPinwheel className="animate-spin size-5" />
+            {!isConnected ? (
+              "Connect Wallet"
+            ) : !canUseSdk ? (
+              "Initializing..."
+            ) : !hasValidInputs ? (
+              "Complete form"
+            ) : loading ? (
+              <span className="flex items-center gap-x-2">
+                <LoaderPinwheel className="animate-spin size-5" />
+                Fetching intent...
+              </span>
             ) : (
-              "Bridge"
+              "Fetching intent..."
             )}
           </Button>
         )}

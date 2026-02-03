@@ -36,7 +36,7 @@ export interface FastBridgeState {
 
 interface UseBridgeProps {
   network: NexusNetwork;
-  connectedAddress: Address;
+  connectedAddress?: Address;
   nexusSDK: NexusSDK | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
@@ -65,7 +65,7 @@ type Action =
 
 const buildInitialInputs = (
   network: NexusNetwork,
-  connectedAddress: Address,
+  connectedAddress: Address | undefined,
   prefill?: {
     token: string;
     chainId: number;
@@ -81,7 +81,9 @@ const buildInitialInputs = (
         : SUPPORTED_CHAINS.ETHEREUM),
     token: (prefill?.token as SUPPORTED_TOKENS) ?? "USDC",
     amount: prefill?.amount ?? undefined,
-    recipient: (prefill?.recipient as `0x${string}`) ?? connectedAddress,
+    recipient:
+      (prefill?.recipient as `0x${string}`) ??
+      (connectedAddress as `0x${string}` | undefined),
   };
 };
 

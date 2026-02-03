@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useAccount } from "wagmi";
+import { ConnectKitButton } from "connectkit";
 import ShowcaseWrapper from "./showcase-wrapper";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
@@ -9,18 +9,24 @@ const FastBridge = dynamic(
   {
     ssr: false,
     loading: () => <Skeleton className="w-full h-full" />,
-  }
+  },
 );
 
 const FastBridgeShowcase = () => {
-  const { address } = useAccount();
-
   return (
     <ShowcaseWrapper
       connectLabel="Connect wallet to use Nexus Fast Bridge"
       type="fast-bridge"
     >
-      <FastBridge connectedAddress={address as `0x${string}`} />
+      <ConnectKitButton.Custom>
+        {({ show, isConnected, address }) => (
+          <FastBridge
+            connectedAddress={address as `0x${string}`}
+            isWalletConnected={isConnected}
+            onConnectWallet={show}
+          />
+        )}
+      </ConnectKitButton.Custom>
     </ShowcaseWrapper>
   );
 };

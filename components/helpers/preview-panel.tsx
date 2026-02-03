@@ -10,11 +10,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface PreviewPanelProps {
   children: ReactNode;
   connectLabel: string;
+  allowDisconnected?: boolean;
 }
 
 export function PreviewPanel({
   children,
   connectLabel,
+  allowDisconnected = false,
 }: Readonly<PreviewPanelProps>) {
   const { status, connector } = useAccount();
   const { data: walletClient } = useConnectorClient();
@@ -45,13 +47,20 @@ export function PreviewPanel({
       initializeNexus();
     }
   }, [status, nexusSDK]);
+  const shouldRenderChildren =
+    allowDisconnected ||
+    ((status === "connected" || status === "connecting") && nexusSDK);
+
+  const showInitButton =
+    !allowDisconnected && status === "connected" && !nexusSDK;
+
+  const showConnectLabel = !allowDisconnected && status !== "connected";
+
   return (
     <div className="w-full">
       <div className="flex flex-col w-full items-center justify-center min-h-[450px] relative">
-        {(status === "connected" || status === "connecting") && nexusSDK && (
-          <>{children}</>
-        )}
-        {status === "connected" && !nexusSDK && (
+        {shouldRenderChildren && <>{children}</>}
+        {showInitButton && (
           <Button onClick={initializeNexus}>
             {loading ? (
               <LoaderPinwheel className="size-6 animate-spin" />
@@ -60,7 +69,7 @@ export function PreviewPanel({
             )}
           </Button>
         )}
-        {status !== "connected" && (
+        {showConnectLabel && (
           <p className="text-lg font-semibold">{connectLabel}</p>
         )}
       </div>

@@ -16,6 +16,7 @@ import {
   type RefObject,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -75,11 +76,18 @@ const NexusProvider = ({
 
   const [nexusSDK, setNexusSDK] = useState<NexusSDK | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const supportedChainsAndTokens =
-    useRef<SupportedChainsAndTokensResult | null>(null);
-  const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null
-  );
+  const [supportedChainsAndTokens, setSupportedChainsAndTokens] =
+    useState<SupportedChainsAndTokensResult | null>(() => {
+      return (
+        sdk.utils.getSupportedChains(
+          config?.network === "testnet" ? 0 : undefined
+        ) ?? null
+      );
+    });
+  const [swapSupportedChainsAndTokens, setSwapSupportedChainsAndTokens] =
+    useState<SupportedChainsResult | null>(() => {
+      return sdk.utils.getSwapSupportedChainsAndTokens() ?? null;
+    });
   const [bridgableBalance, setBridgableBalance] = useState<UserAsset[] | null>(
     null
   );
@@ -90,13 +98,16 @@ const NexusProvider = ({
   const allowance = useRef<OnAllowanceHookData | null>(null);
   const swapIntent = useRef<OnSwapIntentHookData | null>(null);
 
-  const setupNexus = useCallback(async () => {
+  useEffect(() => {
     const list = sdk.utils.getSupportedChains(
       config?.network === "testnet" ? 0 : undefined
     );
-    supportedChainsAndTokens.current = list ?? null;
+    setSupportedChainsAndTokens(list ?? null);
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
-    swapSupportedChainsAndTokens.current = swapList ?? null;
+    setSwapSupportedChainsAndTokens(swapList ?? null);
+  }, [sdk, config?.network]);
+
+  const setupNexus = useCallback(async () => {
     const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
       sdk.getBalancesForBridge(),
       sdk.utils.getCoinbaseRates(),
@@ -139,8 +150,6 @@ const NexusProvider = ({
       if (!nexusSDK) throw new Error("Nexus is not initialized");
       await nexusSDK?.deinit();
       setNexusSDK(null);
-      supportedChainsAndTokens.current = null;
-      swapSupportedChainsAndTokens.current = null;
       setBridgableBalance(null);
       setSwapBalance(null);
       exchangeRate.current = null;
@@ -238,8 +247,8 @@ const NexusProvider = ({
       intent,
       allowance,
       handleInit,
-      supportedChainsAndTokens: supportedChainsAndTokens.current,
-      swapSupportedChainsAndTokens: swapSupportedChainsAndTokens.current,
+      supportedChainsAndTokens,
+      swapSupportedChainsAndTokens,
       bridgableBalance,
       swapBalance: swapBalance,
       network: config?.network,
@@ -256,6 +265,9 @@ const NexusProvider = ({
       deinitializeNexus,
       attachEventHooks,
       handleInit,
+      supportedChainsAndTokens,
+      swapSupportedChainsAndTokens,
+      bridgableBalance,
       swapBalance,
       config,
       loading,

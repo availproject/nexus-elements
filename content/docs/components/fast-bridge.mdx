@@ -63,6 +63,8 @@ npm install @avail-project/nexus-core@1.0.0-beta.64 @radix-ui/react-accordion @r
 ```tsx showLineNumbers
 <FastBridge
   connectedAddress={address}
+  isWalletConnected={isConnected}
+  onConnectWallet={openConnectModal}
   onComplete={completeCurrent}
   prefill={{
     token: "USDC",
@@ -83,7 +85,14 @@ The `FastBridge` component uses the `bridge` function from `@avail-project/nexus
 
 ```ts title="FastBridgeProps"
 interface FastBridgeProps {
-  connectedAddress: Address; // connected address to the wallet
+  connectedAddress?: Address; // connected address to the wallet
+  isWalletConnected?: boolean; // optional explicit wallet connection state
+  onConnectWallet?: () => void; // callback to trigger wallet connect UI
+  mockIntent?: {
+    totalAmount?: string; // mock "you spend" amount (token suffix added automatically)
+    receiveAmount?: string; // mock "you receive" amount (token suffix added automatically)
+    totalGas?: string; // mock total gas/fees display (shown as-is)
+  };
   prefill?: {
     token: SUPPORTED_TOKENS; // token to bridge
     chainId: SUPPORTED_CHAINS_IDS; // chain to bridge to
@@ -97,3 +106,6 @@ interface FastBridgeProps {
 ```
 
 </CodeCollapsibleWrapper>
+
+When `mockIntent` is omitted, the preview amounts are derived from the input:
+`totalGas = amount * 0.10%`, `receive = amount`, and `spend = amount + totalGas`.
