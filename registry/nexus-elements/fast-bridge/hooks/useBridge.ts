@@ -206,8 +206,6 @@ const useBridge = ({
       dispatch({ type: "setStatus", payload: "error" });
     }
   };
-  console.log("INTENT", intent?.current);
-  console.log("BALANCE", bridgableBalance);
 
   const onSuccess = async () => {
     // Close dialog and stop timer on success
