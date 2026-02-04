@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: github:availproject/nexus-sdk#47298a54374948f8fc3c396856c73f3baa11e344
-        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/47298a54374948f8fc3c396856c73f3baa11e344(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        specifier: github:availproject/nexus-sdk#b28492d093e44f08286be2bb9aeb33d39d3b8de7
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/b28492d093e44f08286be2bb9aeb33d39d3b8de7(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.2(react@19.2.2))(react@19.2.2)
@@ -171,8 +171,8 @@ packages:
     resolution: {integrity: sha512-C90iyzm/jLV7Lomv2UzwWUzRv9WZr1oRsFRKsX5HjQL4EXrbi9H/RtBkjCP+NF+ABZXUKpAa4F1dkoTaea4zHg==}
     hasBin: true
 
-  '@avail-project/ca-common@https://codeload.github.com/availproject/ca-common/tar.gz/143e4e202de927b071d046d2af4369fa7046e8a4':
-    resolution: {tarball: https://codeload.github.com/availproject/ca-common/tar.gz/143e4e202de927b071d046d2af4369fa7046e8a4}
+  '@avail-project/ca-common@https://codeload.github.com/availproject/ca-common/tar.gz/32a28643ba170801557ebe17d18a13abfe0319ec':
+    resolution: {tarball: https://codeload.github.com/availproject/ca-common/tar.gz/32a28643ba170801557ebe17d18a13abfe0319ec}
     version: 1.0.0-beta.17
     peerDependencies:
       '@cosmjs/proto-signing': ^0.34.0
@@ -183,8 +183,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/47298a54374948f8fc3c396856c73f3baa11e344':
-    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/47298a54374948f8fc3c396856c73f3baa11e344}
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/b28492d093e44f08286be2bb9aeb33d39d3b8de7':
+    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/b28492d093e44f08286be2bb9aeb33d39d3b8de7}
     version: 1.0.0-beta.64
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
@@ -6625,7 +6625,7 @@ snapshots:
 
   '@antfu/ni@23.3.1': {}
 
-  '@avail-project/ca-common@https://codeload.github.com/availproject/ca-common/tar.gz/143e4e202de927b071d046d2af4369fa7046e8a4(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.4)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@avail-project/ca-common@https://codeload.github.com/availproject/ca-common/tar.gz/32a28643ba170801557ebe17d18a13abfe0319ec(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.4)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@bufbuild/protobuf': 2.11.0
       '@cosmjs/proto-signing': 0.34.0
@@ -6643,9 +6643,9 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/47298a54374948f8fc3c396856c73f3baa11e344(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/b28492d093e44f08286be2bb9aeb33d39d3b8de7(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@avail-project/ca-common': https://codeload.github.com/availproject/ca-common/tar.gz/143e4e202de927b071d046d2af4369fa7046e8a4(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.4)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@avail-project/ca-common': https://codeload.github.com/availproject/ca-common/tar.gz/32a28643ba170801557ebe17d18a13abfe0319ec(@cosmjs/proto-signing@0.34.0)(@cosmjs/stargate@0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.13.4)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.0
       '@cosmjs/stargate': 0.34.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@metamask/safe-event-emitter': 3.1.2
