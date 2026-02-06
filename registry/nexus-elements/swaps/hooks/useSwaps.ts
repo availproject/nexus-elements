@@ -190,6 +190,7 @@ const useSwaps = ({
 
   const exactOutSourceOptions = useMemo<ExactOutSourceOption[]>(() => {
     const optionsByKey = new Map<string, ExactOutSourceOption>();
+    const destinationChainId = state.inputs.toChainID;
 
     const upsertOption = (option: ExactOutSourceOption) => {
       optionsByKey.set(option.key, option);
@@ -203,6 +204,9 @@ const useSwaps = ({
 
         const tokenAddress = entry.contractAddress as `0x${string}`;
         const chainId = entry.chain.id;
+        if (typeof destinationChainId === "number" && chainId === destinationChainId) {
+          continue;
+        }
         upsertOption({
           key: buildSourceOptionKey(chainId, tokenAddress),
           chainId,
@@ -219,6 +223,9 @@ const useSwaps = ({
 
     for (const source of currentIntentSources) {
       const chainId = source.chain.id;
+      if (typeof destinationChainId === "number" && chainId === destinationChainId) {
+        continue;
+      }
       const tokenAddress = source.token.contractAddress as `0x${string}`;
       const key = buildSourceOptionKey(chainId, tokenAddress);
       if (optionsByKey.has(key)) continue;
@@ -246,7 +253,12 @@ const useSwaps = ({
     });
 
     return options;
-  }, [currentIntentSources, currentIntentSourcesSignature, swapBalance]);
+  }, [
+    currentIntentSources,
+    currentIntentSourcesSignature,
+    state.inputs.toChainID,
+    swapBalance,
+  ]);
 
   const exactOutAllSourceKeys = useMemo(
     () => exactOutSourceOptions.map((opt) => opt.key),

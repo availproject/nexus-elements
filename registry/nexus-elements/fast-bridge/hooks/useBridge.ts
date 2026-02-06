@@ -248,9 +248,14 @@ const useBridge = ({
 
   const availableSources = useMemo(() => {
     const breakdown = filteredBridgableBalance?.breakdown ?? [];
-    const nonZero = breakdown.filter(
-      (b) => Number.parseFloat(b.balance ?? "0") > 0
-    );
+    const destinationChainId = inputs?.chain;
+    const nonZero = breakdown.filter((b) => {
+      if (Number.parseFloat(b.balance ?? "0") <= 0) return false;
+      if (typeof destinationChainId === "number") {
+        return b.chain.id !== destinationChainId;
+      }
+      return true;
+    });
     const decimals = filteredBridgableBalance?.decimals;
     if (!nexusSDK || typeof decimals !== "number") {
       return nonZero.sort(
@@ -268,6 +273,7 @@ const useBridge = ({
       }
     });
   }, [
+    inputs?.chain,
     filteredBridgableBalance?.breakdown,
     filteredBridgableBalance?.decimals,
     nexusSDK,
@@ -280,7 +286,13 @@ const useBridge = ({
 
   const effectiveSelectedSourceChains = useMemo(() => {
     if (selectedSourceChains && selectedSourceChains.length > 0) {
-      return selectedSourceChains;
+      const availableSet = new Set(allAvailableSourceChainIds);
+      const filteredSelection = selectedSourceChains.filter((id) =>
+        availableSet.has(id),
+      );
+      if (filteredSelection.length > 0) {
+        return filteredSelection;
+      }
     }
     return allAvailableSourceChainIds;
   }, [selectedSourceChains, allAvailableSourceChainIds]);

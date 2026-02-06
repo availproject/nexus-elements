@@ -130,6 +130,7 @@ const AmountInput: FC<AmountInputProps> = ({
             <div className="space-y-1 py-2">
               {bridgableBalance?.breakdown.map((chain) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
+                if (inputs?.chain === chain.chain.id) return null;
                 return (
                   <Fragment key={chain.chain.id}>
                     <div className="flex items-center justify-between px-2 py-1 rounded-md">
