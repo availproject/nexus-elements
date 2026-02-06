@@ -73,6 +73,12 @@ const FastTransfer: FC<FastTransferProps> = ({
     lastExplorerUrl,
     steps,
     status,
+    availableSources,
+    selectedSourceChains,
+    toggleSourceChain,
+    isSourceSelectionInsufficient,
+    selectedTotal,
+    requiredTotal,
   } = useTransfer({
     prefill,
     network: network ?? "mainnet",
@@ -87,7 +93,7 @@ const FastTransfer: FC<FastTransferProps> = ({
   });
   return (
     <Card className="w-full max-w-xl">
-      <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6">
+      <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6 relative">
         <ViewHistory className="absolute -top-2 right-3" />
         <ChainSelect
           selectedChain={inputs?.chain}
@@ -113,6 +119,7 @@ const FastTransfer: FC<FastTransferProps> = ({
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
+          sourceChains={selectedSourceChains}
         />
         <RecipientAddress
           address={inputs?.recipient}
@@ -130,6 +137,12 @@ const FastTransfer: FC<FastTransferProps> = ({
               chain={inputs?.chain}
               bridgableBalance={filteredBridgableBalance}
               requiredAmount={inputs?.amount}
+              availableSources={availableSources}
+              selectedSourceChains={selectedSourceChains}
+              onToggleSourceChain={toggleSourceChain}
+              isSourceSelectionInsufficient={isSourceSelectionInsufficient}
+              selectedTotal={selectedTotal}
+              requiredTotal={requiredTotal}
             />
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">Receipient Receives</p>

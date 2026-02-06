@@ -712,6 +712,7 @@
         "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
@@ -923,6 +924,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/swaps/utils/source-matching.ts",
+          "target": "components/swaps/utils/source-matching.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
           "target": "components/common/components/ErrorBoundary.tsx",
           "type": "registry:component"
@@ -998,7 +1004,9 @@
         "lucide-react"
       ],
       "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
@@ -1181,6 +1189,7 @@
         "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",

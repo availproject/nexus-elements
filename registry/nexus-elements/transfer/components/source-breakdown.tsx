@@ -1,5 +1,4 @@
 import {
-  CHAIN_METADATA,
   type ReadableIntent,
   type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
@@ -14,6 +13,8 @@ import {
 import { Skeleton } from "../../ui/skeleton";
 import { useMemo } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
+import { Checkbox } from "../../ui/checkbox";
+import { cn } from "@/lib/utils";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
@@ -22,6 +23,12 @@ interface SourceBreakdownProps {
   chain?: SUPPORTED_CHAINS_IDS;
   bridgableBalance?: UserAsset;
   requiredAmount?: string;
+  availableSources: UserAsset["breakdown"];
+  selectedSourceChains: number[];
+  onToggleSourceChain: (chainId: number) => void;
+  isSourceSelectionInsufficient?: boolean;
+  selectedTotal?: string;
+  requiredTotal?: string;
 }
 
 const SourceBreakdown = ({
@@ -31,6 +38,12 @@ const SourceBreakdown = ({
   chain,
   bridgableBalance,
   requiredAmount,
+  availableSources,
+  selectedSourceChains,
+  onToggleSourceChain,
+  isSourceSelectionInsufficient = false,
+  selectedTotal,
+  requiredTotal,
 }: SourceBreakdownProps) => {
   const { nexusSDK } = useNexus();
 
@@ -38,7 +51,7 @@ const SourceBreakdown = ({
     if (!bridgableBalance || !chain) return 0;
     return Number.parseFloat(
       bridgableBalance?.breakdown?.find((b) => b.chain?.id === chain)
-        ?.balance ?? "0"
+        ?.balance ?? "0",
     );
   }, [bridgableBalance, chain]);
 
@@ -55,46 +68,19 @@ const SourceBreakdown = ({
     return base + fees;
   }, [requiredAmount, intent]);
 
-  const displaySources = useMemo(() => {
-    if (!intent) {
-      return [
-        {
-          chainID: chain as number,
-          chainLogo: chain ? CHAIN_METADATA[chain]?.logo : undefined,
-          chainName: chain
-            ? CHAIN_METADATA[chain]?.name ?? "Destination"
-            : "Destination",
-          amount: requiredAmount ?? "0",
-          contractAddress: "" as `0x${string}`,
-        },
-      ];
-    }
-    const baseSources = intent?.sources ?? [];
+  const directDestinationSpend = useMemo(() => {
+    if (!chain) return 0;
+    if (!selectedSourceChains.includes(chain)) return 0;
     const requiredAmountNumber = Number(requiredAmount ?? "0");
+    if (!Number.isFinite(requiredAmountNumber) || requiredAmountNumber <= 0) {
+      return 0;
+    }
     const destUsed = Math.max(
       Math.min(requiredAmountNumber, fundsOnDestination),
-      0
+      0,
     );
-    if (destUsed <= 0 || !chain) {
-      return baseSources;
-    }
-    const allSources = intent?.allSources ?? [];
-    const destDetails = allSources?.find?.((s) => s?.chainID === chain);
-    const hasDest = baseSources?.some?.((s) => s?.chainID === chain);
-    const destSource = {
-      chainID: chain,
-      chainLogo: destDetails?.chainLogo,
-      chainName: destDetails?.chainName ?? "Destination",
-      amount: destUsed.toString(),
-      contractAddress: (destDetails?.contractAddress ?? "") as `0x${string}`,
-    };
-    if (hasDest) {
-      return baseSources.map((s) =>
-        s?.chainID === chain ? { ...s, amount: destSource.amount } : s
-      );
-    }
-    return [...baseSources, destSource];
-  }, [intent, requiredAmount, fundsOnDestination, chain]);
+    return destUsed;
+  }, [chain, requiredAmount, fundsOnDestination, selectedSourceChains]);
 
   return (
     <Accordion type="single" collapsible className="w-full">
@@ -114,7 +100,7 @@ const SourceBreakdown = ({
               </div>
             </>
           ) : (
-            displaySources && (
+            intent && (
               <>
                 <div className="flex flex-col items-start gap-y-1 min-w-fit">
                   <p className="text-base font-light">You Spend</p>
@@ -141,34 +127,133 @@ const SourceBreakdown = ({
             )
           )}
         </div>
-        {!isLoading && displaySources?.length > 0 && (
+        {!isLoading && (
           <AccordionContent className="my-4 bg-muted pb-0 px-4 py-2 rounded-lg w-full">
-            <div className="flex flex-col items-center gap-y-3">
-              {displaySources?.map((source) => (
-                <div
-                  key={source.chainID}
-                  className="flex items-center justify-between w-full gap-x-2"
-                >
-                  <div className="flex items-center gap-x-2">
-                    <img
-                      src={source?.chainLogo}
-                      alt={source?.chainName}
-                      width={20}
-                      height={20}
-                      className="rounded-full"
-                    />
-                    <p className="text-sm font-light">{source.chainName}</p>
-                  </div>
-
-                  <p className="text-sm font-light">
-                    {nexusSDK?.utils?.formatTokenBalance(source.amount, {
-                      symbol: tokenSymbol,
-                      decimals: intent?.token?.decimals,
-                    })}
-                  </p>
+            {isSourceSelectionInsufficient &&
+              selectedTotal &&
+              requiredTotal && (
+                <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-200">
+                  Insufficient selected sources balance. Selected{" "}
+                  <span className="font-medium">
+                    {selectedTotal} {tokenSymbol}
+                  </span>
+                  , need at least{" "}
+                  <span className="font-medium">
+                    {requiredTotal} {tokenSymbol}
+                  </span>{" "}
                 </div>
-              ))}
-            </div>
+              )}
+
+            {availableSources.length === 0 ? (
+              <p className="py-2 text-sm text-muted-foreground">
+                No source balances available for this token.
+              </p>
+            ) : (
+              <div className="flex flex-col items-center gap-y-3">
+                {availableSources.map((source) => {
+                  const chainId = source.chain.id;
+                  const isSelected = selectedSourceChains.includes(chainId);
+                  const isLastSelected = isSelected
+                    ? selectedSourceChains.length === 1
+                    : false;
+
+                  const willUseFromIntent = intent?.sources?.find(
+                    (s) => s.chainID === chainId,
+                  )?.amount;
+                  const showDirectDestinationSpend =
+                    chainId === chain &&
+                    directDestinationSpend > 0 &&
+                    !willUseFromIntent;
+
+                  return (
+                    <div
+                      key={chainId}
+                      className={cn(
+                        "flex items-center justify-between w-full gap-x-2 select-none",
+                        isLastSelected
+                          ? "opacity-80 cursor-not-allowed"
+                          : "cursor-pointer",
+                      )}
+                      onClick={() => {
+                        if (isLastSelected) return;
+                        onToggleSourceChain(chainId);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (isLastSelected) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onToggleSourceChain(chainId);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-x-2">
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={isLastSelected}
+                          onCheckedChange={() => {
+                            if (isLastSelected) return;
+                            onToggleSourceChain(chainId);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${source.chain.name} as a source`}
+                        />
+                        <img
+                          src={source.chain.logo}
+                          alt={source.chain.name}
+                          width={20}
+                          height={20}
+                          className="rounded-full"
+                        />
+                        <p className="text-sm font-light">
+                          {source.chain.name}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
+                        <p className="text-sm font-light">
+                          {nexusSDK?.utils?.formatTokenBalance(source.balance, {
+                            symbol: tokenSymbol,
+                            decimals: source.decimals,
+                          })}
+                        </p>
+                        {willUseFromIntent && (
+                          <p className="text-xs text-muted-foreground">
+                            Will use:{" "}
+                            {nexusSDK?.utils?.formatTokenBalance(
+                              willUseFromIntent,
+                              {
+                                symbol: tokenSymbol,
+                                decimals: intent?.token?.decimals,
+                              },
+                            )}
+                          </p>
+                        )}
+                        {showDirectDestinationSpend && (
+                          <p className="text-xs text-muted-foreground">
+                            Direct:{" "}
+                            {nexusSDK?.utils?.formatTokenBalance(
+                              directDestinationSpend,
+                              {
+                                symbol: tokenSymbol,
+                                decimals: intent?.token?.decimals,
+                              },
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {availableSources.length > 0 && (
+              <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                <p>Select at least 1 chain.</p>
+              </div>
+            )}
           </AccordionContent>
         )}
       </AccordionItem>

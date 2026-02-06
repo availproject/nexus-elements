@@ -25,6 +25,9 @@ const EXCLUDED_SECTIONS: string[] = [
   "root:get-started.mdx",
   "root:view-components.mdx",
   "root:mcp.mdx",
+  "get-started.mdx",
+  "view-components.mdx",
+  "mcp.mdx",
 ];
 
 const EXCLUDED_PAGES: string[] = ["/docs/components/swap-deposit"];

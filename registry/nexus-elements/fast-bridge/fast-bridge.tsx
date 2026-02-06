@@ -75,6 +75,12 @@ const FastBridge: FC<FastBridgeProps> = ({
     lastExplorerUrl,
     steps,
     status,
+    availableSources,
+    selectedSourceChains,
+    toggleSourceChain,
+    isSourceSelectionInsufficient,
+    selectedTotal,
+    requiredTotal,
   } = useBridge({
     prefill,
     network: network ?? "mainnet",
@@ -116,6 +122,7 @@ const FastBridge: FC<FastBridgeProps> = ({
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
+          sourceChains={selectedSourceChains}
         />
         <RecipientAddress
           address={inputs?.recipient}
@@ -130,6 +137,12 @@ const FastBridge: FC<FastBridgeProps> = ({
               intent={intent?.current?.intent}
               tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
+              availableSources={availableSources}
+              selectedSourceChains={selectedSourceChains}
+              onToggleSourceChain={toggleSourceChain}
+              isSourceSelectionInsufficient={isSourceSelectionInsufficient}
+              selectedTotal={selectedTotal}
+              requiredTotal={requiredTotal}
             />
 
             <div className="w-full flex items-start justify-between gap-x-4">

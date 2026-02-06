@@ -20,6 +20,7 @@ interface AmountInputProps {
   onCommit?: (value: string) => void;
   disabled?: boolean;
   inputs: FastBridgeState;
+  sourceChains?: number[];
 }
 
 const AmountInput: FC<AmountInputProps> = ({
@@ -29,6 +30,7 @@ const AmountInput: FC<AmountInputProps> = ({
   onCommit,
   disabled,
   inputs,
+  sourceChains,
 }) => {
   const { nexusSDK, loading } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +49,7 @@ const AmountInput: FC<AmountInputProps> = ({
       token: inputs?.token,
       toChainId: inputs?.chain,
       recipient: inputs?.recipient,
+      sourceChains,
     });
     if (!maxBalAvailable) return;
     onChange(maxBalAvailable.amount);

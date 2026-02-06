@@ -13,6 +13,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useCallback,
   useRef,
   useState,
   useReducer,
@@ -130,6 +131,9 @@ const useBridge = ({
   const [txError, setTxError] = useState<string | null>(null);
   const [lastExplorerUrl, setLastExplorerUrl] = useState<string>("");
   const commitLockRef = useRef<boolean>(false);
+  const [selectedSourceChains, setSelectedSourceChains] = useState<
+    number[] | null
+  >(null);
   const {
     steps,
     onStepsList,
@@ -147,6 +151,8 @@ const useBridge = ({
   }, [inputs]);
 
   const handleTransaction = async () => {
+    if (commitLockRef.current) return;
+    commitLockRef.current = true;
     if (
       !inputs?.amount ||
       !inputs?.recipient ||
@@ -154,6 +160,7 @@ const useBridge = ({
       !inputs?.token
     ) {
       console.error("Missing required inputs");
+      commitLockRef.current = false;
       return;
     }
     dispatch({ type: "setStatus", payload: "executing" });
@@ -176,6 +183,7 @@ const useBridge = ({
           amount: formattedAmount,
           toChainId: inputs?.chain,
           recipient: inputs?.recipient ?? connectedAddress,
+          sourceChains: sourceChainsForSdk,
         },
         {
           onEvent: (event) => {
@@ -207,7 +215,17 @@ const useBridge = ({
       setTxError(message);
       onError?.(message);
       setIsDialogOpen(false);
+      // Reset sources selection on failures/rejections so a new attempt starts
+      // from a clean "all sources" default.
+      setSelectedSourceChains(null);
+      setRefreshing(false);
+      stopwatch.stop();
+      stopwatch.reset();
+      resetSteps();
+      void fetchBalance();
       dispatch({ type: "setStatus", payload: "error" });
+    } finally {
+      commitLockRef.current = false;
     }
   };
 
@@ -220,6 +238,7 @@ const useBridge = ({
     allowance.current = null;
     dispatch({ type: "resetInputs" });
     setRefreshing(false);
+    setSelectedSourceChains(null);
     await fetchBalance();
   };
 
@@ -227,10 +246,140 @@ const useBridge = ({
     return bridgableBalance?.find((bal) => bal?.symbol === inputs?.token);
   }, [bridgableBalance, inputs?.token]);
 
+  const availableSources = useMemo(() => {
+    const breakdown = filteredBridgableBalance?.breakdown ?? [];
+    const nonZero = breakdown.filter(
+      (b) => Number.parseFloat(b.balance ?? "0") > 0
+    );
+    const decimals = filteredBridgableBalance?.decimals;
+    if (!nexusSDK || typeof decimals !== "number") {
+      return nonZero.sort(
+        (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance)
+      );
+    }
+    return nonZero.sort((a, b) => {
+      try {
+        const aRaw = nexusSDK.utils.parseUnits(a.balance ?? "0", decimals);
+        const bRaw = nexusSDK.utils.parseUnits(b.balance ?? "0", decimals);
+        if (aRaw === bRaw) return 0;
+        return aRaw > bRaw ? -1 : 1;
+      } catch {
+        return Number.parseFloat(b.balance) - Number.parseFloat(a.balance);
+      }
+    });
+  }, [
+    filteredBridgableBalance?.breakdown,
+    filteredBridgableBalance?.decimals,
+    nexusSDK,
+  ]);
+
+  const allAvailableSourceChainIds = useMemo(
+    () => availableSources.map((s) => s.chain.id),
+    [availableSources]
+  );
+
+  const effectiveSelectedSourceChains = useMemo(() => {
+    if (selectedSourceChains && selectedSourceChains.length > 0) {
+      return selectedSourceChains;
+    }
+    return allAvailableSourceChainIds;
+  }, [selectedSourceChains, allAvailableSourceChainIds]);
+
+  const sourceChainsForSdk =
+    effectiveSelectedSourceChains.length > 0
+      ? effectiveSelectedSourceChains
+      : undefined;
+
+  const toggleSourceChain = useCallback(
+    (chainId: number) => {
+      setSelectedSourceChains((prev) => {
+        if (allAvailableSourceChainIds.length === 0) return prev;
+        const current =
+          prev && prev.length > 0 ? prev : allAvailableSourceChainIds;
+        const next = current.includes(chainId)
+          ? current.filter((id) => id !== chainId)
+          : [...current, chainId];
+        if (next.length === 0) {
+          // Always require at least one selected source chain.
+          return current;
+        }
+        const isAllSelected =
+          next.length === allAvailableSourceChainIds.length &&
+          allAvailableSourceChainIds.every((id) => next.includes(id));
+        return isAllSelected ? null : next;
+      });
+    },
+    [allAvailableSourceChainIds]
+  );
+
+  const sourceSelection = useMemo(() => {
+    const decimals = filteredBridgableBalance?.decimals;
+    const amount = inputs?.amount?.trim() ?? "";
+    if (!nexusSDK || typeof decimals !== "number" || !amount) {
+      return {
+        selectedTotalRaw: BigInt(0),
+        requiredRaw: BigInt(0),
+        selectedTotal: "0",
+        requiredTotal: "0",
+        insufficient: false,
+      };
+    }
+    const parsedAmount = Number.parseFloat(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return {
+        selectedTotalRaw: BigInt(0),
+        requiredRaw: BigInt(0),
+        selectedTotal: "0",
+        requiredTotal: "0",
+        insufficient: false,
+      };
+    }
+    try {
+      const amountRaw = nexusSDK.utils.parseUnits(amount, decimals);
+      const requiredRaw = (amountRaw * BigInt(130)) / BigInt(100);
+      const balanceByChain = new Map(
+        availableSources.map((s) => [s.chain.id, s.balance] as const)
+      );
+      const selectedTotalRaw = effectiveSelectedSourceChains.reduce(
+        (sum, chainId) => {
+          const bal = balanceByChain.get(chainId);
+          if (!bal) return sum;
+          return sum + nexusSDK.utils.parseUnits(bal ?? "0", decimals);
+        },
+        BigInt(0)
+      );
+      return {
+        selectedTotalRaw,
+        requiredRaw,
+        selectedTotal: nexusSDK.utils.formatUnits(selectedTotalRaw, decimals),
+        requiredTotal: nexusSDK.utils.formatUnits(requiredRaw, decimals),
+        insufficient: selectedTotalRaw < requiredRaw,
+      };
+    } catch {
+      return {
+        selectedTotalRaw: BigInt(0),
+        requiredRaw: BigInt(0),
+        selectedTotal: "0",
+        requiredTotal: "0",
+        insufficient: false,
+      };
+    }
+  }, [
+    nexusSDK,
+    filteredBridgableBalance?.decimals,
+    inputs?.amount,
+    availableSources,
+    effectiveSelectedSourceChains,
+  ]);
+
   const refreshIntent = async () => {
+    if (!intent.current) return;
     setRefreshing(true);
     try {
-      await intent.current?.refresh([]);
+      const updated = await intent.current.refresh(sourceChainsForSdk);
+      if (updated) {
+        intent.current.intent = updated;
+      }
     } catch (error) {
       console.error("Transaction failed:", error);
     } finally {
@@ -245,27 +394,26 @@ const useBridge = ({
     dispatch({ type: "resetInputs" });
     dispatch({ type: "setStatus", payload: "idle" });
     setRefreshing(false);
+    setSelectedSourceChains(null);
     stopwatch.stop();
     stopwatch.reset();
     resetSteps();
   };
 
   const startTransaction = () => {
-    // Reset timer for a fresh run
-    intent.current?.allow();
-    setIsDialogOpen(true);
-    setTxError(null);
+    if (!intent.current) return;
+    void (async () => {
+      // Ensure the intent reflects the latest selected sources before allowing.
+      await refreshIntent();
+      intent.current?.allow();
+      setIsDialogOpen(true);
+      setTxError(null);
+    })();
   };
 
   const commitAmount = async () => {
-    if (commitLockRef.current) return;
-    if (!intent.current || loading || txError || !areInputsValid) return;
-    commitLockRef.current = true;
-    try {
-      await handleTransaction();
-    } finally {
-      commitLockRef.current = false;
-    }
+    if (intent.current || loading || txError || !areInputsValid) return;
+    await handleTransaction();
   };
 
   usePolling(Boolean(intent.current) && !isDialogOpen, refreshIntent, 15000);
@@ -278,6 +426,10 @@ const useBridge = ({
       intent.current = null;
     }
   }, [inputs]);
+
+  useEffect(() => {
+    setSelectedSourceChains(null);
+  }, [inputs?.token]);
 
   useEffect(() => {
     if (!isDialogOpen) {
@@ -310,6 +462,12 @@ const useBridge = ({
     lastExplorerUrl,
     steps,
     status: state.status,
+    availableSources,
+    selectedSourceChains: effectiveSelectedSourceChains,
+    toggleSourceChain,
+    isSourceSelectionInsufficient: sourceSelection.insufficient,
+    selectedTotal: sourceSelection.selectedTotal,
+    requiredTotal: sourceSelection.requiredTotal,
   };
 };
 
