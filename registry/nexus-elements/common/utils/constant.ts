@@ -9,7 +9,7 @@ export const SHORT_CHAIN_NAME: Record<number, string> = {
   [SUPPORTED_CHAINS.POLYGON]: "Polygon",
   [SUPPORTED_CHAINS.AVALANCHE]: "Avalanche",
   [SUPPORTED_CHAINS.SCROLL]: "Scroll",
-  [SUPPORTED_CHAINS.SOPHON]: "Sophon",
+  // [SUPPORTED_CHAINS.SOPHON]: "Sophon",
   [SUPPORTED_CHAINS.KAIA]: "Kaia",
   [SUPPORTED_CHAINS.BNB]: "BNB",
   [SUPPORTED_CHAINS.MONAD]: "Monad",
