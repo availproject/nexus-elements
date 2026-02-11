@@ -96,7 +96,8 @@ const normalizeMaxAmount = (
 ): string | undefined => {
   if (maxAmount === undefined || maxAmount === null) return undefined;
   const value = String(maxAmount).trim();
-  if (!value || value === "." || !MAX_AMOUNT_REGEX.test(value)) return undefined;
+  if (!value || value === "." || !MAX_AMOUNT_REGEX.test(value))
+    return undefined;
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
   return value;
@@ -385,7 +386,11 @@ const useBridge = ({
   };
 
   const filteredBridgableBalance = useMemo(() => {
-    return bridgableBalance?.find((bal) => bal?.symbol === inputs?.token);
+    return bridgableBalance?.find((bal) =>
+      inputs?.token === "USDM"
+        ? bal?.symbol === "USDC"
+        : bal?.symbol === inputs?.token,
+    );
   }, [bridgableBalance, inputs?.token]);
 
   const availableSources = useMemo(() => {
@@ -401,7 +406,7 @@ const useBridge = ({
     const decimals = filteredBridgableBalance?.decimals;
     if (!nexusSDK || typeof decimals !== "number") {
       return nonZero.sort(
-        (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance)
+        (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance),
       );
     }
     return nonZero.sort((a, b) => {
@@ -423,7 +428,7 @@ const useBridge = ({
 
   const allAvailableSourceChainIds = useMemo(
     () => availableSources.map((s) => s.chain.id),
-    [availableSources]
+    [availableSources],
   );
 
   const effectiveSelectedSourceChains = useMemo(() => {
@@ -502,12 +507,13 @@ const useBridge = ({
         return isAllSelected ? null : next;
       });
     },
-    [allAvailableSourceChainIds]
+    [allAvailableSourceChainIds],
   );
 
   const sourceSelection = useMemo(() => {
     const amount = inputs?.amount?.trim() ?? "";
-    const decimals = filteredBridgableBalance?.decimals;
+    const decimals =
+      inputs?.token === "USDM" ? 18 : filteredBridgableBalance?.decimals;
     const selectedChainSet = new Set(effectiveSelectedSourceChains);
     const selectedTotalRaw =
       !nexusSDK || typeof decimals !== "number"
@@ -516,8 +522,7 @@ const useBridge = ({
             if (!selectedChainSet.has(source.chain.id)) return sum;
             try {
               return (
-                sum +
-                nexusSDK.utils.parseUnits(source.balance ?? "0", decimals)
+                sum + nexusSDK.utils.parseUnits(source.balance ?? "0", decimals)
               );
             } catch {
               return sum;
@@ -704,7 +709,7 @@ const useBridge = ({
     async () => {
       await refreshIntent();
     },
-    15000
+    15000,
   );
 
   const stopwatch = useStopwatch({ intervalMs: 100 });
@@ -788,7 +793,8 @@ const useBridge = ({
     toggleSourceChain,
     isSourceSelectionInsufficient: sourceSelection.isBelowRequired,
     isSourceSelectionBelowSafetyBuffer: sourceSelection.isBelowSafetyBuffer,
-    isSourceSelectionReadyForAccept: sourceSelection.coverageState === "healthy",
+    isSourceSelectionReadyForAccept:
+      sourceSelection.coverageState === "healthy",
     sourceCoverageState: sourceSelection.coverageState,
     sourceCoveragePercent: sourceSelection.coverageToSafetyPercent,
     missingToProceed: sourceSelection.missingToProceed,

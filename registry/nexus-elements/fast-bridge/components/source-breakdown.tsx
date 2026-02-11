@@ -109,7 +109,7 @@ const SourceBreakdown = ({
                 <div className="flex flex-col items-start gap-y-1 min-w-fit">
                   <p className="text-base font-light">You Spend</p>
                   <p className="text-sm font-light">
-                    {`${intent?.token.symbol.toUpperCase()} on ${
+                    {`${tokenSymbol} on ${
                       intent?.sources?.length
                     } ${intent?.sources?.length > 1 ? "chains" : "chain"}`}
                   </p>

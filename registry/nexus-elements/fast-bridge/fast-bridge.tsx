@@ -183,7 +183,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                       connectedAddress === inputs?.recipient
                         ? intent?.current?.intent?.destination?.amount
                         : inputs.amount
-                    } ${filteredBridgableBalance?.symbol}`}
+                    } ${inputs?.token === "USDM" ? "USDM" : filteredBridgableBalance?.symbol}`}
                   </p>
                 )}
                 {refreshing ? (
@@ -198,6 +198,7 @@ const FastBridge: FC<FastBridgeProps> = ({
             <FeeBreakdown
               intent={intent?.current?.intent}
               isLoading={refreshing}
+              tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
             />
           </>
         )}

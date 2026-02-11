@@ -176,7 +176,11 @@ const FastTransfer: FC<FastTransferProps> = ({
                   <Skeleton className="h-5 w-28" />
                 ) : (
                   <p className="text-base font-semibold text-right">
-                    {inputs?.amount} {filteredBridgableBalance?.symbol}
+                    {`${inputs?.amount} ${
+                      inputs?.token === "USDM"
+                        ? "USDM"
+                        : filteredBridgableBalance?.symbol
+                    }`}
                   </p>
                 )}
                 {refreshing ? (
@@ -191,6 +195,7 @@ const FastTransfer: FC<FastTransferProps> = ({
             <FeeBreakdown
               intent={intent?.current?.intent}
               isLoading={refreshing}
+              tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
             />
           </>
         )}
