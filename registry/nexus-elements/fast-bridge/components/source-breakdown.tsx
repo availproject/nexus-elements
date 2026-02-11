@@ -14,6 +14,8 @@ import { useNexus } from "../../nexus/NexusProvider";
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
 
+type SourceCoverageState = "healthy" | "warning" | "error";
+
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
   tokenSymbol: SUPPORTED_TOKENS;
@@ -21,9 +23,15 @@ interface SourceBreakdownProps {
   availableSources: UserAsset["breakdown"];
   selectedSourceChains: number[];
   onToggleSourceChain: (chainId: number) => void;
+  onSourceMenuOpenChange?: (open: boolean) => void;
   isSourceSelectionInsufficient?: boolean;
+  sourceCoverageState?: SourceCoverageState;
+  sourceCoveragePercent?: number;
+  missingToProceed?: string;
+  missingToSafety?: string;
   selectedTotal?: string;
   requiredTotal?: string;
+  requiredSafetyTotal?: string;
 }
 
 const SourceBreakdown = ({
@@ -33,13 +41,53 @@ const SourceBreakdown = ({
   availableSources,
   selectedSourceChains,
   onToggleSourceChain,
+  onSourceMenuOpenChange,
   isSourceSelectionInsufficient = false,
+  sourceCoverageState = "healthy",
+  sourceCoveragePercent = 100,
+  missingToProceed,
+  missingToSafety,
   selectedTotal,
   requiredTotal,
+  requiredSafetyTotal,
 }: SourceBreakdownProps) => {
   const { nexusSDK } = useNexus();
+  const normalizedCoverage = Math.max(0, Math.min(100, sourceCoveragePercent));
+  const progressRadius = 16;
+  const progressCircumference = 2 * Math.PI * progressRadius;
+  const progressOffset =
+    progressCircumference - (normalizedCoverage / 100) * progressCircumference;
+  const showCoverageFeedback = Boolean(
+    selectedTotal && requiredTotal && requiredSafetyTotal,
+  );
+  const shouldShowProceedMessage =
+    sourceCoverageState === "error" &&
+    Number.parseFloat(missingToProceed ?? "0") > 0;
+  const shouldShowSafetyMessage =
+    sourceCoverageState === "warning" &&
+    Number.parseFloat(missingToSafety ?? "0") > 0;
+
+  const coverageToneClass =
+    sourceCoverageState === "error"
+      ? "text-rose-500"
+      : sourceCoverageState === "warning"
+        ? "text-amber-500"
+        : "text-emerald-500";
+
+  const coverageSurfaceClass =
+    sourceCoverageState === "error"
+      ? " text-rose-950 dark:text-rose-200"
+      : sourceCoverageState === "warning"
+        ? " text-amber-950 dark:text-amber-200"
+        : " text-emerald-950 dark:text-emerald-200";
+
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion
+      type="single"
+      collapsible
+      className="w-full"
+      onValueChange={(value) => onSourceMenuOpenChange?.(value === "sources")}
+    >
       <AccordionItem value="sources">
         <div className="flex items-start justify-between gap-x-4 w-full">
           {isLoading ? (
@@ -88,20 +136,84 @@ const SourceBreakdown = ({
         </div>
         {!isLoading && (
           <AccordionContent className="my-4 bg-muted pb-0 px-4 py-2 rounded-lg w-full">
-            {isSourceSelectionInsufficient &&
-              selectedTotal &&
-              requiredTotal && (
-                <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-200">
-                  Insufficient selected sources balance. Selected{" "}
-                  <span className="font-medium">
-                    {selectedTotal} {tokenSymbol}
-                  </span>
-                  , need at least{" "}
-                  <span className="font-medium">
-                    {requiredTotal} {tokenSymbol}
-                  </span>{" "}
+            {showCoverageFeedback && (
+              <div
+                className={cn(
+                  "mb-3 rounded-md py-2 text-sm",
+                  coverageSurfaceClass,
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative size-12 shrink-0">
+                    <svg
+                      className="-rotate-90 size-12"
+                      viewBox="0 0 48 48"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r={progressRadius}
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        className="text-muted-foreground/30"
+                        fill="none"
+                      />
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r={progressRadius}
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        className={coverageToneClass}
+                        fill="none"
+                        strokeDasharray={progressCircumference}
+                        strokeDashoffset={progressOffset}
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium p-1">
+                      {Math.round(normalizedCoverage)}%
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-y-0.5">
+                    <p className="font-medium">
+                      Selected{" "}
+                      <span className="font-semibold">
+                        {selectedTotal} {tokenSymbol}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold">
+                        {requiredSafetyTotal} {tokenSymbol}
+                      </span>{" "}
+                    </p>
+                    {shouldShowProceedMessage && (
+                      <p>
+                        Add{" "}
+                        <span className="font-semibold">
+                          {missingToProceed} {tokenSymbol}
+                        </span>{" "}
+                        more to make this transaction.
+                      </p>
+                    )}
+                    {shouldShowSafetyMessage && (
+                      <p>
+                        Add{" "}
+                        <span className="font-semibold">
+                          {missingToSafety} {tokenSymbol}
+                        </span>{" "}
+                        more to reach the 130% safety buffer.
+                      </p>
+                    )}
+                    {!isSourceSelectionInsufficient &&
+                      sourceCoverageState === "healthy" && (
+                        <p>Source coverage is healthy for execution.</p>
+                      )}
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
             {availableSources.length === 0 ? (
               <p className="py-2 text-sm text-muted-foreground">

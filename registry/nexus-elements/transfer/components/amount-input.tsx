@@ -1,4 +1,4 @@
-import { type FC, Fragment, useEffect, useRef } from "react";
+import { type FC, Fragment, useEffect, useMemo, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { type UserAsset } from "@avail-project/nexus-core";
@@ -21,6 +21,8 @@ interface AmountInputProps {
   disabled?: boolean;
   inputs: FastTransferState;
   sourceChains?: number[];
+  maxAmount?: string | number;
+  maxAvailableAmount?: string;
 }
 
 const AmountInput: FC<AmountInputProps> = ({
@@ -31,9 +33,40 @@ const AmountInput: FC<AmountInputProps> = ({
   disabled,
   inputs,
   sourceChains,
+  maxAmount,
+  maxAvailableAmount,
 }) => {
   const { nexusSDK, loading } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const normalizedMaxAmount = useMemo(() => {
+    if (maxAmount === undefined || maxAmount === null) return undefined;
+    const value = String(maxAmount).trim();
+    if (!value || value === ".") return undefined;
+    const parsed = Number.parseFloat(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+    return value;
+  }, [maxAmount]);
+
+  const applyMaxCap = (value: string) => {
+    if (!normalizedMaxAmount || !nexusSDK || !inputs?.token || !inputs?.chain) {
+      return value;
+    }
+    try {
+      const valueRaw = nexusSDK.convertTokenReadableAmountToBigInt(
+        value,
+        inputs.token,
+        inputs.chain,
+      );
+      const maxRaw = nexusSDK.convertTokenReadableAmountToBigInt(
+        normalizedMaxAmount,
+        inputs.token,
+        inputs.chain,
+      );
+      return valueRaw > maxRaw ? normalizedMaxAmount : value;
+    } catch {
+      return value;
+    }
+  };
 
   const scheduleCommit = (val: string) => {
     if (!onCommit || disabled) return;
@@ -51,9 +84,10 @@ const AmountInput: FC<AmountInputProps> = ({
       recipient: inputs?.recipient,
       sourceChains,
     });
-    if (!maxBalAvailable) return;
-    onChange(maxBalAvailable.amount);
-    onCommit?.(maxBalAvailable.amount);
+    if (!maxBalAvailable?.amount) return;
+    const capped = applyMaxCap(maxBalAvailable.amount);
+    onChange(capped);
+    onCommit?.(capped);
   };
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 "use client";
-import { type FC } from "react";
+import { type FC, useEffect, useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
@@ -29,6 +29,7 @@ import AllowanceModal from "./components/allowance-modal";
 import ViewHistory from "../view-history/view-history";
 
 interface FastTransferProps {
+  maxAmount?: string | number;
   prefill?: {
     token: SUPPORTED_TOKENS;
     chainId: SUPPORTED_CHAINS_IDS;
@@ -41,11 +42,13 @@ interface FastTransferProps {
 }
 
 const FastTransfer: FC<FastTransferProps> = ({
+  maxAmount,
   onComplete,
   onStart,
   onError,
   prefill,
 }) => {
+  const [isSourceMenuOpen, setIsSourceMenuOpen] = useState(false);
   const {
     nexusSDK,
     intent,
@@ -77,8 +80,15 @@ const FastTransfer: FC<FastTransferProps> = ({
     selectedSourceChains,
     toggleSourceChain,
     isSourceSelectionInsufficient,
+    isSourceSelectionReadyForAccept,
+    sourceCoverageState,
+    sourceCoveragePercent,
+    missingToProceed,
+    missingToSafety,
     selectedTotal,
     requiredTotal,
+    requiredSafetyTotal,
+    maxAvailableAmount,
   } = useTransfer({
     prefill,
     network: network ?? "mainnet",
@@ -90,7 +100,16 @@ const FastTransfer: FC<FastTransferProps> = ({
     onError,
     allowance,
     fetchBalance: fetchBridgableBalance,
+    maxAmount,
+    isSourceMenuOpen,
   });
+
+  useEffect(() => {
+    if (!intent.current?.intent) {
+      setIsSourceMenuOpen(false);
+    }
+  }, [intent.current?.intent]);
+
   return (
     <Card className="w-full max-w-xl">
       <CardContent className="flex flex-col gap-y-4 w-full px-2 sm:px-6 relative">
@@ -120,6 +139,8 @@ const FastTransfer: FC<FastTransferProps> = ({
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
           sourceChains={selectedSourceChains}
+          maxAmount={maxAmount}
+          maxAvailableAmount={maxAvailableAmount}
         />
         <RecipientAddress
           address={inputs?.recipient}
@@ -134,15 +155,19 @@ const FastTransfer: FC<FastTransferProps> = ({
               intent={intent?.current?.intent}
               tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
               isLoading={refreshing}
-              chain={inputs?.chain}
-              bridgableBalance={filteredBridgableBalance}
               requiredAmount={inputs?.amount}
               availableSources={availableSources}
               selectedSourceChains={selectedSourceChains}
               onToggleSourceChain={toggleSourceChain}
+              onSourceMenuOpenChange={setIsSourceMenuOpen}
               isSourceSelectionInsufficient={isSourceSelectionInsufficient}
+              sourceCoverageState={sourceCoverageState}
+              sourceCoveragePercent={sourceCoveragePercent}
+              missingToProceed={missingToProceed}
+              missingToSafety={missingToSafety}
               selectedTotal={selectedTotal}
               requiredTotal={requiredTotal}
+              requiredSafetyTotal={requiredSafetyTotal}
             />
             <div className="w-full flex items-start justify-between gap-x-4">
               <p className="text-base font-semibold">Receipient Receives</p>
@@ -205,7 +230,7 @@ const FastTransfer: FC<FastTransferProps> = ({
                 <Button
                   onClick={startTransaction}
                   className="w-1/2"
-                  disabled={refreshing}
+                  disabled={refreshing || !isSourceSelectionReadyForAccept}
                 >
                   {refreshing ? "Refreshing..." : "Accept"}
                 </Button>
@@ -236,7 +261,7 @@ const FastTransfer: FC<FastTransferProps> = ({
         </Dialog>
 
         {txError && (
-          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full max-w-md">
+          <div className="rounded-md border border-destructive bg-destructive/80 px-3 py-2 text-sm text-destructive-foreground flex items-start justify-between gap-x-3 mt-3 w-full">
             <span className="flex-1 w-full truncate">{txError}</span>
             <Button
               type="button"

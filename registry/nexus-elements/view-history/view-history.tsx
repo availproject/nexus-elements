@@ -15,6 +15,7 @@ import { Button } from "@/registry/nexus-elements/ui/button";
 import { Card } from "@/registry/nexus-elements/ui/card";
 import { Separator } from "@/registry/nexus-elements/ui/separator";
 import useViewHistory from "./hooks/useViewHistory";
+import { useEffect, useState } from "react";
 
 const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
   return (
@@ -99,6 +100,7 @@ const ViewHistory = ({
   viewAsModal?: boolean;
   className?: string;
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const {
     history,
     displayedHistory,
@@ -106,9 +108,15 @@ const ViewHistory = ({
     isLoadingMore,
     getStatus,
     observerTarget,
+    refreshHistory,
     ITEMS_PER_PAGE,
     formatExpiryDate,
   } = useViewHistory();
+
+  useEffect(() => {
+    if (!viewAsModal || !isOpen) return;
+    void refreshHistory();
+  }, [isOpen, refreshHistory, viewAsModal]);
 
   const renderHistoryContent = () => {
     if (displayedHistory.length > 0) {
@@ -239,7 +247,7 @@ const ViewHistory = ({
   }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"

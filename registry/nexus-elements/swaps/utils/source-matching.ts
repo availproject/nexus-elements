@@ -67,8 +67,13 @@ export function getIntentMatchedOptionKeys(
 
     const symbolKey = buildSymbolKey(chainId, source.token.symbol);
     const symbolCandidates = optionBySymbol.get(symbolKey) ?? [];
-    const fallbackMatch = symbolCandidates.find((key) => !matchedSet.has(key));
-    if (fallbackMatch) {
+    const availableCandidates = symbolCandidates.filter(
+      (key) => !matchedSet.has(key),
+    );
+    // Avoid ambiguous symbol-only matches. If multiple sources share
+    // chain+symbol, only explicit address matches should be auto-resolved.
+    if (availableCandidates.length === 1) {
+      const fallbackMatch = availableCandidates[0];
       matched.push(fallbackMatch);
       matchedSet.add(fallbackMatch);
     }

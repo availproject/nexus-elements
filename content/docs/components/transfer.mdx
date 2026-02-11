@@ -82,6 +82,7 @@ The `FastTransfer` component uses the `transfer` function from `@avail-project/n
 
 ```ts title="FastTransferProps"
 interface FastTransferProps {
+  maxAmount?: string | number; // optional cap for transfer amount
   prefill?: {
     token: SUPPORTED_TOKENS; // token to bridge
     chainId: SUPPORTED_CHAINS_IDS; // chain to bridge to

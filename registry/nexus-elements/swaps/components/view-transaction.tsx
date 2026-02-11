@@ -561,7 +561,12 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
         {status === "simulating" && (
           <Button
             onClick={() => void continueSwap()}
-            disabled={!hasSources || updatingExactOutSources}
+            disabled={
+              !hasSources ||
+              updatingExactOutSources ||
+              (shouldShowExactOutSourceSelection &&
+                isExactOutSourceSelectionInsufficient)
+            }
           >
             {continueLabel}
           </Button>

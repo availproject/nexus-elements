@@ -84,6 +84,7 @@ The `FastBridge` component uses the `bridge` function from `@avail-project/nexus
 ```ts title="FastBridgeProps"
 interface FastBridgeProps {
   connectedAddress: Address; // connected address to the wallet
+  maxAmount?: string | number; // optional cap for bridge amount (for campaign-specific limits)
   prefill?: {
     token: SUPPORTED_TOKENS; // token to bridge
     chainId: SUPPORTED_CHAINS_IDS; // chain to bridge to

@@ -1250,6 +1250,11 @@
       "description": "A simple component built with Nexus to display view history",
       "files": [
         {
+          "path": "registry/nexus-elements/view-history/history-events.ts",
+          "target": "components/view-history/history-events.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
           "target": "components/view-history/hooks/useViewHistory.ts",
           "type": "registry:component"

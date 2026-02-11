@@ -1,6 +1,7 @@
 import { type RFF } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useCallback, useEffect, useState } from "react";
+import { INTENT_HISTORY_REFRESH_EVENT } from "../history-events";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -27,25 +28,36 @@ const useViewHistory = () => {
     setSentinelNode(node);
   }, []);
 
-  const fetchIntentHistory = async () => {
+  const fetchIntentHistory = useCallback(async () => {
+    if (!nexusSDK) return;
     try {
-      const history = await nexusSDK?.getMyIntents();
-      if (history) {
-        setHistory(history);
-        const firstPage = history.slice(0, ITEMS_PER_PAGE);
-        setDisplayedHistory(firstPage);
-        setHasMore(history.length > ITEMS_PER_PAGE);
-      }
+      const nextHistory = (await nexusSDK.getMyIntents()) ?? [];
+      setHistory(nextHistory);
+      const firstPage = nextHistory.slice(0, ITEMS_PER_PAGE);
+      setDisplayedHistory(firstPage);
+      setPage(0);
+      setHasMore(nextHistory.length > ITEMS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching intent history:", error);
     }
-  };
+  }, [nexusSDK]);
 
   useEffect(() => {
-    if (!history) {
-      fetchIntentHistory();
-    }
-  }, [history]);
+    void fetchIntentHistory();
+  }, [fetchIntentHistory]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleRefresh = () => {
+      void fetchIntentHistory();
+    };
+
+    window.addEventListener(INTENT_HISTORY_REFRESH_EVENT, handleRefresh);
+    return () => {
+      window.removeEventListener(INTENT_HISTORY_REFRESH_EVENT, handleRefresh);
+    };
+  }, [fetchIntentHistory]);
 
   const loadMore = useCallback(() => {
     if (!history || isLoadingMore || !hasMore) return;
@@ -112,6 +124,7 @@ const useViewHistory = () => {
     isLoadingMore,
     getStatus,
     observerTarget,
+    refreshHistory: fetchIntentHistory,
     ITEMS_PER_PAGE,
     formatExpiryDate,
   };

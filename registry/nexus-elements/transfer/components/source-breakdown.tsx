@@ -1,6 +1,5 @@
 import {
   type ReadableIntent,
-  type SUPPORTED_CHAINS_IDS,
   type SUPPORTED_TOKENS,
   type UserAsset,
 } from "@avail-project/nexus-core";
@@ -16,44 +15,75 @@ import { useNexus } from "../../nexus/NexusProvider";
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
 
+type SourceCoverageState = "healthy" | "warning" | "error";
+
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
   tokenSymbol: SUPPORTED_TOKENS;
   isLoading?: boolean;
-  chain?: SUPPORTED_CHAINS_IDS;
-  bridgableBalance?: UserAsset;
   requiredAmount?: string;
   availableSources: UserAsset["breakdown"];
   selectedSourceChains: number[];
   onToggleSourceChain: (chainId: number) => void;
+  onSourceMenuOpenChange?: (open: boolean) => void;
   isSourceSelectionInsufficient?: boolean;
+  sourceCoverageState?: SourceCoverageState;
+  sourceCoveragePercent?: number;
+  missingToProceed?: string;
+  missingToSafety?: string;
   selectedTotal?: string;
   requiredTotal?: string;
+  requiredSafetyTotal?: string;
 }
 
 const SourceBreakdown = ({
   intent,
   tokenSymbol,
   isLoading = false,
-  chain,
-  bridgableBalance,
   requiredAmount,
   availableSources,
   selectedSourceChains,
   onToggleSourceChain,
+  onSourceMenuOpenChange,
   isSourceSelectionInsufficient = false,
+  sourceCoverageState = "healthy",
+  sourceCoveragePercent = 100,
+  missingToProceed,
+  missingToSafety,
   selectedTotal,
   requiredTotal,
+  requiredSafetyTotal,
 }: SourceBreakdownProps) => {
   const { nexusSDK } = useNexus();
+  const normalizedCoverage = Math.max(0, Math.min(100, sourceCoveragePercent));
+  const progressRadius = 16;
+  const progressCircumference = 2 * Math.PI * progressRadius;
+  const progressOffset =
+    progressCircumference -
+    (normalizedCoverage / 100) * progressCircumference;
+  const showCoverageFeedback = Boolean(
+    selectedTotal && requiredTotal && requiredSafetyTotal,
+  );
+  const shouldShowProceedMessage =
+    sourceCoverageState === "error" &&
+    Number.parseFloat(missingToProceed ?? "0") > 0;
+  const shouldShowSafetyMessage =
+    sourceCoverageState === "warning" &&
+    Number.parseFloat(missingToSafety ?? "0") > 0;
 
-  const fundsOnDestination = useMemo(() => {
-    if (!bridgableBalance || !chain) return 0;
-    return Number.parseFloat(
-      bridgableBalance?.breakdown?.find((b) => b.chain?.id === chain)
-        ?.balance ?? "0",
-    );
-  }, [bridgableBalance, chain]);
+  const coverageToneClass =
+    sourceCoverageState === "error"
+      ? "text-rose-500"
+      : sourceCoverageState === "warning"
+        ? "text-amber-500"
+        : "text-emerald-500";
+
+  const coverageSurfaceClass =
+    sourceCoverageState === "error"
+      ? "border-rose-500/30 bg-rose-500/10 text-rose-950 dark:text-rose-200"
+      : sourceCoverageState === "warning"
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-200"
+        : "border-emerald-500/30 bg-emerald-500/10 text-emerald-950 dark:text-emerald-200";
 
   const spendOnSources = useMemo(() => {
     if (!intent || (intent?.sources?.length ?? 0) < 2)
@@ -68,22 +98,13 @@ const SourceBreakdown = ({
     return base + fees;
   }, [requiredAmount, intent]);
 
-  const directDestinationSpend = useMemo(() => {
-    if (!chain) return 0;
-    if (!selectedSourceChains.includes(chain)) return 0;
-    const requiredAmountNumber = Number(requiredAmount ?? "0");
-    if (!Number.isFinite(requiredAmountNumber) || requiredAmountNumber <= 0) {
-      return 0;
-    }
-    const destUsed = Math.max(
-      Math.min(requiredAmountNumber, fundsOnDestination),
-      0,
-    );
-    return destUsed;
-  }, [chain, requiredAmount, fundsOnDestination, selectedSourceChains]);
-
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion
+      type="single"
+      collapsible
+      className="w-full"
+      onValueChange={(value) => onSourceMenuOpenChange?.(value === "sources")}
+    >
       <AccordionItem value="sources">
         <div className="flex items-start justify-between gap-x-4 w-full">
           {isLoading ? (
@@ -129,20 +150,85 @@ const SourceBreakdown = ({
         </div>
         {!isLoading && (
           <AccordionContent className="my-4 bg-muted pb-0 px-4 py-2 rounded-lg w-full">
-            {isSourceSelectionInsufficient &&
-              selectedTotal &&
-              requiredTotal && (
-                <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-200">
-                  Insufficient selected sources balance. Selected{" "}
-                  <span className="font-medium">
-                    {selectedTotal} {tokenSymbol}
-                  </span>
-                  , need at least{" "}
-                  <span className="font-medium">
-                    {requiredTotal} {tokenSymbol}
-                  </span>{" "}
+            {showCoverageFeedback && (
+              <div
+                className={cn(
+                  "mb-3 rounded-md border px-3 py-2 text-sm",
+                  coverageSurfaceClass,
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative size-10 shrink-0">
+                    <svg
+                      className="-rotate-90 size-10"
+                      viewBox="0 0 40 40"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r={progressRadius}
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        className="text-muted-foreground/30"
+                        fill="none"
+                      />
+                      <circle
+                        cx="20"
+                        cy="20"
+                        r={progressRadius}
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        className={coverageToneClass}
+                        fill="none"
+                        strokeDasharray={progressCircumference}
+                        strokeDashoffset={progressOffset}
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
+                      {Math.round(normalizedCoverage)}%
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-y-0.5">
+                    <p className="font-medium">
+                      Selected{" "}
+                      <span className="font-semibold">
+                        {selectedTotal} {tokenSymbol}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold">
+                        {requiredSafetyTotal} {tokenSymbol}
+                      </span>{" "}
+                      target (130% safety).
+                    </p>
+                    {shouldShowProceedMessage && (
+                      <p>
+                        Add{" "}
+                        <span className="font-semibold">
+                          {missingToProceed} {tokenSymbol}
+                        </span>{" "}
+                        more to make this transaction.
+                      </p>
+                    )}
+                    {shouldShowSafetyMessage && (
+                      <p>
+                        Add{" "}
+                        <span className="font-semibold">
+                          {missingToSafety} {tokenSymbol}
+                        </span>{" "}
+                        more to reach the 130% safety buffer.
+                      </p>
+                    )}
+                    {!isSourceSelectionInsufficient &&
+                      sourceCoverageState === "healthy" && (
+                        <p>Source coverage is healthy for execution.</p>
+                      )}
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
             {availableSources.length === 0 ? (
               <p className="py-2 text-sm text-muted-foreground">
@@ -160,10 +246,6 @@ const SourceBreakdown = ({
                   const willUseFromIntent = intent?.sources?.find(
                     (s) => s.chainID === chainId,
                   )?.amount;
-                  const showDirectDestinationSpend =
-                    chainId === chain &&
-                    directDestinationSpend > 0 &&
-                    !willUseFromIntent;
 
                   return (
                     <div
@@ -223,18 +305,6 @@ const SourceBreakdown = ({
                             Will use:{" "}
                             {nexusSDK?.utils?.formatTokenBalance(
                               willUseFromIntent,
-                              {
-                                symbol: tokenSymbol,
-                                decimals: intent?.token?.decimals,
-                              },
-                            )}
-                          </p>
-                        )}
-                        {showDirectDestinationSpend && (
-                          <p className="text-xs text-muted-foreground">
-                            Direct:{" "}
-                            {nexusSDK?.utils?.formatTokenBalance(
-                              directDestinationSpend,
                               {
                                 symbol: tokenSymbol,
                                 decimals: intent?.token?.decimals,
