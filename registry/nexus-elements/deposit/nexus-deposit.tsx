@@ -100,19 +100,24 @@ const NexusDeposit = ({
   // Use controlled or uncontrolled open state
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
+  const resetWidget = widget.reset;
+  const shouldPreventDialogDismiss = widget.isProcessing;
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
+      if (!open && shouldPreventDialogDismiss) {
+        return;
+      }
       if (!isControlled) {
         setInternalOpen(open);
       }
       onOpenChange?.(open);
       if (!open) {
         onClose?.();
-        widget.reset();
+        resetWidget();
       }
     },
-    [isControlled, onOpenChange, onClose],
+    [isControlled, onOpenChange, onClose, shouldPreventDialogDismiss, resetWidget],
   );
 
   const handleClose = useCallback(() => {
@@ -149,6 +154,7 @@ const NexusDeposit = ({
       <DialogContent
         className={cn("px-0 max-w-md!", className)}
         showCloseButton={false}
+        dismissible={!shouldPreventDialogDismiss}
       >
         <WidgetErrorBoundary widgetName="Deposit" onReset={widget.reset}>
           <div
