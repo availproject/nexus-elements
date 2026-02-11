@@ -362,12 +362,13 @@ export function useDepositWidget(
           to: executeParams.to,
           value: executeParams.value,
           data: executeParams.data,
+          gasPrice: executeParams.gasPrice,
           tokenApproval: executeParams.tokenApproval as {
             token: `0x${string}`;
             amount: bigint;
             spender: Hex;
           },
-          gas: BigInt(200_000),
+          gas: BigInt(300_000),
         },
       };
 
