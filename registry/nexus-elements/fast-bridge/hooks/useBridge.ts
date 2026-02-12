@@ -203,6 +203,7 @@ const useBridge = ({
   const [lastExplorerUrl, setLastExplorerUrl] = useState<string>("");
   const commitLockRef = useRef<boolean>(false);
   const runIdRef = useRef(0);
+  const previousConnectedAddressRef = useRef<Address>(connectedAddress);
   const maxAmountRequestIdRef = useRef(0);
   const [selectedSourceChains, setSelectedSourceChains] = useState<
     number[] | null
@@ -236,6 +237,17 @@ const useBridge = ({
     if (commitLockRef.current) return;
     commitLockRef.current = true;
     const currentRunId = ++runIdRef.current;
+    let didEnterExecutingState = false;
+    const cleanupSupersededExecution = () => {
+      if (!didEnterExecutingState) return;
+      setRefreshing(false);
+      setIsDialogOpen(false);
+      setLastExplorerUrl("");
+      stopwatch.stop();
+      stopwatch.reset();
+      resetSteps();
+      dispatch({ type: "setStatus", payload: "idle" });
+    };
     try {
       if (
         !inputs?.amount ||
@@ -255,6 +267,15 @@ const useBridge = ({
       if (allAvailableSourceChainIds.length === 0) {
         const message =
           "No eligible source chains available for the selected token and destination.";
+        setTxError(message);
+        onError?.(message);
+        dispatch({ type: "setStatus", payload: "error" });
+        return;
+      }
+
+      const parsedAmount = Number(inputs.amount);
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        const message = "Enter a valid amount greater than 0.";
         setTxError(message);
         onError?.(message);
         dispatch({ type: "setStatus", payload: "error" });
@@ -306,6 +327,7 @@ const useBridge = ({
       }
 
       dispatch({ type: "setStatus", payload: "executing" });
+      didEnterExecutingState = true;
       setTxError(null);
       onStart?.();
       setLastExplorerUrl("");
@@ -335,14 +357,20 @@ const useBridge = ({
           },
         },
       );
-      if (currentRunId !== runIdRef.current) return;
+      if (currentRunId !== runIdRef.current) {
+        cleanupSupersededExecution();
+        return;
+      }
       if (!bridgeTxn) {
         throw new Error("Transaction rejected by user");
       }
       setLastExplorerUrl(bridgeTxn.explorerUrl);
       await onSuccess();
     } catch (error) {
-      if (currentRunId !== runIdRef.current) return;
+      if (currentRunId !== runIdRef.current) {
+        cleanupSupersededExecution();
+        return;
+      }
       const { message, code, context, details } = handleNexusError(error);
       console.error("Fast bridge transaction failed:", {
         code,
@@ -512,8 +540,12 @@ const useBridge = ({
 
   const sourceSelection = useMemo(() => {
     const amount = inputs?.amount?.trim() ?? "";
+
     const decimals =
-      inputs?.token === "USDM" ? 18 : filteredBridgableBalance?.decimals;
+      inputs?.token === "USDM" ||
+      (inputs?.token === "USDC" && inputs?.chain === SUPPORTED_CHAINS.BNB)
+        ? 18
+        : filteredBridgableBalance?.decimals;
     const selectedChainSet = new Set(effectiveSelectedSourceChains);
     const selectedTotalRaw =
       !nexusSDK || typeof decimals !== "number"
@@ -744,6 +776,16 @@ const useBridge = ({
   ]);
 
   useEffect(() => {
+    const previousConnectedAddress = previousConnectedAddressRef.current;
+    if (connectedAddress === previousConnectedAddress) return;
+    previousConnectedAddressRef.current = connectedAddress;
+    if (prefill?.recipient) return;
+    if (!inputs?.recipient || inputs.recipient === previousConnectedAddress) {
+      dispatch({ type: "setInputs", payload: { recipient: connectedAddress } });
+    }
+  }, [connectedAddress, inputs?.recipient, prefill?.recipient]);
+
+  useEffect(() => {
     runIdRef.current += 1;
     if (intent.current) {
       intent.current.deny();
@@ -803,6 +845,7 @@ const useBridge = ({
     requiredTotal: sourceSelection.requiredTotal,
     requiredSafetyTotal: sourceSelection.requiredSafetyTotal,
     maxAvailableAmount: selectedSourcesMaxAmount ?? undefined,
+    isInputsValid: areInputsValid,
   };
 };
 

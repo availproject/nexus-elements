@@ -91,6 +91,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     requiredTotal,
     requiredSafetyTotal,
     maxAvailableAmount,
+    isInputsValid,
   } = useBridge({
     prefill,
     network: network ?? "mainnet",
@@ -206,13 +207,7 @@ const FastBridge: FC<FastBridgeProps> = ({
         {!intent.current && (
           <Button
             onClick={handleTransaction}
-            disabled={
-              !inputs?.amount ||
-              !inputs?.recipient ||
-              !inputs?.chain ||
-              !inputs?.token ||
-              loading
-            }
+            disabled={!isInputsValid || loading}
           >
             {loading ? (
               <LoaderPinwheel className="animate-spin size-5" />
