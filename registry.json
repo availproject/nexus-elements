@@ -25,6 +25,29 @@
       ]
     },
     {
+      "name": "all",
+      "type": "registry:component",
+      "title": "All Elements",
+      "description": "Install all Nexus Elements in one command",
+      "files": [
+        {
+          "path": "registry/nexus-elements/all/index.ts",
+          "target": "components/all/index.ts",
+          "type": "registry:component"
+        }
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/bridge-deposit.json",
+        "https://elements.nexus.availproject.org/r/deposit.json",
+        "https://elements.nexus.availproject.org/r/fast-bridge.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/swaps.json",
+        "https://elements.nexus.availproject.org/r/transfer.json",
+        "https://elements.nexus.availproject.org/r/unified-balance.json",
+        "https://elements.nexus.availproject.org/r/view-history.json"
+      ]
+    },
+    {
       "name": "animated-spinner",
       "type": "registry:component",
       "title": "Animated Spinner",
@@ -220,7 +243,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "lucide-react",
         "viem"
       ],
@@ -357,6 +380,11 @@
         {
           "path": "registry/nexus-elements/deposit/components/confirmation-loading.tsx",
           "target": "components/deposit/components/confirmation-loading.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/empty-balance-state.tsx",
+          "target": "components/deposit/components/empty-balance-state.tsx",
           "type": "registry:component"
         },
         {
@@ -576,7 +604,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "clsx",
         "lucide-react",
         "next",
@@ -764,7 +792,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "lucide-react",
         "viem"
       ],
@@ -832,7 +860,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "wagmi"
       ]
     },
@@ -1080,7 +1108,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1281,7 +1309,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "lucide-react",
         "viem"
       ],
@@ -1314,7 +1342,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1456,7 +1484,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.0",
         "lucide-react"
       ],
       "registryDependencies": [

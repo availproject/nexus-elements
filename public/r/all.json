@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "all",
+  "type": "registry:component",
+  "title": "All Elements",
+  "description": "Install all Nexus Elements in one command",
+  "registryDependencies": [
+    "https://elements.nexus.availproject.org/r/bridge-deposit.json",
+    "https://elements.nexus.availproject.org/r/deposit.json",
+    "https://elements.nexus.availproject.org/r/fast-bridge.json",
+    "https://elements.nexus.availproject.org/r/nexus-provider.json",
+    "https://elements.nexus.availproject.org/r/swaps.json",
+    "https://elements.nexus.availproject.org/r/transfer.json",
+    "https://elements.nexus.availproject.org/r/unified-balance.json",
+    "https://elements.nexus.availproject.org/r/view-history.json"
+  ],
+  "files": [
+    {
+      "path": "registry/nexus-elements/all/index.ts",
+      "content": "export { default as NexusProvider } from \"../nexus/NexusProvider\";\nexport { default as FastBridge } from \"../fast-bridge/fast-bridge\";\nexport { default as FastTransfer } from \"../transfer/transfer\";\nexport { default as Deposit } from \"../deposit/nexus-deposit\";\nexport { default as BridgeDeposit } from \"../bridge-deposit/deposit\";\nexport { default as SwapWidget } from \"../swaps/swap-widget\";\nexport { default as UnifiedBalance } from \"../unified-balance/unified-balance\";\nexport { default as ViewHistory } from \"../view-history/view-history\";\n",
+      "type": "registry:component",
+      "target": "components/all/index.ts"
+    }
+  ]
+}

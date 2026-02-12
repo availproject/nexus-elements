@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { DestinationConfig, AssetSelectionState } from "../types";
 import type {
   OnSwapIntentHookData,
+  NexusSDK,
   UserAsset,
 } from "@avail-project/nexus-core";
 import { CHAIN_METADATA } from "@avail-project/nexus-core";
@@ -51,7 +52,7 @@ interface UseDepositComputedProps {
   actualGasFeeUsd: number | null;
   swapSkippedData: SwapSkippedData | null;
   skipSwap: boolean;
-  nexusSDK: any;
+  nexusSDK: NexusSDK | null;
 }
 
 /**
@@ -396,7 +397,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       return { totalGasFee: 0, gasUsd: 0, gasFormatted: "0" };
     }
 
-    const gas = (activeIntent.intent.destination as any).gas;
+    const gas = activeIntent.intent.destination.gas;
     const gasAmount = parseFloat(gas.amount);
     const gasSymbol = resolvePricingSymbol({
       chainId: activeIntent.intent.destination?.chain?.id ?? destination.chainId,

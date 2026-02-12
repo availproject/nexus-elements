@@ -38,7 +38,7 @@ npx shadcn@latest add https://elements.nexus.availproject.org/r/nexus-provider.j
 ## Manual install (no shadcn)
 1) Download `https://elements.nexus.availproject.org/r/nexus-provider.json`.
 2) Create each file in `files[].target` with `files[].content`.
-3) Install dependencies: `@avail-project/nexus-core@1.0.0-beta.64` and `wagmi`.
+3) Install dependencies: `@avail-project/nexus-core@1.1.0` and `wagmi`.
 
 ## Usage
 Wrap your app:
