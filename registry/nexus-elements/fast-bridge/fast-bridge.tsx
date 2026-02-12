@@ -142,7 +142,6 @@ const FastBridge: FC<FastBridgeProps> = ({
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
-          sourceChains={selectedSourceChains}
           maxAmount={maxAmount}
           maxAvailableAmount={maxAvailableAmount}
         />

@@ -89,6 +89,7 @@ const FastTransfer: FC<FastTransferProps> = ({
     requiredTotal,
     requiredSafetyTotal,
     maxAvailableAmount,
+    isInputsValid,
   } = useTransfer({
     prefill,
     network: network ?? "mainnet",
@@ -138,7 +139,6 @@ const FastTransfer: FC<FastTransferProps> = ({
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
           inputs={inputs}
-          sourceChains={selectedSourceChains}
           maxAmount={maxAmount}
           maxAvailableAmount={maxAvailableAmount}
         />
@@ -203,13 +203,7 @@ const FastTransfer: FC<FastTransferProps> = ({
         {!intent.current && (
           <Button
             onClick={handleTransaction}
-            disabled={
-              !inputs?.amount ||
-              !inputs?.recipient ||
-              !inputs?.chain ||
-              !inputs?.token ||
-              loading
-            }
+            disabled={!isInputsValid || loading}
           >
             {loading ? (
               <LoaderPinwheel className="animate-spin size-5" />

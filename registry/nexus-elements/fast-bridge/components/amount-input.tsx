@@ -11,6 +11,10 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { SHORT_CHAIN_NAME } from "../../common";
+import {
+  clampAmountToMax,
+  normalizeMaxAmount,
+} from "../../common/utils/transaction-flow";
 import { LoaderCircle } from "lucide-react";
 
 interface AmountInputProps {
@@ -20,7 +24,6 @@ interface AmountInputProps {
   onCommit?: (value: string) => void;
   disabled?: boolean;
   inputs: FastBridgeState;
-  sourceChains?: number[];
   maxAmount?: string | number;
   maxAvailableAmount?: string;
 }
@@ -32,40 +35,27 @@ const AmountInput: FC<AmountInputProps> = ({
   onCommit,
   disabled,
   inputs,
-  sourceChains,
   maxAmount,
   maxAvailableAmount,
 }) => {
   const { nexusSDK, loading } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const normalizedMaxAmount = useMemo(() => {
-    if (maxAmount === undefined || maxAmount === null) return undefined;
-    const value = String(maxAmount).trim();
-    if (!value || value === ".") return undefined;
-    const parsed = Number.parseFloat(value);
-    if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
-    return value;
-  }, [maxAmount]);
+  const normalizedMaxAmount = useMemo(
+    () => normalizeMaxAmount(maxAmount),
+    [maxAmount],
+  );
 
   const applyMaxCap = (value: string) => {
-    if (!normalizedMaxAmount || !nexusSDK || !inputs?.token || !inputs?.chain) {
+    if (!nexusSDK || !inputs?.token || !inputs?.chain) {
       return value;
     }
-    try {
-      const valueRaw = nexusSDK.convertTokenReadableAmountToBigInt(
-        value,
-        inputs.token,
-        inputs.chain,
-      );
-      const maxRaw = nexusSDK.convertTokenReadableAmountToBigInt(
-        normalizedMaxAmount,
-        inputs.token,
-        inputs.chain,
-      );
-      return valueRaw > maxRaw ? normalizedMaxAmount : value;
-    } catch {
-      return value;
-    }
+    return clampAmountToMax({
+      amount: value,
+      maxAmount: normalizedMaxAmount,
+      nexusSDK,
+      token: inputs.token,
+      chainId: inputs.chain,
+    });
   };
 
   const scheduleCommit = (val: string) => {
@@ -76,16 +66,9 @@ const AmountInput: FC<AmountInputProps> = ({
     }, 800);
   };
 
-  const onMaxClick = async () => {
-    if (!nexusSDK || !inputs) return;
-    const maxBalAvailable = await nexusSDK?.calculateMaxForBridge({
-      token: inputs?.token,
-      toChainId: inputs?.chain,
-      recipient: inputs?.recipient,
-      sourceChains,
-    });
-    if (!maxBalAvailable?.amount) return;
-    const capped = applyMaxCap(maxBalAvailable.amount);
+  const onMaxClick = () => {
+    if (!maxAvailableAmount) return;
+    const capped = applyMaxCap(maxAvailableAmount);
     onChange(capped);
     onCommit?.(capped);
   };
@@ -146,7 +129,7 @@ const AmountInput: FC<AmountInputProps> = ({
             variant={"ghost"}
             onClick={onMaxClick}
             className="px-0 font-medium"
-            disabled={disabled}
+            disabled={disabled || maxAvailableAmount === undefined}
           >
             MAX
           </Button>
