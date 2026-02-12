@@ -540,10 +540,9 @@ const useBridge = ({
 
   const sourceSelection = useMemo(() => {
     const amount = inputs?.amount?.trim() ?? "";
-
+    console.log("BNB", filteredBridgableBalance);
     const decimals =
-      inputs?.token === "USDM" ||
-      (inputs?.token === "USDC" && inputs?.chain === SUPPORTED_CHAINS.BNB)
+      inputs?.token === "USDM" || inputs?.chain === SUPPORTED_CHAINS.BNB
         ? 18
         : filteredBridgableBalance?.decimals;
     const selectedChainSet = new Set(effectiveSelectedSourceChains);
