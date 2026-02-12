@@ -209,7 +209,7 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
             {usdFormatter.format(
               getFiatValue(
                 Number.parseFloat(inputs.fromAmount),
-                inputs.fromToken?.logo
+                inputs.fromToken?.symbol
               )
             )}
           </span>

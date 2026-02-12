@@ -40,7 +40,7 @@ const BalanceBreakdown = ({
       <Accordion type="single" collapsible className="w-full space-y-4">
         {tokens.map((token) => {
           const positiveBreakdown = token.breakdown.filter(
-            (chain) => Number.parseFloat(chain.balance) > 0
+            (chain) => Number.parseFloat(chain.balance) > 0,
           );
           const chainsCount = positiveBreakdown.length;
           const chainsLabel =
@@ -117,9 +117,9 @@ const BalanceBreakdown = ({
                             {nexusSDK?.utils?.formatTokenBalance(
                               chain.balance,
                               {
-                                symbol: token.symbol,
-                                decimals: token.decimals,
-                              }
+                                symbol: chain.symbol,
+                                decimals: chain.decimals,
+                              },
                             )}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -163,16 +163,16 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
   const tokens = useMemo(
     () =>
       bridgableBalance?.filter(
-        (token) => Number.parseFloat(token.balance) > 0
+        (token) => Number.parseFloat(token.balance) > 0,
       ) ?? [],
-    [bridgableBalance]
+    [bridgableBalance],
   );
 
   const swapTokens = useMemo(
     () =>
       swapBalance?.filter((token) => Number.parseFloat(token.balance) > 0) ??
       [],
-    [swapBalance]
+    [swapBalance],
   );
 
   if (!swapBalance) {

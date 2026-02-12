@@ -4,6 +4,8 @@ import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
 import MockBridgeUI from "@/components/mock-ui-bridge";
 import { CopyButton } from "@/components/helpers/copy-button";
 
+const INSTALL_COMMAND = "npx shadcn@latest add @nexus-elements/all";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-white selection:bg-accent selection:text-primary font-sans">
@@ -30,11 +32,8 @@ export default function Home() {
             </div>
             <div className="mt-12 flex items-center justify-center gap-2 text-sm text-foreground font-mono border border-border rounded-md p-4 w-full overflow-x-scroll lg:w-max bg-background mx-auto">
               <span>~</span>
-              <span>npx shadcn@latest add @nexus-elements/fast-bridge</span>
-              <CopyButton
-                value={"npx shadcn@latest add @nexus-elements/fast-bridge"}
-                customPosition=""
-              />
+              <span>{INSTALL_COMMAND}</span>
+              <CopyButton value={INSTALL_COMMAND} customPosition="" />
             </div>
           </div>
 
@@ -71,7 +70,7 @@ export function BridgeInterface() {
 
   return (
     <div className="p-4">
-      <FastBridge 
+      <FastBridge
         connectedAddress={address}
         prefill={{
           token: 'USDC',

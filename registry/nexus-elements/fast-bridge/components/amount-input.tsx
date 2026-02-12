@@ -1,4 +1,4 @@
-import { type FC, Fragment, useEffect, useRef } from "react";
+import { type FC, Fragment, useEffect, useMemo, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { type UserAsset } from "@avail-project/nexus-core";
@@ -11,6 +11,10 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { SHORT_CHAIN_NAME } from "../../common";
+import {
+  clampAmountToMax,
+  normalizeMaxAmount,
+} from "../../common/utils/transaction-flow";
 import { LoaderCircle } from "lucide-react";
 
 interface AmountInputProps {
@@ -20,6 +24,8 @@ interface AmountInputProps {
   onCommit?: (value: string) => void;
   disabled?: boolean;
   inputs: FastBridgeState;
+  maxAmount?: string | number;
+  maxAvailableAmount?: string;
 }
 
 const AmountInput: FC<AmountInputProps> = ({
@@ -29,9 +35,28 @@ const AmountInput: FC<AmountInputProps> = ({
   onCommit,
   disabled,
   inputs,
+  maxAmount,
+  maxAvailableAmount,
 }) => {
   const { nexusSDK, loading } = useNexus();
   const commitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const normalizedMaxAmount = useMemo(
+    () => normalizeMaxAmount(maxAmount),
+    [maxAmount],
+  );
+
+  const applyMaxCap = (value: string) => {
+    if (!nexusSDK || !inputs?.token || !inputs?.chain) {
+      return value;
+    }
+    return clampAmountToMax({
+      amount: value,
+      maxAmount: normalizedMaxAmount,
+      nexusSDK,
+      token: inputs.token,
+      chainId: inputs.chain,
+    });
+  };
 
   const scheduleCommit = (val: string) => {
     if (!onCommit || disabled) return;
@@ -41,16 +66,11 @@ const AmountInput: FC<AmountInputProps> = ({
     }, 800);
   };
 
-  const onMaxClick = async () => {
-    if (!nexusSDK || !inputs) return;
-    const maxBalAvailable = await nexusSDK?.calculateMaxForBridge({
-      token: inputs?.token,
-      toChainId: inputs?.chain,
-      recipient: inputs?.recipient,
-    });
-    if (!maxBalAvailable) return;
-    onChange(maxBalAvailable.amount);
-    onCommit?.(maxBalAvailable.amount);
+  const onMaxClick = () => {
+    if (!maxAvailableAmount) return;
+    const capped = applyMaxCap(maxAvailableAmount);
+    onChange(capped);
+    onCommit?.(capped);
   };
 
   useEffect(() => {
@@ -109,7 +129,7 @@ const AmountInput: FC<AmountInputProps> = ({
             variant={"ghost"}
             onClick={onMaxClick}
             className="px-0 font-medium"
-            disabled={disabled}
+            disabled={disabled || maxAvailableAmount === undefined}
           >
             MAX
           </Button>
@@ -127,6 +147,7 @@ const AmountInput: FC<AmountInputProps> = ({
             <div className="space-y-1 py-2">
               {bridgableBalance?.breakdown.map((chain) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
+                if (inputs?.chain === chain.chain.id) return null;
                 return (
                   <Fragment key={chain.chain.id}>
                     <div className="flex items-center justify-between px-2 py-1 rounded-md">
@@ -150,7 +171,7 @@ const AmountInput: FC<AmountInputProps> = ({
                       <p className="text-sm font-light text-right">
                         {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
                           symbol: bridgableBalance?.symbol,
-                          decimals: bridgableBalance?.decimals,
+                          decimals: chain?.decimals,
                         })}
                       </p>
                     </div>

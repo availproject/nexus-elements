@@ -1,9 +1,10 @@
-import { Check, Circle, LoaderPinwheel } from "lucide-react";
+import { Check, Circle, LoaderPinwheel, SquareArrowOutUpRight } from "lucide-react";
 import { type FC, memo, useMemo } from "react";
 import {
   type BridgeStepType,
   type SwapStepType,
 } from "@avail-project/nexus-core";
+import { Button } from "../../ui/button";
 
 type ProgressStep = BridgeStepType | SwapStepType;
 
@@ -130,14 +131,12 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       <StepList steps={effectiveSteps} currentIndex={currentIndex} />
 
       {viewIntentUrl && (
-        <a
-          href={viewIntentUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-8 underline font-semibold"
-        >
-          {ctaText}
-        </a>
+        <Button asChild variant="outline" className="mt-8">
+          <a href={viewIntentUrl} target="_blank" rel="noreferrer">
+            {ctaText}
+            <SquareArrowOutUpRight className="size-4" />
+          </a>
+        </Button>
       )}
     </div>
   );

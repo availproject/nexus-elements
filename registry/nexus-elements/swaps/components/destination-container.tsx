@@ -138,7 +138,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 size="lg"
               />
               <span className="font-medium">{inputs?.toToken?.symbol}</span>
-              <ChevronDown size={16} className="mr- ref={isSourceHovered}1" />
+              <ChevronDown size={16} className="mr-1" />
             </div>
           </DialogTrigger>
           <DialogContent className="max-w-md!">
@@ -162,7 +162,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 Number.parseFloat(
                   swapIntent?.current?.intent?.destination?.amount
                 ),
-                inputs.toToken?.logo
+                inputs.toToken?.symbol
               )
             )}
           </span>

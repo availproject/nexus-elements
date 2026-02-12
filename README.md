@@ -10,6 +10,12 @@ You can install the `fast-bridge` component into any project using the shadcn CL
 pnpm dlx shadcn@latest add @nexus-elements/fast-bridge
 ```
 
+Install all Nexus Elements in one go:
+
+```bash
+pnpm dlx shadcn@latest add @nexus-elements/all
+```
+
 ### Local development (install from localhost)
 
 If you’re running this repo locally:
