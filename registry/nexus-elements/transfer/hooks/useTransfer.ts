@@ -512,7 +512,9 @@ const useTransfer = ({
   const sourceSelection = useMemo(() => {
     const amount = inputs?.amount?.trim() ?? "";
     const decimals =
-      inputs?.token === "USDM" ? 18 : filteredBridgableBalance?.decimals;
+      inputs?.token === "USDM" || inputs?.chain === SUPPORTED_CHAINS.BNB
+        ? 18
+        : filteredBridgableBalance?.decimals;
     const selectedChainSet = new Set(effectiveSelectedSourceChains);
     const selectedTotalRaw =
       !nexusSDK || typeof decimals !== "number"
