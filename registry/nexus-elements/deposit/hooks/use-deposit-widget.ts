@@ -85,6 +85,16 @@ export function useDepositWidget(
   const determiningSwapComplete = useRef(false);
   const lastSimulationTime = useRef(0);
 
+  const denyActiveSwapIntent = useCallback(() => {
+    try {
+      swapIntent.current?.deny();
+    } catch (error) {
+      console.error("Failed to deny active swap intent", error);
+    } finally {
+      swapIntent.current = null;
+    }
+  }, [swapIntent]);
+
   // Transaction steps tracking
   const {
     seed,
@@ -323,6 +333,7 @@ export function useDepositWidget(
       assetSelection.selectedChainIds,
       destination,
       getFiatValue,
+      fetchSwapBalance,
       dispatch,
       stopwatch,
     ],
@@ -339,7 +350,7 @@ export function useDepositWidget(
       dispatch({ type: "setIntentReady", payload: false });
       initialSimulationDone.current = false;
       determiningSwapComplete.current = false;
-      swapIntent.current = null;
+      denyActiveSwapIntent();
 
       const tokenAmount =
         totalAmountUsd / (exchangeRate[destination.tokenSymbol] ?? 1);
@@ -387,7 +398,7 @@ export function useDepositWidget(
       destination,
       executeDeposit,
       start,
-      swapIntent,
+      denyActiveSwapIntent,
       dispatch,
     ],
   );
@@ -439,7 +450,7 @@ export function useDepositWidget(
         type: "setStep",
         payload: { step: previousStep, direction: "backward" },
       });
-      swapIntent.current = null;
+      denyActiveSwapIntent();
       initialSimulationDone.current = false;
       lastSimulationTime.current = 0;
       setPollingEnabled(false);
@@ -447,7 +458,7 @@ export function useDepositWidget(
       stopwatch.reset();
       await fetchSwapBalance();
     }
-  }, [state.step, swapIntent, stopwatch, dispatch]);
+  }, [state.step, stopwatch, dispatch, denyActiveSwapIntent, fetchSwapBalance]);
 
   /**
    * Reset widget to initial state
@@ -456,14 +467,21 @@ export function useDepositWidget(
     dispatch({ type: "reset" });
     resetAssetSelection();
     resetSteps();
-    swapIntent.current = null;
+    denyActiveSwapIntent();
     initialSimulationDone.current = false;
     lastSimulationTime.current = 0;
     setPollingEnabled(false);
     stopwatch.stop();
     stopwatch.reset();
     await fetchSwapBalance();
-  }, [resetSteps, swapIntent, stopwatch, dispatch, resetAssetSelection]);
+  }, [
+    resetSteps,
+    stopwatch,
+    dispatch,
+    resetAssetSelection,
+    denyActiveSwapIntent,
+    fetchSwapBalance,
+  ]);
 
   /**
    * Refresh simulation data

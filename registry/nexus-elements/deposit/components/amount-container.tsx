@@ -22,6 +22,7 @@ const AmountContainer = ({
   onClose,
 }: AmountContainerProps) => {
   const [hasAmountError, setHasAmountError] = useState(false);
+  const isSwapBalanceLoaded = widget.swapBalance !== null;
   const selectedTokenAmount = useMemo(
     () => widget.totalSelectedBalance,
     [widget.totalSelectedBalance],
@@ -31,7 +32,7 @@ const AmountContainer = ({
     (amount: string) => {
       widget.setInputs({ amount });
     },
-    [widget.setInputs],
+    [widget],
   );
 
   const handleErrorStateChange = useCallback((hasError: boolean) => {
@@ -47,7 +48,7 @@ const AmountContainer = ({
       />
       <CardContent>
         <div className="flex flex-col gap-4">
-          {widget.totalBalance?.balance && widget?.totalBalance?.usdBalance ? (
+          {isSwapBalanceLoaded ? (
             <AmountCard
               totalBalance={widget.totalBalance!}
               amount={widget.inputs.amount ?? ""}

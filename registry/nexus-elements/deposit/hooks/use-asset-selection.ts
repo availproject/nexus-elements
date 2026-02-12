@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { AssetSelectionState } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
 
@@ -20,13 +20,18 @@ export const createInitialAssetSelection = (): AssetSelectionState => ({
 export function useAssetSelection(swapBalance: UserAsset[] | null) {
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
+  const hasUserModifiedSelection = useRef(false);
 
   // Extract primitive value for effect dependency (rerender-dependencies)
   const selectedChainIdsCount = assetSelection.selectedChainIds.size;
 
   // Auto-select all assets when swapBalance first loads
   useEffect(() => {
-    if (swapBalance && selectedChainIdsCount === 0) {
+    if (
+      swapBalance &&
+      selectedChainIdsCount === 0 &&
+      !hasUserModifiedSelection.current
+    ) {
       const allChainIds = new Set<string>();
       swapBalance.forEach((asset) => {
         if (asset.breakdown) {
@@ -49,12 +54,14 @@ export function useAssetSelection(swapBalance: UserAsset[] | null) {
 
   const setAssetSelection = useCallback(
     (update: Partial<AssetSelectionState>) => {
+      hasUserModifiedSelection.current = true;
       setAssetSelectionState((prev) => ({ ...prev, ...update }));
     },
     []
   );
 
   const resetAssetSelection = useCallback(() => {
+    hasUserModifiedSelection.current = false;
     setAssetSelectionState(createInitialAssetSelection());
   }, []);
 
