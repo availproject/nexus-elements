@@ -25,6 +25,29 @@
       ]
     },
     {
+      "name": "all",
+      "type": "registry:component",
+      "title": "All Elements",
+      "description": "Install all Nexus Elements in one command",
+      "files": [
+        {
+          "path": "registry/nexus-elements/all/index.ts",
+          "target": "components/all/index.ts",
+          "type": "registry:component"
+        }
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/bridge-deposit.json",
+        "https://elements.nexus.availproject.org/r/deposit.json",
+        "https://elements.nexus.availproject.org/r/fast-bridge.json",
+        "https://elements.nexus.availproject.org/r/nexus-provider.json",
+        "https://elements.nexus.availproject.org/r/swaps.json",
+        "https://elements.nexus.availproject.org/r/transfer.json",
+        "https://elements.nexus.availproject.org/r/unified-balance.json",
+        "https://elements.nexus.availproject.org/r/view-history.json"
+      ]
+    },
+    {
       "name": "animated-spinner",
       "type": "registry:component",
       "title": "Animated Spinner",
@@ -174,6 +197,16 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/index.ts",
           "target": "components/common/index.ts",
           "type": "registry:component"
@@ -194,13 +227,23 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "lucide-react",
         "viem"
       ],
@@ -337,6 +380,11 @@
         {
           "path": "registry/nexus-elements/deposit/components/confirmation-loading.tsx",
           "target": "components/deposit/components/confirmation-loading.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/deposit/components/empty-balance-state.tsx",
+          "target": "components/deposit/components/empty-balance-state.tsx",
           "type": "registry:component"
         },
         {
@@ -510,6 +558,16 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/index.ts",
           "target": "components/common/index.ts",
           "type": "registry:component"
@@ -530,13 +588,23 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "clsx",
         "lucide-react",
         "next",
@@ -678,6 +746,16 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/index.ts",
           "target": "components/common/index.ts",
           "type": "registry:component"
@@ -698,13 +776,23 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "lucide-react",
         "viem"
       ],
@@ -712,6 +800,7 @@
         "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
@@ -771,7 +860,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "wagmi"
       ]
     },
@@ -923,6 +1012,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/swaps/utils/source-matching.ts",
+          "target": "components/swaps/utils/source-matching.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
           "target": "components/common/components/ErrorBoundary.tsx",
           "type": "registry:component"
@@ -968,6 +1062,16 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/index.ts",
           "target": "components/common/index.ts",
           "type": "registry:component"
@@ -988,17 +1092,29 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "lucide-react"
       ],
       "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/label.json",
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
@@ -1147,6 +1263,16 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/index.ts",
           "target": "components/common/index.ts",
           "type": "registry:component"
@@ -1167,13 +1293,23 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "lucide-react",
         "viem"
       ],
@@ -1181,6 +1317,7 @@
         "https://elements.nexus.availproject.org/r/accordion.json",
         "https://elements.nexus.availproject.org/r/button.json",
         "https://elements.nexus.availproject.org/r/card.json",
+        "https://elements.nexus.availproject.org/r/checkbox.json",
         "https://elements.nexus.availproject.org/r/dialog.json",
         "https://elements.nexus.availproject.org/r/input.json",
         "https://elements.nexus.availproject.org/r/label.json",
@@ -1205,7 +1342,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1240,6 +1377,11 @@
       "title": "View History",
       "description": "A simple component built with Nexus to display view history",
       "files": [
+        {
+          "path": "registry/nexus-elements/view-history/history-events.ts",
+          "target": "components/view-history/history-events.ts",
+          "type": "registry:component"
+        },
         {
           "path": "registry/nexus-elements/view-history/hooks/useViewHistory.ts",
           "target": "components/view-history/hooks/useViewHistory.ts",
@@ -1296,6 +1438,16 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/index.ts",
           "target": "components/common/index.ts",
           "type": "registry:component"
@@ -1316,13 +1468,23 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-core@1.0.0-beta.64",
+        "@avail-project/nexus-core@1.1.1",
         "lucide-react"
       ],
       "registryDependencies": [

@@ -1,49 +1,56 @@
 ---
 name: nexus-elements-unified-balance
-description: Install and use the Unified Balance component for cross-chain balance aggregation. Use when you need a balance panel with per-chain breakdown.
+description: Integrate the UnifiedBalance element for cross-chain token balance views in React/TypeScript apps. Use when installing or debugging bridgeable/swappable balance aggregation, per-chain breakdown rendering, and formatting powered by Nexus SDK balance APIs.
 ---
 
 # Nexus Elements - Unified Balance
 
-## Overview
-Install the UnifiedBalance component to display aggregated token balances across chains with per-chain breakdown.
+## Install
+- Install widget:
+  - `npx shadcn@latest add @nexus-elements/unified-balance`
+- Ensure `NexusProvider` is installed and initialized before rendering.
 
-## Prerequisites
-- NexusProvider installed and initialized on wallet connect.
-- Wallet connection configured.
+## Required setup before rendering
+- Ensure `useNexus().nexusSDK` is initialized.
+- Ensure provider has fetched bridge and swap balances.
 
-## Install (shadcn registry)
-1) Ensure shadcn/ui is initialized (`components.json` exists).
-2) Ensure registry mapping exists:
-```json
-"registries": {
-  "@nexus-elements/": "https://elements.nexus.availproject.org/r/{name}.json"
-}
-```
-3) Install:
-```bash
-npx shadcn@latest add @nexus-elements/unified-balance
-```
-Alternative:
-```bash
-npx shadcn@latest add https://elements.nexus.availproject.org/r/unified-balance.json
-```
+## Initialize SDK (required once per app)
+- On wallet connect, resolve an EIP-1193 provider and call `useNexus().handleInit(provider)`.
+- Wait for `useNexus().nexusSDK` before expecting balance data.
+- Re-run init after reconnect if wallet session resets.
 
-## Manual install (no shadcn)
-1) Download `https://elements.nexus.availproject.org/r/unified-balance.json`.
-2) Create each file in `files[].target` with `files[].content`.
-3) Install dependencies listed in `dependencies` and each `registryDependencies` item.
-
-## Usage
+## Render widget
 ```tsx
+"use client";
+
 import UnifiedBalance from "@/components/unified-balance/unified-balance";
 
-<UnifiedBalance className="max-w-lg" />
+export function BalancePanel() {
+  return <UnifiedBalance className="max-w-lg" />;
+}
 ```
 
-## SDK flow mapping
-- Displays `bridgableBalance` and `swapBalance` from `NexusProvider` (from `sdk.getBalancesForBridge()` / `sdk.getBalancesForSwap()`).
-- Uses `nexusSDK.utils.formatTokenBalance(...)` for display formatting.
+## Live prop contract
+- `className?`: class passthrough for container styling.
 
-## Props (UnifiedBalanceProps)
-- `className?`: optional container className
+## SDK flow details (under the hood)
+- Data source:
+  - `bridgableBalance` from `sdk.getBalancesForBridge()`
+  - `swapBalance` from `sdk.getBalancesForSwap()`
+- Formatting:
+  - `nexusSDK.utils.formatTokenBalance(...)`
+- Presentation behavior:
+  - if swap balance is unavailable, render bridge breakdown only
+  - if swap balance exists, render tabs for bridge vs swap balances
+
+## E2E verification
+- Confirm non-zero tokens show chain counts and per-chain rows.
+- Confirm total fiat reflects aggregate `balanceInFiat` values.
+- Confirm tab switch works when both bridge and swap balances exist.
+- Confirm styles from `className` are applied in both render branches.
+
+## Common failure cases
+- Empty panel:
+  - SDK not initialized or wallet has no supported assets.
+- Incorrect formatting:
+  - ensure token decimals/symbol values exist in returned balance data.

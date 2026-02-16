@@ -5,7 +5,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import { type ReadableIntent } from "@avail-project/nexus-core";
+import {
+  formatTokenBalance,
+  SUPPORTED_TOKENS,
+  type ReadableIntent,
+} from "@avail-project/nexus-core";
 import { Skeleton } from "../../ui/skeleton";
 import { useNexus } from "../../nexus/NexusProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
@@ -13,10 +17,15 @@ import { MessageCircleQuestion } from "lucide-react";
 
 interface FeeBreakdownProps {
   intent: ReadableIntent;
+  tokenSymbol: SUPPORTED_TOKENS;
   isLoading?: boolean;
 }
 
-const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent, isLoading = false }) => {
+const FeeBreakdown: FC<FeeBreakdownProps> = ({
+  intent,
+  tokenSymbol,
+  isLoading = false,
+}) => {
   const { nexusSDK } = useNexus();
 
   const feeRows = [
@@ -61,8 +70,8 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent, isLoading = false }) => {
               <Skeleton className="h-5 w-24" />
             ) : (
               <p className="font-light text-base min-w-max">
-                {nexusSDK?.utils?.formatTokenBalance(intent.fees?.total, {
-                  symbol: intent.token?.symbol,
+                {formatTokenBalance(intent.fees?.total, {
+                  symbol: tokenSymbol,
                   decimals: intent?.token?.decimals,
                 })}
               </p>
@@ -93,8 +102,8 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({ intent, isLoading = false }) => {
                       <Skeleton className="h-4 w-20" />
                     ) : (
                       <p className="text-sm font-light">
-                        {nexusSDK?.utils?.formatTokenBalance(value, {
-                          symbol: intent.token?.symbol,
+                        {formatTokenBalance(value, {
+                          symbol: tokenSymbol,
                           decimals: intent?.token?.decimals,
                         })}
                       </p>

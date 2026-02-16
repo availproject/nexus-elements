@@ -4,11 +4,44 @@ import { useMemo } from "react";
 import type { DestinationConfig, AssetSelectionState } from "../types";
 import type {
   OnSwapIntentHookData,
+  NexusSDK,
   UserAsset,
 } from "@avail-project/nexus-core";
-import { CHAIN_METADATA } from "@avail-project/nexus-core";
+import { CHAIN_METADATA, formatTokenBalance } from "@avail-project/nexus-core";
 import { usdFormatter } from "../../common";
 import type { SwapSkippedData } from "./use-deposit-state";
+
+const NATIVE_TOKEN_PLACEHOLDER_ADDRESS =
+  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+function normalizeAddress(address?: string | null): string {
+  return (address ?? "").toLowerCase();
+}
+
+function isNativeLikeAddress(address?: string | null): boolean {
+  const normalized = normalizeAddress(address);
+  return (
+    normalized === NATIVE_TOKEN_PLACEHOLDER_ADDRESS ||
+    normalized === ZERO_ADDRESS
+  );
+}
+
+function resolvePricingSymbol(params: {
+  chainId: number;
+  contractAddress?: string | null;
+  fallbackSymbol: string;
+}): string {
+  const { chainId, contractAddress, fallbackSymbol } = params;
+  if (!isNativeLikeAddress(contractAddress)) {
+    return fallbackSymbol;
+  }
+
+  const nativeSymbol =
+    CHAIN_METADATA[chainId as keyof typeof CHAIN_METADATA]?.nativeCurrency
+      ?.symbol;
+  return nativeSymbol ?? fallbackSymbol;
+}
 
 interface UseDepositComputedProps {
   swapBalance: UserAsset[] | null;
@@ -21,7 +54,7 @@ interface UseDepositComputedProps {
   actualGasFeeUsd: number | null;
   swapSkippedData: SwapSkippedData | null;
   skipSwap: boolean;
-  nexusSDK: any;
+  nexusSDK: NexusSDK | null;
 }
 
 /**
@@ -86,7 +119,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       }
     }
     return items.toSorted(
-      (a, b) => (b.balanceInFiat ?? 0) - (a.balanceInFiat ?? 0)
+      (a, b) => (b.balanceInFiat ?? 0) - (a.balanceInFiat ?? 0),
     );
   }, [swapBalance]);
 
@@ -102,7 +135,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         }
         return sum;
       }, 0),
-    [availableAssets, assetSelection.selectedChainIds]
+    [availableAssets, assetSelection.selectedChainIds],
   );
 
   /**
@@ -112,7 +145,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const balance =
       swapBalance?.reduce(
         (acc, balance) => acc + parseFloat(balance.balance),
-        0
+        0,
       ) ?? 0;
     const usdBalance =
       swapBalance?.reduce((acc, balance) => acc + balance.balanceInFiat, 0) ??
@@ -151,7 +184,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       const estimatedFeeEth = estimatedFeeWei / 1e18;
       const gasFeeUsd = getFiatValue(
         estimatedFeeEth,
-        destination.gasTokenSymbol ?? "ETH"
+        destination.gasTokenSymbol ?? "ETH",
       );
 
       return {
@@ -181,12 +214,12 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const tokenExchangeRate = exchangeRate?.[destination.tokenSymbol] ?? 1;
     const receiveTokenAmount = receiveAmountUsd / tokenExchangeRate;
 
-    const receiveAmountAfterSwap = nexusSDK.utils.formatTokenBalance(
+    const receiveAmountAfterSwap = formatTokenBalance(
       receiveTokenAmount.toString(),
       {
         symbol: destination.tokenSymbol,
         decimals: destination.tokenDecimals,
-      }
+      },
     );
 
     // Build sources array from intent sources
@@ -204,20 +237,42 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     }> = [];
 
     activeIntent.intent.sources.forEach((source) => {
+      const sourcePricingSymbol = resolvePricingSymbol({
+        chainId: source.chain.id,
+        contractAddress: source.token.contractAddress,
+        fallbackSymbol: source.token.symbol,
+      });
+      const sourceAmount = Number.parseFloat(source.amount);
+      const sourceAmountUsd = Number.isFinite(sourceAmount)
+        ? getFiatValue(sourceAmount, sourcePricingSymbol)
+        : 0;
+
       const matchingAsset = availableAssets.find(
         (asset) =>
           asset.chainId === source.chain.id &&
-          asset.symbol === source.token.symbol
+          (normalizeAddress(asset.tokenAddress) ===
+            normalizeAddress(source.token.contractAddress) ||
+            asset.symbol.toUpperCase() === source.token.symbol.toUpperCase()),
       );
+
       if (matchingAsset) {
-        const sourceAmountUsd = getFiatValue(
-          Number.parseFloat(source.amount),
-          source.token.symbol
-        );
         sources.push({
           ...matchingAsset,
+          symbol: sourcePricingSymbol,
           balance: source.amount,
           balanceInFiat: sourceAmountUsd,
+          isDestinationBalance: false,
+        });
+      } else {
+        sources.push({
+          chainId: source.chain.id,
+          tokenAddress: source.token.contractAddress as `0x${string}`,
+          decimals: source.token.decimals,
+          symbol: sourcePricingSymbol,
+          balance: source.amount,
+          balanceInFiat: sourceAmountUsd,
+          chainLogo: source.chain.logo,
+          chainName: source.chain.name,
           isDestinationBalance: false,
         });
       }
@@ -226,20 +281,35 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     // Calculate total spent from cross-chain sources
     const totalAmountSpentUsd = activeIntent.intent.sources?.reduce(
       (acc, source) => {
+        const sourcePricingSymbol = resolvePricingSymbol({
+          chainId: source.chain.id,
+          contractAddress: source.token.contractAddress,
+          fallbackSymbol: source.token.symbol,
+        });
         const amount = Number.parseFloat(source.amount);
-        const usdAmount = getFiatValue(amount, source.token.symbol);
+        const usdAmount = Number.isFinite(amount)
+          ? getFiatValue(amount, sourcePricingSymbol)
+          : 0;
         return acc + usdAmount;
       },
-      0
+      0,
     );
 
     // Get the actual amount arriving on destination (AFTER fees)
     const destinationAmount = Number.parseFloat(
-      activeIntent.intent.destination?.amount ?? "0"
+      activeIntent.intent.destination?.amount ?? "0",
     );
+    const destinationPricingSymbol = resolvePricingSymbol({
+      chainId:
+        activeIntent.intent.destination?.chain?.id ?? destination.chainId,
+      contractAddress: activeIntent.intent.destination?.token?.contractAddress,
+      fallbackSymbol:
+        activeIntent.intent.destination?.token?.symbol ??
+        destination.tokenSymbol,
+    });
     const destinationAmountUsd = getFiatValue(
       destinationAmount,
-      activeIntent.intent.destination?.token?.symbol ?? destination.tokenSymbol
+      destinationPricingSymbol,
     );
 
     // Calculate bridge/protocol fees
@@ -248,7 +318,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     // Calculate destination balance used
     const usedFromDestinationUsd = Math.max(
       0,
-      receiveAmountUsd - destinationAmountUsd
+      receiveAmountUsd - destinationAmountUsd,
     );
 
     if (usedFromDestinationUsd > 0.01 && destinationBalance) {
@@ -320,7 +390,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       const estimatedFeeEth = estimatedFeeWei / 1e18;
       const gasUsd = getFiatValue(
         estimatedFeeEth,
-        destination.gasTokenSymbol ?? "ETH"
+        destination.gasTokenSymbol ?? "ETH",
       );
       const gasFormatted = usdFormatter.format(gasUsd);
       return { totalGasFee: gasUsd, gasUsd, gasFormatted };
@@ -331,9 +401,14 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       return { totalGasFee: 0, gasUsd: 0, gasFormatted: "0" };
     }
 
-    const gas = (activeIntent.intent.destination as any).gas;
+    const gas = activeIntent.intent.destination.gas;
     const gasAmount = parseFloat(gas.amount);
-    const gasSymbol = gas.token?.symbol ?? destination.gasTokenSymbol;
+    const gasSymbol = resolvePricingSymbol({
+      chainId:
+        activeIntent.intent.destination?.chain?.id ?? destination.chainId,
+      contractAddress: gas.token?.contractAddress,
+      fallbackSymbol: gas.token?.symbol ?? destination.gasTokenSymbol ?? "ETH",
+    });
     const gasUsd = getFiatValue(gasAmount, gasSymbol);
     const gasFormatted = usdFormatter.format(gasUsd);
 
@@ -344,6 +419,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     actualGasFeeUsd,
     swapSkippedData,
     skipSwap,
+    destination.chainId,
     destination.gasTokenSymbol,
   ]);
 

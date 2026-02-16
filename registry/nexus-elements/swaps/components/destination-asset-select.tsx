@@ -5,6 +5,7 @@ import {
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
   type UserAsset,
+  formatTokenBalance,
 } from "@avail-project/nexus-core";
 import { DESTINATION_SWAP_TOKENS } from "../config/destination";
 import { DialogClose } from "../../ui/dialog";
@@ -25,7 +26,7 @@ interface DestinationAssetSelectProps {
   swapBalance: UserAsset[] | null;
   onSelect: (
     chainId: SUPPORTED_CHAINS_IDS,
-    token: DestinationTokenInfo
+    token: DestinationTokenInfo,
   ) => void;
 }
 
@@ -54,7 +55,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
         ?.breakdown?.find((chain) => chain.chain?.id === token.chainId);
       return {
         ...token,
-        balance: nexusSDK?.utils?.formatTokenBalance(balance?.balance ?? "0", {
+        balance: formatTokenBalance(balance?.balance ?? "0", {
           symbol: token.symbol,
           decimals: balance?.decimals ?? 0,
         }),
@@ -84,7 +85,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
         (t) =>
           t.symbol.toLowerCase().includes(query) ||
           t.name.toLowerCase().includes(query) ||
-          t.tokenAddress.toLowerCase().includes(query)
+          t.tokenAddress.toLowerCase().includes(query),
       );
     }
 
@@ -104,7 +105,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
           value={tempChain ? CHAIN_METADATA[tempChain].name : ""}
           onValueChange={(value) => {
             const matchedChain = chainsWithTokens.find(
-              (chain) => String(chain) === value
+              (chain) => String(chain) === value,
             );
             if (matchedChain) {
               setTempChain(matchedChain);

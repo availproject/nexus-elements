@@ -4,6 +4,7 @@ import {
   type UserAsset,
   type ReadableIntent,
   type SUPPORTED_TOKENS,
+  formatTokenBalance,
 } from "@avail-project/nexus-core";
 import {
   Accordion,
@@ -44,7 +45,7 @@ const SourceBreakdown = ({
   const fundsOnDestination = useMemo(() => {
     return Number.parseFloat(
       bridgableBalance?.breakdown?.find((b) => b.chain?.id === chain)
-        ?.balance ?? "0"
+        ?.balance ?? "0",
     );
   }, [bridgableBalance, chain]);
 
@@ -52,8 +53,8 @@ const SourceBreakdown = ({
     const amountToFormat = intent
       ? Number.parseFloat(requiredAmount ?? "0") +
         Number.parseFloat(intent?.fees?.total ?? "0")
-      : requiredAmount ?? "0";
-    return nexusSDK?.utils?.formatTokenBalance(amountToFormat, {
+      : (requiredAmount ?? "0");
+    return formatTokenBalance(amountToFormat, {
       symbol: tokenSymbol,
       decimals: intent?.token?.decimals,
     });
@@ -74,17 +75,17 @@ const SourceBreakdown = ({
     const requiredAmountNumber = Number(requiredAmount ?? "0");
     const destUsed = Math.max(
       Math.min(requiredAmountNumber, fundsOnDestination),
-      0
+      0,
     );
     if (destUsed <= 0) {
       return baseSources;
     }
     const allSources = intent?.allSources ?? [];
     const destDetails = allSources?.find?.(
-      (s: ReadableIntentSource) => s?.chainID === chain
+      (s: ReadableIntentSource) => s?.chainID === chain,
     );
     const hasDest = baseSources?.some?.(
-      (s: ReadableIntentSource) => s?.chainID === chain
+      (s: ReadableIntentSource) => s?.chainID === chain,
     );
     const destSource = {
       chainID: chain,
@@ -95,7 +96,7 @@ const SourceBreakdown = ({
     };
     if (hasDest) {
       return baseSources.map((s: ReadableIntentSource) =>
-        s?.chainID === chain ? { ...s, amount: destSource.amount } : s
+        s?.chainID === chain ? { ...s, amount: destSource.amount } : s,
       );
     }
     return [...baseSources, destSource];

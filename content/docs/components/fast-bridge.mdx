@@ -32,7 +32,7 @@ links:
       
       <Step>Install these dependencies</Step>
 ```bash
-npm install @avail-project/nexus-core@1.0.0-beta.64 @radix-ui/react-accordion @radix-ui/react-dialog @radix-ui/react-label @radix-ui/react-select @radix-ui/react-slot class-variance-authority clsx lucide-react tailwind-merge
+npm install @avail-project/nexus-core @radix-ui/react-accordion @radix-ui/react-dialog @radix-ui/react-label @radix-ui/react-select @radix-ui/react-slot class-variance-authority clsx lucide-react tailwind-merge
 ```
 <Step>Copy and paste the following code into your project.</Step>
       <div
@@ -84,6 +84,7 @@ The `FastBridge` component uses the `bridge` function from `@avail-project/nexus
 ```ts title="FastBridgeProps"
 interface FastBridgeProps {
   connectedAddress: Address; // connected address to the wallet
+  maxAmount?: string | number; // optional cap for bridge amount (for campaign-specific limits)
   prefill?: {
     token: SUPPORTED_TOKENS; // token to bridge
     chainId: SUPPORTED_CHAINS_IDS; // chain to bridge to

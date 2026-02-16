@@ -1,42 +1,29 @@
 ---
 name: nexus-elements-deposit
-description: Install and use the Nexus Deposit widget (swap + execute via swapAndExecute). Use when integrating the full deposit flow with destination config and custom execute builder.
+description: Integrate the Deposit element for swap-plus-execute deposit flows in React/TypeScript apps. Use when installing or debugging destination-fixed deposits, execute call builders, swap-intent confirmation UX, and `sdk.swapAndExecute` progress from quote to completion.
 ---
 
 # Nexus Elements - Deposit
 
-## Overview
-Install the NexusDeposit widget for a full swap-and-execute deposit flow with unified balances, fee preview, and progress UI.
+## Install
+- Install widget:
+  - `npx shadcn@latest add @nexus-elements/deposit`
+- Ensure `NexusProvider` is installed and initialized before rendering.
 
-## Prerequisites
-- NexusProvider installed and initialized on wallet connect.
-- Wallet connection configured.
-- You can build an execute call (contract address + encoded data) for the target protocol.
+## Required setup before rendering
+- Ensure `useNexus().nexusSDK` is initialized.
+- Ensure `exchangeRate` contains destination token rate (widget requires it for amount simulation).
+- Provide a correct `destination` config and `executeDeposit` builder.
 
-## Install (shadcn registry)
-1) Ensure shadcn/ui is initialized (`components.json` exists).
-2) Ensure registry mapping exists:
-```json
-"registries": {
-  "@nexus-elements/": "https://elements.nexus.availproject.org/r/{name}.json"
-}
-```
-3) Install:
-```bash
-npx shadcn@latest add @nexus-elements/deposit
-```
-Alternative:
-```bash
-npx shadcn@latest add https://elements.nexus.availproject.org/r/deposit.json
-```
+## Initialize SDK (required once per app)
+- On wallet connect, resolve an EIP-1193 provider and call `useNexus().handleInit(provider)`.
+- Wait for `useNexus().nexusSDK` before allowing amount confirmation.
+- Re-run init after reconnect if wallet session resets.
 
-## Manual install (no shadcn)
-1) Download `https://elements.nexus.availproject.org/r/deposit.json`.
-2) Create each file in `files[].target` with `files[].content`.
-3) Install dependencies listed in `dependencies` and each `registryDependencies` item.
-
-## Usage
+## Render widget
 ```tsx
+"use client";
+
 import NexusDeposit from "@/components/deposit/nexus-deposit";
 import {
   SUPPORTED_CHAINS,
@@ -46,66 +33,103 @@ import {
 } from "@avail-project/nexus-core";
 import { encodeFunctionData, type Abi } from "viem";
 
-<NexusDeposit
-  destination={{
-    chainId: SUPPORTED_CHAINS.BASE,
-    tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
-    tokenSymbol: "USDC",
-    tokenDecimals: TOKEN_METADATA["USDC"].decimals,
-    tokenLogo: TOKEN_METADATA["USDC"].icon,
-    label: "Deposit USDC on Aave Base",
-    gasTokenSymbol: CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
-    explorerUrl: CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
-    estimatedTime: "~= 30s",
-  }}
-  executeDeposit={(tokenSymbol, tokenAddress, amount, _chainId, user) => {
-    const contractAddress = "0x..." as const;
-    const abi: Abi = [
-      {
-        inputs: [
-          { internalType: "address", name: "asset", type: "address" },
-          { internalType: "uint256", name: "amount", type: "uint256" },
-          { internalType: "address", name: "onBehalfOf", type: "address" },
-          { internalType: "uint16", name: "referralCode", type: "uint16" },
-        ],
-        name: "supply",
-        outputs: [],
-        stateMutability: "nonpayable",
-        type: "function",
-      },
-    ];
+export function DepositPanel() {
+  return (
+    <NexusDeposit
+      heading="Deposit USDC"
+      destination={{
+        chainId: SUPPORTED_CHAINS.BASE,
+        tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
+        tokenSymbol: "USDC",
+        tokenDecimals: TOKEN_METADATA["USDC"].decimals,
+        tokenLogo: TOKEN_METADATA["USDC"].icon,
+        label: "Deposit to protocol",
+        gasTokenSymbol: CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
+        explorerUrl: CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
+        estimatedTime: "~30s",
+      }}
+      executeDeposit={(tokenSymbol, tokenAddress, amount, _chainId, user) => {
+        const contract = "0x0000000000000000000000000000000000000000" as const;
+        const abi: Abi = [
+          {
+            type: "function",
+            name: "deposit",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "asset", type: "address" },
+              { name: "amount", type: "uint256" },
+              { name: "beneficiary", type: "address" },
+            ],
+            outputs: [],
+          },
+        ];
 
-    const data = encodeFunctionData({
-      abi,
-      functionName: "supply",
-      args: [tokenAddress, amount, user, 0],
-    });
+        const data = encodeFunctionData({
+          abi,
+          functionName: "deposit",
+          args: [tokenAddress, amount, user],
+        });
 
-    return {
-      to: contractAddress,
-      data,
-      tokenApproval: {
-        token: tokenSymbol,
-        amount,
-        spender: contractAddress,
-      },
-    };
-  }}
-/>
+        return {
+          to: contract,
+          data,
+          tokenApproval: {
+            token: tokenAddress,
+            amount,
+            spender: contract,
+          },
+        };
+      }}
+      onSuccess={() => {
+        // success
+      }}
+      onError={(message) => {
+        console.error(message);
+      }}
+    />
+  );
+}
 ```
 
-## SDK flow mapping
-- Uses `sdk.swapAndExecute(...)` under the hood.
-- Relies on the swap intent hook (`swapIntent`) for confirmation UI.
-- Progress updates come from `NEXUS_EVENTS.SWAP_STEP_COMPLETE`.
+## Live prop contract
+- Required:
+  - `destination: DestinationConfig`
+  - `executeDeposit(tokenSymbol, tokenAddress, amount, chainId, user)`
+- Optional:
+  - `heading`, `embed`, `className`
+  - `open`, `onOpenChange`, `defaultOpen` (dialog mode)
+  - `onSuccess`, `onError`, `onClose`
 
-## Props (DepositWidgetProps)
-- `destination` (required): chainId, tokenAddress, tokenSymbol, tokenDecimals, tokenLogo?, label?, estimatedTime?, gasTokenSymbol?, explorerUrl?, depositTargetLogo?
-- `executeDeposit` (required): returns `{ to, data, value?, tokenApproval? }`
-- `embed`, `heading`, `className` for layout
-- `open`, `onOpenChange`, `defaultOpen` for modal control
-- `onSuccess`, `onError`, `onClose`
+## SDK flow details (under the hood)
+- Main execute call:
+  - `sdk.swapAndExecute({ toChainId, toTokenAddress, toAmount, fromSources?, execute }, { onEvent })`
+- Step and status behavior:
+  - amount step starts simulation-loading
+  - waits for `swapIntent` hook to enter previewing state
+  - confirm order calls `activeIntent.allow()` and moves to executing
+- Event mapping:
+  - listens to `NEXUS_EVENTS.SWAP_STEP_COMPLETE`
+  - handles `DETERMINING_SWAP` and `SWAP_SKIPPED`
+- Fee handling:
+  - destination execute receipt computes actual gas USD in success path
 
-## Notes
-- Use `embed={true}` for inline rendering; default renders a modal.
-- `executeDeposit` receives `amount` in smallest units (`bigint`); return calldata + optional `tokenApproval`.
+## Important amount semantics
+- Amount input is interpreted as USD in this widget flow.
+- Widget converts USD amount to destination token amount via provider exchange rates.
+- If destination token exchange rate is missing/invalid, widget shows error and blocks confirmation.
+
+## E2E verification
+- Enter amount and continue to confirmation.
+- Confirm simulation appears and updates every polling cycle.
+- Confirm order and verify status screen transitions.
+- Verify both source and destination explorer links when available.
+- Verify `onSuccess` and balance refresh after completion.
+- Verify error screen appears on failed simulation/execution.
+
+## Common failure cases
+- `Nexus SDK is not initialized`:
+  - ensure `handleInit(provider)` ran after wallet connect.
+- `Unable to fetch pricing for <token>`:
+  - ensure rates loaded in provider and token symbol is valid.
+- Execute revert:
+  - validate `executeDeposit` target, calldata, and token approval spender.

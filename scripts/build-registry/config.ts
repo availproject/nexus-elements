@@ -11,7 +11,7 @@ const DEFAULT_CONFIG: RegistryConfig = {
   outputPath: "registry.json",
   peerDependencies: ["react", "react-dom"],
   pinnedDependencies: {
-    "@avail-project/nexus-core": "1.0.0-beta.64",
+    "@avail-project/nexus-core": "1.1.1",
   },
   aliases: {
     "@/lib/utils": "lib/utils.ts",
@@ -52,6 +52,10 @@ const DEFAULT_CONFIG: RegistryConfig = {
       title: "View History",
       description:
         "A simple component built with Nexus to display view history",
+    },
+    all: {
+      title: "All Elements",
+      description: "Install all Nexus Elements in one command",
     },
     utils: {
       title: "Utils (cn)",

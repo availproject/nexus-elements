@@ -43,7 +43,7 @@ npx shadcn@latest add @nexus-elements/deposit
     <Steps>
       <Step>Install these dependencies</Step>
 ```bash
-npm install @avail-project/nexus-core@1.0.0-beta.64 lucide-react @radix-ui/react-dialog @radix-ui/react-collapsible @radix-ui/react-accordion @radix-ui/react-label @radix-ui/react-popover @radix-ui/react-checkbox @radix-ui/react-slot @radix-ui/react-tooltip
+npm install @avail-project/nexus-core lucide-react @radix-ui/react-dialog @radix-ui/react-collapsible @radix-ui/react-accordion @radix-ui/react-label @radix-ui/react-popover @radix-ui/react-checkbox @radix-ui/react-slot @radix-ui/react-tooltip
 ```
       <Step>Copy and paste the following code into your project.</Step>
       <div
@@ -266,7 +266,7 @@ interface DepositWidgetProps {
   // Execute builder function (required)
   executeDeposit: (
     tokenSymbol: string,
-    tokenAddress: string,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     chainId: number,
     user: `0x${string}`

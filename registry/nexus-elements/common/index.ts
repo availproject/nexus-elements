@@ -6,6 +6,8 @@ export * from "./hooks/useLatest";
 export * from "./hooks/useDebouncedValue";
 export * from "./hooks/useDebouncedCallback";
 export * from "./hooks/useNexusError";
+export * from "./hooks/useTransactionFlow";
+export * from "./types/transaction-flow";
 export * from "./tx/types";
 export * from "./tx/steps";
 export * from "./tx/useTransactionSteps";

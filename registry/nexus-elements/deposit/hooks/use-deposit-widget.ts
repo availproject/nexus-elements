@@ -85,6 +85,16 @@ export function useDepositWidget(
   const determiningSwapComplete = useRef(false);
   const lastSimulationTime = useRef(0);
 
+  const denyActiveSwapIntent = useCallback(() => {
+    try {
+      swapIntent.current?.deny();
+    } catch (error) {
+      console.error("Failed to deny active swap intent", error);
+    } finally {
+      swapIntent.current = null;
+    }
+  }, [swapIntent]);
+
   // Transaction steps tracking
   const {
     seed,
@@ -323,6 +333,7 @@ export function useDepositWidget(
       assetSelection.selectedChainIds,
       destination,
       getFiatValue,
+      fetchSwapBalance,
       dispatch,
       stopwatch,
     ],
@@ -331,18 +342,36 @@ export function useDepositWidget(
   /**
    * Handle amount input continue - starts simulation
    */
-  const handleAmountContinue = useCallback(
+  const beginAmountSimulation = useCallback(
     (totalAmountUsd: number) => {
-      if (!nexusSDK || !address || !exchangeRate) return;
+      if (!nexusSDK) {
+        dispatch({ type: "setError", payload: "Nexus SDK is not initialized." });
+        dispatch({ type: "setStatus", payload: "error" });
+        return false;
+      }
+      if (!address) {
+        dispatch({ type: "setError", payload: "Connect your wallet to continue." });
+        dispatch({ type: "setStatus", payload: "error" });
+        return false;
+      }
+      const destinationRate = exchangeRate?.[destination.tokenSymbol];
+      if (!destinationRate || !Number.isFinite(destinationRate) || destinationRate <= 0) {
+        dispatch({
+          type: "setError",
+          payload: `Unable to fetch pricing for ${destination.tokenSymbol}. Please try again.`,
+        });
+        dispatch({ type: "setStatus", payload: "error" });
+        return false;
+      }
 
       // Reset state and refs for a fresh simulation
+      dispatch({ type: "setError", payload: null });
       dispatch({ type: "setIntentReady", payload: false });
       initialSimulationDone.current = false;
       determiningSwapComplete.current = false;
-      swapIntent.current = null;
+      denyActiveSwapIntent();
 
-      const tokenAmount =
-        totalAmountUsd / (exchangeRate[destination.tokenSymbol] ?? 1);
+      const tokenAmount = totalAmountUsd / destinationRate;
       const tokenAmountStr = tokenAmount.toFixed(destination.tokenDecimals);
       const parsed = parseUnits(tokenAmountStr, destination.tokenDecimals);
 
@@ -362,12 +391,13 @@ export function useDepositWidget(
           to: executeParams.to,
           value: executeParams.value,
           data: executeParams.data,
+          gasPrice: executeParams.gasPrice,
           tokenApproval: executeParams.tokenApproval as {
             token: `0x${string}`;
             amount: bigint;
             spender: Hex;
           },
-          gas: BigInt(200_000),
+          gas: BigInt(400_000),
         },
       };
 
@@ -378,6 +408,7 @@ export function useDepositWidget(
       dispatch({ type: "setStatus", payload: "simulation-loading" });
       dispatch({ type: "setSimulationLoading", payload: true });
       start(newInputs);
+      return true;
     },
     [
       nexusSDK,
@@ -386,9 +417,16 @@ export function useDepositWidget(
       destination,
       executeDeposit,
       start,
-      swapIntent,
+      denyActiveSwapIntent,
       dispatch,
     ],
+  );
+
+  const handleAmountContinue = useCallback(
+    (totalAmountUsd: number) => {
+      beginAmountSimulation(totalAmountUsd);
+    },
+    [beginAmountSimulation],
   );
 
   /**
@@ -409,22 +447,28 @@ export function useDepositWidget(
    */
   const goToStep = useCallback(
     (newStep: WidgetStep) => {
-      dispatch({
-        type: "setStep",
-        payload: { step: newStep, direction: "forward" },
-      });
       if (state.step === "amount" && newStep === "confirmation") {
         const amount = state.inputs.amount;
         if (amount) {
           const totalAmountUsd = parseFloat(amount.replace(/,/g, ""));
           if (totalAmountUsd > 0) {
-            handleAmountContinue(totalAmountUsd);
+            const started = beginAmountSimulation(totalAmountUsd);
+            if (started) {
+              dispatch({
+                type: "setStep",
+                payload: { step: newStep, direction: "forward" },
+              });
+            }
             return;
           }
         }
       }
+      dispatch({
+        type: "setStep",
+        payload: { step: newStep, direction: "forward" },
+      });
     },
-    [state.step, state.inputs.amount, handleAmountContinue, dispatch],
+    [state.step, state.inputs.amount, beginAmountSimulation, dispatch],
   );
 
   /**
@@ -438,7 +482,7 @@ export function useDepositWidget(
         type: "setStep",
         payload: { step: previousStep, direction: "backward" },
       });
-      swapIntent.current = null;
+      denyActiveSwapIntent();
       initialSimulationDone.current = false;
       lastSimulationTime.current = 0;
       setPollingEnabled(false);
@@ -446,7 +490,7 @@ export function useDepositWidget(
       stopwatch.reset();
       await fetchSwapBalance();
     }
-  }, [state.step, swapIntent, stopwatch, dispatch]);
+  }, [state.step, stopwatch, dispatch, denyActiveSwapIntent, fetchSwapBalance]);
 
   /**
    * Reset widget to initial state
@@ -455,14 +499,21 @@ export function useDepositWidget(
     dispatch({ type: "reset" });
     resetAssetSelection();
     resetSteps();
-    swapIntent.current = null;
+    denyActiveSwapIntent();
     initialSimulationDone.current = false;
     lastSimulationTime.current = 0;
     setPollingEnabled(false);
     stopwatch.stop();
     stopwatch.reset();
     await fetchSwapBalance();
-  }, [resetSteps, swapIntent, stopwatch, dispatch, resetAssetSelection]);
+  }, [
+    resetSteps,
+    stopwatch,
+    dispatch,
+    resetAssetSelection,
+    denyActiveSwapIntent,
+    fetchSwapBalance,
+  ]);
 
   /**
    * Refresh simulation data

@@ -5,6 +5,7 @@ import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
+import { truncateAddress } from "@avail-project/nexus-core";
 
 interface RecipientAddressProps {
   address?: Address;
@@ -45,7 +46,7 @@ const RecipientAddress: FC<RecipientAddressProps> = ({
           <div className="flex items-center gap-x-3 ">
             {address && (
               <p className="font-light text-base">
-                {nexusSDK?.utils?.truncateAddress(address, 6, 6)}
+                {truncateAddress(address, 6, 6)}
               </p>
             )}
 

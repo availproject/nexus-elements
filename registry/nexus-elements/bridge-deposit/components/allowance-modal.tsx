@@ -13,15 +13,18 @@ import { Label } from "../../ui/label";
 import {
   type AllowanceHookSource,
   CHAIN_METADATA,
+  formatTokenBalance,
   type OnAllowanceHookData,
+  parseUnits,
 } from "@avail-project/nexus-core";
-import { useNexus } from "../../nexus/NexusProvider";
+import { useNexusError } from "../../common";
 import { Loader2 } from "lucide-react";
 
 interface AllowanceModalProps {
   allowance: RefObject<OnAllowanceHookData | null>;
   callback?: () => void;
   onCloseCallback?: () => void;
+  onError?: (message: string) => void;
 }
 
 type AllowanceChoice = "min" | "max" | "custom";
@@ -108,8 +111,9 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   allowance,
   callback,
   onCloseCallback,
+  onError,
 }) => {
-  const { nexusSDK } = useNexus();
+  const handleNexusError = useNexusError();
   const [selectedOption, setSelectedOption] = useState<AllowanceChoice[]>([]);
   const [customValues, setCustomValues] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -121,17 +125,17 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   };
   const defaultChoices = useMemo<AllowanceChoice[]>(
     () => Array.from({ length: sources.length }, () => "min"),
-    [sources.length]
+    [sources.length],
   );
 
   const isCustomValueValid = (
     value: string,
     minimumRaw: bigint,
-    decimals: number
+    decimals: number,
   ): boolean => {
     if (!value || value.trim() === "") return false;
     try {
-      const parsedValue = nexusSDK?.utils?.parseUnits(value, decimals);
+      const parsedValue = parseUnits(value, decimals);
       if (parsedValue === undefined) return false;
       return parsedValue >= minimumRaw;
     } catch {
@@ -147,7 +151,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       return !isCustomValueValid(
         value,
         source.allowance.minimumRaw,
-        source.token.decimals
+        source.token.decimals,
       );
     });
   }, [sources, selectedOption, customValues]);
@@ -173,7 +177,9 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       allow(processed);
       callback?.();
     } catch (error) {
+      const { message } = handleNexusError(error);
       console.error("AllowanceModal onApprove error", error);
+      onError?.(message);
       onCloseCallback?.();
     } finally {
       allowance.current = null;
@@ -190,7 +196,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   };
 
   const formatAmount = (value: string | bigint, source: AllowanceHookSource) =>
-    nexusSDK?.utils?.formatTokenBalance(value, {
+    formatTokenBalance(value, {
       symbol: source.token.symbol,
       decimals: source.token.decimals,
     }) ?? "—";
@@ -263,7 +269,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
                     !isCustomValueValid(
                       customValue,
                       source.allowance.minimumRaw,
-                      source.token.decimals
+                      source.token.decimals,
                     );
                   return (
                     <AllowanceOption

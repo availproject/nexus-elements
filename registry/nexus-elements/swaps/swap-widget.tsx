@@ -18,7 +18,7 @@ function SwapWidget({
 }: Readonly<{
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
-  onError?: () => void;
+  onError?: (message: string) => void;
 }>) {
   const sourceContainer = useRef<HTMLDivElement | null>(null);
   const destinationContainer = useRef<HTMLDivElement | null>(null);
@@ -31,7 +31,6 @@ function SwapWidget({
     setSwapMode,
     txError,
     setInputs,
-    setStatus,
     setTxError,
     steps,
     reset,
@@ -40,6 +39,12 @@ function SwapWidget({
     availableStables,
     formatBalance,
     destinationBalance,
+    continueSwap,
+    exactOutSourceOptions,
+    exactOutSelectedKeys,
+    toggleExactOutSource,
+    isExactOutSourceSelectionDirty,
+    updatingExactOutSources,
   } = useSwaps({
     nexusSDK,
     swapIntent,
@@ -195,10 +200,16 @@ function SwapWidget({
           explorerUrls={explorerUrls}
           steps={steps}
           status={status}
+          swapMode={swapMode}
           swapIntent={swapIntent}
           getFiatValue={getFiatValue}
           nexusSDK={nexusSDK}
-          setStatus={setStatus}
+          continueSwap={continueSwap}
+          exactOutSourceOptions={exactOutSourceOptions}
+          exactOutSelectedKeys={exactOutSelectedKeys}
+          toggleExactOutSource={toggleExactOutSource}
+          isExactOutSourceSelectionDirty={isExactOutSourceSelectionDirty}
+          updatingExactOutSources={updatingExactOutSources}
           reset={reset}
         />
       )}

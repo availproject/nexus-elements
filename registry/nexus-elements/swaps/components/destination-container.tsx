@@ -1,4 +1,4 @@
-import React, { type RefObject } from "react";
+import React, { type RefObject, useMemo } from "react";
 import { Label } from "../../ui/label";
 import { cn } from "@/lib/utils";
 import {
@@ -69,6 +69,28 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
           swapIntent?.current?.intent?.destination?.token?.decimals
         ) ?? "";
 
+  const quickPickTokens = useMemo(
+    () =>
+      availableStables
+        .map((token) => {
+          const breakdown =
+            token.breakdown?.find(
+              (entry) => Number.parseFloat(entry.balance ?? "0") > 0,
+            ) ?? token.breakdown?.[0];
+          if (!breakdown) return null;
+          return { token, breakdown };
+        })
+        .filter(
+          (
+            item,
+          ): item is {
+            token: UserAsset;
+            breakdown: UserAsset["breakdown"][number];
+          } => item !== null,
+        ),
+    [availableStables],
+  );
+
   return (
     <div className="bg-background rounded-xl flex flex-col items-center w-full gap-y-4">
       <div className="w-full flex items-center justify-between">
@@ -82,9 +104,9 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 : "opacity-0 -translate-y-1"
             )}
           >
-            {availableStables.map((token) => (
+            {quickPickTokens.map(({ token, breakdown }) => (
               <Button
-                key={token?.symbol}
+                key={`${token.symbol}-${breakdown.chain.id}`}
                 size={"icon-sm"}
                 variant={"secondary"}
                 onClick={() => {
@@ -92,14 +114,13 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                   setInputs({
                     ...inputs,
                     toToken: {
-                      tokenAddress: token.breakdown[0].contractAddress,
+                      tokenAddress: breakdown.contractAddress,
                       decimals: token.decimals,
                       logo: token.icon ?? "",
                       name: token.symbol,
                       symbol: token.symbol,
                     },
-                    toChainID: token.breakdown[0].chain
-                      .id as SUPPORTED_CHAINS_IDS,
+                    toChainID: breakdown.chain.id as SUPPORTED_CHAINS_IDS,
                   });
                 }}
                 className="bg-transparent rounded-full hover:-translate-y-1 hover:object-scale-down"
@@ -107,7 +128,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 <TokenIcon
                   symbol={token?.symbol}
                   tokenLogo={token?.icon}
-                  chainLogo={token.breakdown[0].chain.logo}
+                  chainLogo={breakdown.chain.logo}
                   size="sm"
                 />
               </Button>
@@ -138,7 +159,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 size="lg"
               />
               <span className="font-medium">{inputs?.toToken?.symbol}</span>
-              <ChevronDown size={16} className="mr- ref={isSourceHovered}1" />
+              <ChevronDown size={16} className="mr-1" />
             </div>
           </DialogTrigger>
           <DialogContent className="max-w-md!">
@@ -162,7 +183,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 Number.parseFloat(
                   swapIntent?.current?.intent?.destination?.amount
                 ),
-                inputs.toToken?.logo
+                inputs.toToken?.symbol
               )
             )}
           </span>

@@ -1,58 +1,87 @@
 ---
 name: nexus-elements-swaps
-description: Install and use the Swaps widget (SwapWidget) from Nexus Elements. Use for cross-chain exact-in or exact-out swaps with intent progress UI.
+description: Integrate the SwapWidget element for cross-chain exact-in and exact-out swaps in React/TypeScript apps. Use when installing or debugging swap simulations, source selection for exact-out mode, swap intent approvals, and event-driven progress using `sdk.swapWithExactIn`/`sdk.swapWithExactOut`.
 ---
 
 # Nexus Elements - Swaps
 
-## Overview
-Install the SwapWidget component for cross-chain swaps with exact-in/out modes, progress UI, and optional callbacks.
+## Install
+- Install widget:
+  - `npx shadcn@latest add @nexus-elements/swaps`
+- Ensure `NexusProvider` is installed and initialized before rendering.
 
-## Prerequisites
-- NexusProvider installed and initialized on wallet connect.
-- Wallet connection configured.
+## Required setup before rendering
+- Ensure `useNexus().nexusSDK` is initialized.
+- Ensure `swapBalance` is fetched (`fetchSwapBalance` is called by hook if missing).
 
-## Install (shadcn registry)
-1) Ensure shadcn/ui is initialized (`components.json` exists).
-2) Ensure registry mapping exists:
-```json
-"registries": {
-  "@nexus-elements/": "https://elements.nexus.availproject.org/r/{name}.json"
-}
-```
-3) Install:
-```bash
-npx shadcn@latest add @nexus-elements/swaps
-```
-Alternative:
-```bash
-npx shadcn@latest add https://elements.nexus.availproject.org/r/swaps.json
-```
+## Initialize SDK (required once per app)
+- On wallet connect, resolve an EIP-1193 provider and call `useNexus().handleInit(provider)`.
+- Wait for `useNexus().nexusSDK` before swap simulation starts.
+- Re-run init after reconnect if wallet session resets.
 
-## Manual install (no shadcn)
-1) Download `https://elements.nexus.availproject.org/r/swaps.json`.
-2) Create each file in `files[].target` with `files[].content`.
-3) Install dependencies listed in `dependencies` and each `registryDependencies` item.
-
-## Usage
+## Render widget
 ```tsx
+"use client";
+
 import SwapWidget from "@/components/swaps/swap-widget";
 
-<SwapWidget
-  onStart={() => {}}
-  onComplete={(amount) => console.log(amount)}
-  onError={() => console.error("Swap failed")}
-/>
+export function SwapPanel() {
+  return (
+    <SwapWidget
+      onStart={() => {
+        // swap started
+      }}
+      onComplete={(amount) => {
+        console.log("Destination amount:", amount);
+      }}
+      onError={() => {
+        console.error("Swap failed");
+      }}
+    />
+  );
+}
 ```
 
-## SDK flow mapping
-- Uses `sdk.swapWithExactIn(...)` and `sdk.swapWithExactOut(...)`.
-- Relies on the swap intent hook (`swapIntent`) for confirmation UI.
-- Progress updates come from `NEXUS_EVENTS.SWAP_STEP_COMPLETE`.
+## Live prop contract
+- `onStart?(): void`
+- `onComplete?(amount?: string): void`
+- `onError?(): void` (component signature currently ignores message argument)
 
-## Props (SwapsProps)
-- `onStart`, `onComplete`, `onError`
+## SDK flow details (under the hood)
+- Exact-in mode:
+  - build `ExactInSwapInput`
+  - call `sdk.swapWithExactIn(input, { onEvent })`
+- Exact-out mode:
+  - build `ExactOutSwapInput`
+  - optional `fromSources` comes from selected source options
+  - call `sdk.swapWithExactOut(input, { onEvent })`
+- Intent confirmation:
+  - uses `swapIntent.current` from `setOnSwapIntentHook`
+  - final execution happens after `swapIntent.current.allow()` in `continueSwap()`
+- Event mapping:
+  - listens for `NEXUS_EVENTS.SWAP_STEP_COMPLETE`
+  - captures source/destination explorer URLs from step payloads
 
-## Notes
-- The widget handles exact-in and exact-out modes internally.
-- If you need an error message, you can widen the `onError` signature in `swap-widget.tsx` to accept `(message?: string)`.
+## Understand mode behavior
+- Widget auto-simulates when inputs are valid (debounced).
+- `exactIn`: requires source chain/token/amount and destination chain/token.
+- `exactOut`: requires destination chain/token/amount; sources are auto-selected unless overridden.
+- Exact-out source selection:
+  - users can toggle source options.
+  - if selection changes, widget re-simulates before allowing continue.
+
+## E2E verification
+- Enter exact-in inputs and confirm simulation starts automatically.
+- Confirm swap intent appears and progress steps render.
+- Switch to exact-out, set destination amount, and verify source options load.
+- Change exact-out source selection and confirm re-simulation occurs.
+- Continue swap and confirm explorer links for source/destination swaps.
+- Confirm balances refresh after success.
+
+## Common failure cases
+- No valid inputs for current mode:
+  - ensure required fields for active mode are populated.
+- Stale intent after input changes:
+  - widget calls `deny()` and resets; re-enter or wait for re-simulation.
+- Simulation loops:
+  - clear errors and verify destination/source token-chain combinations are supported.
