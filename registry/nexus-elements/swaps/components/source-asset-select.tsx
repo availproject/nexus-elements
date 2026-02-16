@@ -6,6 +6,7 @@ import {
   type UserAsset,
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
+  formatTokenBalance,
 } from "@avail-project/nexus-core";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Link2, Loader2, Search, X } from "lucide-react";
@@ -54,7 +55,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           logo: TOKEN_IMAGES[asset.symbol] ?? "",
           name: asset.symbol,
           symbol: asset.symbol,
-          balance: nexusSDK?.utils?.formatTokenBalance(breakdown?.balance, {
+          balance: formatTokenBalance(breakdown?.balance, {
             symbol: asset.symbol,
             decimals: asset.decimals,
           }),
@@ -78,7 +79,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
     if (!swapSupportedChainsAndTokens || !allTokens.length) return [];
     const chainIdsWithTokens = new Set(allTokens.map((t) => t.chainId));
     return swapSupportedChainsAndTokens.filter((c) =>
-      chainIdsWithTokens.has(c.id)
+      chainIdsWithTokens.has(c.id),
     );
   }, [swapSupportedChainsAndTokens, allTokens]);
 
@@ -98,7 +99,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
         (t) =>
           t.symbol.toLowerCase().includes(query) ||
           t.name.toLowerCase().includes(query) ||
-          t.contractAddress.toLowerCase().includes(query)
+          t.contractAddress.toLowerCase().includes(query),
       );
     }
 
@@ -127,7 +128,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
         value={tempChain?.name}
         onValueChange={(value) => {
           const matchedChain = chainsWithTokens.find(
-            (chain) => chain.name === value
+            (chain) => chain.name === value,
           );
           if (matchedChain) {
             setTempChain(matchedChain);

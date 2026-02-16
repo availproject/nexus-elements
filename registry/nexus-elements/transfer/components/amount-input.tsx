@@ -1,7 +1,7 @@
 import { type FC, Fragment, useEffect, useMemo, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { type UserAsset } from "@avail-project/nexus-core";
+import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type FastTransferState } from "../hooks/useTransfer";
 import {
@@ -115,7 +115,7 @@ const AmountInput: FC<AmountInputProps> = ({
         <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
           {bridgableBalance && (
             <p className="text-base font-medium min-w-max">
-              {nexusSDK?.utils?.formatTokenBalance(bridgableBalance?.balance, {
+              {formatTokenBalance(bridgableBalance?.balance, {
                 symbol: bridgableBalance?.symbol,
                 decimals: bridgableBalance?.decimals,
               })}
@@ -169,7 +169,7 @@ const AmountInput: FC<AmountInputProps> = ({
                         </span>
                       </div>
                       <p className="text-sm font-light text-right">
-                        {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
+                        {formatTokenBalance(chain.balance, {
                           symbol: bridgableBalance?.symbol,
                           decimals: chain?.decimals,
                         })}

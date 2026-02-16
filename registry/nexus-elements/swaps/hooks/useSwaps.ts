@@ -17,6 +17,8 @@ import {
   type OnSwapIntentHookData,
   type Source as SwapSource,
   type UserAsset,
+  parseUnits,
+  formatTokenBalance,
 } from "@avail-project/nexus-core";
 import {
   useTransactionSteps,
@@ -185,7 +187,7 @@ const useSwaps = ({
   const currentIntentSources = swapIntent.current?.intent?.sources ?? [];
   const currentIntentSourcesSignature = useMemo(
     () => getIntentSourcesSignature(currentIntentSources),
-    [currentIntentSources]
+    [currentIntentSources],
   );
 
   const exactOutSourceOptions = useMemo<ExactOutSourceOption[]>(() => {
@@ -204,7 +206,10 @@ const useSwaps = ({
 
         const tokenAddress = entry.contractAddress as `0x${string}`;
         const chainId = entry.chain.id;
-        if (typeof destinationChainId === "number" && chainId === destinationChainId) {
+        if (
+          typeof destinationChainId === "number" &&
+          chainId === destinationChainId
+        ) {
           continue;
         }
         upsertOption({
@@ -223,7 +228,10 @@ const useSwaps = ({
 
     for (const source of currentIntentSources) {
       const chainId = source.chain.id;
-      if (typeof destinationChainId === "number" && chainId === destinationChainId) {
+      if (
+        typeof destinationChainId === "number" &&
+        chainId === destinationChainId
+      ) {
         continue;
       }
       const tokenAddress = source.token.contractAddress as `0x${string}`;
@@ -262,7 +270,7 @@ const useSwaps = ({
 
   const exactOutAllSourceKeys = useMemo(
     () => exactOutSourceOptions.map((opt) => opt.key),
-    [exactOutSourceOptions]
+    [exactOutSourceOptions],
   );
 
   const [exactOutSelectedKeys, setExactOutSelectedKeys] = useState<
@@ -283,7 +291,9 @@ const useSwaps = ({
 
   const isExactOutAllSelected = useMemo(() => {
     if (exactOutAllSourceKeys.length === 0) return true;
-    return effectiveExactOutSelectedKeys.length === exactOutAllSourceKeys.length;
+    return (
+      effectiveExactOutSelectedKeys.length === exactOutAllSourceKeys.length
+    );
   }, [exactOutAllSourceKeys, effectiveExactOutSelectedKeys]);
 
   const toggleExactOutSource = useCallback(
@@ -306,7 +316,7 @@ const useSwaps = ({
         return next;
       });
     },
-    [exactOutAllSourceKeys]
+    [exactOutAllSourceKeys],
   );
 
   const applyExactOutSelectionKeys = useCallback(
@@ -320,14 +330,12 @@ const useSwaps = ({
       if (unique.length === 0) return;
 
       const isAllSelected = unique.length === allKeys.length;
-      const selectionKey = isAllSelected
-        ? "ALL"
-        : [...unique].sort().join("|");
+      const selectionKey = isAllSelected ? "ALL" : [...unique].sort().join("|");
 
       setExactOutSelectedKeys(isAllSelected ? null : unique);
       setAppliedExactOutSelectionKey(selectionKey);
     },
-    [exactOutAllSourceKeys]
+    [exactOutAllSourceKeys],
   );
 
   const exactOutSelectionKey = useMemo(() => {
@@ -338,7 +346,7 @@ const useSwaps = ({
   const syncExactOutSelectionFromIntent = useCallback(
     (
       intentSources: NonNullable<OnSwapIntentHookData["intent"]>["sources"],
-      force = false
+      force = false,
     ) => {
       if (intentSources.length === 0 || exactOutSourceOptions.length === 0) {
         return false;
@@ -347,7 +355,7 @@ const useSwaps = ({
       const signature = getIntentSourcesSignature(intentSources);
       const usedKeys = getIntentMatchedOptionKeys(
         intentSources,
-        exactOutSourceOptions
+        exactOutSourceOptions,
       );
       if (usedKeys.length === 0) return false;
       const usedSelectionKey = [...new Set(usedKeys)].sort().join("|");
@@ -364,7 +372,7 @@ const useSwaps = ({
       lastSyncedIntentSelectionKeyRef.current = usedSelectionKey;
       return true;
     },
-    [applyExactOutSelectionKeys, exactOutSourceOptions]
+    [applyExactOutSelectionKeys, exactOutSourceOptions],
   );
 
   const exactOutFromSources = useMemo<SwapSource[] | undefined>(() => {
@@ -456,9 +464,9 @@ const useSwaps = ({
     )
       return;
 
-    const amountBigInt = nexusSDK.utils.parseUnits(
+    const amountBigInt = parseUnits(
       state.inputs.fromAmount,
-      state.inputs.fromToken.decimals
+      state.inputs.fromToken.decimals,
     );
     const swapInput: ExactInSwapInput = {
       from: [
@@ -494,9 +502,9 @@ const useSwaps = ({
     )
       return;
 
-    const amountBigInt = nexusSDK.utils.parseUnits(
+    const amountBigInt = parseUnits(
       state.inputs.toAmount,
-      state.inputs.toToken.decimals
+      state.inputs.toToken.decimals,
     );
     const swapInput: ExactOutSwapInput = {
       toAmount: amountBigInt,
@@ -629,7 +637,7 @@ const useSwaps = ({
       swapBalance
         ?.find((token) => token.symbol === state.inputs?.fromToken?.symbol)
         ?.breakdown?.find(
-          (chain) => chain.chain?.id === state.inputs?.fromChainID
+          (chain) => chain.chain?.id === state.inputs?.fromChainID,
         ) ?? undefined
     );
   }, [
@@ -651,7 +659,7 @@ const useSwaps = ({
       swapBalance
         ?.find((token) => token.symbol === state?.inputs?.toToken?.symbol)
         ?.breakdown?.find(
-          (chain) => chain.chain?.id === state?.inputs?.toChainID
+          (chain) => chain.chain?.id === state?.inputs?.toChainID,
         ) ?? undefined
     );
   }, [state?.inputs?.toToken, state?.inputs?.toChainID, swapBalance, nexusSDK]);
@@ -669,10 +677,10 @@ const useSwaps = ({
   const formatBalance = (
     balance?: string | number,
     symbol?: string,
-    decimals?: number
+    decimals?: number,
   ) => {
     if (!balance || !symbol || !decimals) return undefined;
-    return nexusSDK?.utils?.formatTokenBalance(balance, {
+    return formatTokenBalance(balance, {
       symbol: symbol,
       decimals: decimals,
     });
@@ -733,7 +741,7 @@ const useSwaps = ({
     async () => {
       await refreshSimulation();
     },
-    15000
+    15000,
   );
 
   const continueSwap = useCallback(async () => {

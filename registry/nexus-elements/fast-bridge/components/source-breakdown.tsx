@@ -1,4 +1,5 @@
 import {
+  formatTokenBalance,
   type ReadableIntent,
   type SUPPORTED_TOKENS,
   type UserAsset,
@@ -113,7 +114,7 @@ const SourceBreakdown = ({
 
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-light">
-                    {nexusSDK?.utils?.formatTokenBalance(intent?.sourcesTotal, {
+                    {formatTokenBalance(intent?.sourcesTotal, {
                       symbol: tokenSymbol,
                       decimals: intent?.token?.decimals,
                     })}
@@ -177,13 +178,22 @@ const SourceBreakdown = ({
                     <p className="font-medium">
                       Available on selected chains:{" "}
                       <span className="font-semibold">
-                        {selectedTotal} {tokenSymbol}
+                        {formatTokenBalance(parseFloat(selectedTotal ?? "0"), {
+                          symbol: tokenSymbol,
+                          decimals: intent?.token?.decimals,
+                        })}
                       </span>
                     </p>
                     <p className="font-medium">
                       Required for this transaction:{" "}
                       <span className="font-semibold">
-                        {requiredSafetyTotal} {tokenSymbol}
+                        {formatTokenBalance(
+                          parseFloat(requiredSafetyTotal ?? "0"),
+                          {
+                            symbol: tokenSymbol,
+                            decimals: intent?.token?.decimals,
+                          },
+                        )}
                       </span>
                     </p>
                     {shouldShowProceedMessage && (
@@ -198,8 +208,8 @@ const SourceBreakdown = ({
                     {!isSourceSelectionInsufficient &&
                       sourceCoverageState === "healthy" && (
                         <p>
-                          You&apos;re all set. We&apos;ll only use what&apos;s needed
-                          from these selected chains.
+                          You&apos;re all set. We&apos;ll only use what&apos;s
+                          needed from these selected chains.
                         </p>
                       )}
                   </div>
@@ -271,7 +281,7 @@ const SourceBreakdown = ({
 
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-base font-light">
-                          {nexusSDK?.utils?.formatTokenBalance(source.balance, {
+                          {formatTokenBalance(source.balance, {
                             symbol: tokenSymbol,
                             decimals: source.decimals,
                           })}
@@ -279,13 +289,10 @@ const SourceBreakdown = ({
                         {willUseAmount && (
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
-                            {nexusSDK?.utils?.formatTokenBalance(
-                              willUseAmount,
-                              {
-                                symbol: tokenSymbol,
-                                decimals: intent?.token?.decimals,
-                              },
-                            )}
+                            {formatTokenBalance(willUseAmount, {
+                              symbol: tokenSymbol,
+                              decimals: intent?.token?.decimals,
+                            })}
                           </p>
                         )}
                       </div>

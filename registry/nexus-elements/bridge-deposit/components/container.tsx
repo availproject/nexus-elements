@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import SimpleDeposit from "./simple-deposit";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type BaseDepositProps } from "../deposit";
+import { truncateAddress } from "@avail-project/nexus-core";
 
 interface ContainerProps extends BaseDepositProps {
   fiatSubheading?: string;
@@ -26,9 +27,7 @@ const Container = ({
         <TabsTrigger value="simple" className="px-2 py-1">
           <div className="flex items-center flex-col gap-y-1">
             <p className="text-sm data-[state=active]:font-bold">Wallet</p>
-            <p className="text-[10px]">
-              {nexusSDK?.utils?.truncateAddress(address, 4, 4)}
-            </p>
+            <p className="text-[10px]">{truncateAddress(address, 4, 4)}</p>
           </div>
         </TabsTrigger>
         <TabsTrigger value="qr" className="px-2 py-1">

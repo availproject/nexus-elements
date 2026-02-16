@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import {
+  formatTokenBalance,
   SUPPORTED_TOKENS,
   type ReadableIntent,
 } from "@avail-project/nexus-core";
@@ -68,7 +69,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
               <Skeleton className="h-5 w-24" />
             ) : (
               <p className="font-light text-base min-w-max">
-                {nexusSDK?.utils?.formatTokenBalance(intent.fees?.total, {
+                {formatTokenBalance(intent.fees?.total, {
                   symbol: tokenSymbol,
                   decimals: intent?.token?.decimals,
                 })}
@@ -100,7 +101,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
                       <Skeleton className="h-4 w-20" />
                     ) : (
                       <p className="text-sm font-light">
-                        {nexusSDK?.utils?.formatTokenBalance(value, {
+                        {formatTokenBalance(value, {
                           symbol: tokenSymbol,
                           decimals: intent?.token?.decimals,
                         })}

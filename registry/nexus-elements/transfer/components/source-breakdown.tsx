@@ -1,4 +1,5 @@
 import {
+  formatTokenBalance,
   type ReadableIntent,
   type SUPPORTED_TOKENS,
   type UserAsset,
@@ -58,8 +59,7 @@ const SourceBreakdown = ({
   const progressRadius = 16;
   const progressCircumference = 2 * Math.PI * progressRadius;
   const progressOffset =
-    progressCircumference -
-    (normalizedCoverage / 100) * progressCircumference;
+    progressCircumference - (normalizedCoverage / 100) * progressCircumference;
   const showCoverageFeedback = Boolean(
     selectedTotal && requiredTotal && requiredSafetyTotal,
   );
@@ -126,7 +126,7 @@ const SourceBreakdown = ({
 
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-light">
-                    {nexusSDK?.utils?.formatTokenBalance(amountSpend, {
+                    {formatTokenBalance(amountSpend, {
                       symbol: tokenSymbol,
                       decimals: intent?.token?.decimals,
                     })}
@@ -212,8 +212,8 @@ const SourceBreakdown = ({
                     {!isSourceSelectionInsufficient &&
                       sourceCoverageState === "healthy" && (
                         <p>
-                          You&apos;re all set. We&apos;ll only use what&apos;s needed
-                          from these selected chains.
+                          You&apos;re all set. We&apos;ll only use what&apos;s
+                          needed from these selected chains.
                         </p>
                       )}
                   </div>
@@ -286,7 +286,7 @@ const SourceBreakdown = ({
 
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-sm font-light">
-                          {nexusSDK?.utils?.formatTokenBalance(source.balance, {
+                          {formatTokenBalance(source.balance, {
                             symbol: tokenSymbol,
                             decimals: source.decimals,
                           })}
@@ -294,13 +294,10 @@ const SourceBreakdown = ({
                         {willUseFromIntent && (
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
-                            {nexusSDK?.utils?.formatTokenBalance(
-                              willUseFromIntent,
-                              {
-                                symbol: tokenSymbol,
-                                decimals: intent?.token?.decimals,
-                              },
-                            )}
+                            {formatTokenBalance(willUseFromIntent, {
+                              symbol: tokenSymbol,
+                              decimals: intent?.token?.decimals,
+                            })}
                           </p>
                         )}
                       </div>

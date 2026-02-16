@@ -9,6 +9,7 @@ import {
   NexusSDK,
   type SwapStepType,
   type OnSwapIntentHookData,
+  formatTokenBalance,
 } from "@avail-project/nexus-core";
 import { MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
@@ -91,7 +92,7 @@ const TokenBreakdown = ({
     <div className="flex items-center w-full justify-between">
       <div className="flex flex-col items-start gap-y-1">
         <p className="text-xl font-medium ">
-          {nexusSDK?.utils.formatTokenBalance(amount, {
+          {formatTokenBalance(amount, {
             symbol: symbol,
             decimals: decimals,
           })}
@@ -175,15 +176,15 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
   const hasMultipleSources = sources.length > 1;
   const usedSourceKeys = useMemo(
     () => getIntentMatchedOptionKeys(sources, exactOutSourceOptions),
-    [sources, exactOutSourceOptions]
+    [sources, exactOutSourceOptions],
   );
   const usedSourceKeySet = useMemo(
     () => new Set(usedSourceKeys),
-    [usedSourceKeys]
+    [usedSourceKeys],
   );
   const { usedSourceOptions, otherSourceOptions } = useMemo(() => {
     const usedOrder = new Map(
-      usedSourceKeys.map((key, index) => [key, index] as const)
+      usedSourceKeys.map((key, index) => [key, index] as const),
     );
     const used: ExactOutSourceOption[] = [];
     const other: ExactOutSourceOption[] = [];
@@ -253,7 +254,9 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
 
   const exactOutRequiredUsd = useMemo(() => {
     if (!shouldShowExactOutSourceSelection) return 0;
-    const amount = Number.parseFloat(transactionIntent?.destination?.amount ?? "0");
+    const amount = Number.parseFloat(
+      transactionIntent?.destination?.amount ?? "0",
+    );
     if (!Number.isFinite(amount) || amount <= 0) return 0;
     const symbol = transactionIntent?.destination?.token?.symbol;
     if (!symbol) return 0;
@@ -383,7 +386,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                       const tokenLogo =
                         opt.tokenLogo || TOKEN_IMAGES[opt.tokenSymbol] || "";
                       const formattedBalance =
-                        nexusSDK?.utils?.formatTokenBalance(opt.balance, {
+                        formatTokenBalance(opt.balance, {
                           symbol: opt.tokenSymbol,
                           decimals: opt.decimals,
                         }) ?? `${opt.balance} ${opt.tokenSymbol}`;
@@ -395,7 +398,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                             "flex w-full select-none items-center justify-between gap-x-3",
                             isLastSelected || updatingExactOutSources
                               ? "opacity-80 cursor-not-allowed"
-                              : "cursor-pointer"
+                              : "cursor-pointer",
                           )}
                           onClick={() => {
                             if (isLastSelected || updatingExactOutSources) {
@@ -418,12 +421,11 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                           <div className="flex items-center gap-x-2">
                             <Checkbox
                               checked={isSelected}
-                              disabled={isLastSelected || updatingExactOutSources}
+                              disabled={
+                                isLastSelected || updatingExactOutSources
+                              }
                               onCheckedChange={() => {
-                                if (
-                                  isLastSelected ||
-                                  updatingExactOutSources
-                                ) {
+                                if (isLastSelected || updatingExactOutSources) {
                                   return;
                                 }
                                 toggleExactOutSource(opt.key);
@@ -472,7 +474,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                       const tokenLogo =
                         opt.tokenLogo || TOKEN_IMAGES[opt.tokenSymbol] || "";
                       const formattedBalance =
-                        nexusSDK?.utils?.formatTokenBalance(opt.balance, {
+                        formatTokenBalance(opt.balance, {
                           symbol: opt.tokenSymbol,
                           decimals: opt.decimals,
                         }) ?? `${opt.balance} ${opt.tokenSymbol}`;
@@ -484,7 +486,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                             "flex w-full select-none items-center justify-between gap-x-3",
                             isLastSelected || updatingExactOutSources
                               ? "opacity-80 cursor-not-allowed"
-                              : "cursor-pointer"
+                              : "cursor-pointer",
                           )}
                           onClick={() => {
                             if (isLastSelected || updatingExactOutSources) {
@@ -507,12 +509,11 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                           <div className="flex items-center gap-x-2">
                             <Checkbox
                               checked={isSelected}
-                              disabled={isLastSelected || updatingExactOutSources}
+                              disabled={
+                                isLastSelected || updatingExactOutSources
+                              }
                               onCheckedChange={() => {
-                                if (
-                                  isLastSelected ||
-                                  updatingExactOutSources
-                                ) {
+                                if (isLastSelected || updatingExactOutSources) {
                                   return;
                                 }
                                 toggleExactOutSource(opt.key);

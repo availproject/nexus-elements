@@ -14,6 +14,7 @@ import {
   NEXUS_EVENTS,
   type BridgeStepType,
   CHAIN_METADATA,
+  formatTokenBalance,
 } from "@avail-project/nexus-core";
 import {
   useEffect,
@@ -61,7 +62,7 @@ interface UseDepositProps {
     token: SUPPORTED_TOKENS,
     amount: string,
     chainId: SUPPORTED_CHAINS_IDS,
-    userAddress: `0x${string}`
+    userAddress: `0x${string}`,
   ) => Omit<ExecuteParams, "toChainId">;
   executeConfig?: Omit<ExecuteParams, "toChainId">;
 }
@@ -104,7 +105,7 @@ const useDeposit = ({
 
   const allSourceIds = useMemo(
     () => chainOptions?.map((c) => c.id) ?? [],
-    [chainOptions]
+    [chainOptions],
   );
 
   const createInitialState = useCallback(
@@ -122,7 +123,7 @@ const useDeposit = ({
       error: null,
       lastResult: null,
     }),
-    [chain, allSourceIds]
+    [chain, allSourceIds],
   );
 
   const initialState = createInitialState();
@@ -213,17 +214,17 @@ const useDeposit = ({
     if (!tokenBalance) return undefined;
 
     const nonZeroBreakdown = tokenBalance.breakdown.filter(
-      (chain) => Number.parseFloat(chain.balance) > 0
+      (chain) => Number.parseFloat(chain.balance) > 0,
     );
 
     const totalBalance = nonZeroBreakdown.reduce(
       (sum, chain) => sum + Number.parseFloat(chain.balance),
-      0
+      0,
     );
 
     const totalBalanceInFiat = nonZeroBreakdown.reduce(
       (sum, chain) => sum + chain.balanceInFiat,
-      0
+      0,
     );
 
     return {
@@ -242,17 +243,17 @@ const useDeposit = ({
     const filteredBreakdown = tokenBalance.breakdown.filter(
       (chain) =>
         selectedSourcesSet.has(chain.chain.id) &&
-        Number.parseFloat(chain.balance) > 0
+        Number.parseFloat(chain.balance) > 0,
     );
 
     const totalBalance = filteredBreakdown.reduce(
       (sum, chain) => sum + Number.parseFloat(chain.balance),
-      0
+      0,
     );
 
     const totalBalanceInFiat = filteredBreakdown.reduce(
       (sum, chain) => sum + chain.balanceInFiat,
-      0
+      0,
     );
 
     return {
@@ -265,7 +266,7 @@ const useDeposit = ({
 
   const allCompleted = useMemo(
     () => (steps?.length ?? 0) > 0 && steps.every((s) => s.completed),
-    [steps]
+    [steps],
   );
 
   const stopwatch = useStopwatch({
@@ -289,18 +290,12 @@ const useDeposit = ({
     const nativeDecimals = native.decimals;
 
     const gasFormatted =
-      nexusSDK?.utils?.formatTokenBalance(
-        simulation?.executeSimulation?.gasFee,
-        {
-          symbol: nativeSymbol,
-          decimals: nativeDecimals,
-        }
-      ) ?? "0";
+      formatTokenBalance(simulation?.executeSimulation?.gasFee, {
+        symbol: nativeSymbol,
+        decimals: nativeDecimals,
+      }) ?? "0";
     const gasUnits = Number.parseFloat(
-      nexusSDK?.utils?.formatUnits(
-        simulation?.executeSimulation?.gasFee,
-        nativeDecimals
-      )
+      formatUnits(simulation?.executeSimulation?.gasFee, nativeDecimals),
     );
 
     const gasUsd = getFiatValue(gasUnits, nativeSymbol);
@@ -308,16 +303,13 @@ const useDeposit = ({
       const tokenDecimals =
         simulation?.bridgeSimulation?.intent?.token?.decimals;
       const bridgeFormatted =
-        nexusSDK?.utils?.formatTokenBalance(
-          simulation?.bridgeSimulation?.intent?.fees?.total,
-          {
-            symbol: token,
-            decimals: tokenDecimals,
-          }
-        ) ?? "0";
+        formatTokenBalance(simulation?.bridgeSimulation?.intent?.fees?.total, {
+          symbol: token,
+          decimals: tokenDecimals,
+        }) ?? "0";
       const bridgeUsd = getFiatValue(
         Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total),
-        token
+        token,
       );
 
       const totalGasFee = bridgeUsd + gasUsd;
@@ -353,7 +345,7 @@ const useDeposit = ({
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs.amount,
         token,
-        inputs.chain
+        inputs.chain,
       );
       const executeParams: Omit<ExecuteParams, "toChainId"> | undefined =
         executeBuilder
@@ -386,7 +378,7 @@ const useDeposit = ({
               onStepComplete(event.args);
             }
           },
-        }
+        },
       );
 
       if (!result) {
@@ -448,7 +440,7 @@ const useDeposit = ({
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         amountToUse,
         token,
-        inputs.chain
+        inputs.chain,
       );
       const executeParams: Omit<ExecuteParams, "toChainId"> | undefined =
         executeBuilder
@@ -550,7 +542,7 @@ const useDeposit = ({
     async () => {
       await refreshSimulation();
     },
-    15000
+    15000,
   );
 
   return {

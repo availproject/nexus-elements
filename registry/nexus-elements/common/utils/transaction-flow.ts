@@ -1,4 +1,5 @@
 import {
+  formatUnits,
   type NexusNetwork,
   NexusSDK,
   SUPPORTED_CHAINS,
@@ -61,7 +62,7 @@ export const formatAmountForDisplay = (
   nexusSDK: NexusSDK,
 ): string => {
   if (typeof decimals !== "number") return amount.toString();
-  const formatted = nexusSDK.utils.formatUnits(amount, decimals);
+  const formatted = formatUnits(amount, decimals);
   if (!formatted.includes(".")) return formatted;
   const [whole, fraction] = formatted.split(".");
   const trimmedFraction = fraction.slice(0, 6).replace(/0+$/, "");
@@ -113,7 +114,11 @@ export const getCoverageDecimals = ({
   fallback: number | undefined;
 }) => {
   if (token === "USDM") return 18;
-  if (type === "bridge" && token === "USDC" && chainId === SUPPORTED_CHAINS.BNB) {
+  if (
+    type === "bridge" &&
+    token === "USDC" &&
+    chainId === SUPPORTED_CHAINS.BNB
+  ) {
     return 18;
   }
   return fallback;

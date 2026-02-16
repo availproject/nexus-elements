@@ -11,18 +11,16 @@ import {
 } from "../ui/accordion";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
-import { NexusSDK, type UserAsset } from "@avail-project/nexus-core";
+import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 const BalanceBreakdown = ({
   className,
   totalFiat,
   tokens,
-  nexusSDK,
 }: {
   totalFiat: string;
   tokens: UserAsset[];
-  nexusSDK: NexusSDK | null;
   className?: string;
 }) => {
   return (
@@ -80,7 +78,7 @@ const BalanceBreakdown = ({
                   <div className="flex items-center gap-3">
                     <div className="flex flex-col items-end">
                       <p className="text-base font-medium">
-                        {nexusSDK?.utils?.formatTokenBalance(token.balance, {
+                        {formatTokenBalance(token.balance, {
                           symbol: token.symbol,
                           decimals: token.decimals,
                         })}
@@ -114,13 +112,10 @@ const BalanceBreakdown = ({
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">
-                            {nexusSDK?.utils?.formatTokenBalance(
-                              chain.balance,
-                              {
-                                symbol: chain.symbol,
-                                decimals: chain.decimals,
-                              },
-                            )}
+                            {formatTokenBalance(chain.balance, {
+                              symbol: chain.symbol,
+                              decimals: chain.decimals,
+                            })}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             ${chain.balanceInFiat.toFixed(2)}
@@ -180,10 +175,9 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
       <BalanceBreakdown
         totalFiat={totalFiat}
         tokens={tokens}
-        nexusSDK={nexusSDK}
         className={cn(
-          "w-full max-w-lg mx-auto py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border",
-          className
+          "w-full max-w-lg mx-auto py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-93 rounded-lg border border-border",
+          className,
         )}
       />
     );
@@ -204,23 +198,21 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
       </TabsList>
       <TabsContent
         value="bridgeBalance"
-        className="w-full overflow-y-scroll max-h-[372px] pt-6 no-scrollbar"
+        className="w-full overflow-y-scroll max-h-93 pt-6 no-scrollbar"
       >
         <BalanceBreakdown
           totalFiat={totalFiat}
           tokens={tokens}
-          nexusSDK={nexusSDK}
           className={className}
         />
       </TabsContent>
       <TabsContent
         value="swapBalance"
-        className="w-full overflow-y-scroll max-h-[372px] pt-6 no-scrollbar"
+        className="w-full overflow-y-scroll max-h-93 pt-6 no-scrollbar"
       >
         <BalanceBreakdown
           totalFiat={swapTotalFiat}
           tokens={swapTokens}
-          nexusSDK={nexusSDK}
           className={className}
         />
       </TabsContent>

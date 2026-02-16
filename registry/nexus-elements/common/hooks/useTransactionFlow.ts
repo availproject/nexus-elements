@@ -4,6 +4,7 @@ import {
   NexusSDK,
   type OnAllowanceHookData,
   type OnIntentHookData,
+  parseUnits,
   type UserAsset,
 } from "@avail-project/nexus-core";
 import {
@@ -193,8 +194,8 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     }
     return nonZero.sort((a, b) => {
       try {
-        const aRaw = nexusSDK.utils.parseUnits(a.balance ?? "0", decimals);
-        const bRaw = nexusSDK.utils.parseUnits(b.balance ?? "0", decimals);
+        const aRaw = parseUnits(a.balance ?? "0", decimals);
+        const bRaw = parseUnits(b.balance ?? "0", decimals);
         if (aRaw === bRaw) return 0;
         return aRaw > bRaw ? -1 : 1;
       } catch {
@@ -293,7 +294,8 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   );
 
   const sourceSelection = useMemo(() => {
-    const amount = intentSourceSpendAmount?.trim() ?? inputs?.amount?.trim() ?? "";
+    const amount =
+      intentSourceSpendAmount?.trim() ?? inputs?.amount?.trim() ?? "";
     const decimals = getCoverageDecimals({
       type,
       token: inputs?.token,
@@ -307,9 +309,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         : availableSources.reduce((sum, source) => {
             if (!selectedChainSet.has(source.chain.id)) return sum;
             try {
-              return (
-                sum + nexusSDK.utils.parseUnits(source.balance ?? "0", decimals)
-              );
+              return sum + parseUnits(source.balance ?? "0", decimals);
             } catch {
               return sum;
             }
@@ -351,9 +351,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
       const missingToSafetyRaw = missingToProceedRaw;
 
       const coverageState: SourceCoverageState =
-        selectedTotalRaw < requiredRaw
-          ? "error"
-          : "healthy";
+        selectedTotalRaw < requiredRaw ? "error" : "healthy";
 
       const coverageBasisPoints =
         requiredRaw === BigInt(0)

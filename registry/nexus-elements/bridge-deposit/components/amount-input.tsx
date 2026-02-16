@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  formatTokenBalance,
   type SUPPORTED_CHAINS_IDS,
   type UserAsset,
 } from "@avail-project/nexus-core";
@@ -83,13 +84,10 @@ const AmountInput = ({
             />
             {bridgableBalance && hasSelectedSources && (
               <p className="text-base font-semibold min-w-max">
-                {nexusSDK?.utils?.formatTokenBalance(
-                  bridgableBalance?.balance,
-                  {
-                    symbol: bridgableBalance?.symbol,
-                    decimals: bridgableBalance?.decimals,
-                  }
-                )}
+                {formatTokenBalance(bridgableBalance?.balance, {
+                  symbol: bridgableBalance?.symbol,
+                  decimals: bridgableBalance?.decimals,
+                })}
               </p>
             )}
             {bridgableBalance && !hasSelectedSources && (
@@ -117,9 +115,9 @@ const AmountInput = ({
                       bridgableBalance.balance,
                       option.value,
                       bridgableBalance?.breakdown.find(
-                        (chain) => chain?.chain?.id === destinationChain
+                        (chain) => chain?.chain?.id === destinationChain,
                       )?.decimals ?? bridgableBalance?.decimals,
-                      SAFETY_MARGIN
+                      SAFETY_MARGIN,
                     );
                     onChange?.(amount);
                   }}
@@ -164,7 +162,7 @@ const AmountInput = ({
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium">
-                          {nexusSDK?.utils?.formatTokenBalance(chain.balance, {
+                          {formatTokenBalance(chain.balance, {
                             symbol: bridgableBalance?.symbol,
                             decimals: bridgableBalance?.decimals,
                           })}
