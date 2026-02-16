@@ -189,28 +189,32 @@ const SourceBreakdown = ({
 
                   <div className="flex flex-col gap-y-0.5">
                     <p className="font-medium">
-                      Selected{" "}
+                      Available on selected chains:{" "}
                       <span className="font-semibold">
                         {selectedTotal} {tokenSymbol}
-                      </span>{" "}
-                      of{" "}
+                      </span>
+                    </p>
+                    <p className="font-medium">
+                      Required for this transaction:{" "}
                       <span className="font-semibold">
                         {requiredSafetyTotal} {tokenSymbol}
-                      </span>{" "}
-                      target.
+                      </span>
                     </p>
                     {shouldShowProceedMessage && (
                       <p>
-                        Add{" "}
+                        Need{" "}
                         <span className="font-semibold">
                           {missingToProceed} {tokenSymbol}
                         </span>{" "}
-                        more to make this transaction.
+                        more on selected chains to continue.
                       </p>
                     )}
                     {!isSourceSelectionInsufficient &&
                       sourceCoverageState === "healthy" && (
-                        <p>Source coverage is healthy for execution.</p>
+                        <p>
+                          You&apos;re all set. We&apos;ll only use what&apos;s needed
+                          from these selected chains.
+                        </p>
                       )}
                   </div>
                 </div>
@@ -289,7 +293,7 @@ const SourceBreakdown = ({
                         </p>
                         {willUseFromIntent && (
                           <p className="text-xs text-muted-foreground">
-                            Will use:{" "}
+                            Estimated to use:{" "}
                             {nexusSDK?.utils?.formatTokenBalance(
                               willUseFromIntent,
                               {
@@ -308,7 +312,7 @@ const SourceBreakdown = ({
 
             {availableSources.length > 0 && (
               <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                <p>Select at least 1 chain.</p>
+                <p>Keep at least 1 chain selected.</p>
               </div>
             )}
           </AccordionContent>

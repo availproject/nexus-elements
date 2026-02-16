@@ -339,6 +339,13 @@ const useDeposit = ({
 
   const handleTransaction = async () => {
     if (!inputs?.amount || !inputs?.chain) return;
+    if (!inputs.selectedSources?.length) {
+      dispatch({
+        type: "setError",
+        payload: "Select at least 1 source chain to continue.",
+      });
+      return;
+    }
     dispatch({ type: "setStatus", payload: "executing" });
     dispatch({ type: "setError", payload: null });
     try {
@@ -356,9 +363,7 @@ const useDeposit = ({
         token,
         amount: amountBigInt,
         toChainId: inputs.chain,
-        sourceChains: inputs.selectedSources?.length
-          ? inputs.selectedSources
-          : allSourceIds,
+        sourceChains: inputs.selectedSources,
         execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: true,
       };
@@ -427,6 +432,15 @@ const useDeposit = ({
       setSimulation(null);
       return;
     }
+    if (!inputs.selectedSources?.length) {
+      activeSimulationIdRef.current = null;
+      dispatch({
+        type: "setError",
+        payload: "Select at least 1 source chain to continue.",
+      });
+      setSimulation(null);
+      return;
+    }
     const requestId = ++simulationRequestIdRef.current;
     activeSimulationIdRef.current = requestId;
     setSimulating(true);
@@ -444,9 +458,7 @@ const useDeposit = ({
         token,
         amount: amountBigInt,
         toChainId: inputs.chain,
-        sourceChains: inputs.selectedSources?.length
-          ? inputs.selectedSources
-          : allSourceIds,
+        sourceChains: inputs.selectedSources,
         execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: false,
       };

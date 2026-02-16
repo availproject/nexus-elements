@@ -1,81 +1,99 @@
 ---
 name: nexus-elements-bridge-deposit
-description: Install and use the Bridge Deposit widget (simple bridge deposit flow). Use when you want a lighter deposit UI without the full execute builder.
+description: Integrate the Bridge Deposit element for bridge-plus-execute deposit flows in React/TypeScript apps. Use when installing or debugging source-chain constrained deposits, bridge+execute simulation, intent/allowance approvals, and `sdk.bridgeAndExecute` transaction execution.
 ---
 
 # Nexus Elements - Bridge Deposit
 
-## Overview
-Install the Bridge Deposit widget for a simple bridge-and-execute deposit flow. This is lighter than the full Deposit widget.
+## Install
+- Install widget:
+  - `npx shadcn@latest add @nexus-elements/bridge-deposit`
+- Ensure `NexusProvider` is installed and initialized before rendering.
 
-## Prerequisites
-- NexusProvider installed and initialized on wallet connect.
-- Wallet connection configured; you have the connected wallet address.
+## Required setup before rendering
+- Ensure `useNexus().nexusSDK` is initialized.
+- Pass connected address (`address`) and destination chain (`chain`).
+- Provide `depositExecute` callback returning execute parameters.
 
-## Install (shadcn registry)
-1) Ensure shadcn/ui is initialized (`components.json` exists).
-2) Ensure registry mapping exists:
-```json
-"registries": {
-  "@nexus-elements/": "https://elements.nexus.availproject.org/r/{name}.json"
-}
-```
-3) Install:
-```bash
-npx shadcn@latest add @nexus-elements/bridge-deposit
-```
-Alternative:
-```bash
-npx shadcn@latest add https://elements.nexus.availproject.org/r/bridge-deposit.json
-```
+## Initialize SDK (required once per app)
+- On wallet connect, resolve an EIP-1193 provider and call `useNexus().handleInit(provider)`.
+- Wait for `useNexus().nexusSDK` before simulation/execution.
+- Re-run init after reconnect if wallet session resets.
 
-## Manual install (no shadcn)
-1) Download `https://elements.nexus.availproject.org/r/bridge-deposit.json`.
-2) Create each file in `files[].target` with `files[].content`.
-3) Install dependencies listed in `dependencies` and each `registryDependencies` item.
-
-## Usage
+## Render widget
 ```tsx
-import NexusDeposit from "@/components/bridge-deposit/deposit";
+"use client";
+
+import BridgeDeposit from "@/components/bridge-deposit/deposit";
 import { SUPPORTED_CHAINS, TOKEN_METADATA } from "@avail-project/nexus-core";
 import { parseUnits } from "viem";
 
-<NexusDeposit
-  address={address}
-  chain={SUPPORTED_CHAINS.BASE}
-  token="USDC"
-  heading="Deposit USDC"
-  destinationLabel="Deposit to Aave"
-  embed={false}
-  depositExecute={(token, amount, chainId, userAddress) => {
-    const decimals = TOKEN_METADATA[token].decimals;
-    const amountWei = parseUnits(amount, decimals);
-    return {
-      to: "0x...",
-      data: "0x...",
-      tokenApproval: {
-        token,
-        amount: amountWei,
-        spender: "0x...",
-      },
-    };
-  }}
-/>
+export function BridgeDepositPanel({ address }: { address: `0x${string}` }) {
+  return (
+    <BridgeDeposit
+      address={address}
+      chain={SUPPORTED_CHAINS.BASE}
+      token="USDC"
+      heading="Deposit USDC"
+      destinationLabel="Deposit to protocol"
+      depositExecute={(token, amount, chainId, userAddress) => {
+        const decimals = TOKEN_METADATA[token].decimals;
+        const amountWei = parseUnits(amount, decimals);
+        const contract = "0x0000000000000000000000000000000000000000" as const;
+
+        return {
+          to: contract,
+          data: "0x",
+          tokenApproval: {
+            token,
+            amount: amountWei,
+            spender: contract,
+          },
+        };
+      }}
+    />
+  );
+}
 ```
 
-## SDK flow mapping
-- Uses `sdk.bridgeAndExecute(...)` under the hood.
-- Relies on intent + allowance hooks (`intent`, `allowance`) for confirmation UI.
-- Progress updates come from `NEXUS_EVENTS.STEPS_LIST` and `NEXUS_EVENTS.STEP_COMPLETE`.
+## Live prop contract
+- Required:
+  - `address`
+  - `chain`
+  - `depositExecute(token, amount, chainId, userAddress)`
+- Optional:
+  - `token` (default `USDC`)
+  - `chainOptions` (restrict selectable source chains)
+  - `heading`, `embed`, `destinationLabel`
 
-## Props (NexusDepositProps)
-- `address` (required): connected wallet address
-- `chain` (required): destination chain id
-- `token` (optional, default "USDC")
-- `chainOptions` (optional): customize source chains list
-- `depositExecute` (required): returns `{ to, data, value?, tokenApproval? }`
-- `heading`, `embed`, `destinationLabel`
+## SDK flow details (under the hood)
+- Simulation:
+  - debounced amount triggers `sdk.simulateBridgeAndExecute(...)`
+- Execution:
+  - `sdk.bridgeAndExecute({ token, amount, toChainId, sourceChains, execute, waitForReceipt: true }, { onEvent })`
+- Hook usage:
+  - `intent.current` for preview/allow
+  - `allowance.current` for allowance decisions
+- Event mapping:
+  - `NEXUS_EVENTS.STEPS_LIST` seeds bridge steps
+  - `NEXUS_EVENTS.STEP_COMPLETE` marks progress and transaction start
 
-## Notes
-- Use `embed={true}` to render inline, otherwise a modal is shown.
-- This is distinct from the full `deposit` widget which uses `swapAndExecute` and broader asset selection.
+## Source selection behavior
+- Widget tracks `inputs.selectedSources` and passes them to simulate/execute.
+- Widget blocks simulation/execution if no source chains are selected.
+- If you pass `chainOptions`, ensure they match chains that actually hold source liquidity.
+
+## E2E verification
+- Enter amount and confirm simulation response appears.
+- Toggle source chains and confirm simulation + fee updates.
+- Start transaction and verify intent/allowance flows resolve.
+- Verify intent and execute explorer URLs on success.
+- Verify balance refresh after completion.
+
+## Common failure cases
+- No source chains selected:
+  - widget will error and block execution.
+- Invalid execute builder output:
+  - ensure `to`, `data`, and optional `tokenApproval` are correct.
+- Simulation fails repeatedly:
+  - reduce amount or update selected sources.

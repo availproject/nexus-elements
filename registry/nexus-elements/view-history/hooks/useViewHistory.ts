@@ -18,6 +18,7 @@ function formatExpiryDate(timestamp: number) {
 const useViewHistory = () => {
   const { nexusSDK } = useNexus();
   const [history, setHistory] = useState<RFF[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [displayedHistory, setDisplayedHistory] = useState<RFF[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -32,6 +33,7 @@ const useViewHistory = () => {
     if (!nexusSDK) return;
     try {
       const nextHistory = (await nexusSDK.getMyIntents()) ?? [];
+      setLoadError(null);
       setHistory(nextHistory);
       const firstPage = nextHistory.slice(0, ITEMS_PER_PAGE);
       setDisplayedHistory(firstPage);
@@ -39,6 +41,11 @@ const useViewHistory = () => {
       setHasMore(nextHistory.length > ITEMS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching intent history:", error);
+      setLoadError("Please check your wallet connection and try again.");
+      setHistory([]);
+      setDisplayedHistory([]);
+      setPage(0);
+      setHasMore(false);
     }
   }, [nexusSDK]);
 
@@ -118,6 +125,7 @@ const useViewHistory = () => {
 
   return {
     history,
+    loadError,
     displayedHistory,
     page,
     hasMore,

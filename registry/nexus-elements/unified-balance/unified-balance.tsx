@@ -181,7 +181,10 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
         totalFiat={totalFiat}
         tokens={tokens}
         nexusSDK={nexusSDK}
-        className="w-full max-w-lg mx-auto py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border"
+        className={cn(
+          "w-full max-w-lg mx-auto py-4 px-1 sm:p-4 flex flex-col gap-y-2 items-center overflow-y-scroll max-h-[372px] rounded-lg border border-border",
+          className
+        )}
       />
     );
   }

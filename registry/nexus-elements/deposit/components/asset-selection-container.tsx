@@ -49,7 +49,6 @@ function transformSwapBalanceToTokens(
   swapBalance: UserAsset[] | null,
 ): Token[] {
   if (!swapBalance) return [];
-  console.log("SWAP_BALANCE", swapBalance);
   return swapBalance
     .filter((asset) => asset.breakdown && asset.breakdown.length > 0)
     .map((asset) => {
