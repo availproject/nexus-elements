@@ -56,7 +56,7 @@ const DepositShowcase = () => {
     // USDm on AAVE MegaETH
 
     const contractAddress =
-      "0x7e324abc5de01d112afc03a584966ff199741c28" as const;
+      "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5" as const;
 
     const abi: Abi = [
       {
