@@ -146,7 +146,7 @@ const NexusDeposit = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Deposit
         </Button>

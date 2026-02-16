@@ -397,7 +397,7 @@ export function useDepositWidget(
             amount: bigint;
             spender: Hex;
           },
-          gas: BigInt(300_000),
+          gas: BigInt(400_000),
         },
       };
 
