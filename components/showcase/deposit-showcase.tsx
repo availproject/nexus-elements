@@ -7,7 +7,6 @@ import {
   CHAIN_METADATA,
   SUPPORTED_CHAINS,
   TOKEN_CONTRACT_ADDRESSES,
-  TOKEN_METADATA,
 } from "@avail-project/nexus-core";
 
 const DepositShowcase = () => {
