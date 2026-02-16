@@ -15,6 +15,7 @@ import {
   type BridgeStepType,
   CHAIN_METADATA,
   formatTokenBalance,
+  formatUnits,
 } from "@avail-project/nexus-core";
 import {
   useEffect,
