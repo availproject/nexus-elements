@@ -107,6 +107,7 @@ const SimpleDeposit = ({
                 allowance={allowance}
                 callback={startTransaction}
                 onCloseCallback={reset}
+                onError={setTxError}
               />
             </DialogContent>
           </Dialog>

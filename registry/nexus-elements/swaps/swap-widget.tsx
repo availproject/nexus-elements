@@ -18,7 +18,7 @@ function SwapWidget({
 }: Readonly<{
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
-  onError?: () => void;
+  onError?: (message: string) => void;
 }>) {
   const sourceContainer = useRef<HTMLDivElement | null>(null);
   const destinationContainer = useRef<HTMLDivElement | null>(null);

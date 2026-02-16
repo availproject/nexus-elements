@@ -17,12 +17,13 @@ import {
   type OnAllowanceHookData,
   parseUnits,
 } from "@avail-project/nexus-core";
-import { useNexus } from "../../nexus/NexusProvider";
+import { useNexusError } from "../../common";
 
 interface AllowanceModalProps {
   allowance: RefObject<OnAllowanceHookData | null>;
   callback?: () => void;
   onCloseCallback?: () => void;
+  onError?: (message: string) => void;
 }
 
 type AllowanceChoice = "min" | "max" | "custom";
@@ -109,8 +110,9 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
   allowance,
   callback,
   onCloseCallback,
+  onError,
 }) => {
-  const { nexusSDK } = useNexus();
+  const handleNexusError = useNexusError();
   const [selectedOption, setSelectedOption] = useState<AllowanceChoice[]>([]);
   const [customValues, setCustomValues] = useState<string[]>([]);
 
@@ -174,8 +176,10 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
       allowance.current = null;
       callback?.();
     } catch (error) {
+      const { message } = handleNexusError(error);
       console.error("AllowanceModal onApprove error", error);
       allowance.current = null;
+      onError?.(message);
       onCloseCallback?.();
     }
   };

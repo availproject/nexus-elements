@@ -249,6 +249,7 @@ const FastBridge: FC<FastBridgeProps> = ({
                 allowance={allowance}
                 callback={startTransaction}
                 onCloseCallback={reset}
+                onError={setTxError}
               />
             ) : (
               <TransactionProgress

@@ -453,31 +453,49 @@ const useSwaps = ({
   };
 
   const handleExactInSwap = async (runId: number) => {
+    const fromToken = state.inputs.fromToken;
+    const toToken = state.inputs.toToken;
+    const fromAmount = state.inputs.fromAmount;
+    const toChainID = state.inputs.toChainID;
+    const fromChainID = state.inputs.fromChainID;
+
     if (
       !nexusSDK ||
       !areExactInInputsValid ||
-      !state?.inputs?.fromToken ||
-      !state?.inputs?.toToken ||
-      !state?.inputs?.fromAmount ||
-      !state?.inputs?.toChainID ||
-      !state?.inputs?.fromChainID
+      !fromToken ||
+      !toToken ||
+      !fromAmount ||
+      !toChainID ||
+      !fromChainID
     )
       return;
 
+    const sourceBalance = swapBalance
+      ?.find((token) => token.symbol === fromToken.symbol)
+      ?.breakdown?.find((chain) => chain.chain?.id === fromChainID);
+    if (
+      !sourceBalance ||
+      Number.parseFloat(sourceBalance.balance ?? "0") <= 0
+    ) {
+      throw new Error(
+        "No balance found for this wallet on supported source chains.",
+      );
+    }
+
     const amountBigInt = parseUnits(
-      state.inputs.fromAmount,
-      state.inputs.fromToken.decimals,
+      fromAmount,
+      fromToken.decimals,
     );
     const swapInput: ExactInSwapInput = {
       from: [
         {
-          chainId: state.inputs.fromChainID,
+          chainId: fromChainID,
           amount: amountBigInt,
-          tokenAddress: state.inputs.fromToken.contractAddress,
+          tokenAddress: fromToken.contractAddress,
         },
       ],
-      toChainId: state.inputs.toChainID,
-      toTokenAddress: state.inputs.toToken.tokenAddress,
+      toChainId: toChainID,
+      toTokenAddress: toToken.tokenAddress,
     };
 
     const result = await nexusSDK.swapWithExactIn(swapInput, {
@@ -493,23 +511,35 @@ const useSwaps = ({
   };
 
   const handleExactOutSwap = async (runId: number) => {
+    const toToken = state.inputs.toToken;
+    const toAmount = state.inputs.toAmount;
+    const toChainID = state.inputs.toChainID;
+
     if (
       !nexusSDK ||
       !areExactOutInputsValid ||
-      !state?.inputs?.toToken ||
-      !state?.inputs?.toAmount ||
-      !state?.inputs?.toChainID
+      !toToken ||
+      !toAmount ||
+      !toChainID
     )
       return;
+    if (swapBalance && exactOutSourceOptions.length === 0) {
+      throw new Error(
+        "No balance found for this wallet on supported source chains.",
+      );
+    }
+    if (!exactOutFromSources || exactOutFromSources.length === 0) {
+      throw new Error("Select at least one source with available balance.");
+    }
 
     const amountBigInt = parseUnits(
-      state.inputs.toAmount,
-      state.inputs.toToken.decimals,
+      toAmount,
+      toToken.decimals,
     );
     const swapInput: ExactOutSwapInput = {
       toAmount: amountBigInt,
-      toChainId: state.inputs.toChainID,
-      toTokenAddress: state.inputs.toToken.tokenAddress,
+      toChainId: toChainID,
+      toTokenAddress: toToken.tokenAddress,
       ...(exactOutFromSources ? { fromSources: exactOutFromSources } : {}),
     };
 
@@ -525,7 +555,7 @@ const useSwaps = ({
   };
 
   const runSwap = async (runId: number) => {
-    if (!nexusSDK || !areInputsValid) return;
+    if (!nexusSDK || !areInputsValid || !swapBalance) return;
 
     try {
       onStart?.();

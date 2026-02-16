@@ -246,6 +246,7 @@ const FastTransfer: FC<FastTransferProps> = ({
                 allowance={allowance}
                 callback={startTransaction}
                 onCloseCallback={reset}
+                onError={setTxError}
               />
             ) : (
               <TransactionProgress
