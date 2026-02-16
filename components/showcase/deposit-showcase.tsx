@@ -125,7 +125,7 @@ const DepositShowcase = () => {
     >
       <NexusDeposit
         embed={embed}
-        heading={"Deposit USDC"}
+        heading={"Deposit USDm"}
         destination={{
           chainId: SUPPORTED_CHAINS.MEGAETH,
           tokenAddress:
@@ -134,7 +134,7 @@ const DepositShowcase = () => {
           tokenDecimals: 18,
           tokenLogo:
             "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
-          label: "Deposit USDM on Aave Megaeth",
+          label: "Deposit USDm on Aave Megaeth",
           gasTokenSymbol:
             CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
