@@ -5,7 +5,7 @@
   "title": "Unified Balance",
   "description": "A simple component built with Nexus to display unified balance",
   "dependencies": [
-    "@avail-project/nexus-core@1.1.0",
+    "@avail-project/nexus-core@1.1.1",
     "lucide-react"
   ],
   "registryDependencies": [
