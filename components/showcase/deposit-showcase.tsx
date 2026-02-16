@@ -19,8 +19,46 @@ const DepositShowcase = () => {
     _chainId: number,
     user: Address,
   ) => {
+    // USDC on AAVE BASE
+    // const contractAddress =
+    //   "0x7e324AbC5De01d112AfC03a584966ff199741C28" as const;
+
+    // const abi: Abi = [
+    //   {
+    //     inputs: [
+    //       {
+    //         internalType: "address",
+    //         name: "asset",
+    //         type: "address",
+    //       },
+    //       {
+    //         internalType: "uint256",
+    //         name: "amount",
+    //         type: "uint256",
+    //       },
+    //       {
+    //         internalType: "address",
+    //         name: "onBehalfOf",
+    //         type: "address",
+    //       },
+    //       {
+    //         internalType: "uint16",
+    //         name: "referralCode",
+    //         type: "uint16",
+    //       },
+    //     ],
+    //     name: "supply",
+    //     outputs: [],
+    //     stateMutability: "nonpayable",
+    //     type: "function",
+    //   },
+    // ];
+
+    // USDm on AAVE MegaETH
+
     const contractAddress =
       "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5" as const;
+
     const abi: Abi = [
       {
         inputs: [
@@ -51,6 +89,7 @@ const DepositShowcase = () => {
         type: "function",
       },
     ];
+
     if (tokenSymbol === "ETH") {
       throw new Error(
         "ETH is native and not supported for this execute builder",
@@ -89,17 +128,19 @@ const DepositShowcase = () => {
         embed={embed}
         heading={"Deposit USDC"}
         destination={{
-          chainId: SUPPORTED_CHAINS.BASE,
-          tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
-          tokenSymbol: "USDC",
-          tokenDecimals: TOKEN_METADATA["USDC"].decimals,
-          tokenLogo: TOKEN_METADATA["USDC"].icon,
-          label: "Deposit USDC on Aave Base",
+          chainId: SUPPORTED_CHAINS.MEGAETH,
+          tokenAddress:
+            TOKEN_CONTRACT_ADDRESSES["USDM"][SUPPORTED_CHAINS.MEGAETH],
+          tokenSymbol: "USDM",
+          tokenDecimals: 18,
+          tokenLogo:
+            "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
+          label: "Deposit USDM on Aave Megaeth",
           gasTokenSymbol:
-            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
+            CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
           explorerUrl:
-            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
+            CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].blockExplorerUrls[0],
           depositTargetLogo: "/aave.svg",
         }}
         executeDeposit={executeDeposit}
