@@ -49,7 +49,6 @@ const SourceBreakdown = ({
   sourceCoverageState = "healthy",
   sourceCoveragePercent = 100,
   missingToProceed,
-  missingToSafety,
   selectedTotal,
   requiredTotal,
   requiredSafetyTotal,
@@ -67,9 +66,6 @@ const SourceBreakdown = ({
   const shouldShowProceedMessage =
     sourceCoverageState === "error" &&
     Number.parseFloat(missingToProceed ?? "0") > 0;
-  const shouldShowSafetyMessage =
-    sourceCoverageState === "warning" &&
-    Number.parseFloat(missingToSafety ?? "0") > 0;
 
   const coverageToneClass =
     sourceCoverageState === "error"
@@ -201,7 +197,7 @@ const SourceBreakdown = ({
                       <span className="font-semibold">
                         {requiredSafetyTotal} {tokenSymbol}
                       </span>{" "}
-                      target (130% safety).
+                      target.
                     </p>
                     {shouldShowProceedMessage && (
                       <p>
@@ -210,15 +206,6 @@ const SourceBreakdown = ({
                           {missingToProceed} {tokenSymbol}
                         </span>{" "}
                         more to make this transaction.
-                      </p>
-                    )}
-                    {shouldShowSafetyMessage && (
-                      <p>
-                        Add{" "}
-                        <span className="font-semibold">
-                          {missingToSafety} {tokenSymbol}
-                        </span>{" "}
-                        more to reach the 130% safety buffer.
                       </p>
                     )}
                     {!isSourceSelectionInsufficient &&

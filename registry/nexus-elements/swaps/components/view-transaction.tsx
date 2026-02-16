@@ -259,7 +259,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
     if (!symbol) return 0;
     const base = getFiatValue(amount, symbol);
     if (!Number.isFinite(base) || base <= 0) return 0;
-    return base * 1.3;
+    return base;
   }, [shouldShowExactOutSourceSelection, transactionIntent, getFiatValue]);
 
   const isExactOutSourceSelectionInsufficient = useMemo(() => {
@@ -294,7 +294,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
       <DialogContent className="max-w-md!" showCloseButton={false}>
         <DialogHeader className="flex-row items-center justify-between w-full">
           <p className="text-sm font-medium text-muted-foreground">
-            You're Swapping
+            You&apos;re Swapping
           </p>
           <DialogClose>
             <XIcon className="size-5 text-muted-foreground" />
@@ -363,8 +363,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
                       <span className="font-medium">
                         {usdFormatter.format(exactOutRequiredUsd)}
                       </span>{" "}
-                      (130% of{" "}
-                      {transactionIntent?.destination?.amount}{" "}
+                      (required for {transactionIntent?.destination?.amount}{" "}
                       {transactionIntent?.destination?.token.symbol}).
                     </div>
                   )}

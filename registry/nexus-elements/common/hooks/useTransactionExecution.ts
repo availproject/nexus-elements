@@ -347,12 +347,6 @@ export function useTransactionExecution({
       onError?.(message);
       return;
     }
-    if (sourceSelection.coverageState === "warning" && inputs?.token) {
-      const message = `Add ${sourceSelection.missingToSafety} ${inputs.token} more in selected sources to reach the 130% safety buffer.`;
-      setTxError(message);
-      onError?.(message);
-      return;
-    }
     void (async () => {
       const refreshed = await refreshIntent({ reportError: true });
       if (!refreshed || !intent.current) return;

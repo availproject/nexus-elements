@@ -10,8 +10,6 @@ import { type Address } from "viem";
 const MAX_AMOUNT_REGEX = /^\d*\.?\d+$/;
 
 export const MAX_AMOUNT_DEBOUNCE_MS = 300;
-export const SOURCE_SAFETY_MULTIPLIER_NUMERATOR = BigInt(130);
-export const SOURCE_SAFETY_MULTIPLIER_DENOMINATOR = BigInt(100);
 
 export const normalizeMaxAmount = (
   maxAmount?: string | number,

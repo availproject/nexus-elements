@@ -32,8 +32,6 @@ import {
 } from "../types/transaction-flow";
 import {
   MAX_AMOUNT_DEBOUNCE_MS,
-  SOURCE_SAFETY_MULTIPLIER_DENOMINATOR,
-  SOURCE_SAFETY_MULTIPLIER_NUMERATOR,
   buildInitialInputs,
   clampAmountToMax,
   formatAmountForDisplay,
@@ -246,6 +244,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   ]);
   const hasPendingSourceSelectionChanges =
     sourceSelectionKey !== appliedSourceSelectionKey;
+  const intentSourceSpendAmount = intent.current?.intent?.sourcesTotal;
 
   const getMaxForCurrentSelection = useCallback(async () => {
     if (!nexusSDK || !inputs?.token || !inputs?.chain) return undefined;
@@ -294,7 +293,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   );
 
   const sourceSelection = useMemo(() => {
-    const amount = inputs?.amount?.trim() ?? "";
+    const amount = intentSourceSpendAmount?.trim() ?? inputs?.amount?.trim() ?? "";
     const decimals = getCoverageDecimals({
       type,
       token: inputs?.token,
@@ -345,42 +344,28 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         return baseSelection;
       }
 
-      const requiredSafetyRaw =
-        (requiredRaw * SOURCE_SAFETY_MULTIPLIER_NUMERATOR +
-          (SOURCE_SAFETY_MULTIPLIER_DENOMINATOR - BigInt(1))) /
-        SOURCE_SAFETY_MULTIPLIER_DENOMINATOR;
-
       const missingToProceedRaw =
         selectedTotalRaw >= requiredRaw
           ? BigInt(0)
           : requiredRaw - selectedTotalRaw;
-      const missingToSafetyRaw =
-        selectedTotalRaw >= requiredSafetyRaw
-          ? BigInt(0)
-          : requiredSafetyRaw - selectedTotalRaw;
+      const missingToSafetyRaw = missingToProceedRaw;
 
       const coverageState: SourceCoverageState =
         selectedTotalRaw < requiredRaw
           ? "error"
-          : selectedTotalRaw < requiredSafetyRaw
-            ? "warning"
-            : "healthy";
+          : "healthy";
 
       const coverageBasisPoints =
-        requiredSafetyRaw === BigInt(0)
+        requiredRaw === BigInt(0)
           ? 10_000
-          : selectedTotalRaw >= requiredSafetyRaw
+          : selectedTotalRaw >= requiredRaw
             ? 10_000
-            : Number((selectedTotalRaw * BigInt(10_000)) / requiredSafetyRaw);
+            : Number((selectedTotalRaw * BigInt(10_000)) / requiredRaw);
 
       return {
         selectedTotal,
         requiredTotal: amount,
-        requiredSafetyTotal: formatAmountForDisplay(
-          requiredSafetyRaw,
-          decimals,
-          nexusSDK,
-        ),
+        requiredSafetyTotal: amount,
         missingToProceed: formatAmountForDisplay(
           missingToProceedRaw,
           decimals,
@@ -394,7 +379,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         coverageState,
         coverageToSafetyPercent: coverageBasisPoints / 100,
         isBelowRequired: coverageState === "error",
-        isBelowSafetyBuffer: coverageState !== "healthy",
+        isBelowSafetyBuffer: coverageState === "error",
       };
     } catch {
       return baseSelection;
@@ -406,6 +391,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     inputs?.chain,
     inputs?.amount,
     inputs?.token,
+    intentSourceSpendAmount,
     availableSources,
     effectiveSelectedSourceChains,
   ]);
