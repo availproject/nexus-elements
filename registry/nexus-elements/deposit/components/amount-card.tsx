@@ -14,6 +14,7 @@ import {
   SHINE_ANIMATION_DURATION_MS,
   MAX_INPUT_WIDTH_PX,
 } from "../constants/widget";
+import { TOKEN_IMAGES } from "../constants/assets";
 
 // Hoisted RegExp to avoid recreation on every render (js-hoist-regexp)
 const NUMERIC_INPUT_REGEX = /^\d*\.?\d*$/;
@@ -195,7 +196,10 @@ function AmountCard({
         }`}
       >
         <TokenIcon
-          tokenSrc={destinationConfig.tokenLogo ?? "/usdc.svg"}
+          tokenSrc={
+            destinationConfig.tokenLogo ??
+            TOKEN_IMAGES[destinationConfig.tokenSymbol]
+          }
           protocolSrc={destinationConfig?.depositTargetLogo}
           tokenAlt="USDC"
         />

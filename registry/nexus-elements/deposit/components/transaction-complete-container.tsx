@@ -8,6 +8,7 @@ import { ArrowBoxUpRightIcon, ChevronDownIcon, ChevronUpIcon } from "./icons";
 import { CardContent, CardFooter } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { usdFormatter } from "../../common";
+import { TOKEN_IMAGES } from "../constants/assets";
 
 function formatTimer(seconds: number): string {
   const secs = Math.round(seconds);
@@ -69,6 +70,9 @@ const TransactionCompleteContainer = ({
               label="You received"
               amount={receiveAmountUsd}
               timeLabel={completionTime}
+              destinationTokenLogo={
+                TOKEN_IMAGES[widget.destination.tokenSymbol]
+              }
             />
             <span className="font-sans text-sm w-full text-center leading-4.5 text-muted-foreground">
               Transaction successful
@@ -193,7 +197,7 @@ const TransactionCompleteContainer = ({
                     {usdFormatter.format(
                       widget.feeBreakdown.gasUsd +
                         (widget?.confirmationDetails?.totalFeeUsd ?? 0),
-                    )}
+                    )}{" "}
                     USD
                   </span>
                 </div>

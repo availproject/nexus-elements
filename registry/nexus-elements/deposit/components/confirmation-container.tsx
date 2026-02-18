@@ -148,7 +148,7 @@ const ConfirmationContainer = ({
                         </div>
                         <div className="flex flex-col gap-0.5 items-end">
                           <span className="font-sans text-sm text-card-foreground">
-                            {usdFormatter.format(amountUsd)}USD
+                            {usdFormatter.format(amountUsd)} USD
                           </span>
                           <span className="font-sans text-[13px] text-muted-foreground">
                             {formatTokenBalance(parseFloat(source.amount), {

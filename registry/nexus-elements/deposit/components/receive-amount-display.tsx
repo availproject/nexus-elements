@@ -1,6 +1,6 @@
 import { TokenIcon } from "./token-icon";
 import { ClockIcon } from "./icons";
-import { DEPOSIT_WIDGET_ASSETS } from "../constants/assets";
+import { DEPOSIT_WIDGET_ASSETS, TOKEN_IMAGES } from "../constants/assets";
 import { Skeleton } from "../../ui/skeleton";
 import { usdFormatter } from "../../common";
 
@@ -32,7 +32,7 @@ export function ReceiveAmountDisplay({
       </span>
       <div className="w-full flex items-center justify-center gap-3">
         <TokenIcon
-          tokenSrc={destinationTokenLogo || DEPOSIT_WIDGET_ASSETS.tokens.USDC}
+          tokenSrc={destinationTokenLogo ?? ""}
           protocolSrc={
             depositTargetLogo || DEPOSIT_WIDGET_ASSETS.protocols.aave
           }
