@@ -1,5 +1,6 @@
 "use client";
 import {
+  Environment,
   type EthereumProvider,
   type NexusNetwork,
   NexusSDK,
@@ -74,12 +75,22 @@ const NexusProvider = ({
 }: NexusProviderProps) => {
   const stableConfig = useMemo(
     () => ({ ...defaultConfig, ...config }),
-    [config]
+    [config],
   );
 
   const sdkRef = useRef<NexusSDK | null>(null);
   sdkRef.current ??= new NexusSDK({
-    ...stableConfig,
+    network: {
+      NETWORK_HINT: Environment.CERISE,
+      COSMOS_GRPC_URL: "https://debugnet.availproject.org/grpc-web/",
+      COSMOS_REST_URL: "https://debugnet.availproject.org",
+      COSMOS_RPC_URL: "https://debugnet.availproject.org:26650",
+      COSMOS_WS_URL: "wss://debugnet.availproject.org:26650/websocket",
+      INTENT_EXPLORER_URL: "https://explorer.nexus-cerise.availproject.org",
+      VSC_BASE_URL: "https://vsc-debugnet.availproject.org",
+      VSC_WS_URL: "wss://vsc-debugnet.availproject.org",
+    },
+    debug: true,
   });
   const sdk = sdkRef.current;
 
@@ -88,20 +99,21 @@ const NexusProvider = ({
   const supportedChainsAndTokens =
     useRef<SupportedChainsAndTokensResult | null>(null);
   const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
-    null
+    null,
   );
   const [bridgableBalance, setBridgableBalance] = useState<UserAsset[] | null>(
-    null
+    null,
   );
   const [swapBalance, setSwapBalance] = useState<UserAsset[] | null>(null);
-  const [exchangeRateState, setExchangeRateState] = useState<
-    Record<string, number> | null
-  >(null);
+  const [exchangeRateState, setExchangeRateState] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const exchangeRate = useRef<Record<string, number> | null>(null);
   const coinbaseUsdRateCache = useRef<Record<string, number>>({});
-  const coinbaseUsdRateRequests = useRef<Record<string, Promise<number | null>>>(
-    {},
-  );
+  const coinbaseUsdRateRequests = useRef<
+    Record<string, Promise<number | null>>
+  >({});
   const usdPeggedSymbols = useRef<Set<string>>(
     new Set(DEFAULT_USD_PEGGED_TOKEN_SYMBOLS),
   );
@@ -127,73 +139,76 @@ const NexusProvider = ({
     setExchangeRateState(nextRates);
   }, []);
 
-  const resolveTokenUsdRate = useCallback(async (tokenSymbol: string) => {
-    const normalizedSymbol = normalizeTokenSymbol(tokenSymbol);
-    if (!normalizedSymbol) return null;
+  const resolveTokenUsdRate = useCallback(
+    async (tokenSymbol: string) => {
+      const normalizedSymbol = normalizeTokenSymbol(tokenSymbol);
+      if (!normalizedSymbol) return null;
 
-    const sdkRate = toFinitePositiveNumber(
-      exchangeRate.current?.[normalizedSymbol],
-    );
-    if (sdkRate) {
-      return sdkRate;
-    }
+      const sdkRate = toFinitePositiveNumber(
+        exchangeRate.current?.[normalizedSymbol],
+      );
+      if (sdkRate) {
+        return sdkRate;
+      }
 
-    const cachedRate = toFinitePositiveNumber(
-      coinbaseUsdRateCache.current[normalizedSymbol],
-    );
-    if (cachedRate) {
-      return cachedRate;
-    }
+      const cachedRate = toFinitePositiveNumber(
+        coinbaseUsdRateCache.current[normalizedSymbol],
+      );
+      if (cachedRate) {
+        return cachedRate;
+      }
 
-    const inFlightRequest = coinbaseUsdRateRequests.current[normalizedSymbol];
-    if (inFlightRequest) {
-      return inFlightRequest;
-    }
+      const inFlightRequest = coinbaseUsdRateRequests.current[normalizedSymbol];
+      if (inFlightRequest) {
+        return inFlightRequest;
+      }
 
-    const requestPromise = (async (): Promise<number | null> => {
-      for (const candidate of getCoinbaseSymbolCandidates(normalizedSymbol)) {
-        const sdkCandidateRate = toFinitePositiveNumber(
-          exchangeRate.current?.[candidate],
-        );
-        if (sdkCandidateRate) {
-          cacheUsdRate(normalizedSymbol, sdkCandidateRate);
-          return sdkCandidateRate;
+      const requestPromise = (async (): Promise<number | null> => {
+        for (const candidate of getCoinbaseSymbolCandidates(normalizedSymbol)) {
+          const sdkCandidateRate = toFinitePositiveNumber(
+            exchangeRate.current?.[candidate],
+          );
+          if (sdkCandidateRate) {
+            cacheUsdRate(normalizedSymbol, sdkCandidateRate);
+            return sdkCandidateRate;
+          }
+
+          const cachedCandidateRate = toFinitePositiveNumber(
+            coinbaseUsdRateCache.current[candidate],
+          );
+          if (cachedCandidateRate) {
+            cacheUsdRate(normalizedSymbol, cachedCandidateRate);
+            return cachedCandidateRate;
+          }
         }
 
-        const cachedCandidateRate = toFinitePositiveNumber(
-          coinbaseUsdRateCache.current[candidate],
-        );
-        if (cachedCandidateRate) {
-          cacheUsdRate(normalizedSymbol, cachedCandidateRate);
-          return cachedCandidateRate;
+        const coinbaseRate = await fetchCoinbaseUsdRate(normalizedSymbol);
+        if (coinbaseRate) {
+          cacheUsdRate(normalizedSymbol, coinbaseRate);
+          return coinbaseRate;
         }
+
+        if (usdPeggedSymbols.current.has(normalizedSymbol)) {
+          cacheUsdRate(normalizedSymbol, USD_PEGGED_FALLBACK_RATE);
+          return USD_PEGGED_FALLBACK_RATE;
+        }
+
+        return null;
+      })();
+
+      coinbaseUsdRateRequests.current[normalizedSymbol] = requestPromise;
+      try {
+        return await requestPromise;
+      } finally {
+        delete coinbaseUsdRateRequests.current[normalizedSymbol];
       }
-
-      const coinbaseRate = await fetchCoinbaseUsdRate(normalizedSymbol);
-      if (coinbaseRate) {
-        cacheUsdRate(normalizedSymbol, coinbaseRate);
-        return coinbaseRate;
-      }
-
-      if (usdPeggedSymbols.current.has(normalizedSymbol)) {
-        cacheUsdRate(normalizedSymbol, USD_PEGGED_FALLBACK_RATE);
-        return USD_PEGGED_FALLBACK_RATE;
-      }
-
-      return null;
-    })();
-
-    coinbaseUsdRateRequests.current[normalizedSymbol] = requestPromise;
-    try {
-      return await requestPromise;
-    } finally {
-      delete coinbaseUsdRateRequests.current[normalizedSymbol];
-    }
-  }, [cacheUsdRate]);
+    },
+    [cacheUsdRate],
+  );
 
   const setupNexus = useCallback(async () => {
     const list = sdk.utils.getSupportedChains(
-      config?.network === "testnet" ? 0 : undefined
+      config?.network === "testnet" ? 0 : undefined,
     );
     supportedChainsAndTokens.current = list ?? null;
     usdPeggedSymbols.current = buildUsdPeggedSymbolSet(list ?? null);
@@ -390,7 +405,7 @@ const NexusProvider = ({
       exchangeRateState,
       getFiatValue,
       resolveTokenUsdRate,
-    ]
+    ],
   );
   return (
     <NexusContext.Provider value={value}>{children}</NexusContext.Provider>
