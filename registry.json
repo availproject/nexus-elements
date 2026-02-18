@@ -237,6 +237,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
           "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
@@ -598,6 +603,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
           "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
@@ -783,6 +793,11 @@
         {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
           "type": "registry:component"
         },
         {
@@ -1102,6 +1117,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
           "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
@@ -1303,6 +1323,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
           "target": "components/common/utils/transaction-flow.ts",
           "type": "registry:component"
@@ -1475,6 +1500,11 @@
         {
           "path": "registry/nexus-elements/common/utils/constant.ts",
           "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
           "type": "registry:component"
         },
         {

@@ -67,6 +67,7 @@ export function useDepositWidget(
     fetchSwapBalance,
     getFiatValue,
     exchangeRate,
+    resolveTokenUsdRate,
   } = useNexus();
   const { address } = useAccount();
   const handleNexusError = useNexusError();
@@ -343,7 +344,7 @@ export function useDepositWidget(
    * Handle amount input continue - starts simulation
    */
   const beginAmountSimulation = useCallback(
-    (totalAmountUsd: number) => {
+    async (totalAmountUsd: number) => {
       if (!nexusSDK) {
         dispatch({ type: "setError", payload: "Nexus SDK is not initialized." });
         dispatch({ type: "setStatus", payload: "error" });
@@ -354,8 +355,12 @@ export function useDepositWidget(
         dispatch({ type: "setStatus", payload: "error" });
         return false;
       }
-      const destinationRate = exchangeRate?.[destination.tokenSymbol];
-      if (!destinationRate || !Number.isFinite(destinationRate) || destinationRate <= 0) {
+      const destinationRate = await resolveTokenUsdRate(destination.tokenSymbol);
+      if (
+        !destinationRate ||
+        !Number.isFinite(destinationRate) ||
+        destinationRate <= 0
+      ) {
         dispatch({
           type: "setError",
           payload: `Unable to fetch pricing for ${destination.tokenSymbol}. Please try again.`,
@@ -413,7 +418,7 @@ export function useDepositWidget(
     [
       nexusSDK,
       address,
-      exchangeRate,
+      resolveTokenUsdRate,
       destination,
       executeDeposit,
       start,
@@ -424,7 +429,7 @@ export function useDepositWidget(
 
   const handleAmountContinue = useCallback(
     (totalAmountUsd: number) => {
-      beginAmountSimulation(totalAmountUsd);
+      void beginAmountSimulation(totalAmountUsd);
     },
     [beginAmountSimulation],
   );
@@ -452,13 +457,14 @@ export function useDepositWidget(
         if (amount) {
           const totalAmountUsd = parseFloat(amount.replace(/,/g, ""));
           if (totalAmountUsd > 0) {
-            const started = beginAmountSimulation(totalAmountUsd);
-            if (started) {
+            void (async () => {
+              const started = await beginAmountSimulation(totalAmountUsd);
+              if (!started) return;
               dispatch({
                 type: "setStep",
                 payload: { step: newStep, direction: "forward" },
               });
-            }
+            })();
             return;
           }
         }
