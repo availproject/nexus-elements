@@ -48,7 +48,7 @@ interface BaseTransactionFlowProps {
   allowance: RefObject<OnAllowanceHookData | null>;
   bridgableBalance: UserAsset[] | null;
   prefill?: TransactionFlowPrefill;
-  onComplete?: () => void;
+  onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
   fetchBalance: () => Promise<void>;
@@ -523,11 +523,15 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   }, [inputs?.token]);
 
   useEffect(() => {
-    if (!isDialogOpen) {
-      stopwatch.stop();
-      stopwatch.reset();
+    if (isDialogOpen) return;
+    stopwatch.stop();
+    stopwatch.reset();
+    if (state.status === "success" || state.status === "error") {
+      resetSteps();
+      setLastExplorerUrl("");
+      setStatus("idle");
     }
-  }, [isDialogOpen, stopwatch]);
+  }, [isDialogOpen, resetSteps, setStatus, state.status, stopwatch]);
 
   useEffect(() => {
     if (txError) {

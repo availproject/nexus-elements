@@ -63,7 +63,7 @@ interface UseTransactionExecutionProps {
   };
   handleNexusError: NexusErrorHandler;
   onStart?: () => void;
-  onComplete?: () => void;
+  onComplete?: (explorerUrl?: string) => void;
   onError?: (message: string) => void;
   fetchBalance: () => Promise<void>;
   notifyHistoryRefresh?: () => void;
@@ -129,15 +129,16 @@ export function useTransactionExecution({
       }
       return false;
     } finally {
-      if (activeRunId !== runIdRef.current) return;
-      setRefreshing(false);
+      if (activeRunId === runIdRef.current) {
+        setRefreshing(false);
+      }
     }
   };
 
-  const onSuccess = async () => {
+  const onSuccess = async (explorerUrl?: string) => {
     stopwatch.stop();
     setStatus("success");
-    onComplete?.();
+    onComplete?.(explorerUrl);
     intent.current = null;
     allowance.current = null;
     resetInputs();
@@ -285,7 +286,7 @@ export function useTransactionExecution({
         throw new Error("Transaction rejected by user");
       }
       setLastExplorerUrl(transactionResult.explorerUrl);
-      await onSuccess();
+      await onSuccess(transactionResult.explorerUrl);
     } catch (error) {
       if (currentRunId !== runIdRef.current) {
         cleanupSupersededExecution();

@@ -37,7 +37,7 @@ interface FastBridgeProps {
     amount?: string;
     recipient?: Address;
   };
-  onComplete?: () => void;
+  onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
 }
@@ -50,6 +50,10 @@ const FastBridge: FC<FastBridgeProps> = ({
   onError,
   prefill,
 }) => {
+  const handleComplete = (explorerUrl?: string) => {
+    onComplete?.(explorerUrl);
+  };
+
   const [isSourceMenuOpen, setIsSourceMenuOpen] = useState(false);
   const {
     nexusSDK,
@@ -100,7 +104,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     intent,
     bridgableBalance,
     allowance,
-    onComplete,
+    onComplete: handleComplete,
     onStart,
     onError,
     fetchBalance: fetchBridgableBalance,

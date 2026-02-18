@@ -21,38 +21,6 @@ const DepositShowcase = () => {
     // USDC on AAVE BASE
     // const contractAddress =
     //   "0x7e324AbC5De01d112AfC03a584966ff199741C28" as const;
-
-    // const abi: Abi = [
-    //   {
-    //     inputs: [
-    //       {
-    //         internalType: "address",
-    //         name: "asset",
-    //         type: "address",
-    //       },
-    //       {
-    //         internalType: "uint256",
-    //         name: "amount",
-    //         type: "uint256",
-    //       },
-    //       {
-    //         internalType: "address",
-    //         name: "onBehalfOf",
-    //         type: "address",
-    //       },
-    //       {
-    //         internalType: "uint16",
-    //         name: "referralCode",
-    //         type: "uint16",
-    //       },
-    //     ],
-    //     name: "supply",
-    //     outputs: [],
-    //     stateMutability: "nonpayable",
-    //     type: "function",
-    //   },
-    // ];
-
     // USDm on AAVE MegaETH
 
     const contractAddress =

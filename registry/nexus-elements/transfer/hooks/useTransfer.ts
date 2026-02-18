@@ -31,7 +31,7 @@ interface UseTransferProps {
     amount?: string;
     recipient?: Address;
   };
-  onComplete?: () => void;
+  onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
   fetchBalance: () => Promise<void>;
