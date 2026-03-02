@@ -84,3 +84,26 @@ export const usdFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+const usdFormatterPrecise = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 6,
+});
+
+/**
+ * Formats USD values with higher precision for tiny non-zero amounts so they
+ * do not appear as $0.00 in fee breakdowns.
+ */
+export function formatUsdForDisplay(value: number): string {
+  if (!Number.isFinite(value)) return usdFormatter.format(0);
+  const absValue = Math.abs(value);
+
+  if (absValue === 0) return usdFormatter.format(0);
+  if (absValue < 0.01) {
+    return usdFormatterPrecise.format(value);
+  }
+
+  return usdFormatter.format(value);
+}

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { AssetSelectionState } from "../types";
+import type { AssetSelectionState, DestinationConfig } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
+import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
+import { buildSelectableSourceIds } from "../utils/source-priority";
 
 /**
  * Creates fresh initial asset selection state
@@ -17,7 +19,10 @@ export const createInitialAssetSelection = (): AssetSelectionState => ({
  * Hook for managing asset selection state in the deposit widget.
  * Handles selection of tokens/chains for cross-chain swaps.
  */
-export function useAssetSelection(swapBalance: UserAsset[] | null) {
+export function useAssetSelection(
+  swapBalance: UserAsset[] | null,
+  destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">,
+) {
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
   const hasUserModifiedSelection = useRef(false);
@@ -32,16 +37,13 @@ export function useAssetSelection(swapBalance: UserAsset[] | null) {
       selectedChainIdsCount === 0 &&
       !hasUserModifiedSelection.current
     ) {
-      const allChainIds = new Set<string>();
-      swapBalance.forEach((asset) => {
-        if (asset.breakdown) {
-          asset.breakdown.forEach((b) => {
-            if (b.chain && b.balance) {
-              allChainIds.add(`${b.contractAddress}-${b.chain.id}`);
-            }
-          });
-        }
-      });
+      const allChainIds = new Set(
+        buildSelectableSourceIds({
+          swapBalance,
+          destination,
+          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        }),
+      );
       if (allChainIds.size > 0) {
         setAssetSelectionState({
           selectedChainIds: allChainIds,
@@ -50,7 +52,7 @@ export function useAssetSelection(swapBalance: UserAsset[] | null) {
         });
       }
     }
-  }, [swapBalance, selectedChainIdsCount]);
+  }, [swapBalance, destination, selectedChainIdsCount]);
 
   const setAssetSelection = useCallback(
     (update: Partial<AssetSelectionState>) => {

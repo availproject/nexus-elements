@@ -17,6 +17,7 @@ export const SIMULATION_POLL_INTERVAL_MS = 15000;
 // Safety & Calculations
 export const BALANCE_SAFETY_MARGIN = 0.92; // Keep 8% as safety buffer
 export const DEFAULT_TOKEN_DECIMALS = 6;
+export const MIN_SELECTABLE_SOURCE_BALANCE_USD = 1;
 
 // Layout
 export const CHAIN_ITEM_HEIGHT_PX = 49;

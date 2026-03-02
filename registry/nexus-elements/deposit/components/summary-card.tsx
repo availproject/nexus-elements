@@ -1,6 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from "./icons";
 import { Skeleton } from "../../ui/skeleton";
-import { usdFormatter } from "../../common";
+import { formatUsdForDisplay } from "../../common";
 
 interface SummaryCardProps {
   icon: React.ReactNode;
@@ -51,7 +51,7 @@ function SummaryCard({
               <>
                 <span className="font-display text-card-foreground tracking-[0.36px] leading-4.5 font-medium">
                   {valueSuffix === "USD"
-                    ? usdFormatter.format(parseFloat(value))
+                    ? formatUsdForDisplay(parseFloat(value))
                     : value}
                 </span>
                 {valueSuffix && (

@@ -26,7 +26,14 @@ import {
 import { type Address, type Hex, formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
-import { SIMULATION_POLL_INTERVAL_MS } from "../constants/widget";
+import {
+  MIN_SELECTABLE_SOURCE_BALANCE_USD,
+  SIMULATION_POLL_INTERVAL_MS,
+} from "../constants/widget";
+import {
+  buildSelectableSourceIds,
+  buildSortedFromSources,
+} from "../utils/source-priority";
 
 // Import extracted hooks
 import {
@@ -78,7 +85,7 @@ export function useDepositWidget(
 
   // Asset selection state
   const { assetSelection, setAssetSelection, resetAssetSelection } =
-    useAssetSelection(swapBalance);
+    useAssetSelection(swapBalance, destination);
 
   // Refs for tracking
   const hasAutoSelected = useRef(false);
@@ -163,18 +170,36 @@ export function useDepositWidget(
 
       seed(SWAP_EXPECTED_STEPS);
 
-      // Build source list from selected assets
-      const fromSources: Array<{ tokenAddress: Hex; chainId: number }> = [];
-      assetSelection.selectedChainIds.forEach((key) => {
-        const lastDashIndex = key.lastIndexOf("-");
-        const tokenAddress = key.substring(0, lastDashIndex) as Hex;
-        const chainId = parseInt(key.substring(lastDashIndex + 1), 10);
-        fromSources.push({ tokenAddress, chainId });
+      // Build source list from selected assets.
+      // If user has no explicit selection, fall back to all eligible token sources (token total >= $1).
+      const selectedSourceIds =
+        assetSelection.selectedChainIds.size > 0
+          ? assetSelection.selectedChainIds
+          : buildSelectableSourceIds({
+              swapBalance,
+              destination,
+              minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+            });
+
+      const fromSources = buildSortedFromSources({
+        sourceIds: selectedSourceIds,
+        swapBalance,
+        destination,
+        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
       });
+
+      if (fromSources.length === 0) {
+        const message =
+          "No eligible token balances found. A minimum total token balance of $1.00 is required.";
+        dispatch({ type: "setError", payload: message });
+        dispatch({ type: "setStatus", payload: "error" });
+        onError?.(message);
+        return;
+      }
 
       const inputsWithSources = {
         ...inputs,
-        fromSources: fromSources.length > 0 ? fromSources : undefined,
+        fromSources,
       };
 
       nexusSDK
@@ -332,6 +357,7 @@ export function useDepositWidget(
       onError,
       handleNexusError,
       assetSelection.selectedChainIds,
+      swapBalance,
       destination,
       getFiatValue,
       fetchSwapBalance,

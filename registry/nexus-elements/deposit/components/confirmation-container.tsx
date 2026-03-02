@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Image from "next/image";
 import SummaryCard from "./summary-card";
 import { GasPumpIcon, CoinIcon } from "./icons";
 import WidgetHeader from "./widget-header";
@@ -10,7 +9,7 @@ import { ErrorBanner } from "./error-banner";
 import type { DepositWidgetContextValue } from "../types";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
-import { usdFormatter } from "../../common";
+import { formatUsdForDisplay, usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
 
@@ -81,6 +80,27 @@ const ConfirmationContainer = ({
     }
     return result;
   }, [confirmationDetails]);
+
+  const feeDetailRows = useMemo(
+    () =>
+      [
+        ...(feeBreakdown.gasUsd > 0
+          ? [{ label: "Destination gas", amountUsd: feeBreakdown.gasUsd }]
+          : []),
+        ...(feeBreakdown.bridgeComponents.length > 0
+          ? feeBreakdown.bridgeComponents.map((component) => ({
+              label: component.label,
+              amountUsd: component.amountUsd,
+            }))
+          : feeBreakdown.bridgeUsd > 0
+            ? [{ label: "Bridge fees", amountUsd: feeBreakdown.bridgeUsd }]
+            : []),
+      ].filter((row) => row.amountUsd > 0),
+    [feeBreakdown],
+  );
+
+  const showFeeBreakdown =
+    !isLoading && (feeDetailRows.length > 0 || feeBreakdown.bufferUsd > 0);
 
   return (
     <>
@@ -166,12 +186,44 @@ const ConfirmationContainer = ({
               <SummaryCard
                 icon={<GasPumpIcon className="w-5 h-5 text-muted-foreground" />}
                 title="Total fees"
-                value={(confirmationDetails?.totalFeeUsd ?? 0).toFixed(2)}
+                value={String(feeBreakdown.totalFeeUsd)}
                 valueSuffix="USD"
-                showBreakdown={false}
+                showBreakdown={showFeeBreakdown}
                 loading={isLoading}
-                expanded={false}
-              />
+                expanded={showFeeDetails}
+                onToggleExpand={() => setShowFeeDetails(!showFeeDetails)}
+              >
+                <div className="space-y-3">
+                  {feeDetailRows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="font-sans text-sm text-card-foreground">
+                        {row.label}
+                      </span>
+                      <span className="font-sans text-sm text-muted-foreground">
+                        {formatUsdForDisplay(row.amountUsd)} USD
+                      </span>
+                    </div>
+                  ))}
+                  {feeBreakdown.bufferUsd > 0 && (
+                    <div className="border-t border-border pt-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-sans text-sm text-card-foreground">
+                          Buffer reserve
+                        </span>
+                        <span className="font-sans text-sm text-muted-foreground">
+                          {formatUsdForDisplay(feeBreakdown.bufferUsd)} USD
+                        </span>
+                      </div>
+                      <p className="font-sans text-[13px] leading-4.5 text-muted-foreground mt-1">
+                        Buffer is excluded from total fees.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </SummaryCard>
             </div>
           </div>
           {txError && widget.status === "error" && (

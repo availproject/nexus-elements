@@ -21,22 +21,20 @@ import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import TokenRow from "./token-row";
-import {
-  CHAIN_METADATA,
-  formatTokenBalance,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
 import { usdFormatter } from "../../common";
 import {
   isStablecoin,
   checkIfMatchesPreset,
   isNative,
 } from "../utils/asset-helpers";
+import { buildSortedFromSources } from "../utils/source-priority";
 import { X } from "lucide-react";
 import {
   SCROLL_THRESHOLD_PX,
   PROGRESS_BAR_ANIMATION_DELAY_MS,
   PROGRESS_BAR_EXIT_DURATION_MS,
+  MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
 
 interface AssetSelectionContainerProps {
@@ -45,10 +43,53 @@ interface AssetSelectionContainerProps {
   onClose?: () => void;
 }
 
+interface TokenWithMeta extends Token {
+  totalUsdValue: number;
+  priorityRank: number;
+  isSelectable: boolean;
+}
+
+function parseNonNegativeNumber(value: unknown): number {
+  const parsed = Number.parseFloat(String(value));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
 function transformSwapBalanceToTokens(
   swapBalance: UserAsset[] | null,
-): Token[] {
+  destination: Pick<
+    DepositWidgetContextValue["destination"],
+    "chainId" | "tokenAddress" | "tokenSymbol"
+  >,
+): TokenWithMeta[] {
   if (!swapBalance) return [];
+
+  const allSourceIds = new Set<string>();
+  swapBalance.forEach((asset) => {
+    asset.breakdown?.forEach((breakdown) => {
+      if (!breakdown.chain?.id || !breakdown.contractAddress) return;
+      allSourceIds.add(`${breakdown.contractAddress}-${breakdown.chain.id}`);
+    });
+  });
+
+  const orderedSources = buildSortedFromSources({
+    sourceIds: allSourceIds,
+    swapBalance,
+    destination,
+  });
+
+  const sourceOrderIndex = new Map<string, number>();
+  orderedSources.forEach((source, index) => {
+    sourceOrderIndex.set(
+      `${source.tokenAddress.toLowerCase()}-${source.chainId}`,
+      index,
+    );
+  });
+
+  const getSourceOrder = (tokenAddress: string, chainId: number) =>
+    sourceOrderIndex.get(`${tokenAddress.toLowerCase()}-${chainId}`) ??
+    Number.MAX_SAFE_INTEGER;
+
   return swapBalance
     .filter((asset) => asset.breakdown && asset.breakdown.length > 0)
     .map((asset) => {
@@ -56,22 +97,29 @@ function transformSwapBalanceToTokens(
         .filter((b) => b.chain && b.balance)
         .map((b) => {
           const balanceNum = parseFloat(b.balance);
+          const usdValue = parseNonNegativeNumber(b.balanceInFiat);
           return {
             id: `${b.contractAddress}-${b.chain.id}`,
             tokenAddress: b.contractAddress as `0x${string}`,
             chainId: b.chain.id,
             name: b.chain.name,
-            usdValue: b.balanceInFiat,
+            usdValue,
             amount: balanceNum,
           };
         })
         .sort((a, b) => {
-          const aVal = a.usdValue;
-          const bVal = b.usdValue;
-          return bVal - aVal;
+          const orderDiff =
+            getSourceOrder(a.tokenAddress, a.chainId) -
+            getSourceOrder(b.tokenAddress, b.chainId);
+          if (orderDiff !== 0) return orderDiff;
+          return b.usdValue - a.usdValue;
         });
 
-      const totalUsdValue = chains.reduce((sum, c) => sum + c.usdValue, 0);
+      const totalUsdFromBreakdown = chains.reduce((sum, c) => sum + c.usdValue, 0);
+      const totalUsdValue = Math.max(
+        parseNonNegativeNumber(asset.balanceInFiat),
+        totalUsdFromBreakdown,
+      );
 
       const totalAmount = chains.reduce((sum, c) => sum + c.amount, 0);
 
@@ -99,8 +147,19 @@ function transformSwapBalanceToTokens(
         decimals: asset.decimals,
         logo: asset.icon || "",
         category,
+        priorityRank: chains.length
+          ? getSourceOrder(chains[0].tokenAddress, chains[0].chainId)
+          : Number.MAX_SAFE_INTEGER,
+        totalUsdValue,
+        isSelectable: totalUsdValue >= MIN_SELECTABLE_SOURCE_BALANCE_USD,
         chains,
       };
+    })
+    .sort((a, b) => {
+      if (a.priorityRank !== b.priorityRank) {
+        return a.priorityRank - b.priorityRank;
+      }
+      return b.totalUsdValue - a.totalUsdValue;
     });
 }
 
@@ -121,13 +180,75 @@ const AssetSelectionContainer = ({
   const selectedChainIds = assetSelection.selectedChainIds;
   const filter = assetSelection.filter;
   const expandedTokens = assetSelection.expandedTokens;
+  const destinationForSorting = useMemo(
+    () => ({
+      chainId: widget.destination.chainId,
+      tokenAddress: widget.destination.tokenAddress,
+      tokenSymbol: widget.destination.tokenSymbol,
+    }),
+    [
+      widget.destination.chainId,
+      widget.destination.tokenAddress,
+      widget.destination.tokenSymbol,
+    ],
+  );
 
   // Defer expensive token transformation to avoid blocking UI
   const deferredSwapBalance = useDeferredValue(swapBalance);
 
   const tokens = useMemo(
-    () => transformSwapBalanceToTokens(deferredSwapBalance),
-    [deferredSwapBalance],
+    () =>
+      transformSwapBalanceToTokens(deferredSwapBalance, destinationForSorting),
+    [deferredSwapBalance, destinationForSorting],
+  );
+
+  const disabledChainIds = useMemo<Set<string>>(() => {
+    const disabled = new Set<string>();
+    tokens.forEach((token) => {
+      if (token.isSelectable) return;
+      token.chains.forEach((chain) => {
+        disabled.add(chain.id);
+      });
+    });
+    return disabled;
+  }, [tokens]);
+
+  const selectableChainIds = useMemo(() => {
+    const selectable = new Set<string>();
+    tokens.forEach((token) => {
+      token.chains.forEach((chain) => {
+        if (!disabledChainIds.has(chain.id)) {
+          selectable.add(chain.id);
+        }
+      });
+    });
+    return selectable;
+  }, [tokens, disabledChainIds]);
+
+  const selectableTokens = useMemo(
+    () =>
+      tokens.map((token) => ({
+        ...token,
+        chains: token.chains.filter((chain) => !disabledChainIds.has(chain.id)),
+      })),
+    [tokens, disabledChainIds],
+  );
+
+  const sortAndGateSelection = useCallback(
+    (chainIds: Iterable<string>) => {
+      const eligibleSourceIds = [...new Set(chainIds)].filter(
+        (id) => !disabledChainIds.has(id),
+      );
+
+      return new Set(
+        buildSortedFromSources({
+          sourceIds: eligibleSourceIds,
+          swapBalance,
+          destination: destinationForSorting,
+        }).map((source) => `${source.tokenAddress}-${source.chainId}`),
+      );
+    },
+    [swapBalance, destinationForSorting, disabledChainIds],
   );
 
   // Build index Map for O(1) token lookups (js-index-maps)
@@ -135,6 +256,26 @@ const AssetSelectionContainer = ({
     () => new Map(tokens.map((t) => [t.id, t])),
     [tokens],
   );
+
+  useEffect(() => {
+    if (selectedChainIds.size === 0) return;
+    const nextSelected = new Set(
+      [...selectedChainIds].filter((id) => selectableChainIds.has(id)),
+    );
+    if (nextSelected.size === selectedChainIds.size) return;
+
+    const nextFilter = checkIfMatchesPreset(selectableTokens, nextSelected);
+    setAssetSelection({
+      selectedChainIds: sortAndGateSelection(nextSelected),
+      filter: nextFilter,
+    });
+  }, [
+    selectedChainIds,
+    selectableChainIds,
+    selectableTokens,
+    setAssetSelection,
+    sortAndGateSelection,
+  ]);
 
   const mainTokens = useMemo(
     () =>
@@ -153,13 +294,13 @@ const AssetSelectionContainer = ({
     let total = 0;
     tokens.forEach((token) => {
       token.chains.forEach((chain) => {
-        if (selectedChainIds.has(chain.id)) {
+        if (selectedChainIds.has(chain.id) && !disabledChainIds.has(chain.id)) {
           total += chain.usdValue;
         }
       });
     });
     return total;
-  }, [tokens, selectedChainIds]);
+  }, [tokens, selectedChainIds, disabledChainIds]);
 
   const requiredAmount = widget.inputs.amount
     ? parseFloat(widget.inputs.amount.replace(/,/g, ""))
@@ -223,15 +364,19 @@ const AssetSelectionContainer = ({
           (preset === "native" && token.category === "native");
 
         if (shouldInclude) {
-          token.chains.forEach((chain) => newChainIds.add(chain.id));
+          token.chains.forEach((chain) => {
+            if (!disabledChainIds.has(chain.id)) {
+              newChainIds.add(chain.id);
+            }
+          });
         }
       });
       setAssetSelection({
-        selectedChainIds: newChainIds,
+        selectedChainIds: sortAndGateSelection(newChainIds),
         filter: preset,
       });
     },
-    [tokens, setAssetSelection],
+    [tokens, setAssetSelection, disabledChainIds, sortAndGateSelection],
   );
 
   const toggleTokenSelection = useCallback(
@@ -239,28 +384,42 @@ const AssetSelectionContainer = ({
       const token = tokensById.get(tokenId); // O(1) lookup instead of O(n)
       if (!token) return;
 
-      const allChainsSelected = token.chains.every((c) =>
+      const selectableChains = token.chains.filter(
+        (chain) => !disabledChainIds.has(chain.id),
+      );
+      if (selectableChains.length === 0) return;
+
+      const allChainsSelected = selectableChains.every((c) =>
         selectedChainIds.has(c.id),
       );
       const newChainIds = new Set(selectedChainIds);
 
       if (allChainsSelected) {
-        token.chains.forEach((chain) => newChainIds.delete(chain.id));
+        selectableChains.forEach((chain) => newChainIds.delete(chain.id));
       } else {
-        token.chains.forEach((chain) => newChainIds.add(chain.id));
+        selectableChains.forEach((chain) => newChainIds.add(chain.id));
       }
 
-      const newFilter = checkIfMatchesPreset(tokens, newChainIds);
+      const newFilter = checkIfMatchesPreset(selectableTokens, newChainIds);
       setAssetSelection({
-        selectedChainIds: newChainIds,
+        selectedChainIds: sortAndGateSelection(newChainIds),
         filter: newFilter,
       });
     },
-    [tokens, tokensById, selectedChainIds, setAssetSelection],
+    [
+      selectableTokens,
+      tokensById,
+      selectedChainIds,
+      setAssetSelection,
+      disabledChainIds,
+      sortAndGateSelection,
+    ],
   );
 
   const toggleChainSelection = useCallback(
     (chainId: string) => {
+      if (disabledChainIds.has(chainId)) return;
+
       const newChainIds = new Set(selectedChainIds);
       if (newChainIds.has(chainId)) {
         newChainIds.delete(chainId);
@@ -268,13 +427,19 @@ const AssetSelectionContainer = ({
         newChainIds.add(chainId);
       }
 
-      const newFilter = checkIfMatchesPreset(tokens, newChainIds);
+      const newFilter = checkIfMatchesPreset(selectableTokens, newChainIds);
       setAssetSelection({
-        selectedChainIds: newChainIds,
+        selectedChainIds: sortAndGateSelection(newChainIds),
         filter: newFilter,
       });
     },
-    [tokens, selectedChainIds, setAssetSelection],
+    [
+      disabledChainIds,
+      selectableTokens,
+      selectedChainIds,
+      setAssetSelection,
+      sortAndGateSelection,
+    ],
   );
 
   const toggleExpanded = useCallback(
@@ -372,7 +537,7 @@ const AssetSelectionContainer = ({
               )}
               <div
                 ref={scrollContainerRef}
-                className="w-full overflow-y-auto max-h-[300px] scrollbar-hide"
+                className="w-full overflow-y-auto max-h-75 scrollbar-hide"
               >
                 {mainTokens.length > 0 && (
                   <div
@@ -388,6 +553,7 @@ const AssetSelectionContainer = ({
                       <TokenRow
                         key={token.id}
                         token={token}
+                        disabledChainIds={disabledChainIds}
                         selectedChainIds={selectedChainIds}
                         isExpanded={expandedTokens.has(token.id)}
                         onToggleExpand={() => toggleExpanded(token.id)}
@@ -420,10 +586,20 @@ const AssetSelectionContainer = ({
 
                     {expandedTokens.has("others-section") && (
                       <div className="w-full border-t">
+                        {disabledChainIds.size > 0 && (
+                          <div className="px-5 py-4 border-b bg-muted/20">
+                            <span className="font-sans text-[13px] leading-5 text-muted-foreground">
+                              A minimum total token balance of $
+                              {MIN_SELECTABLE_SOURCE_BALANCE_USD.toFixed(2)} is
+                              required for a token to be selectable.
+                            </span>
+                          </div>
+                        )}
                         {otherTokens.map((token, index) => (
                           <TokenRow
                             key={token.id}
                             token={token}
+                            disabledChainIds={disabledChainIds}
                             selectedChainIds={selectedChainIds}
                             isExpanded={expandedTokens.has(token.id)}
                             onToggleExpand={() => toggleExpanded(token.id)}

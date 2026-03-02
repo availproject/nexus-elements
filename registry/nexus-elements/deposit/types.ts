@@ -189,6 +189,14 @@ export interface DepositWidgetContextValue {
     totalGasFee: number;
     gasUsd: number;
     gasFormatted: string;
+    bridgeUsd: number;
+    bufferUsd: number;
+    totalFeeUsd: number;
+    bridgeComponents: Array<{
+      key: string;
+      label: string;
+      amountUsd: number;
+    }>;
   };
   steps: Array<{
     id: number;

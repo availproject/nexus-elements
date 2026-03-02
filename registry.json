@@ -513,6 +513,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/deposit/utils/source-priority.ts",
+          "target": "components/deposit/utils/source-priority.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/deposit/utils.ts",
           "target": "components/deposit/utils.ts",
           "type": "registry:component"
