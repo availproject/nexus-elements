@@ -6,7 +6,6 @@ import {
   DialogHeader,
 } from "../../ui/dialog";
 import {
-  NexusSDK,
   type SwapStepType,
   type OnSwapIntentHookData,
   formatTokenBalance,
@@ -14,7 +13,11 @@ import {
 import { MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
 import { StackedTokenIcons } from "./stacked-token-icons";
-import { type GenericStep, usdFormatter } from "../../common";
+import {
+  type GenericStep,
+  formatUsdForDisplay,
+  usdFormatter,
+} from "../../common";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Button } from "../../ui/button";
 import {
@@ -34,11 +37,40 @@ import {
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
 
+function parseNonNegativeNumber(value: unknown): number {
+  const parsed = Number.parseFloat(String(value));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function formatFeeKeyLabel(key: string): string {
+  const normalized = key.trim();
+  if (!normalized) return "Fee";
+
+  const knownLabels: Record<string, string> = {
+    caGas: "CA gas",
+    protocol: "Protocol",
+    solver: "Solver",
+    collection: "Collection",
+    fulfilment: "Fulfilment",
+    gasSupplied: "Gas supplied",
+  };
+
+  if (knownLabels[normalized]) {
+    return knownLabels[normalized];
+  }
+
+  const spaced = normalized
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]/g, " ");
+
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 interface ViewTransactionProps {
   steps: GenericStep<SwapStepType>[];
   status: TransactionStatus;
   swapMode: SwapMode;
-  nexusSDK: NexusSDK | null;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   getFiatValue: (amount: number, token: string) => number;
   continueSwap: () => void | Promise<void>;
@@ -66,6 +98,7 @@ interface TokenBreakdownProps
     | "reset"
     | "txError"
     | "swapMode"
+    | "nexusSDK"
     | "exactOutSourceOptions"
     | "exactOutSelectedKeys"
     | "toggleExactOutSource"
@@ -80,7 +113,6 @@ interface TokenBreakdownProps
 }
 
 const TokenBreakdown = ({
-  nexusSDK,
   getFiatValue,
   tokenLogo,
   chainLogo,
@@ -157,7 +189,6 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
   steps,
   status,
   swapMode,
-  nexusSDK,
   swapIntent,
   getFiatValue,
   continueSwap,
@@ -231,6 +262,63 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
 
   const shouldShowExactOutSourceSelection =
     status === "simulating" && swapMode === "exactOut";
+
+  const feeBreakdown = useMemo(() => {
+    const feesAndBuffer = transactionIntent?.feesAndBuffer;
+    const bridgeEntries = Object.entries(feesAndBuffer?.bridge ?? {})
+      .filter(([key]) => key !== "total")
+      .map(([key, value]) => ({
+        key,
+        label: formatFeeKeyLabel(key),
+        amountUsd: parseNonNegativeNumber(value),
+      }));
+
+    const bridgeComponentTotal = bridgeEntries.reduce(
+      (sum, entry) => sum + entry.amountUsd,
+      0,
+    );
+    const bridgeExplicitTotal = parseNonNegativeNumber(feesAndBuffer?.bridge?.total);
+    const bridgeUsd = Math.max(bridgeExplicitTotal, bridgeComponentTotal);
+
+    const gasAmount = parseNonNegativeNumber(transactionIntent?.destination?.gas?.amount);
+    const gasSymbol = transactionIntent?.destination?.gas?.token?.symbol;
+    const gasUsd =
+      gasAmount > 0 && gasSymbol
+        ? parseNonNegativeNumber(getFiatValue(gasAmount, gasSymbol))
+        : 0;
+
+    const bufferUsd = parseNonNegativeNumber(feesAndBuffer?.buffer);
+    const totalFeeUsd = bridgeUsd + gasUsd;
+
+    return {
+      totalFeeUsd,
+      gasUsd,
+      bridgeUsd,
+      bufferUsd,
+      bridgeEntries,
+    };
+  }, [transactionIntent, getFiatValue]);
+
+  const feeDetailRows = useMemo(
+    () =>
+      [
+        ...(feeBreakdown.gasUsd > 0
+          ? [{ label: "Destination gas", amountUsd: feeBreakdown.gasUsd }]
+          : []),
+        ...(feeBreakdown.bridgeEntries.length > 0
+          ? feeBreakdown.bridgeEntries.map((entry) => ({
+              label: entry.label,
+              amountUsd: entry.amountUsd,
+            }))
+          : feeBreakdown.bridgeUsd > 0
+            ? [{ label: "Bridge fees", amountUsd: feeBreakdown.bridgeUsd }]
+            : []),
+      ].filter((row) => row.amountUsd > 0),
+    [feeBreakdown],
+  );
+
+  const showFeeBreakdown =
+    feeDetailRows.length > 0 || feeBreakdown.bufferUsd > 0;
 
   const exactOutSelectedTotalUsd = useMemo(() => {
     if (!shouldShowExactOutSourceSelection) return 0;
@@ -318,7 +406,6 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
             />
           ) : (
             <TokenBreakdown
-              nexusSDK={nexusSDK}
               getFiatValue={getFiatValue}
               tokenLogo={TOKEN_IMAGES[sources[0].token.symbol] ?? ""}
               chainLogo={sources[0].chain.logo}
@@ -329,7 +416,6 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
           )}
           <MoveDown className="size-5 -ml-1.5 text-muted-foreground" />
           <TokenBreakdown
-            nexusSDK={nexusSDK}
             getFiatValue={getFiatValue}
             tokenLogo={
               TOKEN_IMAGES[transactionIntent?.destination?.token.symbol]
@@ -340,6 +426,42 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
             decimals={transactionIntent?.destination?.token.decimals}
           />
         </div>
+        {showFeeBreakdown && (
+          <div className="w-full rounded-lg border bg-muted/30 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Total fees</p>
+              <p className="text-sm font-medium">
+                {formatUsdForDisplay(feeBreakdown.totalFeeUsd)}
+              </p>
+            </div>
+            <div className="mt-3 space-y-2">
+              {feeDetailRows.map((row) => (
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <p className="text-muted-foreground">{row.label}</p>
+                  <p className="text-muted-foreground">
+                    {formatUsdForDisplay(row.amountUsd)}
+                  </p>
+                </div>
+              ))}
+              {feeBreakdown.bufferUsd > 0 && (
+                <div className="border-t border-border pt-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <p className="text-muted-foreground">Buffer reserve</p>
+                    <p className="text-muted-foreground">
+                      {formatUsdForDisplay(feeBreakdown.bufferUsd)}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Buffer is excluded from total fees.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {status === "error" && (
           <p className="text-destructive text-sm">{txError}</p>
         )}

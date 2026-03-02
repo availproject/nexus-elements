@@ -203,7 +203,6 @@ function SwapWidget({
           swapMode={swapMode}
           swapIntent={swapIntent}
           getFiatValue={getFiatValue}
-          nexusSDK={nexusSDK}
           continueSwap={continueSwap}
           exactOutSourceOptions={exactOutSourceOptions}
           exactOutSelectedKeys={exactOutSelectedKeys}

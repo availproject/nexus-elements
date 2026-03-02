@@ -1134,7 +1134,8 @@
       ],
       "dependencies": [
         "@avail-project/nexus-core@1.1.1",
-        "lucide-react"
+        "lucide-react",
+        "viem"
       ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/accordion.json",
