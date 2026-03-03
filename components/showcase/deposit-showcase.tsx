@@ -7,24 +7,28 @@ import {
   CHAIN_METADATA,
   SUPPORTED_CHAINS,
   TOKEN_CONTRACT_ADDRESSES,
+  TOKEN_METADATA,
 } from "@avail-project/nexus-core";
+
+const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
+  [SUPPORTED_CHAINS.BASE]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+  [SUPPORTED_CHAINS.MEGAETH]: "0x7e324abc5de01d112afc03a584966ff199741c28",
+};
 
 const DepositShowcase = () => {
   const [embed, setEmbed] = React.useState(false);
+
   const executeDeposit = (
     tokenSymbol: string,
     tokenAddress: `0x${string}`,
     amount: bigint,
-    _chainId: number,
+    chainId: number,
     user: Address,
   ) => {
-    // USDC on AAVE BASE
-    // const contractAddress =
-    //   "0x7e324AbC5De01d112AfC03a584966ff199741C28" as const;
-    // USDm on AAVE MegaETH
-
-    const contractAddress =
-      "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5" as const;
+    const contractAddress = AAVE_POOL_BY_CHAIN[chainId];
+    if (!contractAddress) {
+      throw new Error(`Unsupported Aave destination chain: ${chainId}`);
+    }
 
     const abi: Abi = [
       {
@@ -93,21 +97,19 @@ const DepositShowcase = () => {
     >
       <NexusDeposit
         embed={embed}
-        heading={"Deposit USDm"}
+        heading={"Deposit USDC"}
         destination={{
-          chainId: SUPPORTED_CHAINS.MEGAETH,
-          tokenAddress:
-            TOKEN_CONTRACT_ADDRESSES["USDM"][SUPPORTED_CHAINS.MEGAETH],
-          tokenSymbol: "USDM",
-          tokenDecimals: 18,
-          tokenLogo:
-            "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
-          label: "Deposit USDm on Aave Megaeth",
+          chainId: SUPPORTED_CHAINS.BASE,
+          tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
+          tokenSymbol: "USDC",
+          tokenDecimals: TOKEN_METADATA["USDC"].decimals,
+          tokenLogo: TOKEN_METADATA["USDC"].icon,
+          label: "Deposit USDC on Aave Base",
           gasTokenSymbol:
-            CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].nativeCurrency.symbol,
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
           explorerUrl:
-            CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].blockExplorerUrls[0],
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
           depositTargetLogo: "/aave.svg",
         }}
         executeDeposit={executeDeposit}
