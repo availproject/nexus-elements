@@ -5,7 +5,7 @@
   "title": "View History",
   "description": "A simple component built with Nexus to display view history",
   "dependencies": [
-    "@avail-project/nexus-core@1.1.1",
+    "@avail-project/nexus-core@1.1.2",
     "lucide-react"
   ],
   "registryDependencies": [
