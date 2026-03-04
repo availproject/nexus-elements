@@ -7,7 +7,6 @@ import { TransactionSteps, type SimplifiedStep } from "./transaction-steps";
 import type { DepositWidgetContextValue } from "../types";
 import { useMemo } from "react";
 import { usdFormatter } from "../../common";
-import { useNexus } from "../../nexus/NexusProvider";
 
 interface TransactionStatusContainerProps {
   widget: DepositWidgetContextValue;

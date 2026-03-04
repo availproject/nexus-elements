@@ -170,8 +170,8 @@ const AmountInput: FC<AmountInputProps> = ({
                       </div>
                       <p className="text-sm font-light text-right">
                         {formatTokenBalance(chain.balance, {
-                          symbol: bridgableBalance?.symbol,
-                          decimals: chain?.decimals,
+                          symbol: chain.symbol,
+                          decimals: chain.decimals,
                         })}
                       </p>
                     </div>

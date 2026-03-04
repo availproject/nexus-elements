@@ -163,8 +163,8 @@ const AmountInput = ({
                       <div className="text-right">
                         <p className="text-sm font-medium">
                           {formatTokenBalance(chain.balance, {
-                            symbol: bridgableBalance?.symbol,
-                            decimals: bridgableBalance?.decimals,
+                            symbol: chain.symbol,
+                            decimals: chain.decimals,
                           })}
                         </p>
                         <p className="text-xs text-muted-foreground">

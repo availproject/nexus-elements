@@ -6,6 +6,27 @@ interface AmountDisplayProps {
   size?: "default" | "compact";
 }
 
+const alignmentClasses = {
+  left: "items-start text-left",
+  center: "items-center text-center",
+  right: "items-end text-right",
+};
+
+const amountSizeClasses = {
+  default: "text-[23px] tracking-[0.52px]",
+  compact: "text-xl tracking-[0.4px]",
+};
+
+const suffixSizeClasses = {
+  default: "text-sm",
+  compact: "text-xs",
+};
+
+const labelSizeClasses = {
+  default: "text-sm",
+  compact: "text-xs",
+};
+
 export function AmountDisplay({
   amount,
   suffix,
@@ -13,27 +34,6 @@ export function AmountDisplay({
   align = "center",
   size = "default",
 }: AmountDisplayProps) {
-  const alignmentClasses = {
-    left: "items-start text-left",
-    center: "items-center text-center",
-    right: "items-end text-right",
-  };
-
-  const amountSizeClasses = {
-    default: "text-[23px] tracking-[0.52px]",
-    compact: "text-xl tracking-[0.4px]",
-  };
-
-  const suffixSizeClasses = {
-    default: "text-sm",
-    compact: "text-xs",
-  };
-
-  const labelSizeClasses = {
-    default: "text-sm",
-    compact: "text-xs",
-  };
-
   return (
     <div className={`flex flex-col gap-0.5 ${alignmentClasses[align]} w-1/3`}>
       <div className="flex items-baseline gap-1">

@@ -16,6 +16,7 @@ import {
   type RefObject,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -128,6 +129,86 @@ const NexusProvider = ({
     setExchangeRateState(nextRates);
   }, []);
 
+  const getUsdRateFromLocalSources = useCallback((tokenSymbol: string) => {
+    const normalizedSymbol = normalizeTokenSymbol(tokenSymbol);
+    if (!normalizedSymbol) return 0;
+
+    for (const candidate of getCoinbaseSymbolCandidates(normalizedSymbol)) {
+      const sdkRate = toFinitePositiveNumber(exchangeRate.current?.[candidate]);
+      if (sdkRate) return sdkRate;
+
+      const cachedRate = toFinitePositiveNumber(
+        coinbaseUsdRateCache.current[candidate],
+      );
+      if (cachedRate) return cachedRate;
+    }
+
+    if (usdPeggedSymbols.current.has(normalizedSymbol)) {
+      return USD_PEGGED_FALLBACK_RATE;
+    }
+
+    return 0;
+  }, []);
+
+  const normalizeUserAssetFiatValues = useCallback(
+    (assets: UserAsset[] | null): UserAsset[] | null => {
+      if (!assets) return assets;
+
+      return assets.map((asset) => {
+        let computedAssetUsd = 0;
+
+        const breakdown = (asset.breakdown ?? []).map((entry) => {
+          const balance = Number.parseFloat(String(entry.balance ?? "0"));
+          const safeBalance = Number.isFinite(balance) && balance > 0 ? balance : 0;
+          const existingUsd = Number.parseFloat(String(entry.balanceInFiat ?? "0"));
+          const safeExistingUsd =
+            Number.isFinite(existingUsd) && existingUsd >= 0 ? existingUsd : 0;
+
+          let normalizedUsd = safeExistingUsd;
+          if (safeBalance > 0 && normalizedUsd <= 0) {
+            const rate = getUsdRateFromLocalSources(entry.symbol ?? asset.symbol);
+            if (rate > 0) {
+              normalizedUsd = safeBalance * rate;
+            }
+          }
+
+          computedAssetUsd += normalizedUsd;
+          return {
+            ...entry,
+            balanceInFiat: normalizedUsd,
+          };
+        });
+
+        const assetBalance = Number.parseFloat(String(asset.balance ?? "0"));
+        const safeAssetBalance =
+          Number.isFinite(assetBalance) && assetBalance > 0 ? assetBalance : 0;
+        const rawAssetUsd = Number.parseFloat(String(asset.balanceInFiat ?? "0"));
+        const safeAssetUsd = Number.isFinite(rawAssetUsd) && rawAssetUsd >= 0
+          ? rawAssetUsd
+          : 0;
+
+        let normalizedAssetUsd = safeAssetUsd;
+        if (normalizedAssetUsd <= 0) {
+          if (computedAssetUsd > 0) {
+            normalizedAssetUsd = computedAssetUsd;
+          } else if (safeAssetBalance > 0) {
+            const rate = getUsdRateFromLocalSources(asset.symbol);
+            if (rate > 0) {
+              normalizedAssetUsd = safeAssetBalance * rate;
+            }
+          }
+        }
+
+        return {
+          ...asset,
+          balanceInFiat: normalizedAssetUsd,
+          breakdown,
+        };
+      });
+    },
+    [getUsdRateFromLocalSources],
+  );
+
   const resolveTokenUsdRate = useCallback(
     async (tokenSymbol: string) => {
       const normalizedSymbol = normalizeTokenSymbol(tokenSymbol);
@@ -208,10 +289,6 @@ const NexusProvider = ({
       sdk.utils.getCoinbaseRates(),
     ]);
 
-    if (bridgeAbleBalanceResult.status === "fulfilled") {
-      setBridgableBalance(bridgeAbleBalanceResult.value);
-    }
-
     if (rates?.status === "fulfilled") {
       // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
       // Convert to "USD per unit" (e.g., 1 ETH = ~$3514) for straightforward UI calculations.
@@ -226,7 +303,13 @@ const NexusProvider = ({
       exchangeRate.current = usdPerUnit;
       setExchangeRateState(usdPerUnit);
     }
-  }, [sdk, config?.network]);
+
+    if (bridgeAbleBalanceResult.status === "fulfilled") {
+      setBridgableBalance(
+        normalizeUserAssetFiatValues(bridgeAbleBalanceResult.value),
+      );
+    }
+  }, [sdk, config?.network, normalizeUserAssetFiatValues]);
 
   const initializeNexus = useCallback(
     async (provider: EthereumProvider) => {
@@ -328,29 +411,33 @@ const NexusProvider = ({
   const fetchBridgableBalance = useCallback(async () => {
     try {
       const updatedBalance = await sdk.getBalancesForBridge();
-      setBridgableBalance(updatedBalance);
+      setBridgableBalance(normalizeUserAssetFiatValues(updatedBalance));
     } catch (error) {
       console.error("Error fetching bridgable balance:", error);
     }
-  }, [sdk]);
+  }, [sdk, normalizeUserAssetFiatValues]);
 
   const fetchSwapBalance = useCallback(async () => {
     try {
       const updatedBalance = await sdk.getBalancesForSwap();
-      setSwapBalance(updatedBalance);
+      setSwapBalance(normalizeUserAssetFiatValues(updatedBalance));
     } catch (error) {
       console.error("Error fetching swap balance:", error);
     }
-  }, [sdk]);
+  }, [sdk, normalizeUserAssetFiatValues]);
 
   const getFiatValue = useCallback((amount: number, token: string) => {
-    const key = normalizeTokenSymbol(token);
-    const rate =
-      toFinitePositiveNumber(exchangeRate.current?.[key]) ??
-      toFinitePositiveNumber(coinbaseUsdRateCache.current[key]) ??
-      (usdPeggedSymbols.current.has(key) ? USD_PEGGED_FALLBACK_RATE : 0);
+    const rate = getUsdRateFromLocalSources(token);
     return rate * amount;
-  }, []);
+  }, [getUsdRateFromLocalSources]);
+
+  // Backfill USD values once rates arrive so downstream selectors/max logic
+  // do not treat supported assets as $0 simply due to timing.
+  useEffect(() => {
+    if (!exchangeRateState) return;
+    setSwapBalance((prev) => normalizeUserAssetFiatValues(prev));
+    setBridgableBalance((prev) => normalizeUserAssetFiatValues(prev));
+  }, [exchangeRateState, normalizeUserAssetFiatValues]);
 
   useAccountEffect({
     onDisconnect() {

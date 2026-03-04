@@ -11,7 +11,6 @@ import {
   AccordionTrigger,
 } from "../../ui/accordion";
 import { Skeleton } from "../../ui/skeleton";
-import { useNexus } from "../../nexus/NexusProvider";
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +50,7 @@ const SourceBreakdown = ({
   requiredTotal,
   requiredSafetyTotal,
 }: SourceBreakdownProps) => {
-  const { nexusSDK } = useNexus();
+  const displayTokenSymbol = availableSources[0]?.symbol ?? tokenSymbol;
   const normalizedCoverage = Math.max(0, Math.min(100, sourceCoveragePercent));
   const progressRadius = 16;
   const progressCircumference = 2 * Math.PI * progressRadius;
@@ -77,6 +76,35 @@ const SourceBreakdown = ({
       : sourceCoverageState === "warning"
         ? " text-amber-950 dark:text-amber-200"
         : " text-emerald-950 dark:text-emerald-200";
+  const selectedSourceSet = new Set(selectedSourceChains);
+  const bulkActionLabel =
+    selectedSourceChains.length > 1 ? "Deselect all" : "Select all";
+  const isBulkActionDisabled = availableSources.length <= 1;
+  const handleBulkSourceAction = () => {
+    if (isBulkActionDisabled) return;
+
+    if (bulkActionLabel === "Select all") {
+      availableSources.forEach((source) => {
+        const chainId = source.chain.id;
+        if (!selectedSourceSet.has(chainId)) {
+          onToggleSourceChain(chainId);
+        }
+      });
+      return;
+    }
+
+    const chainToKeep =
+      availableSources.find((source) => selectedSourceSet.has(source.chain.id))
+        ?.chain.id ?? selectedSourceChains[0];
+
+    if (typeof chainToKeep !== "number") return;
+
+    selectedSourceChains.forEach((chainId) => {
+      if (chainId !== chainToKeep) {
+        onToggleSourceChain(chainId);
+      }
+    });
+  };
 
   return (
     <Accordion
@@ -106,7 +134,7 @@ const SourceBreakdown = ({
                 <div className="flex flex-col items-start gap-y-1 min-w-fit">
                   <p className="text-base font-light">You Spend</p>
                   <p className="text-sm font-light">
-                    {`${tokenSymbol} on ${
+                    {`${displayTokenSymbol} on ${
                       intent?.sources?.length
                     } ${intent?.sources?.length > 1 ? "chains" : "chain"}`}
                   </p>
@@ -115,7 +143,7 @@ const SourceBreakdown = ({
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-light">
                     {formatTokenBalance(intent?.sourcesTotal, {
-                      symbol: tokenSymbol,
+                      symbol: displayTokenSymbol,
                       decimals: intent?.token?.decimals,
                     })}
                   </p>
@@ -179,7 +207,7 @@ const SourceBreakdown = ({
                       Available on selected chains:{" "}
                       <span className="font-semibold">
                         {formatTokenBalance(parseFloat(selectedTotal ?? "0"), {
-                          symbol: tokenSymbol,
+                          symbol: displayTokenSymbol,
                           decimals: intent?.token?.decimals,
                         })}
                       </span>
@@ -190,7 +218,7 @@ const SourceBreakdown = ({
                         {formatTokenBalance(
                           parseFloat(requiredSafetyTotal ?? "0"),
                           {
-                            symbol: tokenSymbol,
+                            symbol: displayTokenSymbol,
                             decimals: intent?.token?.decimals,
                           },
                         )}
@@ -200,7 +228,7 @@ const SourceBreakdown = ({
                       <p>
                         Need{" "}
                         <span className="font-semibold">
-                          {missingToProceed} {tokenSymbol}
+                          {missingToProceed} {displayTokenSymbol}
                         </span>{" "}
                         more on selected chains to continue.
                       </p>
@@ -222,7 +250,24 @@ const SourceBreakdown = ({
                 No source balances available for this token.
               </p>
             ) : (
-              <div className="flex flex-col items-center gap-y-3">
+              <div className="flex w-full flex-col items-start gap-y-3">
+                <button
+                  type="button"
+                  onClick={handleBulkSourceAction}
+                  disabled={isBulkActionDisabled}
+                  className={cn(
+                    "w-fit text-xs text-muted-foreground hover:underline",
+                    isBulkActionDisabled &&
+                      "cursor-not-allowed opacity-50 hover:no-underline",
+                  )}
+                  aria-label={
+                    bulkActionLabel === "Select all"
+                      ? "Select all source chains"
+                      : "Deselect all source chains except one"
+                  }
+                >
+                  {bulkActionLabel}
+                </button>
                 {availableSources.map((source) => {
                   const chainId = source.chain.id;
                   const isSelected = selectedSourceChains.includes(chainId);
@@ -282,7 +327,7 @@ const SourceBreakdown = ({
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-base font-light">
                           {formatTokenBalance(source.balance, {
-                            symbol: tokenSymbol,
+                            symbol: source.symbol,
                             decimals: source.decimals,
                           })}
                         </p>
@@ -290,7 +335,7 @@ const SourceBreakdown = ({
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
                             {formatTokenBalance(willUseAmount, {
-                              symbol: tokenSymbol,
+                              symbol: source.symbol,
                               decimals: intent?.token?.decimals,
                             })}
                           </p>

@@ -76,8 +76,13 @@ function SwapWidget({
       setInputs(switched);
       return;
     }
-    const isValidSource = swapBalance?.find(
-      (bal) => bal.symbol === inputs.toToken?.symbol
+    const isValidSource = swapBalance?.some((asset) =>
+      (asset.breakdown ?? []).some(
+        (entry) =>
+          entry.chain?.id === inputs.toChainID &&
+          entry.contractAddress.toLowerCase() ===
+            inputs.toToken?.tokenAddress?.toLowerCase(),
+      ),
     );
     if (!isValidSource) {
       const switched: SwapInputs = {

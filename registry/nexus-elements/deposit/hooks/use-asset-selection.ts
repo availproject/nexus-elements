@@ -3,8 +3,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { AssetSelectionState, DestinationConfig } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
-import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
-import { buildPrioritySelectedSourceIds } from "../utils/source-priority";
+import {
+  BALANCE_SAFETY_MARGIN,
+  MIN_SELECTABLE_SOURCE_BALANCE_USD,
+} from "../constants/widget";
+import { buildPrioritySelectedSourceIds } from "../utils";
 
 function parseUsdAmount(value?: string): number {
   if (!value) return 0;
@@ -40,7 +43,10 @@ export const createInitialAssetSelection = (): AssetSelectionState => ({
  */
 export function useAssetSelection(
   swapBalance: UserAsset[] | null,
-  destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">,
+  destination: Pick<
+    DestinationConfig,
+    "chainId" | "tokenAddress" | "tokenSymbol"
+  >,
   inputAmount?: string,
 ) {
   const [assetSelection, setAssetSelectionState] =
@@ -52,11 +58,13 @@ export function useAssetSelection(
   useEffect(() => {
     if (swapBalance && !hasUserModifiedSelection.current) {
       const targetAmountUsd = parseUsdAmount(inputAmount);
+      const coverageTargetUsd =
+        targetAmountUsd > 0 ? targetAmountUsd / BALANCE_SAFETY_MARGIN : 0;
       const defaultSelectedSourceIds = buildPrioritySelectedSourceIds({
         swapBalance,
         destination,
         minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        targetAmountUsd,
+        targetAmountUsd: coverageTargetUsd,
       });
 
       if (defaultSelectedSourceIds.length === 0) return;
@@ -81,7 +89,7 @@ export function useAssetSelection(
       hasUserModifiedSelection.current = options?.markUserModified ?? true;
       setAssetSelectionState((prev) => ({ ...prev, ...update }));
     },
-    []
+    [],
   );
 
   const resetAssetSelection = useCallback(() => {

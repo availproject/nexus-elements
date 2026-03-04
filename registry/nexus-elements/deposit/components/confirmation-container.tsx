@@ -9,11 +9,16 @@ import { ErrorBanner } from "./error-banner";
 import type { DepositWidgetContextValue } from "../types";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
-import { formatUsdForDisplay, usdFormatter } from "../../common";
+import { usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Info } from "lucide-react";
+import {
+  formatFeeUsd,
+  formatImpactPercent,
+  formatSignedUsd,
+  parseNonNegativeNumber,
+} from "../utils";
 
 interface ConfirmationContainerProps {
   widget: DepositWidgetContextValue;
@@ -28,6 +33,7 @@ const ConfirmationContainer = ({
 }: ConfirmationContainerProps) => {
   const [showSpendDetails, setShowSpendDetails] = useState(false);
   const [showFeeDetails, setShowFeeDetails] = useState(false);
+  const [showPriceImpactDetails, setShowPriceImpactDetails] = useState(false);
   const { getFiatValue } = useNexus();
 
   const {
@@ -45,8 +51,11 @@ const ConfirmationContainer = ({
   const receiveAmount =
     confirmationDetails?.receiveAmountAfterSwapUsd?.toFixed(2) ?? "0";
   const timeLabel = confirmationDetails?.estimatedTime ?? "~30s";
-  // This is in USD
-  const amountSpent = confirmationDetails?.amountSpent;
+  const requestedDepositUsd = parseNonNegativeNumber(widget.inputs.amount);
+  const amountSpent =
+    requestedDepositUsd > 0
+      ? requestedDepositUsd + feeBreakdown.totalFeeUsd + feeBreakdown.bufferUsd
+      : (confirmationDetails?.amountSpent ?? 0);
   // TODO: Ensure unique names are displayed
   const tokenNames = confirmationDetails?.sources
     .filter((s) => s)
@@ -88,23 +97,24 @@ const ConfirmationContainer = ({
   const feeDetailRows = useMemo(
     () =>
       [
-        ...(feeBreakdown.gasUsd > 0
-          ? [{ label: "Destination gas", amountUsd: feeBreakdown.gasUsd }]
-          : []),
-        ...(feeBreakdown.bridgeComponents.length > 0
-          ? feeBreakdown.bridgeComponents.map((component) => ({
-              label: component.label,
-              amountUsd: component.amountUsd,
-            }))
-          : feeBreakdown.bridgeUsd > 0
-            ? [{ label: "Bridge fees", amountUsd: feeBreakdown.bridgeUsd }]
-            : []),
+        { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
+        {
+          label: "Execution Gas fee",
+          amountUsd:
+            feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
+        },
+        { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
+        { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
       ].filter((row) => row.amountUsd > 0),
     [feeBreakdown],
   );
 
-  const showFeeBreakdown =
-    !isLoading && (feeDetailRows.length > 0 || feeBreakdown.bufferUsd > 0);
+  const showFeeBreakdown = !isLoading && feeDetailRows.length > 0;
+  const showPriceImpactBreakdown =
+    !isLoading &&
+    (Math.abs(feeBreakdown.maxPriceImpactUsd) > 0 ||
+      Math.abs(feeBreakdown.swapImpactUsd) > 0 ||
+      feeBreakdown.bufferUsd > 0);
 
   return (
     <>
@@ -134,7 +144,6 @@ const ConfirmationContainer = ({
                     : tokenNamesSummary || "Selected assets"
                 }
                 value={String(amountSpent)}
-                valueSuffix="USD"
                 showBreakdown={!isLoading && sourceDetails.length > 0}
                 loading={isLoading}
                 expanded={showSpendDetails}
@@ -144,7 +153,10 @@ const ConfirmationContainer = ({
                   {sourceDetails.map((source, index) => {
                     const amountUsd =
                       source.amountUsd ??
-                      getFiatValue(parseFloat(source.amount), source.tokenSymbol);
+                      getFiatValue(
+                        parseFloat(source.amount),
+                        source.tokenSymbol,
+                      );
                     return (
                       <div
                         key={index}
@@ -171,7 +183,7 @@ const ConfirmationContainer = ({
                         </div>
                         <div className="flex flex-col gap-0.5 items-end">
                           <span className="font-sans text-sm text-card-foreground">
-                            {usdFormatter.format(amountUsd)} USD
+                            {usdFormatter.format(amountUsd)}
                           </span>
                           <span className="font-sans text-[13px] text-muted-foreground">
                             {formatTokenBalance(parseFloat(source.amount), {
@@ -189,31 +201,7 @@ const ConfirmationContainer = ({
               <SummaryCard
                 icon={<GasPumpIcon className="w-5 h-5 text-muted-foreground" />}
                 title="Total fees"
-                subtitle={
-                  !isLoading && feeBreakdown.bufferUsd > 0 ? (
-                    <span className="inline-flex max-w-full items-center gap-1 whitespace-nowrap text-[12px] leading-4">
-                      <span className="truncate">
-                        Refundable: {formatUsdForDisplay(feeBreakdown.bufferUsd)}
-                      </span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label="Refundable buffer info"
-                            className="inline-flex size-3 items-center justify-center rounded-full border border-muted-foreground/60 text-muted-foreground transition-colors hover:border-card-foreground hover:text-card-foreground"
-                          >
-                            <Info className="size-2" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent sideOffset={8}>
-                          Buffer is refundable.
-                        </TooltipContent>
-                      </Tooltip>
-                    </span>
-                  ) : undefined
-                }
-                value={String(feeBreakdown.totalFeeUsd)}
-                valueSuffix="USD"
+                value={formatFeeUsd(feeBreakdown.totalFeeUsd)}
                 showBreakdown={showFeeBreakdown}
                 loading={isLoading}
                 expanded={showFeeDetails}
@@ -229,12 +217,73 @@ const ConfirmationContainer = ({
                         {row.label}
                       </span>
                       <span className="font-sans text-sm text-muted-foreground">
-                        {formatUsdForDisplay(row.amountUsd)} USD
+                        {formatFeeUsd(row.amountUsd)}
                       </span>
                     </div>
                   ))}
                 </div>
               </SummaryCard>
+
+              {showPriceImpactBreakdown && (
+                <SummaryCard
+                  icon={
+                    <Info className="w-5 h-5 text-muted-foreground stroke-[1.8]" />
+                  }
+                  title={
+                    <div className="flex flex-col w-full gap-y-1">
+                      <div className="inline-flex items-center gap-1.5">
+                        <span>Max price impact</span>
+                      </div>
+                    </div>
+                  }
+                  subText={
+                    <>
+                      {!showPriceImpactDetails && (
+                        <p className="font-sans text-xs leading-4.5 text-muted-foreground mt-3">
+                          Includes a buffer to ensure swaps succeed. <br />{" "}
+                          Excess funds are refunded after deducting fees and
+                          impact.
+                        </p>
+                      )}
+                    </>
+                  }
+                  value={`${formatSignedUsd(feeBreakdown.maxPriceImpactUsd)} (${formatImpactPercent(
+                    feeBreakdown.maxPriceImpactPercent,
+                  )})`}
+                  showBreakdown={true}
+                  loading={isLoading}
+                  expanded={showPriceImpactDetails}
+                  onToggleExpand={() =>
+                    setShowPriceImpactDetails(!showPriceImpactDetails)
+                  }
+                >
+                  <div className="flex flex-col gap-y-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-sans text-sm text-card-foreground">
+                          Swap impact
+                        </span>
+                        <span className="font-sans text-sm text-muted-foreground">
+                          {formatSignedUsd(feeBreakdown.swapImpactUsd)} (
+                          {formatImpactPercent(feeBreakdown.swapImpactPercent)})
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-sans text-sm text-card-foreground">
+                          Swap buffer
+                        </span>
+                        <span className="font-sans text-sm text-muted-foreground">
+                          {formatFeeUsd(feeBreakdown.bufferUsd)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="font-sans text-xs leading-4.5 text-muted-foreground mt-3">
+                      Includes a buffer to ensure swaps succeed. <br /> Excess
+                      funds are refunded after deducting fees and impact.
+                    </p>
+                  </div>
+                </SummaryCard>
+              )}
             </div>
           </div>
           {txError && widget.status === "error" && (

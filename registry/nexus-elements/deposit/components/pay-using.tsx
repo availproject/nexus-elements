@@ -8,8 +8,11 @@ import {
 } from "../constants/widget";
 import type { DestinationConfig, AssetFilterType } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
-import { buildPrioritySelectedSourceIds } from "../utils/source-priority";
-import { isNative, isStablecoin } from "../utils/asset-helpers";
+import {
+  buildPrioritySelectedSourceIds,
+  isNative,
+  isStablecoin,
+} from "../utils";
 
 function parseNonNegativeNumber(value: unknown): number {
   const parsed = Number.parseFloat(String(value));
@@ -30,7 +33,10 @@ interface PayUsingProps {
   filter: AssetFilterType;
   amount?: string;
   swapBalance: UserAsset[] | null;
-  destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">;
+  destination: Pick<
+    DestinationConfig,
+    "chainId" | "tokenAddress" | "tokenSymbol"
+  >;
 }
 
 function PayUsing({
@@ -68,13 +74,12 @@ function PayUsing({
     const symbolBySourceId = new Map<string, string>();
 
     swapBalance.forEach((asset) => {
-      const stable = isStablecoin(asset.symbol);
-      const native = isNative(asset.symbol);
-
       asset.breakdown?.forEach((breakdown) => {
         const chainId = breakdown.chain?.id;
         const tokenAddress = breakdown.contractAddress;
         if (!chainId || !tokenAddress) return;
+        const stable = isStablecoin(breakdown.symbol);
+        const native = isNative(breakdown.symbol);
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
@@ -88,7 +93,7 @@ function PayUsing({
 
         if (includeInPool) {
           poolSourceIds.add(sourceId);
-          symbolBySourceId.set(sourceId, asset.symbol);
+          symbolBySourceId.set(sourceId, breakdown.symbol);
         }
       });
     });

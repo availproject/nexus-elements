@@ -28,14 +28,10 @@ import { type Address, type Hex, formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
 import {
+  BALANCE_SAFETY_MARGIN,
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
   SIMULATION_POLL_INTERVAL_MS,
 } from "../constants/widget";
-import {
-  buildPrioritySelectedSourceIds,
-  buildSortedFromSources,
-} from "../utils/source-priority";
-import { isNative, isStablecoin } from "../utils/asset-helpers";
 
 // Import extracted hooks
 import {
@@ -45,6 +41,12 @@ import {
 } from "./use-deposit-state";
 import { useAssetSelection } from "./use-asset-selection";
 import { useDepositComputed } from "./use-deposit-computed";
+import {
+  buildPrioritySelectedSourceIds,
+  buildSortedFromSources,
+  isNative,
+  isStablecoin,
+} from "../utils";
 
 interface UseDepositProps {
   executeDeposit: (
@@ -75,13 +77,12 @@ function buildSourcePoolIds(params: {
   const sourceIds = new Set<string>();
 
   swapBalance?.forEach((asset) => {
-    const stable = isStablecoin(asset.symbol);
-    const native = isNative(asset.symbol);
-
     asset.breakdown?.forEach((breakdown) => {
       const chainId = breakdown.chain?.id;
       const tokenAddress = breakdown.contractAddress;
       if (!chainId || !tokenAddress) return;
+      const stable = isStablecoin(breakdown.symbol);
+      const native = isNative(breakdown.symbol);
 
       const sourceId = `${tokenAddress}-${chainId}`;
       const include =
@@ -211,7 +212,12 @@ export function useDepositWidget(
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
-      const requiredAmountUsd = targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
+      const requiredAmountUsd =
+        targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
+      const coverageTargetUsd =
+        requiredAmountUsd > 0
+          ? requiredAmountUsd / BALANCE_SAFETY_MARGIN
+          : requiredAmountUsd;
 
       // Source pool is based on current filter mode. Actual fromSources are then
       // picked in SDK priority order until target amount is covered.
@@ -224,7 +230,7 @@ export function useDepositWidget(
         swapBalance,
         destination,
         minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        targetAmountUsd: requiredAmountUsd,
+        targetAmountUsd: coverageTargetUsd,
         sourceIds: sourcePoolIds,
       });
 
@@ -421,16 +427,24 @@ export function useDepositWidget(
   const beginAmountSimulation = useCallback(
     async (totalAmountUsd: number) => {
       if (!nexusSDK) {
-        dispatch({ type: "setError", payload: "Nexus SDK is not initialized." });
+        dispatch({
+          type: "setError",
+          payload: "Nexus SDK is not initialized.",
+        });
         dispatch({ type: "setStatus", payload: "error" });
         return false;
       }
       if (!address) {
-        dispatch({ type: "setError", payload: "Connect your wallet to continue." });
+        dispatch({
+          type: "setError",
+          payload: "Connect your wallet to continue.",
+        });
         dispatch({ type: "setStatus", payload: "error" });
         return false;
       }
-      const destinationRate = await resolveTokenUsdRate(destination.tokenSymbol);
+      const destinationRate = await resolveTokenUsdRate(
+        destination.tokenSymbol,
+      );
       if (
         !destinationRate ||
         !Number.isFinite(destinationRate) ||

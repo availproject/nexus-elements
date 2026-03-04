@@ -11,23 +11,13 @@ import {
 } from "react";
 import { ChevronDownIcon } from "./icons";
 import WidgetHeader from "./widget-header";
-import type {
-  DepositWidgetContextValue,
-  Token,
-  ChainItem,
-} from "../types";
+import type { DepositWidgetContextValue, Token, ChainItem } from "../types";
 import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import TokenRow from "./token-row";
 import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
 import { usdFormatter } from "../../common";
-import {
-  isStablecoin,
-  checkIfMatchesPreset,
-  isNative,
-} from "../utils/asset-helpers";
-import { buildSortedFromSources } from "../utils/source-priority";
 import { X } from "lucide-react";
 import {
   SCROLL_THRESHOLD_PX,
@@ -35,6 +25,12 @@ import {
   PROGRESS_BAR_EXIT_DURATION_MS,
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
+import {
+  buildSortedFromSources,
+  checkIfMatchesPreset,
+  isNative,
+  isStablecoin,
+} from "../utils";
 
 interface AssetSelectionContainerProps {
   widget: DepositWidgetContextValue;
@@ -48,10 +44,32 @@ interface TokenWithMeta extends Token {
   group: "selectable" | "below-minimum";
 }
 
+type ChainItemWithTokenMeta = ChainItem & {
+  symbol: string;
+  decimals: number;
+  tokenLogo: string;
+};
+
+type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+  icon?: string;
+};
+
 function parseNonNegativeNumber(value: unknown): number {
   const parsed = Number.parseFloat(String(value));
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
+}
+
+function getBreakdownTokenMeta(
+  breakdown: UserAsset["breakdown"][number],
+  asset: UserAsset,
+) {
+  const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
+  return {
+    symbol: breakdown.symbol,
+    decimals: breakdown.decimals ?? asset.decimals,
+    logo: breakdownIcon || "",
+  };
 }
 
 function transformSwapBalanceToTokens(
@@ -98,34 +116,34 @@ function transformSwapBalanceToTokens(
     Number.MAX_SAFE_INTEGER;
 
   const buildTokenEntry = (
-    asset: UserAsset,
-    chains: ChainItem[],
+    tokenMeta: { symbol: string; decimals: number; logo: string },
+    chains: ChainItemWithTokenMeta[],
     group: "selectable" | "below-minimum",
   ): TokenWithMeta | null => {
     if (chains.length === 0) return null;
 
     const totalUsdValue = chains.reduce((sum, c) => sum + c.usdValue, 0);
     const totalAmount = chains.reduce((sum, c) => sum + c.amount, 0);
-    const category = isStablecoin(asset.symbol)
+    const category = isStablecoin(tokenMeta.symbol)
       ? "stablecoin"
-      : isNative(asset.symbol)
+      : isNative(tokenMeta.symbol)
         ? "native"
         : "memecoin";
 
     return {
-      id: `${asset.symbol}-${group}`,
-      symbol: asset.symbol,
+      id: `${tokenMeta.symbol}-${chains[0].tokenAddress}-${group}`,
+      symbol: tokenMeta.symbol,
       chainsLabel:
         chains.length > 1
           ? `${chains.length} Chain${chains.length !== 1 ? "s" : ""}`
           : chains[0].name,
       usdValue: usdFormatter.format(totalUsdValue),
       amount: formatTokenBalance(totalAmount, {
-        decimals: asset.decimals,
-        symbol: asset.symbol,
+        decimals: tokenMeta.decimals,
+        symbol: tokenMeta.symbol,
       }),
-      decimals: asset.decimals,
-      logo: asset.icon || "",
+      decimals: tokenMeta.decimals,
+      logo: tokenMeta.logo,
       category,
       priorityRank: chains.length
         ? getSourceOrder(chains[0].tokenAddress, chains[0].chainId)
@@ -141,22 +159,33 @@ function transformSwapBalanceToTokens(
 
   for (const asset of swapBalance) {
     if (!asset.breakdown?.length) continue;
+    const chainsBySymbol = new Map<string, ChainItemWithTokenMeta[]>();
 
-    const chains = asset.breakdown
+    asset.breakdown
       .filter((b) => b.chain && b.balance)
-      .map((b) => {
+      .forEach((b) => {
         const balanceNum = parseFloat(b.balance);
+        if (!Number.isFinite(balanceNum) || balanceNum <= 0) return;
+
         const usdValue = parseNonNegativeNumber(b.balanceInFiat);
-        return {
+        const tokenMeta = getBreakdownTokenMeta(b, asset);
+        const existing = chainsBySymbol.get(tokenMeta.symbol) ?? [];
+        existing.push({
           id: `${b.contractAddress}-${b.chain.id}`,
           tokenAddress: b.contractAddress as `0x${string}`,
           chainId: b.chain.id,
           name: b.chain.name,
           usdValue,
           amount: balanceNum,
-        } satisfies ChainItem;
-      })
-      .sort((a, b) => {
+          symbol: tokenMeta.symbol,
+          decimals: tokenMeta.decimals,
+          tokenLogo: tokenMeta.logo,
+        });
+        chainsBySymbol.set(tokenMeta.symbol, existing);
+      });
+
+    for (const chainsForToken of chainsBySymbol.values()) {
+      const sortedChains = chainsForToken.sort((a, b) => {
         const orderDiff =
           getSourceOrder(a.tokenAddress, a.chainId) -
           getSourceOrder(b.tokenAddress, b.chainId);
@@ -164,22 +193,33 @@ function transformSwapBalanceToTokens(
         return b.usdValue - a.usdValue;
       });
 
-    const selectableChains = chains.filter(
-      (chain) => chain.usdValue >= MIN_SELECTABLE_SOURCE_BALANCE_USD,
-    );
-    const belowMinimumChains = chains.filter(
-      (chain) => chain.usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD,
-    );
+      const selectableChains = sortedChains.filter(
+        (chain) => chain.usdValue >= MIN_SELECTABLE_SOURCE_BALANCE_USD,
+      );
+      const belowMinimumChains = sortedChains.filter(
+        (chain) => chain.usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD,
+      );
 
-    const selectableEntry = buildTokenEntry(asset, selectableChains, "selectable");
-    if (selectableEntry) selectableTokens.push(selectableEntry);
+      const tokenMeta = {
+        symbol: sortedChains[0].symbol,
+        decimals: sortedChains[0].decimals,
+        logo: sortedChains[0].tokenLogo,
+      };
 
-    const belowMinimumEntry = buildTokenEntry(
-      asset,
-      belowMinimumChains,
-      "below-minimum",
-    );
-    if (belowMinimumEntry) belowMinimumTokens.push(belowMinimumEntry);
+      const selectableEntry = buildTokenEntry(
+        tokenMeta,
+        selectableChains,
+        "selectable",
+      );
+      if (selectableEntry) selectableTokens.push(selectableEntry);
+
+      const belowMinimumEntry = buildTokenEntry(
+        tokenMeta,
+        belowMinimumChains,
+        "below-minimum",
+      );
+      if (belowMinimumEntry) belowMinimumTokens.push(belowMinimumEntry);
+    }
   }
 
   const sortTokenEntries = (a: TokenWithMeta, b: TokenWithMeta) => {
@@ -303,7 +343,10 @@ const AssetSelectionContainer = ({
     );
     if (nextSelected.size === selectedChainIds.size) return;
 
-    const nextFilter = checkIfMatchesPreset(selectableTokensForPreset, nextSelected);
+    const nextFilter = checkIfMatchesPreset(
+      selectableTokensForPreset,
+      nextSelected,
+    );
     setAssetSelection({
       selectedChainIds: sortAndGateSelection(nextSelected),
       filter: nextFilter,
@@ -656,7 +699,9 @@ const AssetSelectionContainer = ({
                             onToggleToken={() => toggleTokenSelection(token.id)}
                             onToggleChain={toggleChainSelection}
                             isFirst={index === 0}
-                            isLast={index === belowMinimumTokenEntries.length - 1}
+                            isLast={
+                              index === belowMinimumTokenEntries.length - 1
+                            }
                           />
                         ))}
                       </div>

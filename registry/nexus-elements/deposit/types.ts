@@ -199,6 +199,15 @@ export interface DepositWidgetContextValue {
     bridgeUsd: number;
     bufferUsd: number;
     totalFeeUsd: number;
+    gasSponsorshipUsd: number;
+    executionGasFeeUsd: number;
+    protocolFeeUsd: number;
+    solverFeeUsd: number;
+    otherBridgeFeeUsd: number;
+    swapImpactUsd: number;
+    swapImpactPercent: number;
+    maxPriceImpactUsd: number;
+    maxPriceImpactPercent: number;
     bridgeComponents: Array<{
       key: string;
       label: string;

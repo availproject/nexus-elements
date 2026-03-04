@@ -12,7 +12,6 @@ import {
 } from "../../ui/accordion";
 import { Skeleton } from "../../ui/skeleton";
 import { useMemo } from "react";
-import { useNexus } from "../../nexus/NexusProvider";
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +53,7 @@ const SourceBreakdown = ({
   requiredTotal,
   requiredSafetyTotal,
 }: SourceBreakdownProps) => {
-  const { nexusSDK } = useNexus();
+  const displayTokenSymbol = availableSources[0]?.symbol ?? tokenSymbol;
   const normalizedCoverage = Math.max(0, Math.min(100, sourceCoveragePercent));
   const progressRadius = 16;
   const progressCircumference = 2 * Math.PI * progressRadius;
@@ -80,6 +79,35 @@ const SourceBreakdown = ({
       : sourceCoverageState === "warning"
         ? "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-200"
         : "border-emerald-500/30 bg-emerald-500/10 text-emerald-950 dark:text-emerald-200";
+  const selectedSourceSet = new Set(selectedSourceChains);
+  const bulkActionLabel =
+    selectedSourceChains.length > 1 ? "Deselect all" : "Select all";
+  const isBulkActionDisabled = availableSources.length <= 1;
+  const handleBulkSourceAction = () => {
+    if (isBulkActionDisabled) return;
+
+    if (bulkActionLabel === "Select all") {
+      availableSources.forEach((source) => {
+        const chainId = source.chain.id;
+        if (!selectedSourceSet.has(chainId)) {
+          onToggleSourceChain(chainId);
+        }
+      });
+      return;
+    }
+
+    const chainToKeep =
+      availableSources.find((source) => selectedSourceSet.has(source.chain.id))
+        ?.chain.id ?? selectedSourceChains[0];
+
+    if (typeof chainToKeep !== "number") return;
+
+    selectedSourceChains.forEach((chainId) => {
+      if (chainId !== chainToKeep) {
+        onToggleSourceChain(chainId);
+      }
+    });
+  };
 
   const spendOnSources = useMemo(() => {
     if (!intent || (intent?.sources?.length ?? 0) < 2)
@@ -127,7 +155,7 @@ const SourceBreakdown = ({
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-light">
                     {formatTokenBalance(amountSpend, {
-                      symbol: tokenSymbol,
+                      symbol: displayTokenSymbol,
                       decimals: intent?.token?.decimals,
                     })}
                   </p>
@@ -191,20 +219,20 @@ const SourceBreakdown = ({
                     <p className="font-medium">
                       Available on selected chains:{" "}
                       <span className="font-semibold">
-                        {selectedTotal} {tokenSymbol}
+                        {selectedTotal} {displayTokenSymbol}
                       </span>
                     </p>
                     <p className="font-medium">
                       Required for this transaction:{" "}
                       <span className="font-semibold">
-                        {requiredSafetyTotal} {tokenSymbol}
+                        {requiredSafetyTotal} {displayTokenSymbol}
                       </span>
                     </p>
                     {shouldShowProceedMessage && (
                       <p>
                         Need{" "}
                         <span className="font-semibold">
-                          {missingToProceed} {tokenSymbol}
+                          {missingToProceed} {displayTokenSymbol}
                         </span>{" "}
                         more on selected chains to continue.
                       </p>
@@ -226,7 +254,24 @@ const SourceBreakdown = ({
                 No source balances available for this token.
               </p>
             ) : (
-              <div className="flex flex-col items-center gap-y-3">
+              <div className="flex w-full flex-col items-start gap-y-3">
+                <button
+                  type="button"
+                  onClick={handleBulkSourceAction}
+                  disabled={isBulkActionDisabled}
+                  className={cn(
+                    "w-fit text-xs text-muted-foreground hover:underline",
+                    isBulkActionDisabled &&
+                      "cursor-not-allowed opacity-50 hover:no-underline",
+                  )}
+                  aria-label={
+                    bulkActionLabel === "Select all"
+                      ? "Select all source chains"
+                      : "Deselect all source chains except one"
+                  }
+                >
+                  {bulkActionLabel}
+                </button>
                 {availableSources.map((source) => {
                   const chainId = source.chain.id;
                   const isSelected = selectedSourceChains.includes(chainId);
@@ -287,7 +332,7 @@ const SourceBreakdown = ({
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-sm font-light">
                           {formatTokenBalance(source.balance, {
-                            symbol: tokenSymbol,
+                            symbol: source.symbol,
                             decimals: source.decimals,
                           })}
                         </p>
@@ -295,7 +340,7 @@ const SourceBreakdown = ({
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
                             {formatTokenBalance(willUseFromIntent, {
-                              symbol: tokenSymbol,
+                              symbol: source.symbol,
                               decimals: intent?.token?.decimals,
                             })}
                           </p>

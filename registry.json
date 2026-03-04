@@ -503,21 +503,6 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/nexus-elements/deposit/utils/asset-helpers.ts",
-          "target": "components/deposit/utils/asset-helpers.ts",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/deposit/utils/index.ts",
-          "target": "components/deposit/utils/index.ts",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/nexus-elements/deposit/utils/source-priority.ts",
-          "target": "components/deposit/utils/source-priority.ts",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/nexus-elements/deposit/utils.ts",
           "target": "components/deposit/utils.ts",
           "type": "registry:component"
@@ -622,7 +607,6 @@
         "@avail-project/nexus-core@1.1.1",
         "clsx",
         "lucide-react",
-        "next",
         "tailwind-merge",
         "viem",
         "wagmi"
@@ -636,7 +620,6 @@
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/skeleton.json",
         "https://elements.nexus.availproject.org/r/tabs.json",
-        "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/utils.json"
       ]
     },
@@ -1147,6 +1130,7 @@
         "https://elements.nexus.availproject.org/r/nexus-provider.json",
         "https://elements.nexus.availproject.org/r/select.json",
         "https://elements.nexus.availproject.org/r/separator.json",
+        "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/utils.json"
       ]
     },
