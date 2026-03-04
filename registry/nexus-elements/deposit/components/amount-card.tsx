@@ -150,12 +150,12 @@ function AmountCard({
 
   const handlePercentageClick = useCallback(
     (percentage: number) => {
-      const safeBalance = totalBalance?.usdBalance * BALANCE_SAFETY_MARGIN;
+      const safeBalance = selectedTokenAmount * BALANCE_SAFETY_MARGIN;
       const calculatedAmount = safeBalance * percentage;
       const newAmount = usdFormatter.format(calculatedAmount).replace("$", "");
       setAmount(newAmount);
     },
-    [setAmount, totalBalance?.usdBalance],
+    [setAmount, selectedTokenAmount],
   );
 
   const handleDoubleClick = useCallback(() => {

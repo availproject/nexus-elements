@@ -382,10 +382,21 @@ const AssetSelectionContainer = ({
 
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
+      if (preset === "all") {
+        setAssetSelection(
+          {
+            selectedChainIds: new Set(),
+            filter: "all",
+            expandedTokens: new Set(),
+          },
+          { markUserModified: false },
+        );
+        return;
+      }
+
       const newChainIds = new Set<string>();
       selectableTokenEntries.forEach((token) => {
         const shouldInclude =
-          preset === "all" ||
           (preset === "stablecoins" && token.category === "stablecoin") ||
           (preset === "native" && token.category === "native");
 

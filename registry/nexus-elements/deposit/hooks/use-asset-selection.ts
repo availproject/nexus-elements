@@ -21,6 +21,10 @@ function areSetsEqual(a: Set<string>, b: Set<string>): boolean {
   return true;
 }
 
+interface SetAssetSelectionOptions {
+  markUserModified?: boolean;
+}
+
 /**
  * Creates fresh initial asset selection state
  */
@@ -70,8 +74,11 @@ export function useAssetSelection(
   }, [swapBalance, destination, inputAmount, assetSelection.selectedChainIds]);
 
   const setAssetSelection = useCallback(
-    (update: Partial<AssetSelectionState>) => {
-      hasUserModifiedSelection.current = true;
+    (
+      update: Partial<AssetSelectionState>,
+      options?: SetAssetSelectionOptions,
+    ) => {
+      hasUserModifiedSelection.current = options?.markUserModified ?? true;
       setAssetSelectionState((prev) => ({ ...prev, ...update }));
     },
     []

@@ -64,6 +64,10 @@ export interface AssetSelectionState {
   expandedTokens: Set<string>;
 }
 
+export interface SetAssetSelectionOptions {
+  markUserModified?: boolean;
+}
+
 export interface DestinationConfig {
   chainId: SUPPORTED_CHAINS_IDS;
   depositTargetLogo?: string;
@@ -152,7 +156,10 @@ export interface DepositWidgetContextValue {
 
   // Asset selection
   assetSelection: AssetSelectionState;
-  setAssetSelection: (selection: Partial<AssetSelectionState>) => void;
+  setAssetSelection: (
+    selection: Partial<AssetSelectionState>,
+    options?: SetAssetSelectionOptions,
+  ) => void;
 
   // SDK integration
   swapBalance: UserAsset[] | null;

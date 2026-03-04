@@ -189,27 +189,41 @@ export function buildPrioritySelectedSourceIds(params: {
   destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">;
   minimumBalanceUsd: number;
   targetAmountUsd?: number;
+  sourceIds?: Iterable<string>;
 }): string[] {
-  const { swapBalance, destination, minimumBalanceUsd, targetAmountUsd } = params;
-
-  const sourceIds = buildSelectableSourceIds({
+  const {
     swapBalance,
     destination,
     minimumBalanceUsd,
-  });
+    targetAmountUsd,
+    sourceIds,
+  } = params;
 
-  if (sourceIds.length === 0) return [];
+  const orderedCandidateSourceIds = sourceIds
+    ? sortSourceIdsByPriority({
+        sourceIds,
+        swapBalance,
+        destination,
+        minimumBalanceUsd,
+      })
+    : buildSelectableSourceIds({
+        swapBalance,
+        destination,
+        minimumBalanceUsd,
+      });
+
+  if (orderedCandidateSourceIds.length === 0) return [];
 
   const normalizedTargetAmountUsd = parseNonNegativeNumber(targetAmountUsd);
   if (normalizedTargetAmountUsd <= 0) {
-    return [sourceIds[0]];
+    return [orderedCandidateSourceIds[0]];
   }
 
   const sourceFiatByKeyMap = buildSourceFiatByKeyMap(swapBalance);
   const selectedSourceIds: string[] = [];
   let runningTotalUsd = 0;
 
-  for (const sourceId of sourceIds) {
+  for (const sourceId of orderedCandidateSourceIds) {
     const parsed = parseSourceId(sourceId);
     if (!parsed) continue;
 

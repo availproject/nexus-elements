@@ -10,6 +10,14 @@ import { EmptyBalanceState } from "./empty-balance-state";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
 import { Skeleton } from "../../ui/skeleton";
+import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
+import { isNative, isStablecoin } from "../utils/asset-helpers";
+
+function parseNonNegativeNumber(value: unknown): number {
+  const parsed = Number.parseFloat(String(value));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
@@ -36,10 +44,40 @@ const AmountContainer = ({
     [widget.swapBalance],
   );
   const shouldShowEmptyState = isSwapBalanceLoaded && !hasPositiveSwapBalance;
-  const selectedTokenAmount = useMemo(
-    () => widget.totalSelectedBalance,
-    [widget.totalSelectedBalance],
-  );
+  const selectedTokenAmount = useMemo(() => {
+    if (!widget.swapBalance) return 0;
+
+    let total = 0;
+    const filter = widget.assetSelection.filter;
+    const selectedChainIds = widget.assetSelection.selectedChainIds;
+
+    widget.swapBalance.forEach((asset) => {
+      const stable = isStablecoin(asset.symbol);
+      const native = isNative(asset.symbol);
+
+      asset.breakdown?.forEach((chainBreakdown) => {
+        const chainId = chainBreakdown.chain?.id;
+        const tokenAddress = chainBreakdown.contractAddress;
+        if (!chainId || !tokenAddress) return;
+
+        const sourceId = `${tokenAddress}-${chainId}`;
+        const usdValue = parseNonNegativeNumber(chainBreakdown.balanceInFiat);
+        if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
+
+        const shouldInclude =
+          filter === "all" ||
+          (filter === "stablecoins" && stable) ||
+          (filter === "native" && native) ||
+          (filter === "custom" && selectedChainIds.has(sourceId));
+
+        if (shouldInclude) {
+          total += usdValue;
+        }
+      });
+    });
+
+    return total;
+  }, [widget.swapBalance, widget.assetSelection]);
 
   const handleAmountChange = useCallback(
     (amount: string) => {
@@ -77,7 +115,7 @@ const AmountContainer = ({
               onAmountChange={handleAmountChange}
               selectedTokenAmount={selectedTokenAmount}
               onErrorStateChange={handleErrorStateChange}
-              totalSelectedBalance={widget.totalSelectedBalance}
+              totalSelectedBalance={selectedTokenAmount}
               destinationConfig={widget.destination}
             />
           )}
@@ -90,8 +128,10 @@ const AmountContainer = ({
               <PayUsing
                 onClick={() => widget.goToStep("asset-selection")}
                 selectedChainIds={widget.assetSelection.selectedChainIds}
+                filter={widget.assetSelection.filter}
                 amount={widget.inputs.amount}
                 swapBalance={widget.swapBalance}
+                destination={widget.destination}
               />
               <Button
                 className="rounded-t-none"

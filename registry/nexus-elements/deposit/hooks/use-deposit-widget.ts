@@ -6,6 +6,7 @@ import type {
   DepositWidgetContextValue,
   DepositInputs,
   DestinationConfig,
+  AssetFilterType,
 } from "../types";
 import {
   NEXUS_EVENTS,
@@ -34,6 +35,7 @@ import {
   buildPrioritySelectedSourceIds,
   buildSortedFromSources,
 } from "../utils/source-priority";
+import { isNative, isStablecoin } from "../utils/asset-helpers";
 
 // Import extracted hooks
 import {
@@ -62,6 +64,39 @@ function parseUsdAmount(value?: string): number {
   const parsed = Number.parseFloat(value.replace(/,/g, ""));
   if (!Number.isFinite(parsed) || parsed <= 0) return 0;
   return parsed;
+}
+
+function buildSourcePoolIds(params: {
+  swapBalance: DepositWidgetContextValue["swapBalance"];
+  filter: AssetFilterType;
+  selectedChainIds: Set<string>;
+}): Set<string> {
+  const { swapBalance, filter, selectedChainIds } = params;
+  const sourceIds = new Set<string>();
+
+  swapBalance?.forEach((asset) => {
+    const stable = isStablecoin(asset.symbol);
+    const native = isNative(asset.symbol);
+
+    asset.breakdown?.forEach((breakdown) => {
+      const chainId = breakdown.chain?.id;
+      const tokenAddress = breakdown.contractAddress;
+      if (!chainId || !tokenAddress) return;
+
+      const sourceId = `${tokenAddress}-${chainId}`;
+      const include =
+        filter === "all" ||
+        (filter === "stablecoins" && stable) ||
+        (filter === "native" && native) ||
+        (filter === "custom" && selectedChainIds.has(sourceId));
+
+      if (include) {
+        sourceIds.add(sourceId);
+      }
+    });
+  });
+
+  return sourceIds;
 }
 
 /**
@@ -178,20 +213,20 @@ export function useDepositWidget(
       seed(SWAP_EXPECTED_STEPS);
       const requiredAmountUsd = targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
 
-      // Build source list from selected assets.
-      // If user has no explicit selection, fall back to priority-ordered sources
-      // and keep adding until target USD is covered.
-      let selectedSourceIds: Iterable<string>;
-      if (assetSelection.selectedChainIds.size > 0) {
-        selectedSourceIds = assetSelection.selectedChainIds;
-      } else {
-        selectedSourceIds = buildPrioritySelectedSourceIds({
-          swapBalance,
-          destination,
-          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-          targetAmountUsd: requiredAmountUsd,
-        });
-      }
+      // Source pool is based on current filter mode. Actual fromSources are then
+      // picked in SDK priority order until target amount is covered.
+      const sourcePoolIds = buildSourcePoolIds({
+        swapBalance,
+        filter: assetSelection.filter,
+        selectedChainIds: assetSelection.selectedChainIds,
+      });
+      const selectedSourceIds = buildPrioritySelectedSourceIds({
+        swapBalance,
+        destination,
+        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        targetAmountUsd: requiredAmountUsd,
+        sourceIds: sourcePoolIds,
+      });
 
       const fromSources = buildSortedFromSources({
         sourceIds: selectedSourceIds,
@@ -369,6 +404,7 @@ export function useDepositWidget(
       onError,
       handleNexusError,
       assetSelection.selectedChainIds,
+      assetSelection.filter,
       swapBalance,
       destination,
       getFiatValue,

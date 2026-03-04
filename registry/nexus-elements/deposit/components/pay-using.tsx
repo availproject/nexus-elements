@@ -2,30 +2,44 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import ButtonCard from "./button-card";
 import { RightChevronIcon, CoinIcon } from "./icons";
 import { Skeleton } from "../../ui/skeleton";
-import { LOADING_SKELETON_DELAY_MS } from "../constants/widget";
+import {
+  LOADING_SKELETON_DELAY_MS,
+  MIN_SELECTABLE_SOURCE_BALANCE_USD,
+} from "../constants/widget";
+import type { DestinationConfig, AssetFilterType } from "../types";
+import type { UserAsset } from "@avail-project/nexus-core";
+import { buildPrioritySelectedSourceIds } from "../utils/source-priority";
+import { isNative, isStablecoin } from "../utils/asset-helpers";
+
+function parseNonNegativeNumber(value: unknown): number {
+  const parsed = Number.parseFloat(String(value));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function parseUsdAmount(value?: string): number {
+  if (!value) return 0;
+  const parsed = Number.parseFloat(value.replace(/,/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return parsed;
+}
 
 interface PayUsingProps {
   onClick?: () => void;
   selectedChainIds: Set<string>;
+  filter: AssetFilterType;
   amount?: string;
-  swapBalance: Array<{
-    symbol: string;
-    decimals: number;
-    icon?: string;
-    breakdown?: Array<{
-      chain: { id: number; name: string; logo?: string };
-      balance: string;
-      balanceInFiat?: number;
-      contractAddress?: `0x${string}`;
-    }>;
-  }> | null;
+  swapBalance: UserAsset[] | null;
+  destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">;
 }
 
 function PayUsing({
   onClick,
   selectedChainIds,
+  filter,
   amount,
   swapBalance,
+  destination,
 }: PayUsingProps) {
   const [isLoading, setIsLoading] = useState(false);
   const previousAmountRef = useRef<string | undefined>(undefined);
@@ -47,28 +61,59 @@ function PayUsing({
     previousAmountRef.current = amount;
   }, [amount, hasAmount]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { subtitle, selectedCount, totalUsdValue } = useMemo(() => {
-    const tokenCounts: Record<string, number> = {};
-    let total = 0;
+  const subtitle = useMemo(() => {
+    if (!swapBalance) return "No tokens selected";
 
-    if (swapBalance) {
-      swapBalance.forEach((asset) => {
-        const selectedChains =
-          asset.breakdown?.filter((c) =>
-            selectedChainIds.has(`${c.contractAddress}-${c.chain.id}`),
-          ) ?? [];
-        if (selectedChains.length > 0) {
-          tokenCounts[asset.symbol] = selectedChains.length;
-          selectedChains.forEach((c) => {
-            total += c.balanceInFiat ?? 0;
-          });
+    const poolSourceIds = new Set<string>();
+    const symbolBySourceId = new Map<string, string>();
+
+    swapBalance.forEach((asset) => {
+      const stable = isStablecoin(asset.symbol);
+      const native = isNative(asset.symbol);
+
+      asset.breakdown?.forEach((breakdown) => {
+        const chainId = breakdown.chain?.id;
+        const tokenAddress = breakdown.contractAddress;
+        if (!chainId || !tokenAddress) return;
+
+        const sourceId = `${tokenAddress}-${chainId}`;
+        const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
+        if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
+
+        const includeInPool =
+          filter === "all" ||
+          (filter === "stablecoins" && stable) ||
+          (filter === "native" && native) ||
+          (filter === "custom" && selectedChainIds.has(sourceId));
+
+        if (includeInPool) {
+          poolSourceIds.add(sourceId);
+          symbolBySourceId.set(sourceId, asset.symbol);
         }
       });
-    }
+    });
 
-    const symbols = Object.keys(tokenCounts);
-    const count = Object.values(tokenCounts).reduce((a, b) => a + b, 0);
+    if (poolSourceIds.size === 0) return "No tokens selected";
+
+    const prioritizedSourceIds = buildPrioritySelectedSourceIds({
+      swapBalance,
+      destination,
+      minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+      targetAmountUsd: parseUsdAmount(amount),
+      sourceIds: poolSourceIds,
+    });
+
+    const orderedSymbols: string[] = [];
+    const seenSymbols = new Set<string>();
+    prioritizedSourceIds.forEach((sourceId) => {
+      const symbol = symbolBySourceId.get(sourceId);
+      if (!symbol || seenSymbols.has(symbol)) return;
+      seenSymbols.add(symbol);
+      orderedSymbols.push(symbol);
+    });
+
+    const symbols = orderedSymbols;
+    const count = prioritizedSourceIds.length;
 
     let text: string;
     if (count === 0) {
@@ -79,12 +124,8 @@ function PayUsing({
       text = `${symbols.slice(0, 2).join(", ")} +${symbols.length - 2} more`;
     }
 
-    return {
-      subtitle: text,
-      selectedCount: count,
-      totalUsdValue: total,
-    };
-  }, [selectedChainIds, swapBalance]);
+    return text;
+  }, [selectedChainIds, filter, swapBalance, destination, amount]);
 
   const renderSubtitle = () => {
     if (!hasAmount) {
