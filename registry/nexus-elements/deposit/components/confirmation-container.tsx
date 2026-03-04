@@ -12,6 +12,8 @@ import { CardContent } from "../../ui/card";
 import { formatUsdForDisplay, usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import { Info } from "lucide-react";
 
 interface ConfirmationContainerProps {
   widget: DepositWidgetContextValue;
@@ -65,6 +67,7 @@ const ConfirmationContainer = ({
       tokenSymbol: string;
       tokenDecimals: number;
       amount: string;
+      amountUsd?: number;
       isDestinationBalance: boolean;
     }> = [];
     for (const source of confirmationDetails.sources) {
@@ -75,6 +78,7 @@ const ConfirmationContainer = ({
         tokenSymbol: source.symbol ?? "",
         tokenDecimals: source.decimals ?? 6,
         amount: source.balance ?? "0",
+        amountUsd: source.balanceInFiat,
         isDestinationBalance: source.isDestinationBalance ?? false,
       });
     }
@@ -138,10 +142,9 @@ const ConfirmationContainer = ({
               >
                 <div className="space-y-4">
                   {sourceDetails.map((source, index) => {
-                    const amountUsd = getFiatValue(
-                      parseFloat(source.amount),
-                      source.tokenSymbol,
-                    );
+                    const amountUsd =
+                      source.amountUsd ??
+                      getFiatValue(parseFloat(source.amount), source.tokenSymbol);
                     return (
                       <div
                         key={index}
@@ -186,6 +189,29 @@ const ConfirmationContainer = ({
               <SummaryCard
                 icon={<GasPumpIcon className="w-5 h-5 text-muted-foreground" />}
                 title="Total fees"
+                subtitle={
+                  !isLoading && feeBreakdown.bufferUsd > 0 ? (
+                    <span className="inline-flex max-w-full items-center gap-1 whitespace-nowrap text-[12px] leading-4">
+                      <span className="truncate">
+                        Refundable: {formatUsdForDisplay(feeBreakdown.bufferUsd)}
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Refundable buffer info"
+                            className="inline-flex size-3 items-center justify-center rounded-full border border-muted-foreground/60 text-muted-foreground transition-colors hover:border-card-foreground hover:text-card-foreground"
+                          >
+                            <Info className="size-2" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent sideOffset={8}>
+                          Buffer is refundable.
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
+                  ) : undefined
+                }
                 value={String(feeBreakdown.totalFeeUsd)}
                 valueSuffix="USD"
                 showBreakdown={showFeeBreakdown}
@@ -207,21 +233,6 @@ const ConfirmationContainer = ({
                       </span>
                     </div>
                   ))}
-                  {feeBreakdown.bufferUsd > 0 && (
-                    <div className="border-t border-border pt-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-sans text-sm text-card-foreground">
-                          Buffer reserve
-                        </span>
-                        <span className="font-sans text-sm text-muted-foreground">
-                          {formatUsdForDisplay(feeBreakdown.bufferUsd)} USD
-                        </span>
-                      </div>
-                      <p className="font-sans text-[13px] leading-4.5 text-muted-foreground mt-1">
-                        Buffer is excluded from total fees.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </SummaryCard>
             </div>

@@ -4,7 +4,22 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type { AssetSelectionState, DestinationConfig } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
 import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
-import { buildSelectableSourceIds } from "../utils/source-priority";
+import { buildPrioritySelectedSourceIds } from "../utils/source-priority";
+
+function parseUsdAmount(value?: string): number {
+  if (!value) return 0;
+  const parsed = Number.parseFloat(value.replace(/,/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return parsed;
+}
+
+function areSetsEqual(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const item of a) {
+    if (!b.has(item)) return false;
+  }
+  return true;
+}
 
 /**
  * Creates fresh initial asset selection state
@@ -22,37 +37,37 @@ export const createInitialAssetSelection = (): AssetSelectionState => ({
 export function useAssetSelection(
   swapBalance: UserAsset[] | null,
   destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">,
+  inputAmount?: string,
 ) {
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
   const hasUserModifiedSelection = useRef(false);
 
-  // Extract primitive value for effect dependency (rerender-dependencies)
-  const selectedChainIdsCount = assetSelection.selectedChainIds.size;
-
-  // Auto-select all assets when swapBalance first loads
+  // Auto-select token sources by priority until target amount is covered.
+  // This keeps adapting to amount changes until the user manually edits selection.
   useEffect(() => {
-    if (
-      swapBalance &&
-      selectedChainIdsCount === 0 &&
-      !hasUserModifiedSelection.current
-    ) {
-      const allChainIds = new Set(
-        buildSelectableSourceIds({
-          swapBalance,
-          destination,
-          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        }),
-      );
-      if (allChainIds.size > 0) {
-        setAssetSelectionState({
-          selectedChainIds: allChainIds,
-          filter: "all",
-          expandedTokens: new Set(),
-        });
-      }
+    if (swapBalance && !hasUserModifiedSelection.current) {
+      const targetAmountUsd = parseUsdAmount(inputAmount);
+      const defaultSelectedSourceIds = buildPrioritySelectedSourceIds({
+        swapBalance,
+        destination,
+        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        targetAmountUsd,
+      });
+
+      if (defaultSelectedSourceIds.length === 0) return;
+
+      const nextSelection = new Set(defaultSelectedSourceIds);
+      if (areSetsEqual(assetSelection.selectedChainIds, nextSelection)) return;
+
+      setAssetSelectionState((prev) => ({
+        ...prev,
+        selectedChainIds: nextSelection,
+        expandedTokens:
+          prev.expandedTokens.size > 0 ? new Set() : prev.expandedTokens,
+      }));
     }
-  }, [swapBalance, destination, selectedChainIdsCount]);
+  }, [swapBalance, destination, inputAmount, assetSelection.selectedChainIds]);
 
   const setAssetSelection = useCallback(
     (update: Partial<AssetSelectionState>) => {

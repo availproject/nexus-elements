@@ -5,7 +5,7 @@ import { formatUsdForDisplay } from "../../common";
 interface SummaryCardProps {
   icon: React.ReactNode;
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   value: string;
   valueSuffix?: string;
   showBreakdown?: boolean;
@@ -37,9 +37,9 @@ function SummaryCard({
               {title}
             </span>
             {subtitle && (
-              <span className="font-sans text-[13px] leading-4.5 text-muted-foreground">
+              <div className="font-sans text-[13px] leading-4.5 text-muted-foreground">
                 {subtitle}
-              </span>
+              </div>
             )}
           </div>
         </div>

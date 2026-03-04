@@ -31,7 +31,7 @@ import {
   SIMULATION_POLL_INTERVAL_MS,
 } from "../constants/widget";
 import {
-  buildSelectableSourceIds,
+  buildPrioritySelectedSourceIds,
   buildSortedFromSources,
 } from "../utils/source-priority";
 
@@ -55,6 +55,13 @@ interface UseDepositProps {
   destination: DestinationConfig;
   onSuccess?: () => void;
   onError?: (error: string) => void;
+}
+
+function parseUsdAmount(value?: string): number {
+  if (!value) return 0;
+  const parsed = Number.parseFloat(value.replace(/,/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return parsed;
 }
 
 /**
@@ -85,7 +92,7 @@ export function useDepositWidget(
 
   // Asset selection state
   const { assetSelection, setAssetSelection, resetAssetSelection } =
-    useAssetSelection(swapBalance, destination);
+    useAssetSelection(swapBalance, destination, state.inputs.amount);
 
   // Refs for tracking
   const hasAutoSelected = useRef(false);
@@ -165,21 +172,26 @@ export function useDepositWidget(
    * Start the swap and execute flow with the SDK
    */
   const start = useCallback(
-    (inputs: SwapAndExecuteParams) => {
+    (inputs: SwapAndExecuteParams, targetAmountUsd?: number) => {
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
+      const requiredAmountUsd = targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
 
       // Build source list from selected assets.
-      // If user has no explicit selection, fall back to all eligible token sources (token total >= $1).
-      const selectedSourceIds =
-        assetSelection.selectedChainIds.size > 0
-          ? assetSelection.selectedChainIds
-          : buildSelectableSourceIds({
-              swapBalance,
-              destination,
-              minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-            });
+      // If user has no explicit selection, fall back to priority-ordered sources
+      // and keep adding until target USD is covered.
+      let selectedSourceIds: Iterable<string>;
+      if (assetSelection.selectedChainIds.size > 0) {
+        selectedSourceIds = assetSelection.selectedChainIds;
+      } else {
+        selectedSourceIds = buildPrioritySelectedSourceIds({
+          swapBalance,
+          destination,
+          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+          targetAmountUsd: requiredAmountUsd,
+        });
+      }
 
       const fromSources = buildSortedFromSources({
         sourceIds: selectedSourceIds,
@@ -190,7 +202,7 @@ export function useDepositWidget(
 
       if (fromSources.length === 0) {
         const message =
-          "No eligible token balances found. A minimum total token balance of $1.00 is required.";
+          "No eligible source balances found. A minimum source balance of $1.00 is required.";
         dispatch({ type: "setError", payload: message });
         dispatch({ type: "setStatus", payload: "error" });
         onError?.(message);
@@ -363,6 +375,7 @@ export function useDepositWidget(
       fetchSwapBalance,
       dispatch,
       stopwatch,
+      state.inputs.amount,
     ],
   );
 
@@ -438,7 +451,7 @@ export function useDepositWidget(
       });
       dispatch({ type: "setStatus", payload: "simulation-loading" });
       dispatch({ type: "setSimulationLoading", payload: true });
-      start(newInputs);
+      start(newInputs, totalAmountUsd);
       return true;
     },
     [

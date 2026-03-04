@@ -41,6 +41,12 @@ function parseNonNegativeNumber(value: unknown): number {
   return parsed;
 }
 
+interface SourceCandidate {
+  sourceId: string;
+  balanceInFiat: number;
+  priorityRank: number;
+}
+
 export function parseSourceId(sourceId: string): {
   tokenAddress: Hex;
   chainId: number;
@@ -76,36 +82,6 @@ function buildSourceFiatByKeyMap(
   return map;
 }
 
-function buildTokenTotalBySourceKeyMap(
-  swapBalance: UserAsset[] | null,
-): Map<string, number> {
-  const map = new Map<string, number>();
-  if (!swapBalance) return map;
-
-  for (const asset of swapBalance) {
-    const fallbackBreakdownTotal = (asset.breakdown ?? []).reduce((sum, breakdown) => {
-      return sum + parseNonNegativeNumber(breakdown.balanceInFiat);
-    }, 0);
-    const tokenTotalBalanceInFiat = Math.max(
-      parseNonNegativeNumber(asset.balanceInFiat),
-      fallbackBreakdownTotal,
-    );
-
-    for (const breakdown of asset.breakdown ?? []) {
-      const chainId = breakdown.chain?.id;
-      const tokenAddress = breakdown.contractAddress;
-      if (!chainId || !tokenAddress) continue;
-
-      map.set(
-        getFiatLookupKey(tokenAddress, chainId),
-        tokenTotalBalanceInFiat,
-      );
-    }
-  }
-
-  return map;
-}
-
 function buildPriorityRankMap(
   swapBalance: UserAsset[] | null,
   destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">,
@@ -132,12 +108,20 @@ function sortSourceIdsByPriority(params: {
   destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">;
   minimumBalanceUsd?: number;
 }): string[] {
+  return buildSortedSourceCandidates(params).map((item) => item.sourceId);
+}
+
+function buildSortedSourceCandidates(params: {
+  sourceIds: Iterable<string>;
+  swapBalance: UserAsset[] | null;
+  destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">;
+  minimumBalanceUsd?: number;
+}): SourceCandidate[] {
   const { sourceIds, swapBalance, destination, minimumBalanceUsd } = params;
   const uniqueIds = [...new Set(sourceIds)];
   if (uniqueIds.length === 0) return [];
 
   const sourceFiatByKeyMap = buildSourceFiatByKeyMap(swapBalance);
-  const tokenTotalBySourceKeyMap = buildTokenTotalBySourceKeyMap(swapBalance);
   const priorityRankMap = buildPriorityRankMap(swapBalance, destination);
 
   return uniqueIds
@@ -148,20 +132,18 @@ function sortSourceIdsByPriority(params: {
       const fiatKey = getFiatLookupKey(parsed.tokenAddress, parsed.chainId);
       const priorityKey = getPriorityLookupKey(parsed.tokenAddress, parsed.chainId);
       const balanceInFiat = sourceFiatByKeyMap.get(fiatKey) ?? 0;
-      const tokenTotalBalanceInFiat = tokenTotalBySourceKeyMap.get(fiatKey) ?? 0;
       const priorityRank = priorityRankMap.get(priorityKey) ?? MAX_PRIORITY_RANK;
 
       return {
         sourceId,
         balanceInFiat,
-        tokenTotalBalanceInFiat,
         priorityRank,
       };
     })
     .filter((item): item is NonNullable<typeof item> => {
       if (!item) return false;
       if (minimumBalanceUsd == null) return true;
-      return item.tokenTotalBalanceInFiat >= minimumBalanceUsd;
+      return item.balanceInFiat >= minimumBalanceUsd;
     })
     .sort((a, b) => {
       if (a.priorityRank !== b.priorityRank) {
@@ -171,8 +153,7 @@ function sortSourceIdsByPriority(params: {
         return b.balanceInFiat - a.balanceInFiat;
       }
       return a.sourceId.localeCompare(b.sourceId);
-    })
-    .map((item) => item.sourceId);
+    });
 }
 
 export function buildSelectableSourceIds(params: {
@@ -201,6 +182,49 @@ export function buildSelectableSourceIds(params: {
     destination,
     minimumBalanceUsd,
   });
+}
+
+export function buildPrioritySelectedSourceIds(params: {
+  swapBalance: UserAsset[] | null;
+  destination: Pick<DestinationConfig, "chainId" | "tokenAddress" | "tokenSymbol">;
+  minimumBalanceUsd: number;
+  targetAmountUsd?: number;
+}): string[] {
+  const { swapBalance, destination, minimumBalanceUsd, targetAmountUsd } = params;
+
+  const sourceIds = buildSelectableSourceIds({
+    swapBalance,
+    destination,
+    minimumBalanceUsd,
+  });
+
+  if (sourceIds.length === 0) return [];
+
+  const normalizedTargetAmountUsd = parseNonNegativeNumber(targetAmountUsd);
+  if (normalizedTargetAmountUsd <= 0) {
+    return [sourceIds[0]];
+  }
+
+  const sourceFiatByKeyMap = buildSourceFiatByKeyMap(swapBalance);
+  const selectedSourceIds: string[] = [];
+  let runningTotalUsd = 0;
+
+  for (const sourceId of sourceIds) {
+    const parsed = parseSourceId(sourceId);
+    if (!parsed) continue;
+
+    selectedSourceIds.push(sourceId);
+    runningTotalUsd +=
+      sourceFiatByKeyMap.get(
+        getFiatLookupKey(parsed.tokenAddress, parsed.chainId),
+      ) ?? 0;
+
+    if (runningTotalUsd >= normalizedTargetAmountUsd) {
+      break;
+    }
+  }
+
+  return selectedSourceIds;
 }
 
 export function buildSortedFromSources(params: {

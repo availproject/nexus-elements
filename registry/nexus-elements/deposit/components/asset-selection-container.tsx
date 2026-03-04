@@ -14,7 +14,6 @@ import WidgetHeader from "./widget-header";
 import type {
   DepositWidgetContextValue,
   Token,
-  TokenCategory,
   ChainItem,
 } from "../types";
 import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
@@ -46,7 +45,7 @@ interface AssetSelectionContainerProps {
 interface TokenWithMeta extends Token {
   totalUsdValue: number;
   priorityRank: number;
-  isSelectable: boolean;
+  group: "selectable" | "below-minimum";
 }
 
 function parseNonNegativeNumber(value: unknown): number {
@@ -61,8 +60,16 @@ function transformSwapBalanceToTokens(
     DepositWidgetContextValue["destination"],
     "chainId" | "tokenAddress" | "tokenSymbol"
   >,
-): TokenWithMeta[] {
-  if (!swapBalance) return [];
+): {
+  selectableTokens: TokenWithMeta[];
+  belowMinimumTokens: TokenWithMeta[];
+} {
+  if (!swapBalance) {
+    return {
+      selectableTokens: [],
+      belowMinimumTokens: [],
+    };
+  }
 
   const allSourceIds = new Set<string>();
   swapBalance.forEach((asset) => {
@@ -90,77 +97,102 @@ function transformSwapBalanceToTokens(
     sourceOrderIndex.get(`${tokenAddress.toLowerCase()}-${chainId}`) ??
     Number.MAX_SAFE_INTEGER;
 
-  return swapBalance
-    .filter((asset) => asset.breakdown && asset.breakdown.length > 0)
-    .map((asset) => {
-      const chains: ChainItem[] = (asset.breakdown || [])
-        .filter((b) => b.chain && b.balance)
-        .map((b) => {
-          const balanceNum = parseFloat(b.balance);
-          const usdValue = parseNonNegativeNumber(b.balanceInFiat);
-          return {
-            id: `${b.contractAddress}-${b.chain.id}`,
-            tokenAddress: b.contractAddress as `0x${string}`,
-            chainId: b.chain.id,
-            name: b.chain.name,
-            usdValue,
-            amount: balanceNum,
-          };
-        })
-        .sort((a, b) => {
-          const orderDiff =
-            getSourceOrder(a.tokenAddress, a.chainId) -
-            getSourceOrder(b.tokenAddress, b.chainId);
-          if (orderDiff !== 0) return orderDiff;
-          return b.usdValue - a.usdValue;
-        });
+  const buildTokenEntry = (
+    asset: UserAsset,
+    chains: ChainItem[],
+    group: "selectable" | "below-minimum",
+  ): TokenWithMeta | null => {
+    if (chains.length === 0) return null;
 
-      const totalUsdFromBreakdown = chains.reduce((sum, c) => sum + c.usdValue, 0);
-      const totalUsdValue = Math.max(
-        parseNonNegativeNumber(asset.balanceInFiat),
-        totalUsdFromBreakdown,
-      );
+    const totalUsdValue = chains.reduce((sum, c) => sum + c.usdValue, 0);
+    const totalAmount = chains.reduce((sum, c) => sum + c.amount, 0);
+    const category = isStablecoin(asset.symbol)
+      ? "stablecoin"
+      : isNative(asset.symbol)
+        ? "native"
+        : "memecoin";
 
-      const totalAmount = chains.reduce((sum, c) => sum + c.amount, 0);
-
-      let category: TokenCategory;
-      if (isStablecoin(asset.symbol)) {
-        category = "stablecoin";
-      } else if (isNative(asset.symbol)) {
-        category = "native";
-      } else {
-        category = "memecoin";
-      }
-
-      return {
-        id: asset.symbol,
-        symbol: asset.symbol,
-        chainsLabel:
-          chains.length > 1
-            ? `${chains.length} Chain${chains.length !== 1 ? "s" : ""}`
-            : chains[0].name,
-        usdValue: usdFormatter.format(totalUsdValue),
-        amount: formatTokenBalance(totalAmount, {
-          decimals: asset.decimals,
-          symbol: asset.symbol,
-        }),
+    return {
+      id: `${asset.symbol}-${group}`,
+      symbol: asset.symbol,
+      chainsLabel:
+        chains.length > 1
+          ? `${chains.length} Chain${chains.length !== 1 ? "s" : ""}`
+          : chains[0].name,
+      usdValue: usdFormatter.format(totalUsdValue),
+      amount: formatTokenBalance(totalAmount, {
         decimals: asset.decimals,
-        logo: asset.icon || "",
-        category,
-        priorityRank: chains.length
-          ? getSourceOrder(chains[0].tokenAddress, chains[0].chainId)
-          : Number.MAX_SAFE_INTEGER,
-        totalUsdValue,
-        isSelectable: totalUsdValue >= MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        chains,
-      };
-    })
-    .sort((a, b) => {
-      if (a.priorityRank !== b.priorityRank) {
-        return a.priorityRank - b.priorityRank;
-      }
-      return b.totalUsdValue - a.totalUsdValue;
-    });
+        symbol: asset.symbol,
+      }),
+      decimals: asset.decimals,
+      logo: asset.icon || "",
+      category,
+      priorityRank: chains.length
+        ? getSourceOrder(chains[0].tokenAddress, chains[0].chainId)
+        : Number.MAX_SAFE_INTEGER,
+      totalUsdValue,
+      group,
+      chains,
+    };
+  };
+
+  const selectableTokens: TokenWithMeta[] = [];
+  const belowMinimumTokens: TokenWithMeta[] = [];
+
+  for (const asset of swapBalance) {
+    if (!asset.breakdown?.length) continue;
+
+    const chains = asset.breakdown
+      .filter((b) => b.chain && b.balance)
+      .map((b) => {
+        const balanceNum = parseFloat(b.balance);
+        const usdValue = parseNonNegativeNumber(b.balanceInFiat);
+        return {
+          id: `${b.contractAddress}-${b.chain.id}`,
+          tokenAddress: b.contractAddress as `0x${string}`,
+          chainId: b.chain.id,
+          name: b.chain.name,
+          usdValue,
+          amount: balanceNum,
+        } satisfies ChainItem;
+      })
+      .sort((a, b) => {
+        const orderDiff =
+          getSourceOrder(a.tokenAddress, a.chainId) -
+          getSourceOrder(b.tokenAddress, b.chainId);
+        if (orderDiff !== 0) return orderDiff;
+        return b.usdValue - a.usdValue;
+      });
+
+    const selectableChains = chains.filter(
+      (chain) => chain.usdValue >= MIN_SELECTABLE_SOURCE_BALANCE_USD,
+    );
+    const belowMinimumChains = chains.filter(
+      (chain) => chain.usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD,
+    );
+
+    const selectableEntry = buildTokenEntry(asset, selectableChains, "selectable");
+    if (selectableEntry) selectableTokens.push(selectableEntry);
+
+    const belowMinimumEntry = buildTokenEntry(
+      asset,
+      belowMinimumChains,
+      "below-minimum",
+    );
+    if (belowMinimumEntry) belowMinimumTokens.push(belowMinimumEntry);
+  }
+
+  const sortTokenEntries = (a: TokenWithMeta, b: TokenWithMeta) => {
+    if (a.priorityRank !== b.priorityRank) {
+      return a.priorityRank - b.priorityRank;
+    }
+    return b.totalUsdValue - a.totalUsdValue;
+  };
+
+  return {
+    selectableTokens: selectableTokens.sort(sortTokenEntries),
+    belowMinimumTokens: belowMinimumTokens.sort(sortTokenEntries),
+  };
 }
 
 const AssetSelectionContainer = ({
@@ -196,26 +228,33 @@ const AssetSelectionContainer = ({
   // Defer expensive token transformation to avoid blocking UI
   const deferredSwapBalance = useDeferredValue(swapBalance);
 
-  const tokens = useMemo(
+  const {
+    selectableTokens: selectableTokenEntries,
+    belowMinimumTokens: belowMinimumTokenEntries,
+  } = useMemo(
     () =>
       transformSwapBalanceToTokens(deferredSwapBalance, destinationForSorting),
     [deferredSwapBalance, destinationForSorting],
   );
 
+  const allDisplayTokens = useMemo(
+    () => [...selectableTokenEntries, ...belowMinimumTokenEntries],
+    [selectableTokenEntries, belowMinimumTokenEntries],
+  );
+
   const disabledChainIds = useMemo<Set<string>>(() => {
     const disabled = new Set<string>();
-    tokens.forEach((token) => {
-      if (token.isSelectable) return;
+    belowMinimumTokenEntries.forEach((token) => {
       token.chains.forEach((chain) => {
         disabled.add(chain.id);
       });
     });
     return disabled;
-  }, [tokens]);
+  }, [belowMinimumTokenEntries]);
 
   const selectableChainIds = useMemo(() => {
     const selectable = new Set<string>();
-    tokens.forEach((token) => {
+    selectableTokenEntries.forEach((token) => {
       token.chains.forEach((chain) => {
         if (!disabledChainIds.has(chain.id)) {
           selectable.add(chain.id);
@@ -223,15 +262,15 @@ const AssetSelectionContainer = ({
       });
     });
     return selectable;
-  }, [tokens, disabledChainIds]);
+  }, [selectableTokenEntries, disabledChainIds]);
 
-  const selectableTokens = useMemo(
+  const selectableTokensForPreset = useMemo(
     () =>
-      tokens.map((token) => ({
+      selectableTokenEntries.map((token) => ({
         ...token,
         chains: token.chains.filter((chain) => !disabledChainIds.has(chain.id)),
       })),
-    [tokens, disabledChainIds],
+    [selectableTokenEntries, disabledChainIds],
   );
 
   const sortAndGateSelection = useCallback(
@@ -253,8 +292,8 @@ const AssetSelectionContainer = ({
 
   // Build index Map for O(1) token lookups (js-index-maps)
   const tokensById = useMemo(
-    () => new Map(tokens.map((t) => [t.id, t])),
-    [tokens],
+    () => new Map(allDisplayTokens.map((t) => [t.id, t])),
+    [allDisplayTokens],
   );
 
   useEffect(() => {
@@ -264,7 +303,7 @@ const AssetSelectionContainer = ({
     );
     if (nextSelected.size === selectedChainIds.size) return;
 
-    const nextFilter = checkIfMatchesPreset(selectableTokens, nextSelected);
+    const nextFilter = checkIfMatchesPreset(selectableTokensForPreset, nextSelected);
     setAssetSelection({
       selectedChainIds: sortAndGateSelection(nextSelected),
       filter: nextFilter,
@@ -272,27 +311,14 @@ const AssetSelectionContainer = ({
   }, [
     selectedChainIds,
     selectableChainIds,
-    selectableTokens,
+    selectableTokensForPreset,
     setAssetSelection,
     sortAndGateSelection,
   ]);
 
-  const mainTokens = useMemo(
-    () =>
-      tokens.filter(
-        (t) => t.category === "stablecoin" || t.category === "native",
-      ),
-    [tokens],
-  );
-
-  const otherTokens = useMemo(
-    () => tokens.filter((t) => t.category === "memecoin"),
-    [tokens],
-  );
-
   const selectedAmount = useMemo(() => {
     let total = 0;
-    tokens.forEach((token) => {
+    selectableTokenEntries.forEach((token) => {
       token.chains.forEach((chain) => {
         if (selectedChainIds.has(chain.id) && !disabledChainIds.has(chain.id)) {
           total += chain.usdValue;
@@ -300,7 +326,7 @@ const AssetSelectionContainer = ({
       });
     });
     return total;
-  }, [tokens, selectedChainIds, disabledChainIds]);
+  }, [selectableTokenEntries, selectedChainIds, disabledChainIds]);
 
   const requiredAmount = widget.inputs.amount
     ? parseFloat(widget.inputs.amount.replace(/,/g, ""))
@@ -357,7 +383,7 @@ const AssetSelectionContainer = ({
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
       const newChainIds = new Set<string>();
-      tokens.forEach((token) => {
+      selectableTokenEntries.forEach((token) => {
         const shouldInclude =
           preset === "all" ||
           (preset === "stablecoins" && token.category === "stablecoin") ||
@@ -376,7 +402,12 @@ const AssetSelectionContainer = ({
         filter: preset,
       });
     },
-    [tokens, setAssetSelection, disabledChainIds, sortAndGateSelection],
+    [
+      selectableTokenEntries,
+      setAssetSelection,
+      disabledChainIds,
+      sortAndGateSelection,
+    ],
   );
 
   const toggleTokenSelection = useCallback(
@@ -400,14 +431,17 @@ const AssetSelectionContainer = ({
         selectableChains.forEach((chain) => newChainIds.add(chain.id));
       }
 
-      const newFilter = checkIfMatchesPreset(selectableTokens, newChainIds);
+      const newFilter = checkIfMatchesPreset(
+        selectableTokensForPreset,
+        newChainIds,
+      );
       setAssetSelection({
         selectedChainIds: sortAndGateSelection(newChainIds),
         filter: newFilter,
       });
     },
     [
-      selectableTokens,
+      selectableTokensForPreset,
       tokensById,
       selectedChainIds,
       setAssetSelection,
@@ -427,7 +461,10 @@ const AssetSelectionContainer = ({
         newChainIds.add(chainId);
       }
 
-      const newFilter = checkIfMatchesPreset(selectableTokens, newChainIds);
+      const newFilter = checkIfMatchesPreset(
+        selectableTokensForPreset,
+        newChainIds,
+      );
       setAssetSelection({
         selectedChainIds: sortAndGateSelection(newChainIds),
         filter: newFilter,
@@ -435,7 +472,7 @@ const AssetSelectionContainer = ({
     },
     [
       disabledChainIds,
-      selectableTokens,
+      selectableTokensForPreset,
       selectedChainIds,
       setAssetSelection,
       sortAndGateSelection,
@@ -445,12 +482,12 @@ const AssetSelectionContainer = ({
   const toggleExpanded = useCallback(
     (tokenId: string) => {
       let newExpanded = new Set(expandedTokens);
-      if (tokenId === "others-section") {
-        if (newExpanded.has("others-section")) {
-          newExpanded.delete("others-section");
+      if (tokenId === "below-minimum-section") {
+        if (newExpanded.has("below-minimum-section")) {
+          newExpanded.delete("below-minimum-section");
         } else {
           newExpanded = new Set(newExpanded);
-          newExpanded.add("others-section");
+          newExpanded.add("below-minimum-section");
           setTimeout(() => {
             if (scrollContainerRef.current) {
               const currentScrollTop = scrollContainerRef.current.scrollTop;
@@ -462,14 +499,14 @@ const AssetSelectionContainer = ({
           }, 100);
         }
       } else {
-        const othersExpanded = newExpanded.has("others-section");
+        const belowMinimumExpanded = newExpanded.has("below-minimum-section");
         if (newExpanded.has(tokenId)) {
-          newExpanded = othersExpanded
-            ? new Set(["others-section"])
+          newExpanded = belowMinimumExpanded
+            ? new Set(["below-minimum-section"])
             : new Set();
         } else {
-          newExpanded = othersExpanded
-            ? new Set(["others-section", tokenId])
+          newExpanded = belowMinimumExpanded
+            ? new Set(["below-minimum-section", tokenId])
             : new Set([tokenId]);
         }
       }
@@ -527,7 +564,7 @@ const AssetSelectionContainer = ({
 
           <div className="flex flex-col">
             <div className="relative">
-              {showStickyPopular && mainTokens.length > 0 && (
+              {showStickyPopular && selectableTokenEntries.length > 0 && (
                 <button
                   className="absolute top-2 left-1/2 -translate-x-1/2 z-10 text-xs font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer border border-primary/10 px-2 py-1 bg-background"
                   onClick={scrollToPopular}
@@ -537,9 +574,9 @@ const AssetSelectionContainer = ({
               )}
               <div
                 ref={scrollContainerRef}
-                className="w-full overflow-y-auto max-h-75 scrollbar-hide"
+                className="w-full overflow-y-auto max-h-[300px] scrollbar-hide"
               >
-                {mainTokens.length > 0 && (
+                {selectableTokenEntries.length > 0 && (
                   <div
                     ref={popularSectionRef}
                     className="w-full rounded-lg border overflow-hidden"
@@ -549,7 +586,7 @@ const AssetSelectionContainer = ({
                         Popular
                       </span>
                     </div>
-                    {mainTokens.map((token, index) => (
+                    {selectableTokenEntries.map((token, index) => (
                       <TokenRow
                         key={token.id}
                         token={token}
@@ -560,42 +597,44 @@ const AssetSelectionContainer = ({
                         onToggleToken={() => toggleTokenSelection(token.id)}
                         onToggleChain={toggleChainSelection}
                         isFirst={false}
-                        isLast={index === mainTokens.length - 1}
+                        isLast={index === selectableTokenEntries.length - 1}
                       />
                     ))}
                   </div>
                 )}
 
-                {otherTokens.length > 0 && (
+                {belowMinimumTokenEntries.length > 0 && (
                   <div className="w-full bg-base rounded-t-lg border overflow-hidden mt-4">
                     <div
                       className="p-5 flex justify-between items-center cursor-pointer"
-                      onClick={() => toggleExpanded("others-section")}
+                      onClick={() => toggleExpanded("below-minimum-section")}
                     >
                       <span className="font-sans text-sm text-muted-foreground">
-                        Others ({otherTokens.length})
+                        Tokens Below Minimum Balance (
+                        {belowMinimumTokenEntries.length})
                       </span>
                       <ChevronDownIcon
                         className={`text-muted-foreground transition-transform duration-200 ${
-                          expandedTokens.has("others-section")
+                          expandedTokens.has("below-minimum-section")
                             ? "rotate-180"
                             : ""
                         }`}
                       />
                     </div>
 
-                    {expandedTokens.has("others-section") && (
+                    {expandedTokens.has("below-minimum-section") && (
                       <div className="w-full border-t">
                         {disabledChainIds.size > 0 && (
                           <div className="px-5 py-4 border-b bg-muted/20">
                             <span className="font-sans text-[13px] leading-5 text-muted-foreground">
-                              A minimum total token balance of $
-                              {MIN_SELECTABLE_SOURCE_BALANCE_USD.toFixed(2)} is
-                              required for a token to be selectable.
+                              Tokens under $
+                              {MIN_SELECTABLE_SOURCE_BALANCE_USD.toFixed(0)} are
+                              unavailable for deposits to prevent failed
+                              transactions
                             </span>
                           </div>
                         )}
-                        {otherTokens.map((token, index) => (
+                        {belowMinimumTokenEntries.map((token, index) => (
                           <TokenRow
                             key={token.id}
                             token={token}
@@ -606,7 +645,7 @@ const AssetSelectionContainer = ({
                             onToggleToken={() => toggleTokenSelection(token.id)}
                             onToggleChain={toggleChainSelection}
                             isFirst={index === 0}
-                            isLast={index === otherTokens.length - 1}
+                            isLast={index === belowMinimumTokenEntries.length - 1}
                           />
                         ))}
                       </div>

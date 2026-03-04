@@ -241,7 +241,11 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     // Convert USD amount to token amount for display
     const tokenExchangeRate = exchangeRate?.[destination.tokenSymbol] ?? 1;
-    const receiveTokenAmount = receiveAmountUsd / tokenExchangeRate;
+    const safeTokenExchangeRate =
+      Number.isFinite(tokenExchangeRate) && tokenExchangeRate > 0
+        ? tokenExchangeRate
+        : 1;
+    const receiveTokenAmount = receiveAmountUsd / safeTokenExchangeRate;
 
     const receiveAmountAfterSwap = formatTokenBalance(
       receiveTokenAmount.toString(),
@@ -370,8 +374,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       receiveAmountUsd - destinationAmountUsd,
     );
 
-    if (usedFromDestinationUsd > 0.01 && destinationBalance) {
-      const usedTokenAmount = usedFromDestinationUsd / tokenExchangeRate;
+    if (usedFromDestinationUsd > 0) {
+      const usedTokenAmount = usedFromDestinationUsd / safeTokenExchangeRate;
       const chainMeta =
         CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
 
@@ -413,7 +417,6 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     inputAmount,
     exchangeRate,
     getFiatValue,
-    destinationBalance,
     swapSkippedData,
     skipSwap,
   ]);
