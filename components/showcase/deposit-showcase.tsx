@@ -9,6 +9,11 @@ import {
   TOKEN_CONTRACT_ADDRESSES,
 } from "@avail-project/nexus-core";
 
+const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
+  [SUPPORTED_CHAINS.BASE]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+  [SUPPORTED_CHAINS.MEGAETH]: "0x7e324abc5de01d112afc03a584966ff199741c28",
+};
+
 const DepositShowcase = () => {
   const [embed, setEmbed] = React.useState(false);
   const executeDeposit = (
@@ -18,13 +23,10 @@ const DepositShowcase = () => {
     _chainId: number,
     user: Address,
   ) => {
-    // USDC on AAVE BASE
-    // const contractAddress =
-    //   "0x7e324AbC5De01d112AfC03a584966ff199741C28" as const;
-    // USDm on AAVE MegaETH
-
-    const contractAddress =
-      "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5" as const;
+    const contractAddress = AAVE_POOL_BY_CHAIN[_chainId];
+    if (!contractAddress) {
+      throw new Error(`Unsupported Aave destination chain: ${_chainId}`);
+    }
 
     const abi: Abi = [
       {
