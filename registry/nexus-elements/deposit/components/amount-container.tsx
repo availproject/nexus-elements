@@ -11,7 +11,7 @@ import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
 import { Skeleton } from "../../ui/skeleton";
 import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
-import { isNative, isStablecoin, parseNonNegativeNumber } from "../utils";
+import { parseNonNegativeNumber } from "../utils";
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
@@ -50,8 +50,6 @@ const AmountContainer = ({
         const chainId = chainBreakdown.chain?.id;
         const tokenAddress = chainBreakdown.contractAddress;
         if (!chainId || !tokenAddress) return;
-        const stable = isStablecoin(chainBreakdown.symbol);
-        const native = isNative(chainBreakdown.symbol);
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(chainBreakdown.balanceInFiat);
@@ -59,8 +57,6 @@ const AmountContainer = ({
 
         const shouldInclude =
           filter === "all" ||
-          (filter === "stablecoins" && stable) ||
-          (filter === "native" && native) ||
           (filter === "custom" && selectedChainIds.has(sourceId));
 
         if (shouldInclude) {

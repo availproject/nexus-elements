@@ -10,8 +10,6 @@ import type { DestinationConfig, AssetFilterType } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
 import {
   buildPrioritySelectedSourceIds,
-  isNative,
-  isStablecoin,
 } from "../utils";
 
 function parseNonNegativeNumber(value: unknown): number {
@@ -78,8 +76,6 @@ function PayUsing({
         const chainId = breakdown.chain?.id;
         const tokenAddress = breakdown.contractAddress;
         if (!chainId || !tokenAddress) return;
-        const stable = isStablecoin(breakdown.symbol);
-        const native = isNative(breakdown.symbol);
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
@@ -87,8 +83,6 @@ function PayUsing({
 
         const includeInPool =
           filter === "all" ||
-          (filter === "stablecoins" && stable) ||
-          (filter === "native" && native) ||
           (filter === "custom" && selectedChainIds.has(sourceId));
 
         if (includeInPool) {

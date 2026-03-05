@@ -66,18 +66,10 @@ export function checkIfMatchesPreset(
   if (selectedChainIds.size === 0) return "custom";
 
   const allIds = new Set<string>();
-  const stableIds = new Set<string>();
-  const nativeIds = new Set<string>();
 
   tokens.forEach((token) => {
     token.chains.forEach((chain) => {
       allIds.add(chain.id);
-      if (isStablecoin(token.symbol)) {
-        stableIds.add(chain.id);
-      }
-      if (isNative(token.symbol)) {
-        nativeIds.add(chain.id);
-      }
     });
   });
 
@@ -85,8 +77,6 @@ export function checkIfMatchesPreset(
     a.size === b.size && [...a].every((id) => b.has(id));
 
   if (setsEqual(selectedChainIds, allIds)) return "all";
-  if (setsEqual(selectedChainIds, stableIds)) return "stablecoins";
-  if (setsEqual(selectedChainIds, nativeIds)) return "native";
   return "custom";
 }
 
@@ -95,14 +85,11 @@ export function checkIfMatchesPreset(
  */
 export function getChainIdsForFilter(
   tokens: Token[],
-  filter: "all" | "stablecoins" | "native",
+  filter: "all",
 ): Set<string> {
   const ids = new Set<string>();
   tokens.forEach((token) => {
-    const shouldInclude =
-      filter === "all" ||
-      (filter === "stablecoins" && isStablecoin(token.symbol)) ||
-      (filter === "native" && isNative(token.symbol));
+    const shouldInclude = filter === "all";
 
     if (shouldInclude) {
       token.chains.forEach((chain) => ids.add(chain.id));

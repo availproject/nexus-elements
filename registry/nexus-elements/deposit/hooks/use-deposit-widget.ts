@@ -44,8 +44,6 @@ import { useDepositComputed } from "./use-deposit-computed";
 import {
   buildPrioritySelectedSourceIds,
   buildSortedFromSources,
-  isNative,
-  isStablecoin,
 } from "../utils";
 
 interface UseDepositProps {
@@ -81,14 +79,10 @@ function buildSourcePoolIds(params: {
       const chainId = breakdown.chain?.id;
       const tokenAddress = breakdown.contractAddress;
       if (!chainId || !tokenAddress) return;
-      const stable = isStablecoin(breakdown.symbol);
-      const native = isNative(breakdown.symbol);
 
       const sourceId = `${tokenAddress}-${chainId}`;
       const include =
         filter === "all" ||
-        (filter === "stablecoins" && stable) ||
-        (filter === "native" && native) ||
         (filter === "custom" && selectedChainIds.has(sourceId));
 
       if (include) {
@@ -243,7 +237,7 @@ export function useDepositWidget(
 
       if (fromSources.length === 0) {
         const message =
-          "No eligible source balances found. A minimum source balance of $1.00 is required.";
+          "No eligible source balances found. A minimum source balance of $0.10 is required.";
         dispatch({ type: "setError", payload: message });
         dispatch({ type: "setStatus", payload: "error" });
         onError?.(message);

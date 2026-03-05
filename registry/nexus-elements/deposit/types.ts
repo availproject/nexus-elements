@@ -25,7 +25,7 @@ export type TransactionStatus =
 
 export type NavigationDirection = "forward" | "backward" | null;
 
-export type AssetFilterType = "all" | "stablecoins" | "native" | "custom";
+export type AssetFilterType = "all" | "custom";
 
 export type TokenCategory = "stablecoin" | "native" | "memecoin";
 

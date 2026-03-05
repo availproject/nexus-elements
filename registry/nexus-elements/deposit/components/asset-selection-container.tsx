@@ -423,46 +423,16 @@ const AssetSelectionContainer = ({
     });
   }, []);
 
-  const handlePresetClick = useCallback(
-    (preset: "all" | "stablecoins" | "native") => {
-      if (preset === "all") {
-        setAssetSelection(
-          {
-            selectedChainIds: new Set(),
-            filter: "all",
-            expandedTokens: new Set(),
-          },
-          { markUserModified: false },
-        );
-        return;
-      }
-
-      const newChainIds = new Set<string>();
-      selectableTokenEntries.forEach((token) => {
-        const shouldInclude =
-          (preset === "stablecoins" && token.category === "stablecoin") ||
-          (preset === "native" && token.category === "native");
-
-        if (shouldInclude) {
-          token.chains.forEach((chain) => {
-            if (!disabledChainIds.has(chain.id)) {
-              newChainIds.add(chain.id);
-            }
-          });
-        }
-      });
-      setAssetSelection({
-        selectedChainIds: sortAndGateSelection(newChainIds),
-        filter: preset,
-      });
-    },
-    [
-      selectableTokenEntries,
-      setAssetSelection,
-      disabledChainIds,
-      sortAndGateSelection,
-    ],
-  );
+  const handlePresetClick = useCallback(() => {
+    setAssetSelection(
+      {
+        selectedChainIds: new Set(),
+        filter: "all",
+        expandedTokens: new Set(),
+      },
+      { markUserModified: false },
+    );
+  }, [setAssetSelection]);
 
   const toggleTokenSelection = useCallback(
     (tokenId: string) => {
@@ -594,15 +564,13 @@ const AssetSelectionContainer = ({
             <Tabs
               value={filter}
               onValueChange={(value) => {
-                if (value !== "custom") {
-                  handlePresetClick(value as "all" | "stablecoins" | "native");
+                if (value === "all") {
+                  handlePresetClick();
                 }
               }}
             >
               <TabsList>
                 <TabsTrigger value="all">Any token</TabsTrigger>
-                <TabsTrigger value="stablecoins">Stablecoins</TabsTrigger>
-                <TabsTrigger value="native">Native</TabsTrigger>
                 {filter === "custom" && (
                   <TabsTrigger value="custom">Custom</TabsTrigger>
                 )}
@@ -682,7 +650,7 @@ const AssetSelectionContainer = ({
                           <div className="px-5 py-4 border-b bg-muted/20">
                             <span className="font-sans text-[13px] leading-5 text-muted-foreground">
                               Tokens under $
-                              {MIN_SELECTABLE_SOURCE_BALANCE_USD.toFixed(0)} are
+                              {MIN_SELECTABLE_SOURCE_BALANCE_USD.toFixed(1)} are
                               unavailable for deposits to prevent failed
                               transactions
                             </span>
