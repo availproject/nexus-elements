@@ -95,17 +95,16 @@ const ConfirmationContainer = ({
   }, [confirmationDetails]);
 
   const feeDetailRows = useMemo(
-    () =>
-      [
-        { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
-        {
-          label: "Execution Gas fee",
-          amountUsd:
-            feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
-        },
-        { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
-        { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
-      ].filter((row) => row.amountUsd > 0),
+    () => [
+      { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
+      {
+        label: "Execution Gas fee",
+        amountUsd:
+          feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
+      },
+      { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
+      { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
+    ],
     [feeBreakdown],
   );
 
@@ -134,7 +133,7 @@ const ConfirmationContainer = ({
               destinationTokenLogo={widget?.destination?.tokenLogo}
               depositTargetLogo={widget?.destination?.depositTargetLogo}
             />
-            <div>
+            <div className="max-h-100 overflow-y-auto no-scrollbar">
               <SummaryCard
                 icon={<CoinIcon className="w-5 h-5 text-muted-foreground" />}
                 title="You spend"

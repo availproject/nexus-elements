@@ -288,18 +288,21 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
     const protocolFeeUsd = parseNonNegativeNumber(bridgeRaw?.protocol);
     const solverFeeUsd = parseNonNegativeNumber(bridgeRaw?.solver);
 
-    const derivedSponsorshipUsd =
-      collectionUsd + fulfilmentUsd + gasSuppliedUsd;
-    const gasSponsorshipUsd = Math.max(derivedSponsorshipUsd, caGasUsd);
+    const hasBridgeBreakdown = Boolean(bridgeRaw);
+    const executionBridgeUsd = collectionUsd + fulfilmentUsd + gasSuppliedUsd;
+    const gasSponsorshipUsd = hasBridgeBreakdown ? caGasUsd : 0;
 
     const gasAmount = parseNonNegativeNumber(
       transactionIntent?.destination?.gas?.amount,
     );
     const gasSymbol = transactionIntent?.destination?.gas?.token?.symbol;
-    const executionGasFeeUsd =
+    const destinationGasUsd =
       gasAmount > 0 && gasSymbol
         ? parseNonNegativeNumber(getFiatValue(gasAmount, gasSymbol))
         : 0;
+    const executionGasFeeUsd = hasBridgeBreakdown
+      ? executionBridgeUsd
+      : destinationGasUsd;
 
     const bridgeComponentTotal = Object.entries(bridgeRaw ?? {})
       .filter(([key]) => key !== "total")
@@ -308,7 +311,10 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
     const bridgeUsd =
       bridgeExplicitTotal > 0 ? bridgeExplicitTotal : bridgeComponentTotal;
     const knownBridgeRowsUsd =
-      gasSponsorshipUsd + protocolFeeUsd + solverFeeUsd;
+      gasSponsorshipUsd +
+      executionGasFeeUsd +
+      protocolFeeUsd +
+      solverFeeUsd;
     const otherBridgeFeeUsd = Math.max(0, bridgeUsd - knownBridgeRowsUsd);
 
     const bufferUsd = parseNonNegativeNumber(feesAndBuffer?.buffer);
@@ -369,7 +375,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
         },
         { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
         { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
-      ].filter((row) => row.amountUsd > 0),
+      ],
     [feeBreakdown],
   );
 

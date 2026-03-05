@@ -476,11 +476,10 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const protocolFeeUsd = parseNonNegativeNumber(bridgeRaw?.protocol);
     const solverFeeUsd = parseNonNegativeNumber(bridgeRaw?.solver);
 
-    // Keep CA gas + collection style payloads from double-counting by taking the
-    // stronger sponsorship signal for the same cost bucket.
-    const derivedSponsorshipUsd = collectionUsd + fulfilmentUsd + gasSuppliedUsd;
-    const gasSponsorshipUsd = Math.max(derivedSponsorshipUsd, caGasUsd);
-    const executionGasFeeUsd = gasUsd;
+    const hasBridgeBreakdown = Boolean(bridgeRaw);
+    const executionBridgeUsd = collectionUsd + fulfilmentUsd + gasSuppliedUsd;
+    const gasSponsorshipUsd = hasBridgeBreakdown ? caGasUsd : 0;
+    const executionGasFeeUsd = hasBridgeBreakdown ? executionBridgeUsd : gasUsd;
 
     const bridgeComponents = Object.entries(bridgeRaw ?? {})
       .filter(([key]) => key !== "total")
@@ -499,7 +498,10 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const bridgeUsd =
       bridgeExplicitTotal > 0 ? bridgeExplicitTotal : bridgeComponentsTotal;
     const knownBridgeRowsUsd =
-      gasSponsorshipUsd + protocolFeeUsd + solverFeeUsd;
+      gasSponsorshipUsd +
+      executionGasFeeUsd +
+      protocolFeeUsd +
+      solverFeeUsd;
     const otherBridgeFeeUsd = Math.max(0, bridgeUsd - knownBridgeRowsUsd);
 
     // Intent buffer can be displayed for transparency but is not added to total fee.
