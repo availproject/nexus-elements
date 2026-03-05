@@ -137,7 +137,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         if (!breakdown?.chain?.id || !breakdown.balance) continue;
         const numericBalance = Number.parseFloat(breakdown.balance);
         if (!Number.isFinite(numericBalance) || numericBalance <= 0) continue;
-        const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
+        const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon)
+          .icon;
 
         items.push({
           chainId: breakdown.chain.id,
@@ -377,7 +378,10 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         : bridgeFeeComponentsTotal;
 
     // Fall back to inferred fee only when intent payload has no feesAndBuffer field.
-    const inferredFeeUsd = Math.max(0, totalAmountSpentUsd - destinationAmountUsd);
+    const inferredFeeUsd = Math.max(
+      0,
+      totalAmountSpentUsd - destinationAmountUsd,
+    );
     const hasIntentFeeBreakdown = Boolean(intentFeesAndBuffer);
     const totalFeeUsd = hasIntentFeeBreakdown ? bridgeFeeUsd : inferredFeeUsd;
 
@@ -448,7 +452,10 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       const { gas } = swapSkippedData;
       const estimatedFeeWei = Number.parseFloat(gas.estimatedFee);
       const estimatedFeeEth = estimatedFeeWei / 1e18;
-      gasUsd = getFiatValue(estimatedFeeEth, destination.gasTokenSymbol ?? "ETH");
+      gasUsd = getFiatValue(
+        estimatedFeeEth,
+        destination.gasTokenSymbol ?? "ETH",
+      );
     } else if (activeIntent?.intent?.destination?.gas) {
       // Otherwise use estimated gas from intent
       const gas = activeIntent.intent.destination.gas;
@@ -457,7 +464,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         chainId:
           activeIntent.intent.destination?.chain?.id ?? destination.chainId,
         contractAddress: gas.token?.contractAddress,
-        fallbackSymbol: gas.token?.symbol ?? destination.gasTokenSymbol ?? "ETH",
+        fallbackSymbol:
+          gas.token?.symbol ?? destination.gasTokenSymbol ?? "ETH",
       });
       gasUsd = getFiatValue(gasAmount, gasSymbol);
     }
@@ -471,7 +479,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       (bridgeRaw as Record<string, string | undefined> | undefined)?.fulfilment,
     );
     const gasSuppliedUsd = parseNonNegativeNumber(
-      (bridgeRaw as Record<string, string | undefined> | undefined)?.gasSupplied,
+      (bridgeRaw as Record<string, string | undefined> | undefined)
+        ?.gasSupplied,
     );
     const protocolFeeUsd = parseNonNegativeNumber(bridgeRaw?.protocol);
     const solverFeeUsd = parseNonNegativeNumber(bridgeRaw?.solver);
@@ -498,10 +507,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const bridgeUsd =
       bridgeExplicitTotal > 0 ? bridgeExplicitTotal : bridgeComponentsTotal;
     const knownBridgeRowsUsd =
-      gasSponsorshipUsd +
-      executionGasFeeUsd +
-      protocolFeeUsd +
-      solverFeeUsd;
+      gasSponsorshipUsd + executionGasFeeUsd + protocolFeeUsd + solverFeeUsd;
     const otherBridgeFeeUsd = Math.max(0, bridgeUsd - knownBridgeRowsUsd);
 
     // Intent buffer can be displayed for transparency but is not added to total fee.
@@ -539,16 +545,18 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const destinationPricingSymbol = resolvePricingSymbol({
       chainId:
         activeIntent?.intent?.destination?.chain?.id ?? destination.chainId,
-      contractAddress: activeIntent?.intent?.destination?.token?.contractAddress,
+      contractAddress:
+        activeIntent?.intent?.destination?.token?.contractAddress,
       fallbackSymbol:
-        activeIntent?.intent?.destination?.token?.symbol ?? destination.tokenSymbol,
+        activeIntent?.intent?.destination?.token?.symbol ??
+        destination.tokenSymbol,
     });
     const destinationValueUsd = parseNonNegativeNumber(
       getFiatValue(destinationAmount, destinationPricingSymbol),
     );
 
     const swapImpactUsd =
-      destinationValueUsd - sourceValueUsd - totalFeeUsd - bufferUsd;
+      sourceValueUsd - destinationValueUsd - totalFeeUsd - bufferUsd;
     const maxPriceImpactUsd = swapImpactUsd + bufferUsd;
     const spendBaseUsd = sourceValueUsd - totalFeeUsd - bufferUsd;
     const swapImpactPercent =
