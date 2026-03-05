@@ -159,14 +159,19 @@ const NexusProvider = ({
 
         const breakdown = (asset.breakdown ?? []).map((entry) => {
           const balance = Number.parseFloat(String(entry.balance ?? "0"));
-          const safeBalance = Number.isFinite(balance) && balance > 0 ? balance : 0;
-          const existingUsd = Number.parseFloat(String(entry.balanceInFiat ?? "0"));
+          const safeBalance =
+            Number.isFinite(balance) && balance > 0 ? balance : 0;
+          const existingUsd = Number.parseFloat(
+            String(entry.balanceInFiat ?? "0"),
+          );
           const safeExistingUsd =
             Number.isFinite(existingUsd) && existingUsd >= 0 ? existingUsd : 0;
 
           let normalizedUsd = safeExistingUsd;
           if (safeBalance > 0 && normalizedUsd <= 0) {
-            const rate = getUsdRateFromLocalSources(entry.symbol ?? asset.symbol);
+            const rate = getUsdRateFromLocalSources(
+              entry.symbol ?? asset.symbol,
+            );
             if (rate > 0) {
               normalizedUsd = safeBalance * rate;
             }
@@ -182,10 +187,11 @@ const NexusProvider = ({
         const assetBalance = Number.parseFloat(String(asset.balance ?? "0"));
         const safeAssetBalance =
           Number.isFinite(assetBalance) && assetBalance > 0 ? assetBalance : 0;
-        const rawAssetUsd = Number.parseFloat(String(asset.balanceInFiat ?? "0"));
-        const safeAssetUsd = Number.isFinite(rawAssetUsd) && rawAssetUsd >= 0
-          ? rawAssetUsd
-          : 0;
+        const rawAssetUsd = Number.parseFloat(
+          String(asset.balanceInFiat ?? "0"),
+        );
+        const safeAssetUsd =
+          Number.isFinite(rawAssetUsd) && rawAssetUsd >= 0 ? rawAssetUsd : 0;
 
         let normalizedAssetUsd = safeAssetUsd;
         if (normalizedAssetUsd <= 0) {
@@ -419,17 +425,20 @@ const NexusProvider = ({
 
   const fetchSwapBalance = useCallback(async () => {
     try {
-      const updatedBalance = await sdk.getBalancesForSwap();
+      const updatedBalance = await sdk.getBalancesForSwap(false);
       setSwapBalance(normalizeUserAssetFiatValues(updatedBalance));
     } catch (error) {
       console.error("Error fetching swap balance:", error);
     }
   }, [sdk, normalizeUserAssetFiatValues]);
 
-  const getFiatValue = useCallback((amount: number, token: string) => {
-    const rate = getUsdRateFromLocalSources(token);
-    return rate * amount;
-  }, [getUsdRateFromLocalSources]);
+  const getFiatValue = useCallback(
+    (amount: number, token: string) => {
+      const rate = getUsdRateFromLocalSources(token);
+      return rate * amount;
+    },
+    [getUsdRateFromLocalSources],
+  );
 
   // Backfill USD values once rates arrive so downstream selectors/max logic
   // do not treat supported assets as $0 simply due to timing.
