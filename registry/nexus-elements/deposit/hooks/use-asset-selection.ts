@@ -7,7 +7,10 @@ import {
   BALANCE_SAFETY_MARGIN,
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
-import { buildPrioritySelectedSourceIds } from "../utils";
+import {
+  buildPrioritySelectedSourceIds,
+  buildSelectableSourceIds,
+} from "../utils";
 
 function parseUsdAmount(value?: string): number {
   if (!value) return 0;
@@ -52,6 +55,21 @@ export function useAssetSelection(
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
   const hasUserModifiedSelection = useRef(false);
+  const previousAmountUsd = useRef<number>(parseUsdAmount(inputAmount));
+
+  useEffect(() => {
+    const nextAmountUsd = parseUsdAmount(inputAmount);
+
+    if (
+      hasUserModifiedSelection.current &&
+      previousAmountUsd.current !== nextAmountUsd
+    ) {
+      hasUserModifiedSelection.current = false;
+      setAssetSelectionState(createInitialAssetSelection());
+    }
+
+    previousAmountUsd.current = nextAmountUsd;
+  }, [inputAmount]);
 
   // Auto-select token sources by priority until target amount is covered.
   // This keeps adapting to amount changes until the user manually edits selection.
@@ -60,12 +78,19 @@ export function useAssetSelection(
       const targetAmountUsd = parseUsdAmount(inputAmount);
       const coverageTargetUsd =
         targetAmountUsd > 0 ? targetAmountUsd / BALANCE_SAFETY_MARGIN : 0;
-      const defaultSelectedSourceIds = buildPrioritySelectedSourceIds({
-        swapBalance,
-        destination,
-        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        targetAmountUsd: coverageTargetUsd,
-      });
+      const defaultSelectedSourceIds =
+        coverageTargetUsd > 0
+          ? buildPrioritySelectedSourceIds({
+              swapBalance,
+              destination,
+              minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+              targetAmountUsd: coverageTargetUsd,
+            })
+          : buildSelectableSourceIds({
+              swapBalance,
+              destination,
+              minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+            });
 
       if (defaultSelectedSourceIds.length === 0) return;
 

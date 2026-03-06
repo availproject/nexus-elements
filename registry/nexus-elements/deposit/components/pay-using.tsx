@@ -6,13 +6,9 @@ import {
   LOADING_SKELETON_DELAY_MS,
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
-import type { DestinationConfig, AssetFilterType } from "../types";
+import type { DestinationConfig } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
-import {
-  buildPrioritySelectedSourceIds,
-  isNative,
-  isStablecoin,
-} from "../utils";
+import { buildPrioritySelectedSourceIds } from "../utils";
 
 function parseNonNegativeNumber(value: unknown): number {
   const parsed = Number.parseFloat(String(value));
@@ -30,7 +26,6 @@ function parseUsdAmount(value?: string): number {
 interface PayUsingProps {
   onClick?: () => void;
   selectedChainIds: Set<string>;
-  filter: AssetFilterType;
   amount?: string;
   swapBalance: UserAsset[] | null;
   destination: Pick<
@@ -42,7 +37,6 @@ interface PayUsingProps {
 function PayUsing({
   onClick,
   selectedChainIds,
-  filter,
   amount,
   swapBalance,
   destination,
@@ -78,20 +72,12 @@ function PayUsing({
         const chainId = breakdown.chain?.id;
         const tokenAddress = breakdown.contractAddress;
         if (!chainId || !tokenAddress) return;
-        const stable = isStablecoin(breakdown.symbol);
-        const native = isNative(breakdown.symbol);
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
         if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
 
-        const includeInPool =
-          filter === "all" ||
-          (filter === "stablecoins" && stable) ||
-          (filter === "native" && native) ||
-          (filter === "custom" && selectedChainIds.has(sourceId));
-
-        if (includeInPool) {
+        if (selectedChainIds.has(sourceId)) {
           poolSourceIds.add(sourceId);
           symbolBySourceId.set(sourceId, breakdown.symbol);
         }

@@ -6,7 +6,6 @@ import type {
   DepositWidgetContextValue,
   DepositInputs,
   DestinationConfig,
-  AssetFilterType,
 } from "../types";
 import {
   ERROR_CODES,
@@ -45,8 +44,6 @@ import { useDepositComputed } from "./use-deposit-computed";
 import {
   buildPrioritySelectedSourceIds,
   buildSortedFromSources,
-  isNative,
-  isStablecoin,
 } from "../utils";
 
 interface UseDepositProps {
@@ -70,35 +67,9 @@ function parseUsdAmount(value?: string): number {
 }
 
 function buildSourcePoolIds(params: {
-  swapBalance: DepositWidgetContextValue["swapBalance"];
-  filter: AssetFilterType;
   selectedChainIds: Set<string>;
 }): Set<string> {
-  const { swapBalance, filter, selectedChainIds } = params;
-  const sourceIds = new Set<string>();
-
-  swapBalance?.forEach((asset) => {
-    asset.breakdown?.forEach((breakdown) => {
-      const chainId = breakdown.chain?.id;
-      const tokenAddress = breakdown.contractAddress;
-      if (!chainId || !tokenAddress) return;
-      const stable = isStablecoin(breakdown.symbol);
-      const native = isNative(breakdown.symbol);
-
-      const sourceId = `${tokenAddress}-${chainId}`;
-      const include =
-        filter === "all" ||
-        (filter === "stablecoins" && stable) ||
-        (filter === "native" && native) ||
-        (filter === "custom" && selectedChainIds.has(sourceId));
-
-      if (include) {
-        sourceIds.add(sourceId);
-      }
-    });
-  });
-
-  return sourceIds;
+  return new Set(params.selectedChainIds);
 }
 
 /**
@@ -238,8 +209,6 @@ export function useDepositWidget(
       // Source pool is based on current filter mode. Actual fromSources are then
       // picked in SDK priority order until target amount is covered.
       const sourcePoolIds = buildSourcePoolIds({
-        swapBalance,
-        filter: assetSelection.filter,
         selectedChainIds: assetSelection.selectedChainIds,
       });
       const selectedSourceIds = buildPrioritySelectedSourceIds({

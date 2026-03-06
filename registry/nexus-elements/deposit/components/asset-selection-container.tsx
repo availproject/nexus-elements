@@ -428,11 +428,10 @@ const AssetSelectionContainer = ({
       if (preset === "all") {
         setAssetSelection(
           {
-            selectedChainIds: new Set(),
+            selectedChainIds: sortAndGateSelection(selectableChainIds),
             filter: "all",
             expandedTokens: new Set(),
           },
-          { markUserModified: false },
         );
         return;
       }
