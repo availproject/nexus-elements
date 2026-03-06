@@ -420,6 +420,7 @@ export function formatImpactPercent(value: number): string {
   if (absolute < 0.01) {
     return "< 0.01%";
   }
+  const sign = value < 0 ? "-" : "+";
   const fixed = absolute.toFixed(2);
-  return `${fixed.replace(/\.?0+$/, "")}%`;
+  return `${sign}${fixed.replace(/\.?0+$/, "")}%`;
 }

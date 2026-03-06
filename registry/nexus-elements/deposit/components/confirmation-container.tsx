@@ -12,13 +12,20 @@ import { CardContent } from "../../ui/card";
 import { usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
-import { Info } from "lucide-react";
+import {
+  BadgeInfo,
+  BadgePercent,
+  Info,
+  Shield,
+  ShieldCheck,
+} from "lucide-react";
 import {
   formatFeeUsd,
   formatImpactPercent,
   formatSignedUsd,
   parseNonNegativeNumber,
 } from "../utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 
 interface ConfirmationContainerProps {
   widget: DepositWidgetContextValue;
@@ -104,7 +111,7 @@ const ConfirmationContainer = ({
       },
       { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
       { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
-    ],
+    ].filter((row) => row.amountUsd > 0),
     [feeBreakdown],
   );
 
@@ -226,62 +233,47 @@ const ConfirmationContainer = ({
               {showPriceImpactBreakdown && (
                 <SummaryCard
                   icon={
-                    <Info className="w-5 h-5 text-muted-foreground stroke-[1.8]" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <BadgePercent className="size-5 text-muted-foreground stroke-[1.8]" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Estimated market impact from multiple swap routes</p>
+                      </TooltipContent>
+                    </Tooltip>
                   }
                   title={
                     <div className="flex flex-col w-full gap-y-1">
                       <div className="inline-flex items-center gap-1.5">
-                        <span>Max price impact</span>
+                        <span>Price impact</span>
                       </div>
                     </div>
                   }
                   subText={
-                    <>
-                      {!showPriceImpactDetails && (
-                        <p className="font-sans text-xs leading-4.5 text-muted-foreground mt-3">
-                          Includes a buffer to ensure swaps succeed. <br />{" "}
-                          Excess funds are refunded after deducting fees and
-                          impact.
-                        </p>
-                      )}
-                    </>
-                  }
-                  value={`${formatSignedUsd(feeBreakdown.maxPriceImpactUsd)} (${formatImpactPercent(
-                    feeBreakdown.maxPriceImpactPercent,
-                  )})`}
-                  showBreakdown={true}
-                  loading={isLoading}
-                  expanded={showPriceImpactDetails}
-                  onToggleExpand={() =>
-                    setShowPriceImpactDetails(!showPriceImpactDetails)
-                  }
-                >
-                  <div className="flex flex-col gap-y-3">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-sans text-sm text-card-foreground">
-                          Swap impact
-                        </span>
-                        <span className="font-sans text-sm text-muted-foreground">
-                          {formatSignedUsd(feeBreakdown.swapImpactUsd)} (
-                          {formatImpactPercent(feeBreakdown.swapImpactPercent)})
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-sans text-sm text-card-foreground">
-                          Swap buffer
-                        </span>
-                        <span className="font-sans text-sm text-muted-foreground">
+                    <div className="flex flex-col items-start gap-y-4 py-4">
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-x-4">
+                          <ShieldCheck className="size-5 text-muted-foreground stroke-[1.8]" />
+                          <span className="font-sans text-sm text-card-foreground">
+                            Swap buffer
+                          </span>
+                        </div>
+                        <span className="font-display text-card-foreground tracking-[0.36px] leading-4.5 font-medium">
                           {formatFeeUsd(feeBreakdown.bufferUsd)}
                         </span>
                       </div>
+
+                      <p className="font-sans text-xs leading-4.5 text-muted-foreground ml-8.5">
+                        Temporary buffer collected to ensure swaps succeed.{" "}
+                        <br />
+                        Excess funds are refunded.
+                      </p>
                     </div>
-                    <p className="font-sans text-xs leading-4.5 text-muted-foreground mt-3">
-                      Includes a buffer to ensure swaps succeed. <br /> Excess
-                      funds are refunded after deducting fees and impact.
-                    </p>
-                  </div>
-                </SummaryCard>
+                  }
+                  value={`${formatSignedUsd(feeBreakdown.swapImpactUsd)} (${formatImpactPercent(feeBreakdown.swapImpactPercent)})`}
+                  showBreakdown={false}
+                  loading={isLoading}
+                />
               )}
             </div>
           </div>

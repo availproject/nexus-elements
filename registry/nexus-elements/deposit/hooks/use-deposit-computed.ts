@@ -472,12 +472,6 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     const bridgeRaw = activeIntent?.intent?.feesAndBuffer?.bridge;
     const caGasUsd = parseNonNegativeNumber(bridgeRaw?.caGas);
-    const collectionUsd = parseNonNegativeNumber(
-      (bridgeRaw as Record<string, string | undefined> | undefined)?.collection,
-    );
-    const fulfilmentUsd = parseNonNegativeNumber(
-      (bridgeRaw as Record<string, string | undefined> | undefined)?.fulfilment,
-    );
     const gasSuppliedUsd = parseNonNegativeNumber(
       (bridgeRaw as Record<string, string | undefined> | undefined)
         ?.gasSupplied,
@@ -486,8 +480,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const solverFeeUsd = parseNonNegativeNumber(bridgeRaw?.solver);
 
     const hasBridgeBreakdown = Boolean(bridgeRaw);
-    const executionBridgeUsd = collectionUsd + fulfilmentUsd + gasSuppliedUsd;
-    const gasSponsorshipUsd = hasBridgeBreakdown ? caGasUsd : 0;
+    const executionBridgeUsd = caGasUsd;
+    const gasSponsorshipUsd = hasBridgeBreakdown ? gasSuppliedUsd : 0;
     const executionGasFeeUsd = hasBridgeBreakdown ? executionBridgeUsd : gasUsd;
 
     const bridgeComponents = Object.entries(bridgeRaw ?? {})
@@ -555,14 +549,26 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       getFiatValue(destinationAmount, destinationPricingSymbol),
     );
 
-    const swapImpactUsd =
-      sourceValueUsd - destinationValueUsd - totalFeeUsd - bufferUsd;
+    const totalSomething = destinationValueUsd + totalFeeUsd + bufferUsd;
+    const swapImpactUsd = totalSomething - sourceValueUsd;
     const maxPriceImpactUsd = swapImpactUsd + bufferUsd;
     const spendBaseUsd = sourceValueUsd - totalFeeUsd - bufferUsd;
     const swapImpactPercent =
       spendBaseUsd > 0 ? (swapImpactUsd / spendBaseUsd) * 100 : 0;
     const maxPriceImpactPercent =
       spendBaseUsd > 0 ? (maxPriceImpactUsd / spendBaseUsd) * 100 : 0;
+
+    console.log("DATA", {
+      totalSomething,
+      destinationValueUsd,
+      totalFeeUsd,
+      bufferUsd,
+      sourceValueUsd,
+      spendBaseUsd,
+      swapImpactPercent,
+      maxPriceImpactPercent,
+      maxPriceImpactUsd,
+    });
 
     return {
       totalGasFee: gasUsd,

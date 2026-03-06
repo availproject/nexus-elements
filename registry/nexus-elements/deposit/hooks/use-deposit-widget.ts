@@ -9,6 +9,7 @@ import type {
   AssetFilterType,
 } from "../types";
 import {
+  ERROR_CODES,
   NEXUS_EVENTS,
   CHAIN_METADATA,
   type SwapStepType,
@@ -135,16 +136,31 @@ export function useDepositWidget(
   const initialSimulationDone = useRef(false);
   const determiningSwapComplete = useRef(false);
   const lastSimulationTime = useRef(0);
+  const suppressNextWidgetPreviewCancelError = useRef(false);
 
-  const denyActiveSwapIntent = useCallback(() => {
-    try {
-      swapIntent.current?.deny();
-    } catch (error) {
-      console.error("Failed to deny active swap intent", error);
-    } finally {
-      swapIntent.current = null;
-    }
-  }, [swapIntent]);
+  const denyActiveSwapIntent = useCallback(
+    (options?: { suppressUiError?: boolean }) => {
+      const activeSwapIntent = swapIntent.current ?? state.simulation?.swapIntent;
+
+      if (options?.suppressUiError && activeSwapIntent) {
+        suppressNextWidgetPreviewCancelError.current = true;
+      }
+
+      if (!activeSwapIntent) {
+        return;
+      }
+
+      try {
+        activeSwapIntent.deny();
+      } catch (error) {
+        suppressNextWidgetPreviewCancelError.current = false;
+        console.error("Failed to deny active swap intent", error);
+      } finally {
+        swapIntent.current = null;
+      }
+    },
+    [swapIntent, state.simulation],
+  );
 
   // Transaction steps tracking
   const {
@@ -289,6 +305,8 @@ export function useDepositWidget(
           },
         })
         .then((data: SwapAndExecuteResult) => {
+          suppressNextWidgetPreviewCancelError.current = false;
+
           // Extract source swaps from the result
           const sourceSwapsFromResult = data.swapResult?.sourceSwaps ?? [];
           sourceSwapsFromResult.forEach((sourceSwap) => {
@@ -379,7 +397,22 @@ export function useDepositWidget(
           });
         })
         .catch((error) => {
-          const { message } = handleNexusError(error);
+          const { code, message } = handleNexusError(error);
+          const isUserRejectedError =
+            code === ERROR_CODES.USER_DENIED_INTENT ||
+            code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE ||
+            code === ERROR_CODES.USER_DENIED_ALLOWANCE ||
+            code === ERROR_CODES.USER_DENIED_SIWE_SIGNATURE;
+          const shouldSuppressWidgetError =
+            suppressNextWidgetPreviewCancelError.current && isUserRejectedError;
+
+          suppressNextWidgetPreviewCancelError.current = false;
+
+          if (shouldSuppressWidgetError) {
+            onError?.(message);
+            return;
+          }
+
           dispatch({ type: "setError", payload: message });
           dispatch({ type: "setStatus", payload: "error" });
 
@@ -572,12 +605,14 @@ export function useDepositWidget(
   const goBack = useCallback(async () => {
     const previousStep = STEP_HISTORY[state.step];
     if (previousStep) {
+      const suppressUiError =
+        state.step === "confirmation" && !isProcessing;
       dispatch({ type: "setError", payload: null });
       dispatch({
         type: "setStep",
         payload: { step: previousStep, direction: "backward" },
       });
-      denyActiveSwapIntent();
+      denyActiveSwapIntent({ suppressUiError });
       initialSimulationDone.current = false;
       lastSimulationTime.current = 0;
       setPollingEnabled(false);
@@ -585,16 +620,24 @@ export function useDepositWidget(
       stopwatch.reset();
       await fetchSwapBalance();
     }
-  }, [state.step, stopwatch, dispatch, denyActiveSwapIntent, fetchSwapBalance]);
+  }, [
+    state.step,
+    isProcessing,
+    stopwatch,
+    dispatch,
+    denyActiveSwapIntent,
+    fetchSwapBalance,
+  ]);
 
   /**
    * Reset widget to initial state
    */
   const reset = useCallback(async () => {
+    const suppressUiError = state.step === "confirmation" && !isProcessing;
     dispatch({ type: "reset" });
     resetAssetSelection();
     resetSteps();
-    denyActiveSwapIntent();
+    denyActiveSwapIntent({ suppressUiError });
     initialSimulationDone.current = false;
     lastSimulationTime.current = 0;
     setPollingEnabled(false);
@@ -608,6 +651,8 @@ export function useDepositWidget(
     resetAssetSelection,
     denyActiveSwapIntent,
     fetchSwapBalance,
+    state.step,
+    isProcessing,
   ]);
 
   /**

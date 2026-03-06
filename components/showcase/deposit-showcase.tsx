@@ -7,6 +7,7 @@ import {
   CHAIN_METADATA,
   SUPPORTED_CHAINS,
   TOKEN_CONTRACT_ADDRESSES,
+  TOKEN_METADATA,
 } from "@avail-project/nexus-core";
 
 const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
@@ -95,21 +96,19 @@ const DepositShowcase = () => {
     >
       <NexusDeposit
         embed={embed}
-        heading={"Deposit USDm"}
+        heading={"Deposit USDC"}
         destination={{
-          chainId: SUPPORTED_CHAINS.MEGAETH,
-          tokenAddress:
-            TOKEN_CONTRACT_ADDRESSES["USDM"][SUPPORTED_CHAINS.MEGAETH],
-          tokenSymbol: "USDM",
-          tokenDecimals: 18,
-          tokenLogo:
-            "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
-          label: "Deposit USDm on Aave Megaeth",
+          chainId: SUPPORTED_CHAINS.BASE,
+          tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
+          tokenSymbol: "USDC",
+          tokenDecimals: 6,
+          tokenLogo: TOKEN_METADATA["USDC"]?.icon,
+          label: "Deposit USDC on Aave BASE",
           gasTokenSymbol:
-            CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].nativeCurrency.symbol,
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
           explorerUrl:
-            CHAIN_METADATA[SUPPORTED_CHAINS.MEGAETH].blockExplorerUrls[0],
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
           depositTargetLogo: "/aave.svg",
         }}
         executeDeposit={executeDeposit}
