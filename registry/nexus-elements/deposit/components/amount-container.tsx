@@ -44,6 +44,7 @@ const AmountContainer = ({
     let total = 0;
     const filter = widget.assetSelection.filter;
     const selectedChainIds = widget.assetSelection.selectedChainIds;
+    const shouldApplyMinimumBalanceGate = filter !== "all";
 
     widget.swapBalance.forEach((asset) => {
       asset.breakdown?.forEach((chainBreakdown) => {
@@ -55,7 +56,12 @@ const AmountContainer = ({
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(chainBreakdown.balanceInFiat);
-        if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
+        if (
+          shouldApplyMinimumBalanceGate &&
+          usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD
+        ) {
+          return;
+        }
 
         const shouldInclude =
           filter === "all" ||

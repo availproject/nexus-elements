@@ -47,6 +47,8 @@ import {
   buildSortedFromSources,
   isNative,
   isStablecoin,
+  parseNonNegativeNumber,
+  parseSourceId,
 } from "../utils";
 
 interface UseDepositProps {
@@ -79,6 +81,7 @@ function buildSourcePoolIds(params: {
   if (isManualSelection) {
     return new Set(selectedChainIds);
   }
+  const shouldApplyMinimumBalanceGate = filter !== "all";
 
   const sourceIds = new Set<string>();
 
@@ -89,6 +92,13 @@ function buildSourcePoolIds(params: {
       if (!chainId || !tokenAddress) return;
       const stable = isStablecoin(breakdown.symbol);
       const native = isNative(breakdown.symbol);
+      const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
+      if (
+        shouldApplyMinimumBalanceGate &&
+        usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD
+      ) {
+        return;
+      }
 
       const sourceId = `${tokenAddress}-${chainId}`;
       const include =
@@ -244,6 +254,8 @@ export function useDepositWidget(
         requiredAmountUsd > 0
           ? requiredAmountUsd / BALANCE_SAFETY_MARGIN
           : requiredAmountUsd;
+      const hasActiveFilters =
+        isManualSelection || assetSelection.filter !== "all";
 
       // Source pool is based on current filter mode. Actual fromSources are then
       // picked in SDK priority order until target amount is covered.
@@ -253,9 +265,11 @@ export function useDepositWidget(
         selectedChainIds: assetSelection.selectedChainIds,
         isManualSelection,
       });
-      const selectedSourceIds = isManualSelection
+      const selectedSourceIds = !hasActiveFilters
         ? [...sourcePoolIds]
-        : buildPrioritySelectedSourceIds({
+        : isManualSelection
+          ? [...sourcePoolIds]
+          : buildPrioritySelectedSourceIds({
             swapBalance,
             destination,
             minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
@@ -263,12 +277,16 @@ export function useDepositWidget(
             sourceIds: sourcePoolIds,
           });
 
-      const fromSources = buildSortedFromSources({
-        sourceIds: selectedSourceIds,
-        swapBalance,
-        destination,
-        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-      });
+      const fromSources = !hasActiveFilters
+        ? selectedSourceIds
+            .map((sourceId) => parseSourceId(sourceId))
+            .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        : buildSortedFromSources({
+            sourceIds: selectedSourceIds,
+            swapBalance,
+            destination,
+            minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+          });
 
       if (fromSources.length === 0) {
         const message =

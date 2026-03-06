@@ -75,6 +75,8 @@ function PayUsing({
 
     const poolSourceIds = new Set<string>();
     const symbolBySourceId = new Map<string, string>();
+    const hasActiveFilters = isManualSelection || filter !== "all";
+    const shouldApplyMinimumBalanceGate = hasActiveFilters;
 
     swapBalance.forEach((asset) => {
       asset.breakdown?.forEach((breakdown) => {
@@ -86,7 +88,12 @@ function PayUsing({
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
-        if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
+        if (
+          shouldApplyMinimumBalanceGate &&
+          usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD
+        ) {
+          return;
+        }
 
         const includeInPool =
           filter === "all" ||
@@ -103,14 +110,16 @@ function PayUsing({
 
     if (poolSourceIds.size === 0) return "No tokens selected";
 
-    const prioritizedSourceIds = isManualSelection
-      ? buildSortedFromSources({
-          sourceIds: poolSourceIds,
-          swapBalance,
-          destination,
-          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        }).map((source) => `${source.tokenAddress}-${source.chainId}`)
-      : buildPrioritySelectedSourceIds({
+    const prioritizedSourceIds = !hasActiveFilters
+      ? [...poolSourceIds]
+      : isManualSelection
+        ? buildSortedFromSources({
+            sourceIds: poolSourceIds,
+            swapBalance,
+            destination,
+            minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+          }).map((source) => `${source.tokenAddress}-${source.chainId}`)
+        : buildPrioritySelectedSourceIds({
           swapBalance,
           destination,
           minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
