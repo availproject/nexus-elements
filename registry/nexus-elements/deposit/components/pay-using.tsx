@@ -116,7 +116,7 @@ function PayUsing({
     }
 
     return text;
-  }, [selectedChainIds, filter, swapBalance, destination, amount]);
+  }, [selectedChainIds, swapBalance, destination, amount]);
 
   const renderSubtitle = () => {
     if (!hasAmount) {
