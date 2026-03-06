@@ -148,8 +148,7 @@ export function useDepositWidget(
     isManualSelection,
     setAssetSelection,
     resetAssetSelection,
-  } =
-    useAssetSelection(swapBalance, destination, state.inputs.amount);
+  } = useAssetSelection(swapBalance, destination, state.inputs.amount);
 
   // Refs for tracking
   const hasAutoSelected = useRef(false);
@@ -160,7 +159,8 @@ export function useDepositWidget(
 
   const denyActiveSwapIntent = useCallback(
     (options?: { suppressUiError?: boolean }) => {
-      const activeSwapIntent = swapIntent.current ?? state.simulation?.swapIntent;
+      const activeSwapIntent =
+        swapIntent.current ?? state.simulation?.swapIntent;
 
       if (options?.suppressUiError && activeSwapIntent) {
         suppressNextWidgetPreviewCancelError.current = true;
@@ -265,28 +265,10 @@ export function useDepositWidget(
         selectedChainIds: assetSelection.selectedChainIds,
         isManualSelection,
       });
-      const selectedSourceIds = !hasActiveFilters
-        ? [...sourcePoolIds]
-        : isManualSelection
-          ? [...sourcePoolIds]
-          : buildPrioritySelectedSourceIds({
-            swapBalance,
-            destination,
-            minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-            targetAmountUsd: coverageTargetUsd,
-            sourceIds: sourcePoolIds,
-          });
 
-      const fromSources = !hasActiveFilters
-        ? selectedSourceIds
-            .map((sourceId) => parseSourceId(sourceId))
-            .filter((item): item is NonNullable<typeof item> => Boolean(item))
-        : buildSortedFromSources({
-            sourceIds: selectedSourceIds,
-            swapBalance,
-            destination,
-            minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-          });
+      const fromSources = [...sourcePoolIds]
+        .map((sourceId) => parseSourceId(sourceId))
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
       if (fromSources.length === 0) {
         const message =
@@ -637,8 +619,7 @@ export function useDepositWidget(
   const goBack = useCallback(async () => {
     const previousStep = STEP_HISTORY[state.step];
     if (previousStep) {
-      const suppressUiError =
-        state.step === "confirmation" && !isProcessing;
+      const suppressUiError = state.step === "confirmation" && !isProcessing;
       dispatch({ type: "setError", payload: null });
       dispatch({
         type: "setStep",
