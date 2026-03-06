@@ -156,6 +156,7 @@ export interface DepositWidgetContextValue {
 
   // Asset selection
   assetSelection: AssetSelectionState;
+  isManualSelection: boolean;
   setAssetSelection: (
     selection: Partial<AssetSelectionState>,
     options?: SetAssetSelectionOptions,

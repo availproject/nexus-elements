@@ -7,10 +7,7 @@ import {
   BALANCE_SAFETY_MARGIN,
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
-import {
-  buildPrioritySelectedSourceIds,
-  buildSelectableSourceIds,
-} from "../utils";
+import { buildPrioritySelectedSourceIds } from "../utils";
 
 function parseUsdAmount(value?: string): number {
   if (!value) return 0;
@@ -55,6 +52,7 @@ export function useAssetSelection(
   const [assetSelection, setAssetSelectionState] =
     useState<AssetSelectionState>(createInitialAssetSelection);
   const hasUserModifiedSelection = useRef(false);
+  const [isManualSelection, setIsManualSelection] = useState(false);
   const previousAmountUsd = useRef<number>(parseUsdAmount(inputAmount));
 
   useEffect(() => {
@@ -65,6 +63,7 @@ export function useAssetSelection(
       previousAmountUsd.current !== nextAmountUsd
     ) {
       hasUserModifiedSelection.current = false;
+      setIsManualSelection(false);
       setAssetSelectionState(createInitialAssetSelection());
     }
 
@@ -78,19 +77,12 @@ export function useAssetSelection(
       const targetAmountUsd = parseUsdAmount(inputAmount);
       const coverageTargetUsd =
         targetAmountUsd > 0 ? targetAmountUsd / BALANCE_SAFETY_MARGIN : 0;
-      const defaultSelectedSourceIds =
-        coverageTargetUsd > 0
-          ? buildPrioritySelectedSourceIds({
-              swapBalance,
-              destination,
-              minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-              targetAmountUsd: coverageTargetUsd,
-            })
-          : buildSelectableSourceIds({
-              swapBalance,
-              destination,
-              minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-            });
+      const defaultSelectedSourceIds = buildPrioritySelectedSourceIds({
+        swapBalance,
+        destination,
+        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        targetAmountUsd: coverageTargetUsd,
+      });
 
       if (defaultSelectedSourceIds.length === 0) return;
 
@@ -111,7 +103,9 @@ export function useAssetSelection(
       update: Partial<AssetSelectionState>,
       options?: SetAssetSelectionOptions,
     ) => {
-      hasUserModifiedSelection.current = options?.markUserModified ?? true;
+      const nextIsManualSelection = options?.markUserModified ?? true;
+      hasUserModifiedSelection.current = nextIsManualSelection;
+      setIsManualSelection(nextIsManualSelection);
       setAssetSelectionState((prev) => ({ ...prev, ...update }));
     },
     [],
@@ -119,11 +113,13 @@ export function useAssetSelection(
 
   const resetAssetSelection = useCallback(() => {
     hasUserModifiedSelection.current = false;
+    setIsManualSelection(false);
     setAssetSelectionState(createInitialAssetSelection());
   }, []);
 
   return {
     assetSelection,
+    isManualSelection,
     setAssetSelection,
     resetAssetSelection,
   };

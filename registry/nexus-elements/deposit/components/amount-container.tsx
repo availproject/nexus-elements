@@ -11,7 +11,7 @@ import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
 import { Skeleton } from "../../ui/skeleton";
 import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
-import { parseNonNegativeNumber } from "../utils";
+import { isNative, isStablecoin, parseNonNegativeNumber } from "../utils";
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
@@ -42,6 +42,7 @@ const AmountContainer = ({
     if (!widget.swapBalance) return 0;
 
     let total = 0;
+    const filter = widget.assetSelection.filter;
     const selectedChainIds = widget.assetSelection.selectedChainIds;
 
     widget.swapBalance.forEach((asset) => {
@@ -49,12 +50,20 @@ const AmountContainer = ({
         const chainId = chainBreakdown.chain?.id;
         const tokenAddress = chainBreakdown.contractAddress;
         if (!chainId || !tokenAddress) return;
+        const stable = isStablecoin(chainBreakdown.symbol);
+        const native = isNative(chainBreakdown.symbol);
 
         const sourceId = `${tokenAddress}-${chainId}`;
         const usdValue = parseNonNegativeNumber(chainBreakdown.balanceInFiat);
         if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
 
-        if (selectedChainIds.has(sourceId)) {
+        const shouldInclude =
+          filter === "all" ||
+          (filter === "stablecoins" && stable) ||
+          (filter === "native" && native) ||
+          (filter === "custom" && selectedChainIds.has(sourceId));
+
+        if (shouldInclude) {
           total += usdValue;
         }
       });
@@ -112,6 +121,8 @@ const AmountContainer = ({
               <PayUsing
                 onClick={() => widget.goToStep("asset-selection")}
                 selectedChainIds={widget.assetSelection.selectedChainIds}
+                filter={widget.assetSelection.filter}
+                isManualSelection={widget.isManualSelection}
                 amount={widget.inputs.amount}
                 swapBalance={widget.swapBalance}
                 destination={widget.destination}
