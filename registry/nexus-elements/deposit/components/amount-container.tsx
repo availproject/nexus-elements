@@ -10,8 +10,6 @@ import { EmptyBalanceState } from "./empty-balance-state";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
 import { Skeleton } from "../../ui/skeleton";
-import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
-import { isNative, isStablecoin, parseNonNegativeNumber } from "../utils";
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
@@ -38,39 +36,23 @@ const AmountContainer = ({
     [widget.swapBalance],
   );
   const shouldShowEmptyState = isSwapBalanceLoaded && !hasPositiveSwapBalance;
-  const selectedTokenAmount = useMemo(() => {
-    if (!widget.swapBalance) return 0;
+  const amountScreenBalance = useMemo(() => {
+    if (widget.assetSelection.filter === "all") {
+      return widget.totalBalance?.usdBalance ?? 0;
+    }
 
-    let total = 0;
-    const filter = widget.assetSelection.filter;
-    const selectedChainIds = widget.assetSelection.selectedChainIds;
+    return widget.totalSelectedBalance;
+  }, [
+    widget.assetSelection.filter,
+    widget.totalBalance?.usdBalance,
+    widget.totalSelectedBalance,
+  ]);
 
-    widget.swapBalance.forEach((asset) => {
-      asset.breakdown?.forEach((chainBreakdown) => {
-        const chainId = chainBreakdown.chain?.id;
-        const tokenAddress = chainBreakdown.contractAddress;
-        if (!chainId || !tokenAddress) return;
-        const stable = isStablecoin(chainBreakdown.symbol);
-        const native = isNative(chainBreakdown.symbol);
-
-        const sourceId = `${tokenAddress}-${chainId}`;
-        const usdValue = parseNonNegativeNumber(chainBreakdown.balanceInFiat);
-        if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
-
-        const shouldInclude =
-          filter === "all" ||
-          (filter === "stablecoins" && stable) ||
-          (filter === "native" && native) ||
-          (filter === "custom" && selectedChainIds.has(sourceId));
-
-        if (shouldInclude) {
-          total += usdValue;
-        }
-      });
-    });
-
-    return total;
-  }, [widget.swapBalance, widget.assetSelection]);
+  console.log("[deposit][amount][selected-balance]", {
+    filter: widget.assetSelection.filter,
+    selectedSourceIds: [...widget.assetSelection.selectedChainIds],
+    selectedTokenAmountUsd: amountScreenBalance,
+  });
 
   const handleAmountChange = useCallback(
     (amount: string) => {
@@ -106,9 +88,9 @@ const AmountContainer = ({
               totalBalance={widget.totalBalance!}
               amount={widget.inputs.amount ?? ""}
               onAmountChange={handleAmountChange}
-              selectedTokenAmount={selectedTokenAmount}
+              selectedTokenAmount={amountScreenBalance}
               onErrorStateChange={handleErrorStateChange}
-              totalSelectedBalance={selectedTokenAmount}
+              totalSelectedBalance={amountScreenBalance}
               destinationConfig={widget.destination}
             />
           )}

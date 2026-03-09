@@ -6,7 +6,6 @@ import type {
   DepositWidgetContextValue,
   DepositInputs,
   DestinationConfig,
-  AssetFilterType,
 } from "../types";
 import {
   ERROR_CODES,
@@ -14,6 +13,7 @@ import {
   CHAIN_METADATA,
   type SwapStepType,
   type ExecuteParams,
+  type OnSwapIntentHookData,
   type SwapAndExecuteParams,
   type SwapAndExecuteResult,
   parseUnits,
@@ -29,7 +29,6 @@ import { type Address, type Hex, formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
 import {
-  BALANCE_SAFETY_MARGIN,
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
   SIMULATION_POLL_INTERVAL_MS,
 } from "../constants/widget";
@@ -43,10 +42,10 @@ import {
 import { useAssetSelection } from "./use-asset-selection";
 import { useDepositComputed } from "./use-deposit-computed";
 import {
-  buildPrioritySelectedSourceIds,
-  buildSortedFromSources,
-  isNative,
-  isStablecoin,
+  resolveDepositSourceSelection,
+  summarizeSourceCandidates,
+  summarizeSourceIds,
+  summarizeSwapBalanceSources,
 } from "../utils";
 
 interface UseDepositProps {
@@ -69,41 +68,16 @@ function parseUsdAmount(value?: string): number {
   return parsed;
 }
 
-function buildSourcePoolIds(params: {
-  swapBalance: DepositWidgetContextValue["swapBalance"];
-  filter: AssetFilterType;
-  selectedChainIds: Set<string>;
-  isManualSelection: boolean;
-}): Set<string> {
-  const { swapBalance, filter, selectedChainIds, isManualSelection } = params;
-  if (isManualSelection) {
-    return new Set(selectedChainIds);
-  }
-
-  const sourceIds = new Set<string>();
-
-  swapBalance?.forEach((asset) => {
-    asset.breakdown?.forEach((breakdown) => {
-      const chainId = breakdown.chain?.id;
-      const tokenAddress = breakdown.contractAddress;
-      if (!chainId || !tokenAddress) return;
-      const stable = isStablecoin(breakdown.symbol);
-      const native = isNative(breakdown.symbol);
-
-      const sourceId = `${tokenAddress}-${chainId}`;
-      const include =
-        filter === "all" ||
-        (filter === "stablecoins" && stable) ||
-        (filter === "native" && native) ||
-        (filter === "custom" && selectedChainIds.has(sourceId));
-
-      if (include) {
-        sourceIds.add(sourceId);
-      }
-    });
-  });
-
-  return sourceIds;
+function summarizeIntentSources(
+  intentSources: OnSwapIntentHookData["intent"]["sources"] | undefined,
+) {
+  return (intentSources ?? []).map((source) => ({
+    chainId: source.chain.id,
+    chainName: source.chain.name,
+    tokenAddress: source.token.contractAddress,
+    tokenSymbol: source.token.symbol,
+    amount: source.amount,
+  }));
 }
 
 /**
@@ -138,8 +112,7 @@ export function useDepositWidget(
     isManualSelection,
     setAssetSelection,
     resetAssetSelection,
-  } =
-    useAssetSelection(swapBalance, destination, state.inputs.amount);
+  } = useAssetSelection(swapBalance, destination, state.inputs.amount);
 
   // Refs for tracking
   const hasAutoSelected = useRef(false);
@@ -150,7 +123,8 @@ export function useDepositWidget(
 
   const denyActiveSwapIntent = useCallback(
     (options?: { suppressUiError?: boolean }) => {
-      const activeSwapIntent = swapIntent.current ?? state.simulation?.swapIntent;
+      const activeSwapIntent =
+        swapIntent.current ?? state.simulation?.swapIntent;
 
       if (options?.suppressUiError && activeSwapIntent) {
         suppressNextWidgetPreviewCancelError.current = true;
@@ -240,34 +214,37 @@ export function useDepositWidget(
       seed(SWAP_EXPECTED_STEPS);
       const requiredAmountUsd =
         targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
-      const coverageTargetUsd =
-        requiredAmountUsd > 0
-          ? requiredAmountUsd / BALANCE_SAFETY_MARGIN
-          : requiredAmountUsd;
+      const { sourcePoolIds, selectedSourceIds, fromSources } =
+        resolveDepositSourceSelection({
+          swapBalance,
+          destination,
+          filter: assetSelection.filter,
+          selectedSourceIds: assetSelection.selectedChainIds,
+          isManualSelection,
+          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+          targetAmountUsd: requiredAmountUsd,
+        });
 
-      // Source pool is based on current filter mode. Actual fromSources are then
-      // picked in SDK priority order until target amount is covered.
-      const sourcePoolIds = buildSourcePoolIds({
-        swapBalance,
+      console.log("[deposit][start][source-selection]", {
+        requestedAmountUsd: requiredAmountUsd,
         filter: assetSelection.filter,
-        selectedChainIds: assetSelection.selectedChainIds,
         isManualSelection,
-      });
-      const selectedSourceIds = isManualSelection
-        ? [...sourcePoolIds]
-        : buildPrioritySelectedSourceIds({
-            swapBalance,
-            destination,
-            minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-            targetAmountUsd: coverageTargetUsd,
-            sourceIds: sourcePoolIds,
-          });
-
-      const fromSources = buildSortedFromSources({
-        sourceIds: selectedSourceIds,
-        swapBalance,
-        destination,
-        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        uiSelectedSourceIds: [...assetSelection.selectedChainIds],
+        uiSelectedSources: summarizeSourceIds(
+          assetSelection.selectedChainIds,
+          swapBalance,
+        ),
+        sourcePoolIds: [...sourcePoolIds],
+        sourcePoolSources: summarizeSourceIds(sourcePoolIds, swapBalance),
+        candidateSources: summarizeSourceCandidates({
+          sourceIds: sourcePoolIds,
+          swapBalance,
+          destination,
+          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        }),
+        selectedSourceIds,
+        selectedSources: summarizeSourceIds(selectedSourceIds, swapBalance),
+        fromSources,
       });
 
       if (fromSources.length === 0) {
@@ -283,6 +260,32 @@ export function useDepositWidget(
         ...inputs,
         fromSources,
       };
+      console.log("ACTUAL PAYLOAD", inputsWithSources);
+
+      console.log("[deposit][start][sdk-payload]", {
+        toChainId: inputs.toChainId,
+        toTokenAddress: inputs.toTokenAddress,
+        toAmount: inputs.toAmount?.toString(),
+        fromSources,
+        execute: inputs.execute
+          ? {
+              to: inputs.execute.to,
+              value: inputs.execute.value?.toString?.() ?? inputs.execute.value,
+              gas: inputs.execute.gas?.toString?.() ?? inputs.execute.gas,
+              gasPrice:
+                inputs.execute.gasPrice?.toString?.() ??
+                inputs.execute.gasPrice,
+              tokenApproval: inputs.execute.tokenApproval
+                ? {
+                    token: inputs.execute.tokenApproval.token,
+                    amount: inputs.execute.tokenApproval.amount.toString(),
+                    spender: inputs.execute.tokenApproval.spender,
+                  }
+                : undefined,
+              dataLength: inputs.execute.data?.length ?? 0,
+            }
+          : undefined,
+      });
 
       nexusSDK
         .swapAndExecute(inputsWithSources, {
@@ -292,6 +295,13 @@ export function useDepositWidget(
                 completed?: boolean;
                 data?: SwapSkippedData;
               };
+
+              console.log("[deposit][sdk-event]", {
+                eventName: event.name,
+                stepType: step?.type,
+                completed: step?.completed,
+                stepData: step?.data,
+              });
 
               // Handle SWAP_SKIPPED - go directly to transaction-status
               if (step?.type === "SWAP_SKIPPED") {
@@ -319,6 +329,15 @@ export function useDepositWidget(
         })
         .then((data: SwapAndExecuteResult) => {
           suppressNextWidgetPreviewCancelError.current = false;
+
+          console.log("[deposit][start][result]", {
+            intentSources: summarizeIntentSources(
+              swapIntent.current?.intent?.sources,
+            ),
+            sourceSwaps: data.swapResult?.sourceSwaps ?? [],
+            destinationExplorerURL: data.swapResult?.explorerURL ?? null,
+            executeTxHash: data.executeResponse?.txHash ?? null,
+          });
 
           // Extract source swaps from the result
           const sourceSwapsFromResult = data.swapResult?.sourceSwaps ?? [];
@@ -410,6 +429,7 @@ export function useDepositWidget(
           });
         })
         .catch((error) => {
+          console.error("[deposit][start][error]", error);
           const { code, message } = handleNexusError(error);
           const isUserRejectedError =
             code === ERROR_CODES.USER_DENIED_INTENT ||
@@ -542,6 +562,16 @@ export function useDepositWidget(
         },
       };
 
+      console.log("[deposit][simulation][begin]", {
+        totalAmountUsd,
+        destinationRate,
+        tokenAmount,
+        tokenAmountStr,
+        toChainId: newInputs.toChainId,
+        toTokenAddress: newInputs.toTokenAddress,
+        toAmount: newInputs.toAmount.toString(),
+      });
+
       dispatch({
         type: "setInputs",
         payload: { amount: totalAmountUsd.toString() },
@@ -619,8 +649,7 @@ export function useDepositWidget(
   const goBack = useCallback(async () => {
     const previousStep = STEP_HISTORY[state.step];
     if (previousStep) {
-      const suppressUiError =
-        state.step === "confirmation" && !isProcessing;
+      const suppressUiError = state.step === "confirmation" && !isProcessing;
       dispatch({ type: "setError", payload: null });
       dispatch({
         type: "setStep",
@@ -683,6 +712,9 @@ export function useDepositWidget(
       const updated = await swapIntent.current?.refresh();
       if (updated) {
         swapIntent.current!.intent = updated;
+        console.log("[deposit][simulation][refresh]", {
+          intentSources: summarizeIntentSources(updated.sources),
+        });
         dispatch({
           type: "setSimulation",
           payload: {
@@ -714,6 +746,9 @@ export function useDepositWidget(
       return;
     }
 
+    console.log("[deposit][simulation][intent-ready]", {
+      intentSources: summarizeIntentSources(swapIntent.current.intent.sources),
+    });
     initialSimulationDone.current = true;
     dispatch({
       type: "setSimulation",
@@ -733,6 +768,10 @@ export function useDepositWidget(
       void fetchSwapBalance();
       return;
     }
+
+    console.log("[deposit][swap-balance]", {
+      sources: summarizeSwapBalanceSources(swapBalance),
+    });
 
     if (!hasAutoSelected.current && availableAssets.length > 0) {
       hasAutoSelected.current = true;

@@ -412,6 +412,29 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     const actualAmountSpent = totalAmountSpentUsd + usedFromDestinationUsd;
 
+    console.log("[deposit][computed][confirmation]", {
+      requestedAmountUsd: receiveAmountUsd,
+      intentSources: activeIntent.intent.sources.map((source) => ({
+        chainId: source.chain.id,
+        chainName: source.chain.name,
+        tokenAddress: source.token.contractAddress,
+        tokenSymbol: source.token.symbol,
+        amount: source.amount,
+      })),
+      renderedSources: sources.map((source) => ({
+        chainId: source.chainId,
+        chainName: source.chainName,
+        tokenAddress: source.tokenAddress,
+        tokenSymbol: source.symbol,
+        amount: source.balance,
+        amountUsd: source.balanceInFiat,
+        isDestinationBalance: source.isDestinationBalance ?? false,
+      })),
+      totalAmountSpentUsd,
+      usedFromDestinationUsd,
+      totalFeeUsd,
+    });
+
     return {
       sourceLabel: destination.label ?? "Deposit",
       sources,
@@ -558,7 +581,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const maxPriceImpactPercent =
       spendBaseUsd > 0 ? (maxPriceImpactUsd / spendBaseUsd) * 100 : 0;
 
-    console.log("DATA", {
+    console.log("[deposit][computed][fee-breakdown]", {
       totalSomething,
       destinationValueUsd,
       totalFeeUsd,

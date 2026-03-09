@@ -9,17 +9,9 @@ import {
 import type { DestinationConfig, AssetFilterType } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
 import {
-  buildSortedFromSources,
-  buildPrioritySelectedSourceIds,
-  isNative,
-  isStablecoin,
+  resolveDepositSourceSelection,
+  summarizeSourceIds,
 } from "../utils";
-
-function parseNonNegativeNumber(value: unknown): number {
-  const parsed = Number.parseFloat(String(value));
-  if (!Number.isFinite(parsed) || parsed < 0) return 0;
-  return parsed;
-}
 
 function parseUsdAmount(value?: string): number {
   if (!value) return 0;
@@ -72,8 +64,6 @@ function PayUsing({
 
   const subtitle = useMemo(() => {
     if (!swapBalance) return "No tokens selected";
-
-    const poolSourceIds = new Set<string>();
     const symbolBySourceId = new Map<string, string>();
 
     swapBalance.forEach((asset) => {
@@ -81,42 +71,34 @@ function PayUsing({
         const chainId = breakdown.chain?.id;
         const tokenAddress = breakdown.contractAddress;
         if (!chainId || !tokenAddress) return;
-        const stable = isStablecoin(breakdown.symbol);
-        const native = isNative(breakdown.symbol);
-
         const sourceId = `${tokenAddress}-${chainId}`;
-        const usdValue = parseNonNegativeNumber(breakdown.balanceInFiat);
-        if (usdValue < MIN_SELECTABLE_SOURCE_BALANCE_USD) return;
-
-        const includeInPool =
-          filter === "all" ||
-          (filter === "stablecoins" && stable) ||
-          (filter === "native" && native) ||
-          (filter === "custom" && selectedChainIds.has(sourceId));
-
-        if (includeInPool) {
-          poolSourceIds.add(sourceId);
-          symbolBySourceId.set(sourceId, breakdown.symbol);
-        }
+        symbolBySourceId.set(sourceId, breakdown.symbol);
       });
     });
 
-    if (poolSourceIds.size === 0) return "No tokens selected";
+    const { sourcePoolIds, selectedSourceIds: prioritizedSourceIds } =
+      resolveDepositSourceSelection({
+        swapBalance,
+        destination,
+        filter,
+        selectedSourceIds: selectedChainIds,
+        isManualSelection,
+        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        targetAmountUsd: parseUsdAmount(amount),
+      });
 
-    const prioritizedSourceIds = isManualSelection
-      ? buildSortedFromSources({
-          sourceIds: poolSourceIds,
-          swapBalance,
-          destination,
-          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        }).map((source) => `${source.tokenAddress}-${source.chainId}`)
-      : buildPrioritySelectedSourceIds({
-          swapBalance,
-          destination,
-          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-          targetAmountUsd: parseUsdAmount(amount),
-          sourceIds: poolSourceIds,
-        });
+    if (sourcePoolIds.length === 0) return "No tokens selected";
+
+    console.log("[deposit][pay-using][subtitle]", {
+      amount,
+      targetAmountUsd: parseUsdAmount(amount),
+      filter,
+      isManualSelection,
+      poolSourceIds: sourcePoolIds,
+      poolSources: summarizeSourceIds(sourcePoolIds, swapBalance),
+      prioritizedSourceIds,
+      prioritizedSources: summarizeSourceIds(prioritizedSourceIds, swapBalance),
+    });
 
     const orderedSymbols: string[] = [];
     const seenSymbols = new Set<string>();
