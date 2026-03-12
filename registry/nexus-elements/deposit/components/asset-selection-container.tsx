@@ -428,14 +428,12 @@ const AssetSelectionContainer = ({
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
       if (preset === "all") {
-        setAssetSelection(
-          {
-            selectedChainIds: new Set(),
-            filter: "all",
-            expandedTokens: new Set(),
-          },
-          { markUserModified: false },
-        );
+        const nextSelected = sortAndGateSelection(selectableChainIds);
+        setAssetSelection({
+          selectedChainIds: nextSelected,
+          filter: "all",
+          expandedTokens: new Set(),
+        });
         return;
       }
 
