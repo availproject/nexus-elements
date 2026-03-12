@@ -25,9 +25,9 @@ const DepositShowcase = () => {
     chainId: number,
     user: Address,
   ) => {
-    const contractAddress = AAVE_POOL_BY_CHAIN[_chainId];
+    const contractAddress = AAVE_POOL_BY_CHAIN[chainId];
     if (!contractAddress) {
-      throw new Error(`Unsupported Aave destination chain: ${_chainId}`);
+      throw new Error(`Unsupported Aave destination chain: ${chainId}`);
     }
 
     const abi: Abi = [
