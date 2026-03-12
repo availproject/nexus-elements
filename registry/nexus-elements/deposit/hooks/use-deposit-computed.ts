@@ -286,10 +286,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         contractAddress: source.token.contractAddress,
         fallbackSymbol: source.token.symbol,
       });
-      const sourceAmount = Number.parseFloat(source.amount);
-      const sourceAmountUsd = Number.isFinite(sourceAmount)
-        ? getFiatValue(sourceAmount, sourcePricingSymbol)
-        : 0;
+      const sourceAmountUsd = parseNonNegativeNumber(source.value);
 
       const matchingAsset = availableAssets.find(
         (asset) =>
@@ -324,36 +321,13 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     // Calculate total spent from cross-chain sources
     const totalAmountSpentUsd = activeIntent.intent.sources?.reduce(
-      (acc, source) => {
-        const sourcePricingSymbol = resolvePricingSymbol({
-          chainId: source.chain.id,
-          contractAddress: source.token.contractAddress,
-          fallbackSymbol: source.token.symbol,
-        });
-        const amount = Number.parseFloat(source.amount);
-        const usdAmount = Number.isFinite(amount)
-          ? getFiatValue(amount, sourcePricingSymbol)
-          : 0;
-        return acc + usdAmount;
-      },
+      (acc, source) => acc + parseNonNegativeNumber(source.value),
       0,
     );
 
     // Get the actual amount arriving on destination (AFTER fees)
-    const destinationAmount = Number.parseFloat(
-      activeIntent.intent.destination?.amount ?? "0",
-    );
-    const destinationPricingSymbol = resolvePricingSymbol({
-      chainId:
-        activeIntent.intent.destination?.chain?.id ?? destination.chainId,
-      contractAddress: activeIntent.intent.destination?.token?.contractAddress,
-      fallbackSymbol:
-        activeIntent.intent.destination?.token?.symbol ??
-        destination.tokenSymbol,
-    });
-    const destinationAmountUsd = getFiatValue(
-      destinationAmount,
-      destinationPricingSymbol,
+    const destinationAmountUsd = parseNonNegativeNumber(
+      activeIntent.intent.destination?.value,
     );
 
     const intentFeesAndBuffer = activeIntent.intent.feesAndBuffer;
@@ -459,15 +433,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     } else if (activeIntent?.intent?.destination?.gas) {
       // Otherwise use estimated gas from intent
       const gas = activeIntent.intent.destination.gas;
-      const gasAmount = parseFloat(gas.amount);
-      const gasSymbol = resolvePricingSymbol({
-        chainId:
-          activeIntent.intent.destination?.chain?.id ?? destination.chainId,
-        contractAddress: gas.token?.contractAddress,
-        fallbackSymbol:
-          gas.token?.symbol ?? destination.gasTokenSymbol ?? "ETH",
-      });
-      gasUsd = getFiatValue(gasAmount, gasSymbol);
+      gasUsd = parseNonNegativeNumber(gas.value);
     }
 
     const bridgeRaw = activeIntent?.intent?.feesAndBuffer?.bridge;
@@ -518,35 +484,12 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const gasFormatted = usdFormatter.format(gasUsd);
 
     const sourceValueUsd = (activeIntent?.intent?.sources ?? []).reduce(
-      (sum, source) => {
-        const sourcePricingSymbol = resolvePricingSymbol({
-          chainId: source.chain.id,
-          contractAddress: source.token.contractAddress,
-          fallbackSymbol: source.token.symbol,
-        });
-        const sourceAmount = parseNonNegativeNumber(source.amount);
-        const sourceAmountUsd = parseNonNegativeNumber(
-          getFiatValue(sourceAmount, sourcePricingSymbol),
-        );
-        return sum + sourceAmountUsd;
-      },
+      (sum, source) => sum + parseNonNegativeNumber(source.value),
       0,
     );
 
-    const destinationAmount = parseNonNegativeNumber(
-      activeIntent?.intent?.destination?.amount,
-    );
-    const destinationPricingSymbol = resolvePricingSymbol({
-      chainId:
-        activeIntent?.intent?.destination?.chain?.id ?? destination.chainId,
-      contractAddress:
-        activeIntent?.intent?.destination?.token?.contractAddress,
-      fallbackSymbol:
-        activeIntent?.intent?.destination?.token?.symbol ??
-        destination.tokenSymbol,
-    });
     const destinationValueUsd = parseNonNegativeNumber(
-      getFiatValue(destinationAmount, destinationPricingSymbol),
+      activeIntent?.intent?.destination?.value,
     );
 
     const totalSomething = destinationValueUsd + totalFeeUsd + bufferUsd;

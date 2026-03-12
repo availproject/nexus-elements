@@ -388,23 +388,7 @@ const NexusProvider = ({
       /**
        * Same behaviour and function as setOnIntentHook, except this one is for swaps exclusively
        */
-      console.log("[nexus][swap-intent-hook]", {
-        destination: data.intent?.destination
-          ? {
-              chainId: data.intent.destination.chain?.id,
-              tokenAddress: data.intent.destination.token?.contractAddress,
-              tokenSymbol: data.intent.destination.token?.symbol,
-              amount: data.intent.destination.amount,
-            }
-          : null,
-        sources: (data.intent?.sources ?? []).map((source) => ({
-          chainId: source.chain.id,
-          chainName: source.chain.name,
-          tokenAddress: source.token.contractAddress,
-          tokenSymbol: source.token.symbol,
-          amount: source.amount,
-        })),
-      });
+      console.log("SWAP INTENT HOOK", data.intent);
       swapIntent.current = data;
     });
   }, [sdk]);
