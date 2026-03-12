@@ -4,11 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type { AssetSelectionState, DestinationConfig } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
 import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
-import {
-  resolveDepositSourceSelection,
-  summarizeSourceIds,
-  summarizeSwapBalanceSources,
-} from "../utils";
+import { resolveDepositSourceSelection } from "../utils";
 
 function parseUsdAmount(value?: string): number {
   if (!value) return 0;
@@ -63,15 +59,6 @@ export function useAssetSelection(
       hasUserModifiedSelection.current &&
       previousAmountUsd.current !== nextAmountUsd
     ) {
-      console.log("[deposit][selection][amount-reset]", {
-        previousAmountUsd: previousAmountUsd.current,
-        nextAmountUsd,
-        previousSelectedSourceIds: [...assetSelection.selectedChainIds],
-        previousSelectedSources: summarizeSourceIds(
-          assetSelection.selectedChainIds,
-          swapBalance,
-        ),
-      });
       hasUserModifiedSelection.current = false;
       setIsManualSelection(false);
       setAssetSelectionState(createInitialAssetSelection());
@@ -95,14 +82,6 @@ export function useAssetSelection(
           minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
           targetAmountUsd,
         });
-
-      console.log("[deposit][selection][auto]", {
-        inputAmount,
-        targetAmountUsd,
-        selectedSourceIds: defaultSelectedSourceIds,
-        selectedSources: summarizeSourceIds(defaultSelectedSourceIds, swapBalance),
-        availableSources: summarizeSwapBalanceSources(swapBalance),
-      });
 
       if (defaultSelectedSourceIds.length === 0) return;
 
@@ -135,27 +114,6 @@ export function useAssetSelection(
       setAssetSelectionState((prev) => {
         const nextState = { ...prev, ...update };
 
-        console.log("[deposit][selection][set]", {
-          markUserModified: nextIsManualSelection,
-          update: {
-            filter: update.filter,
-            selectedSourceIds: update.selectedChainIds
-              ? [...update.selectedChainIds]
-              : undefined,
-            expandedTokens: update.expandedTokens
-              ? [...update.expandedTokens]
-              : undefined,
-          },
-          previousFilter: prev.filter,
-          nextFilter: nextState.filter,
-          previousSelectedSourceIds: [...prev.selectedChainIds],
-          nextSelectedSourceIds: [...nextState.selectedChainIds],
-          nextSelectedSources: summarizeSourceIds(
-            nextState.selectedChainIds,
-            swapBalance,
-          ),
-        });
-
         return nextState;
       });
     },
@@ -163,13 +121,6 @@ export function useAssetSelection(
   );
 
   const resetAssetSelection = useCallback(() => {
-    console.log("[deposit][selection][reset]", {
-      previousSelectedSourceIds: [...assetSelection.selectedChainIds],
-      previousSelectedSources: summarizeSourceIds(
-        assetSelection.selectedChainIds,
-        swapBalance,
-      ),
-    });
     hasUserModifiedSelection.current = false;
     setIsManualSelection(false);
     setAssetSelectionState(createInitialAssetSelection());

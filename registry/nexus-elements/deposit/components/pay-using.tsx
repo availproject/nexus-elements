@@ -8,10 +8,7 @@ import {
 } from "../constants/widget";
 import type { DestinationConfig, AssetFilterType } from "../types";
 import type { UserAsset } from "@avail-project/nexus-core";
-import {
-  resolveDepositSourceSelection,
-  summarizeSourceIds,
-} from "../utils";
+import { resolveDepositSourceSelection } from "../utils";
 
 function parseUsdAmount(value?: string): number {
   if (!value) return 0;
@@ -88,17 +85,6 @@ function PayUsing({
       });
 
     if (sourcePoolIds.length === 0) return "No tokens selected";
-
-    console.log("[deposit][pay-using][subtitle]", {
-      amount,
-      targetAmountUsd: parseUsdAmount(amount),
-      filter,
-      isManualSelection,
-      poolSourceIds: sourcePoolIds,
-      poolSources: summarizeSourceIds(sourcePoolIds, swapBalance),
-      prioritizedSourceIds,
-      prioritizedSources: summarizeSourceIds(prioritizedSourceIds, swapBalance),
-    });
 
     const orderedSymbols: string[] = [];
     const seenSymbols = new Set<string>();

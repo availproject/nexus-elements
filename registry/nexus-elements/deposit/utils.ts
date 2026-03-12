@@ -132,7 +132,6 @@ export function calculateSelectedAmount(
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const EVM_NATIVE_PLACEHOLDER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const MAX_PRIORITY_RANK = Number.MAX_SAFE_INTEGER;
-const DEPOSIT_SOURCE_DEBUG_PREFIX = "[nexus-deposit:sources]";
 
 function normalizeAddress(address: string): string {
   return address.toLowerCase();
@@ -170,35 +169,6 @@ interface SourceCandidate {
   priorityRank: number;
 }
 
-type SourceDebugEntry = {
-  sourceId: string;
-  chainId: number;
-  tokenAddress: Hex;
-  symbol: string | null;
-  balance: string | null;
-  balanceInFiat: number;
-  priorityRank: number | null;
-};
-
-export function logDepositSourceSelection(
-  context: string,
-  payload: Record<string, unknown>,
-) {
-  console.log(DEPOSIT_SOURCE_DEBUG_PREFIX, context, payload);
-}
-
-export interface DepositSourceDebugSummary {
-  sourceId: string;
-  chainId: number;
-  chainName: string;
-  tokenAddress: Hex;
-  assetSymbol: string;
-  breakdownSymbol: string;
-  balance: string;
-  balanceInFiat: number;
-  missingFromSwapBalance?: boolean;
-}
-
 export function parseSourceId(sourceId: string): {
   tokenAddress: Hex;
   chainId: number;
@@ -228,88 +198,6 @@ function buildSourceFiatByKeyMap(
       const balanceInFiat = parseNonNegativeNumber(breakdown.balanceInFiat);
 
       map.set(getFiatLookupKey(tokenAddress, chainId), balanceInFiat);
-    }
-  }
-
-  return map;
-}
-
-function buildSourceDebugEntries(params: {
-  sourceIds: Iterable<string>;
-  swapBalance: UserAsset[] | null;
-  sourceFiatByKeyMap?: Map<string, number>;
-  priorityRankMap?: Map<string, number>;
-}): SourceDebugEntry[] {
-  const { sourceIds, swapBalance, sourceFiatByKeyMap, priorityRankMap } = params;
-  const detailsByFiatKey = new Map<
-    string,
-    {
-      symbol: string | null;
-      balance: string | null;
-    }
-  >();
-
-  for (const asset of swapBalance ?? []) {
-    for (const breakdown of asset.breakdown ?? []) {
-      const chainId = breakdown.chain?.id;
-      const tokenAddress = breakdown.contractAddress;
-      if (!chainId || !tokenAddress) continue;
-
-      detailsByFiatKey.set(getFiatLookupKey(tokenAddress, chainId), {
-        symbol: breakdown.symbol ?? asset.symbol ?? null,
-        balance: breakdown.balance ?? asset.balance ?? null,
-      });
-    }
-  }
-
-  return [...new Set(sourceIds)]
-    .map<SourceDebugEntry | null>((sourceId) => {
-      const parsed = parseSourceId(sourceId);
-      if (!parsed) return null;
-
-      const fiatKey = getFiatLookupKey(parsed.tokenAddress, parsed.chainId);
-      const priorityKey = getPriorityLookupKey(
-        parsed.tokenAddress,
-        parsed.chainId,
-      );
-      const details = detailsByFiatKey.get(fiatKey);
-
-      return {
-        sourceId,
-        chainId: parsed.chainId,
-        tokenAddress: parsed.tokenAddress,
-        symbol: details?.symbol ?? null,
-        balance: details?.balance ?? null,
-        balanceInFiat: sourceFiatByKeyMap?.get(fiatKey) ?? 0,
-        priorityRank: priorityRankMap?.get(priorityKey) ?? null,
-      };
-    })
-    .filter((entry): entry is SourceDebugEntry => entry !== null);
-}
-
-function buildSourceDebugSummaryMap(
-  swapBalance: UserAsset[] | null,
-): Map<string, DepositSourceDebugSummary> {
-  const map = new Map<string, DepositSourceDebugSummary>();
-  if (!swapBalance) return map;
-
-  for (const asset of swapBalance) {
-    for (const breakdown of asset.breakdown ?? []) {
-      const chainId = breakdown.chain?.id;
-      const tokenAddress = breakdown.contractAddress as Hex | undefined;
-      if (!chainId || !tokenAddress) continue;
-
-      const sourceId = `${tokenAddress}-${chainId}`;
-      map.set(sourceId, {
-        sourceId,
-        chainId,
-        chainName: breakdown.chain?.name ?? `Chain ${chainId}`,
-        tokenAddress,
-        assetSymbol: asset.symbol,
-        breakdownSymbol: breakdown.symbol,
-        balance: breakdown.balance ?? "0",
-        balanceInFiat: parseNonNegativeNumber(breakdown.balanceInFiat),
-      });
     }
   }
 
@@ -401,90 +289,6 @@ function buildSortedSourceCandidates(params: {
       }
       return a.sourceId.localeCompare(b.sourceId);
     });
-}
-
-export function summarizeSwapBalanceSources(
-  swapBalance: UserAsset[] | null,
-): DepositSourceDebugSummary[] {
-  return [...buildSourceDebugSummaryMap(swapBalance).values()].sort((a, b) => {
-    if (a.balanceInFiat !== b.balanceInFiat) {
-      return b.balanceInFiat - a.balanceInFiat;
-    }
-    return a.sourceId.localeCompare(b.sourceId);
-  });
-}
-
-export function summarizeSourceIds(
-  sourceIds: Iterable<string>,
-  swapBalance: UserAsset[] | null,
-): DepositSourceDebugSummary[] {
-  const sourceDebugSummaryMap = buildSourceDebugSummaryMap(swapBalance);
-
-  return [...new Set(sourceIds)]
-    .map((sourceId) => {
-      const summary = sourceDebugSummaryMap.get(sourceId);
-      if (summary) return summary;
-
-      const parsed = parseSourceId(sourceId);
-      return {
-        sourceId,
-        chainId: parsed?.chainId ?? -1,
-        chainName:
-          parsed?.chainId != null ? `Chain ${parsed.chainId}` : "Unknown chain",
-        tokenAddress:
-          parsed?.tokenAddress ??
-          ("0x0000000000000000000000000000000000000000" as Hex),
-        assetSymbol: "UNKNOWN",
-        breakdownSymbol: "UNKNOWN",
-        balance: "0",
-        balanceInFiat: 0,
-        missingFromSwapBalance: true,
-      };
-    })
-    .sort((a, b) => a.sourceId.localeCompare(b.sourceId));
-}
-
-export function summarizeSourceCandidates(params: {
-  sourceIds: Iterable<string>;
-  swapBalance: UserAsset[] | null;
-  destination: Pick<
-    DestinationConfig,
-    "chainId" | "tokenAddress" | "tokenSymbol"
-  >;
-  minimumBalanceUsd?: number;
-}): Array<
-  DepositSourceDebugSummary & {
-    priorityRank: number;
-  }
-> {
-  const sourceDebugSummaryMap = buildSourceDebugSummaryMap(params.swapBalance);
-
-  return buildSortedSourceCandidates(params).map((candidate) => {
-    const summary = sourceDebugSummaryMap.get(candidate.sourceId);
-    if (summary) {
-      return {
-        ...summary,
-        priorityRank: candidate.priorityRank,
-      };
-    }
-
-    const parsed = parseSourceId(candidate.sourceId);
-    return {
-      sourceId: candidate.sourceId,
-      chainId: parsed?.chainId ?? -1,
-      chainName:
-        parsed?.chainId != null ? `Chain ${parsed.chainId}` : "Unknown chain",
-      tokenAddress:
-        parsed?.tokenAddress ??
-        ("0x0000000000000000000000000000000000000000" as Hex),
-      assetSymbol: "UNKNOWN",
-      breakdownSymbol: "UNKNOWN",
-      balance: "0",
-      balanceInFiat: candidate.balanceInFiat,
-      missingFromSwapBalance: true,
-      priorityRank: candidate.priorityRank,
-    };
-  });
 }
 
 export function buildDepositSourcePoolIds(params: {
@@ -597,7 +401,6 @@ export function buildSelectableSourceIds(params: {
     "chainId" | "tokenAddress" | "tokenSymbol"
   >;
   minimumBalanceUsd: number;
-  debugContext?: string;
 }): string[] {
   const { swapBalance, destination, minimumBalanceUsd } = params;
   const sourceIds = new Set<string>();
@@ -631,7 +434,6 @@ export function buildPrioritySelectedSourceIds(params: {
   minimumBalanceUsd: number;
   targetAmountUsd?: number;
   sourceIds?: Iterable<string>;
-  debugContext?: string;
 }): string[] {
   const {
     swapBalance,
@@ -639,7 +441,6 @@ export function buildPrioritySelectedSourceIds(params: {
     minimumBalanceUsd,
     targetAmountUsd,
     sourceIds,
-    debugContext,
   } = params;
 
   const requestedSourceIds = sourceIds ? [...new Set(sourceIds)] : undefined;
@@ -654,8 +455,6 @@ export function buildPrioritySelectedSourceIds(params: {
         swapBalance,
         destination,
         minimumBalanceUsd,
-        debugContext:
-          debugContext != null ? `${debugContext}:all-selectable-sources` : undefined,
       });
 
   if (orderedCandidateSourceIds.length === 0) return [];
@@ -663,36 +462,7 @@ export function buildPrioritySelectedSourceIds(params: {
   const normalizedTargetAmountUsd = parseNonNegativeNumber(targetAmountUsd);
   if (normalizedTargetAmountUsd <= 0) {
     const defaultSourceIds = [orderedCandidateSourceIds[0]];
-    if (debugContext) {
-      const sourceFiatByKeyMap = buildSourceFiatByKeyMap(swapBalance);
-      const priorityRankMap = buildPriorityRankMap(swapBalance, destination);
-      logDepositSourceSelection(debugContext, {
-        destination,
-        minimumBalanceUsd,
-        targetAmountUsd: normalizedTargetAmountUsd,
-        requestedSourceIds: requestedSourceIds ?? null,
-        orderedCandidateSourceIds,
-        orderedCandidateSources: buildSourceDebugEntries({
-          sourceIds: orderedCandidateSourceIds,
-          swapBalance,
-          sourceFiatByKeyMap,
-          priorityRankMap,
-        }),
-        selectedSourceIds: defaultSourceIds,
-        selectedSources: buildSourceDebugEntries({
-          sourceIds: defaultSourceIds,
-          swapBalance,
-          sourceFiatByKeyMap,
-          priorityRankMap,
-        }),
-        runningTotalUsd: buildSourceDebugEntries({
-          sourceIds: defaultSourceIds,
-          swapBalance,
-          sourceFiatByKeyMap,
-          priorityRankMap,
-        }).reduce((sum, source) => sum + source.balanceInFiat, 0),
-      });
-    }
+
     return defaultSourceIds;
   }
 
@@ -716,30 +486,6 @@ export function buildPrioritySelectedSourceIds(params: {
     }
   }
 
-  if (debugContext) {
-    logDepositSourceSelection(debugContext, {
-      destination,
-      minimumBalanceUsd,
-      targetAmountUsd: normalizedTargetAmountUsd,
-      requestedSourceIds: requestedSourceIds ?? null,
-      orderedCandidateSourceIds,
-      orderedCandidateSources: buildSourceDebugEntries({
-        sourceIds: orderedCandidateSourceIds,
-        swapBalance,
-        sourceFiatByKeyMap,
-        priorityRankMap,
-      }),
-      selectedSourceIds,
-      selectedSources: buildSourceDebugEntries({
-        sourceIds: selectedSourceIds,
-        swapBalance,
-        sourceFiatByKeyMap,
-        priorityRankMap,
-      }),
-      runningTotalUsd,
-    });
-  }
-
   return selectedSourceIds;
 }
 
@@ -751,7 +497,6 @@ export function buildSortedFromSources(params: {
     "chainId" | "tokenAddress" | "tokenSymbol"
   >;
   minimumBalanceUsd?: number;
-  debugContext?: string;
 }): Array<{ tokenAddress: Hex; chainId: number }> {
   const requestedSourceIds = [...new Set(params.sourceIds)];
   const orderedIds = sortSourceIdsByPriority({
@@ -761,27 +506,6 @@ export function buildSortedFromSources(params: {
   const orderedSources = orderedIds
     .map((sourceId) => parseSourceId(sourceId))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
-
-  if (params.debugContext) {
-    const sourceFiatByKeyMap = buildSourceFiatByKeyMap(params.swapBalance);
-    const priorityRankMap = buildPriorityRankMap(
-      params.swapBalance,
-      params.destination,
-    );
-    logDepositSourceSelection(params.debugContext, {
-      destination: params.destination,
-      minimumBalanceUsd: params.minimumBalanceUsd ?? null,
-      requestedSourceIds,
-      orderedSourceIds: orderedIds,
-      orderedSources: buildSourceDebugEntries({
-        sourceIds: orderedIds,
-        swapBalance: params.swapBalance,
-        sourceFiatByKeyMap,
-        priorityRankMap,
-      }),
-      fromSources: orderedSources,
-    });
-  }
 
   return orderedSources;
 }

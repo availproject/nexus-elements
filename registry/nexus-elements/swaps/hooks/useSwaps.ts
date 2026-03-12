@@ -304,11 +304,15 @@ const useSwaps = ({
     });
 
     sortedSources.forEach((source, index) => {
-      const sourceComparableAddress = toComparableSdkAddress(source.tokenAddress);
+      const sourceComparableAddress = toComparableSdkAddress(
+        source.tokenAddress,
+      );
 
       for (const option of options) {
         if (option.chainId !== source.chainID) continue;
-        const optionComparableAddress = toComparableSdkAddress(option.tokenAddress);
+        const optionComparableAddress = toComparableSdkAddress(
+          option.tokenAddress,
+        );
         if (optionComparableAddress !== sourceComparableAddress) continue;
         if (!priorityByOptionKey.has(option.key)) {
           priorityByOptionKey.set(option.key, index);
@@ -317,8 +321,10 @@ const useSwaps = ({
     });
 
     return options.sort((a, b) => {
-      const aPriority = priorityByOptionKey.get(a.key) ?? Number.MAX_SAFE_INTEGER;
-      const bPriority = priorityByOptionKey.get(b.key) ?? Number.MAX_SAFE_INTEGER;
+      const aPriority =
+        priorityByOptionKey.get(a.key) ?? Number.MAX_SAFE_INTEGER;
+      const bPriority =
+        priorityByOptionKey.get(b.key) ?? Number.MAX_SAFE_INTEGER;
       if (aPriority !== bPriority) {
         return aPriority - bPriority;
       }
@@ -563,10 +569,7 @@ const useSwaps = ({
       );
     }
 
-    const amountBigInt = parseUnits(
-      fromAmount,
-      fromToken.decimals,
-    );
+    const amountBigInt = parseUnits(fromAmount, fromToken.decimals);
     const swapInput: ExactInSwapInput = {
       from: [
         {
@@ -613,10 +616,7 @@ const useSwaps = ({
       throw new Error("Select at least one source with available balance.");
     }
 
-    const amountBigInt = parseUnits(
-      toAmount,
-      toToken.decimals,
-    );
+    const amountBigInt = parseUnits(toAmount, toToken.decimals);
     const swapInput: ExactOutSwapInput = {
       toAmount: amountBigInt,
       toChainId: toChainID,

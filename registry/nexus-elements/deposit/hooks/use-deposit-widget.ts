@@ -41,12 +41,7 @@ import {
 } from "./use-deposit-state";
 import { useAssetSelection } from "./use-asset-selection";
 import { useDepositComputed } from "./use-deposit-computed";
-import {
-  resolveDepositSourceSelection,
-  summarizeSourceCandidates,
-  summarizeSourceIds,
-  summarizeSwapBalanceSources,
-} from "../utils";
+import { resolveDepositSourceSelection } from "../utils";
 
 interface UseDepositProps {
   executeDeposit: (
@@ -225,28 +220,6 @@ export function useDepositWidget(
           targetAmountUsd: requiredAmountUsd,
         });
 
-      console.log("[deposit][start][source-selection]", {
-        requestedAmountUsd: requiredAmountUsd,
-        filter: assetSelection.filter,
-        isManualSelection,
-        uiSelectedSourceIds: [...assetSelection.selectedChainIds],
-        uiSelectedSources: summarizeSourceIds(
-          assetSelection.selectedChainIds,
-          swapBalance,
-        ),
-        sourcePoolIds: [...sourcePoolIds],
-        sourcePoolSources: summarizeSourceIds(sourcePoolIds, swapBalance),
-        candidateSources: summarizeSourceCandidates({
-          sourceIds: sourcePoolIds,
-          swapBalance,
-          destination,
-          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
-        }),
-        selectedSourceIds,
-        selectedSources: summarizeSourceIds(selectedSourceIds, swapBalance),
-        fromSources,
-      });
-
       if (fromSources.length === 0) {
         const message =
           "No eligible source balances found. A minimum source balance of $1.00 is required.";
@@ -260,33 +233,6 @@ export function useDepositWidget(
         ...inputs,
         fromSources,
       };
-      console.log("ACTUAL PAYLOAD", inputsWithSources);
-
-      console.log("[deposit][start][sdk-payload]", {
-        toChainId: inputs.toChainId,
-        toTokenAddress: inputs.toTokenAddress,
-        toAmount: inputs.toAmount?.toString(),
-        fromSources,
-        execute: inputs.execute
-          ? {
-              to: inputs.execute.to,
-              value: inputs.execute.value?.toString?.() ?? inputs.execute.value,
-              gas: inputs.execute.gas?.toString?.() ?? inputs.execute.gas,
-              gasPrice:
-                inputs.execute.gasPrice?.toString?.() ??
-                inputs.execute.gasPrice,
-              tokenApproval: inputs.execute.tokenApproval
-                ? {
-                    token: inputs.execute.tokenApproval.token,
-                    amount: inputs.execute.tokenApproval.amount.toString(),
-                    spender: inputs.execute.tokenApproval.spender,
-                  }
-                : undefined,
-              dataLength: inputs.execute.data?.length ?? 0,
-            }
-          : undefined,
-      });
-
       nexusSDK
         .swapAndExecute(inputsWithSources, {
           onEvent: (event) => {
@@ -295,13 +241,6 @@ export function useDepositWidget(
                 completed?: boolean;
                 data?: SwapSkippedData;
               };
-
-              console.log("[deposit][sdk-event]", {
-                eventName: event.name,
-                stepType: step?.type,
-                completed: step?.completed,
-                stepData: step?.data,
-              });
 
               // Handle SWAP_SKIPPED - go directly to transaction-status
               if (step?.type === "SWAP_SKIPPED") {
@@ -329,15 +268,6 @@ export function useDepositWidget(
         })
         .then((data: SwapAndExecuteResult) => {
           suppressNextWidgetPreviewCancelError.current = false;
-
-          console.log("[deposit][start][result]", {
-            intentSources: summarizeIntentSources(
-              swapIntent.current?.intent?.sources,
-            ),
-            sourceSwaps: data.swapResult?.sourceSwaps ?? [],
-            destinationExplorerURL: data.swapResult?.explorerURL ?? null,
-            executeTxHash: data.executeResponse?.txHash ?? null,
-          });
 
           // Extract source swaps from the result
           const sourceSwapsFromResult = data.swapResult?.sourceSwaps ?? [];
@@ -429,7 +359,6 @@ export function useDepositWidget(
           });
         })
         .catch((error) => {
-          console.error("[deposit][start][error]", error);
           const { code, message } = handleNexusError(error);
           const isUserRejectedError =
             code === ERROR_CODES.USER_DENIED_INTENT ||
@@ -561,16 +490,6 @@ export function useDepositWidget(
           gas: BigInt(400_000),
         },
       };
-
-      console.log("[deposit][simulation][begin]", {
-        totalAmountUsd,
-        destinationRate,
-        tokenAmount,
-        tokenAmountStr,
-        toChainId: newInputs.toChainId,
-        toTokenAddress: newInputs.toTokenAddress,
-        toAmount: newInputs.toAmount.toString(),
-      });
 
       dispatch({
         type: "setInputs",
@@ -712,9 +631,7 @@ export function useDepositWidget(
       const updated = await swapIntent.current?.refresh();
       if (updated) {
         swapIntent.current!.intent = updated;
-        console.log("[deposit][simulation][refresh]", {
-          intentSources: summarizeIntentSources(updated.sources),
-        });
+
         dispatch({
           type: "setSimulation",
           payload: {
@@ -723,7 +640,7 @@ export function useDepositWidget(
         });
       }
     } catch (e) {
-      console.error(e);
+      console.error("Unable to refresh intent", e);
     } finally {
       dispatch({ type: "setSimulationLoading", payload: false });
       stopwatch.reset();
@@ -746,9 +663,6 @@ export function useDepositWidget(
       return;
     }
 
-    console.log("[deposit][simulation][intent-ready]", {
-      intentSources: summarizeIntentSources(swapIntent.current.intent.sources),
-    });
     initialSimulationDone.current = true;
     dispatch({
       type: "setSimulation",
@@ -768,10 +682,6 @@ export function useDepositWidget(
       void fetchSwapBalance();
       return;
     }
-
-    console.log("[deposit][swap-balance]", {
-      sources: summarizeSwapBalanceSources(swapBalance),
-    });
 
     if (!hasAutoSelected.current && availableAssets.length > 0) {
       hasAutoSelected.current = true;

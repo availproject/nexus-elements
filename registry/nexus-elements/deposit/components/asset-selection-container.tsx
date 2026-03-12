@@ -30,7 +30,6 @@ import {
   checkIfMatchesPreset,
   isNative,
   isStablecoin,
-  summarizeSourceIds,
 } from "../utils";
 
 interface AssetSelectionContainerProps {
@@ -348,12 +347,7 @@ const AssetSelectionContainer = ({
       selectableTokensForPreset,
       nextSelected,
     );
-    console.log("[deposit][asset-selection][strip-disabled]", {
-      previousSelectedSourceIds: [...selectedChainIds],
-      nextSelectedSourceIds: [...nextSelected],
-      nextSelectedSources: summarizeSourceIds(nextSelected, swapBalance),
-      nextFilter,
-    });
+
     setAssetSelection({
       selectedChainIds: sortAndGateSelection(nextSelected),
       filter: nextFilter,
@@ -434,11 +428,6 @@ const AssetSelectionContainer = ({
   const handlePresetClick = useCallback(
     (preset: "all" | "stablecoins" | "native") => {
       if (preset === "all") {
-        console.log("[deposit][asset-selection][preset]", {
-          preset,
-          mode: "auto",
-          selectableSources: summarizeSourceIds(selectableChainIds, swapBalance),
-        });
         setAssetSelection(
           {
             selectedChainIds: new Set(),
@@ -465,12 +454,7 @@ const AssetSelectionContainer = ({
         }
       });
       const nextSelected = sortAndGateSelection(newChainIds);
-      console.log("[deposit][asset-selection][preset]", {
-        preset,
-        mode: "manual",
-        selectedSourceIds: [...nextSelected],
-        selectedSources: summarizeSourceIds(nextSelected, swapBalance),
-      });
+
       setAssetSelection({
         selectedChainIds: nextSelected,
         filter: preset,
@@ -512,13 +496,7 @@ const AssetSelectionContainer = ({
         newChainIds,
       );
       const nextSelected = sortAndGateSelection(newChainIds);
-      console.log("[deposit][asset-selection][toggle-token]", {
-        tokenId,
-        previousSelectedSourceIds: [...selectedChainIds],
-        nextSelectedSourceIds: [...nextSelected],
-        nextSelectedSources: summarizeSourceIds(nextSelected, swapBalance),
-        nextFilter: newFilter,
-      });
+
       setAssetSelection({
         selectedChainIds: nextSelected,
         filter: newFilter,
@@ -551,13 +529,7 @@ const AssetSelectionContainer = ({
         newChainIds,
       );
       const nextSelected = sortAndGateSelection(newChainIds);
-      console.log("[deposit][asset-selection][toggle-chain]", {
-        chainId,
-        previousSelectedSourceIds: [...selectedChainIds],
-        nextSelectedSourceIds: [...nextSelected],
-        nextSelectedSources: summarizeSourceIds(nextSelected, swapBalance),
-        nextFilter: newFilter,
-      });
+
       setAssetSelection({
         selectedChainIds: nextSelected,
         filter: newFilter,
@@ -610,10 +582,6 @@ const AssetSelectionContainer = ({
   );
 
   const handleDeselectAll = useCallback(() => {
-    console.log("[deposit][asset-selection][deselect-all]", {
-      previousSelectedSourceIds: [...selectedChainIds],
-      previousSelectedSources: summarizeSourceIds(selectedChainIds, swapBalance),
-    });
     setAssetSelection({
       selectedChainIds: new Set(),
       filter: "custom",
@@ -621,11 +589,6 @@ const AssetSelectionContainer = ({
   }, [selectedChainIds, setAssetSelection, swapBalance]);
 
   const handleDone = useCallback(() => {
-    console.log("[deposit][asset-selection][done]", {
-      filter,
-      selectedSourceIds: [...selectedChainIds],
-      selectedSources: summarizeSourceIds(selectedChainIds, swapBalance),
-    });
     widget.goToStep("amount");
   }, [filter, selectedChainIds, swapBalance, widget]);
 

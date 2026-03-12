@@ -21,6 +21,7 @@ export const TOKEN_IMAGES: Record<string, string> = {
   USDC: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png",
   USDT: "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png",
   USDM: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
+  MON: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/mon/logo.png",
   "USD₮0":
     "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png",
   WETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",
