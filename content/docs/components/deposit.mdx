@@ -46,6 +46,9 @@ Recommended skills for this component:
 - **Unified Balance Aggregation**: Automatically aggregates user balances across multiple chains
 - **Smart Swap Detection**: Detects when a swap is needed vs. using existing balance on destination chain
 - **Swap Skip Optimization**: When user has sufficient balance on destination chain, skips the swap phase entirely for faster execution
+- **USD-denominated Amount Input**: Users enter a deposit size in USD while the widget converts it to destination-token units under the hood
+- **Source Pool Selection**: Supports `Any token`, `Stablecoins`, `Native`, and custom source selection
+- **Live MAX Calculation**: Uses `sdk.calculateMaxForSwap(...)` for the current destination and active source pool
 - **Customizable Execute Builder**: Define custom protocol interactions (e.g., Aave supply, Compound deposit)
 - **Real-time Fee Estimation**: Shows gas fees and protocol fees before confirmation
 - **Multi-step Progress Tracking**: Visual feedback during transaction execution
@@ -156,7 +159,7 @@ function DepositExample() {
             to: contractAddress,
             data: encoded,
             tokenApproval: {
-              token: tokenSymbol,
+              token: tokenAddress,
               amount: amount,
               spender: contractAddress,
             },
@@ -269,6 +272,15 @@ When the user has sufficient balance on the destination chain, the swap phase is
 
 This optimization reduces gas costs and transaction time when no cross-chain bridging is needed.
 
+## Amount And Source Selection
+
+- The amount input is interpreted as USD, not destination-token units.
+- Before calling `sdk.swapAndExecute(...)`, the widget converts the USD amount into destination-token units using provider exchange rates.
+- Clicking `MAX` calls `sdk.calculateMaxForSwap({ toChainId, toTokenAddress, fromSources? })`, then converts the returned destination-token max back into USD for the input field.
+- Preset filters in the source picker (`Any token`, `Stablecoins`, `Native`) act as explicit source selections.
+- Changing the amount resets source selection back to auto mode.
+- Backing out from the confirmation screen before `activeIntent.allow()` denies the preview intent. The widget suppresses its own local error banner for that intentional cancellation path.
+
 ## API Reference
 
 ### NexusDeposit
@@ -298,7 +310,7 @@ interface DepositWidgetProps {
 
   // Callbacks
   onSuccess?: () => void;     // Called when deposit succeeds
-  onError?: (error: string) => void;  // Called when deposit fails
+  onError?: (error: string) => void;  // Called when deposit fails (apps may also observe intentional preview cancellation)
   onClose?: () => void;       // Called when widget is closed
 
   // Dialog control (non-embed mode only)
@@ -345,7 +357,7 @@ interface ExecuteParams {
   data: `0x${string}`;        // Encoded function data
   value?: bigint;             // Native token value (optional)
   tokenApproval?: {           // Token approval config (optional)
-    token: string;
+    token: `0x${string}`;     // Token contract address to approve
     amount: bigint;
     spender: `0x${string}`;
   };
@@ -384,7 +396,7 @@ executeDeposit={(tokenSymbol, tokenAddress, amount, chainId, user) => {
   return {
     to: compoundComet,
     data: encoded,
-    tokenApproval: { token: tokenSymbol, amount, spender: compoundComet },
+    tokenApproval: { token: tokenAddress, amount, spender: compoundComet },
   };
 }}
 ```
@@ -401,7 +413,7 @@ executeDeposit={(tokenSymbol, tokenAddress, amount, chainId, user) => {
   return {
     to: vaultAddress,
     data: encoded,
-    tokenApproval: { token: tokenSymbol, amount, spender: vaultAddress },
+    tokenApproval: { token: tokenAddress, amount, spender: vaultAddress },
   };
 }}
 ```
@@ -439,6 +451,7 @@ function CustomDeposit() {
 | `step` | `WidgetStep` | Current step in the flow |
 | `status` | `TransactionStatus` | Current transaction status |
 | `skipSwap` | `boolean` | Whether swap phase is being skipped |
+| `isManualSelection` | `boolean` | Whether the current source set came from an explicit picker selection |
 | `confirmationDetails` | `object \| null` | Fee breakdown and source details |
 | `feeBreakdown` | `object` | Gas fee information |
 | `totalBalance` | `object` | User's total balance across chains |

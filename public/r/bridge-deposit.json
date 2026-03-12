@@ -5,7 +5,7 @@
   "title": "Bridge Deposit",
   "description": "A component built with Nexus for bridge deposit functionality",
   "dependencies": [
-    "@avail-project/nexus-core@1.1.1",
+    "@avail-project/nexus-core@1.2.0",
     "lucide-react",
     "viem"
   ],

@@ -14,6 +14,7 @@ description: Integrate the Deposit element for swap-plus-execute deposit flows i
 - Ensure `useNexus().nexusSDK` is initialized.
 - Ensure `exchangeRate` contains destination token rate (widget requires it for amount simulation).
 - Provide a correct `destination` config and `executeDeposit` builder.
+- If using the built-in `MAX` interaction, ensure the widget can compute current source selections so it can call `sdk.calculateMaxForSwap(...)`.
 
 ## Initialize SDK (required once per app)
 - On wallet connect, resolve an EIP-1193 provider and call `useNexus().handleInit(provider)`.
@@ -103,6 +104,8 @@ export function DepositPanel() {
 ## SDK flow details (under the hood)
 - Main execute call:
   - `sdk.swapAndExecute({ toChainId, toTokenAddress, toAmount, fromSources?, execute }, { onEvent })`
+- Max amount call:
+  - `sdk.calculateMaxForSwap({ toChainId, toTokenAddress, fromSources? })`
 - Step and status behavior:
   - amount step starts simulation-loading
   - waits for `swapIntent` hook to enter previewing state
@@ -116,7 +119,22 @@ export function DepositPanel() {
 ## Important amount semantics
 - Amount input is interpreted as USD in this widget flow.
 - Widget converts USD amount to destination token amount via provider exchange rates.
+- `MAX` is destination-token aware:
+  - widget computes `MaxSwapInput` from the current destination and selected source pool
+  - widget calls `sdk.calculateMaxForSwap(...)`
+  - returned destination-token max is converted back to USD for the input field
 - If destination token exchange rate is missing/invalid, widget shows error and blocks confirmation.
+
+## Source selection semantics
+- Amount changes reset source selection back to auto mode.
+- In auto mode, the widget derives source balances from the current filter and current widget logic before simulation.
+- Preset filters in the source picker (`Any token`, `Stablecoins`, `Native`) act as explicit source selections for that pool.
+- Manual source edits are treated as exact selected sources until the amount changes again.
+- `Pay using` and the `fromSources` sent to `sdk.swapAndExecute(...)` should reflect the same current source set.
+
+## Preview cancellation behavior
+- Backing out from the confirmation screen before `activeIntent.allow()` denies the preview intent.
+- This intentional preview cancellation should not surface as the widget's own local error banner, though external `onError` handlers may still observe the rejection if the app wants it.
 
 ## E2E verification
 - Enter amount and continue to confirmation.

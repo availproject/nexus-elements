@@ -5,7 +5,7 @@
   "title": "Deposit",
   "description": "A simple component built with Nexus to enable deposits",
   "dependencies": [
-    "@avail-project/nexus-core@1.1.1",
+    "@avail-project/nexus-core@1.2.0",
     "clsx",
     "lucide-react",
     "tailwind-merge",
@@ -21,6 +21,7 @@
     "https://elements.nexus.availproject.org/r/nexus-provider.json",
     "https://elements.nexus.availproject.org/r/skeleton.json",
     "https://elements.nexus.availproject.org/r/tabs.json",
+    "https://elements.nexus.availproject.org/r/tooltip.json",
     "https://elements.nexus.availproject.org/r/utils.json"
   ],
   "files": [
