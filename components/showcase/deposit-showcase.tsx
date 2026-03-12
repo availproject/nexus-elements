@@ -17,11 +17,12 @@ const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
 
 const DepositShowcase = () => {
   const [embed, setEmbed] = React.useState(false);
+
   const executeDeposit = (
     tokenSymbol: string,
     tokenAddress: `0x${string}`,
     amount: bigint,
-    _chainId: number,
+    chainId: number,
     user: Address,
   ) => {
     const contractAddress = AAVE_POOL_BY_CHAIN[_chainId];
