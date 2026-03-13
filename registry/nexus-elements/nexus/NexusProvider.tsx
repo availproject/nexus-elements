@@ -388,7 +388,6 @@ const NexusProvider = ({
       /**
        * Same behaviour and function as setOnIntentHook, except this one is for swaps exclusively
        */
-      console.log("SWAP INTENT HOOK", data.intent);
       swapIntent.current = data;
     });
   }, [sdk]);
