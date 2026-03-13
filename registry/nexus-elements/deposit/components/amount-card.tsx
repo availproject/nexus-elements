@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
+import type { MaxSwapInput } from "@avail-project/nexus-core";
 import { TokenIcon } from "./token-icon";
 import { ErrorBanner } from "./error-banner";
 import { PercentageSelector } from "./percentage-selector";
@@ -8,6 +9,7 @@ import { parseCurrencyInput } from "../utils";
 import { UpDownArrows } from "./icons";
 import { usdFormatter } from "../../common";
 import { type DestinationConfig } from "../types";
+import { Skeleton } from "../../ui/skeleton";
 import {
   BALANCE_SAFETY_MARGIN,
   CHARACTER_ANIMATION_DURATION_MS,
@@ -15,6 +17,7 @@ import {
   MAX_INPUT_WIDTH_PX,
 } from "../constants/widget";
 import { TOKEN_IMAGES } from "../constants/assets";
+import { useNexus } from "../../nexus/NexusProvider";
 
 // Hoisted RegExp to avoid recreation on every render (js-hoist-regexp)
 const NUMERIC_INPUT_REGEX = /^\d*\.?\d*$/;
@@ -23,6 +26,7 @@ interface AmountCardProps {
   amount?: string;
   onAmountChange?: (amount: string) => void;
   selectedTokenAmount?: number;
+  maxSwapInput?: MaxSwapInput;
   onErrorStateChange?: (hasError: boolean) => void;
   totalSelectedBalance: number;
   totalBalance: {
@@ -36,6 +40,7 @@ function AmountCard({
   amount: externalAmount,
   onAmountChange,
   selectedTokenAmount = 0,
+  maxSwapInput,
   onErrorStateChange,
   totalSelectedBalance,
   totalBalance,
@@ -47,6 +52,7 @@ function AmountCard({
 
   const [inputWidth, setInputWidth] = useState(0);
   const [isShining, setIsShining] = useState(false);
+  const [isCalculatingMax, setIsCalculatingMax] = useState(false);
   const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(
     new Set(),
   );
@@ -60,6 +66,7 @@ function AmountCard({
 
   // Split display value into characters for animation
   const displayChars = displayValue.split("");
+  const { nexusSDK, getFiatValue } = useNexus();
 
   // Track which characters should animate (newly added ones)
   useEffect(() => {
@@ -149,13 +156,52 @@ function AmountCard({
   );
 
   const handlePercentageClick = useCallback(
-    (percentage: number) => {
-      const safeBalance = totalBalance?.usdBalance * BALANCE_SAFETY_MARGIN;
-      const calculatedAmount = safeBalance * percentage;
-      const newAmount = usdFormatter.format(calculatedAmount).replace("$", "");
-      setAmount(newAmount);
+    async (percentage: number) => {
+      const safeBalance = selectedTokenAmount * BALANCE_SAFETY_MARGIN;
+      const setFallbackAmount = () => {
+        const calculatedAmount = safeBalance * percentage;
+        const newAmount = usdFormatter
+          .format(calculatedAmount)
+          .replace("$", "");
+        setAmount(newAmount);
+      };
+
+      if (percentage === 1 && nexusSDK && maxSwapInput) {
+        setIsCalculatingMax(true);
+        try {
+          const maxAmountResult = await nexusSDK.calculateMaxForSwap(
+            maxSwapInput,
+          );
+          const maxTokenAmount = Number.parseFloat(maxAmountResult.maxAmount);
+
+          if (Number.isFinite(maxTokenAmount) && maxTokenAmount > 0) {
+            const maxAmountUsd = getFiatValue(
+              maxTokenAmount,
+              maxAmountResult.symbol || destinationConfig.tokenSymbol,
+            );
+
+            if (Number.isFinite(maxAmountUsd) && maxAmountUsd > 0) {
+              setAmount(usdFormatter.format(maxAmountUsd).replace("$", ""));
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Failed to calculate max swap amount", error);
+        } finally {
+          setIsCalculatingMax(false);
+        }
+      }
+
+      setFallbackAmount();
     },
-    [setAmount, totalBalance?.usdBalance],
+    [
+      setAmount,
+      selectedTokenAmount,
+      nexusSDK,
+      maxSwapInput,
+      getFiatValue,
+      destinationConfig.tokenSymbol,
+    ],
   );
 
   const handleDoubleClick = useCallback(() => {
@@ -179,7 +225,7 @@ function AmountCard({
   );
 
   return (
-    <div className="py-8 min-h-[212px] w-full rounded-lg border bg-base text-muted-foreground shadow-[0_1px_12px_0_rgba(91,91,91,0.05)]">
+    <div className="py-8 min-h-53 w-full rounded-lg border bg-base text-muted-foreground shadow-[0_1px_12px_0_rgba(91,91,91,0.05)]">
       {/* Hidden span to measure text width */}
       <span
         ref={measureRef}
@@ -205,29 +251,33 @@ function AmountCard({
         />
         <div className="relative">
           {/* Animated digits layer (behind input) */}
-          <div
-            className="flex items-center pointer-events-none"
-            aria-hidden="true"
-          >
-            {displayChars.map((char, index) => (
-              <span
-                key={`${index}-${char}-${
-                  animatingIndices.has(index) ? "anim" : "static"
-                }`}
-                className={`font-display text-[32px] font-medium tracking-[0.8px] tabular-nums inline-block ${
-                  animatingIndices.has(index) ? "animate-digit-in" : ""
-                } ${amount ? "text-card-foreground" : "text-muted-foreground"}`}
-              >
-                {char}
-              </span>
-            ))}
-            {/* Placeholder when empty */}
-            {displayValue.length === 0 && (
-              <span className="text-muted-foreground font-display text-[32px] font-medium tracking-[0.8px] tabular-nums">
-                0
-              </span>
-            )}
-          </div>
+          {isCalculatingMax ? (
+            <Skeleton className="h-10 w-28 rounded-md" aria-hidden="true" />
+          ) : (
+            <div
+              className="flex items-center pointer-events-none"
+              aria-hidden="true"
+            >
+              {displayChars.map((char, index) => (
+                <span
+                  key={`${index}-${char}-${
+                    animatingIndices.has(index) ? "anim" : "static"
+                  }`}
+                  className={`font-display text-[32px] font-medium tracking-[0.8px] tabular-nums inline-block ${
+                    animatingIndices.has(index) ? "animate-digit-in" : ""
+                  } ${amount ? "text-card-foreground" : "text-muted-foreground"}`}
+                >
+                  {char}
+                </span>
+              ))}
+              {/* Placeholder when empty */}
+              {displayValue.length === 0 && (
+                <span className="text-muted-foreground font-display text-[32px] font-medium tracking-[0.8px] tabular-nums">
+                  0
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Real input overlaid with transparent text (for cursor positioning) */}
           <input
@@ -247,6 +297,7 @@ function AmountCard({
               maxWidth: "calc(100vw - 100px)",
             }}
             className="absolute inset-0 font-display text-[32px] font-medium tracking-[0.8px] tabular-nums bg-transparent border-none outline-none min-w-[22px] text-transparent caret-card-foreground placeholder:text-transparent"
+            disabled={isCalculatingMax}
           />
         </div>
       </div>
@@ -261,26 +312,36 @@ function AmountCard({
       >
         <div className="overflow-hidden">
           <div className="flex items-center justify-center gap-1 text-muted-foreground h-5">
-            <span
-              key={isShining ? "shining" : "static"}
-              className={`text-[13px] ${
-                isShining ? "animate-glare-shine" : ""
-              }`}
-            >
-              ~ {usdFormatter.format(numericAmount)}
-            </span>
-            <UpDownArrows className="w-4 h-4" />
+            {isCalculatingMax ? (
+              <Skeleton className="h-4 w-20 rounded-sm" aria-hidden="true" />
+            ) : (
+              <>
+                <span
+                  key={isShining ? "shining" : "static"}
+                  className={`text-[13px] ${
+                    isShining ? "animate-glare-shine" : ""
+                  }`}
+                >
+                  ~ {usdFormatter.format(numericAmount)}
+                </span>
+                <UpDownArrows className="w-4 h-4" />
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Percentage Selector */}
       <div className={numericAmount > 0 ? "-mt-px" : ""}>
-        <PercentageSelector onPercentageClick={handlePercentageClick} />
+        <PercentageSelector
+          onPercentageClick={handlePercentageClick}
+          disabled={isCalculatingMax}
+          loadingMax={isCalculatingMax}
+        />
       </div>
 
       {/* Balance Display */}
-      <div className="mt-[33px] font-sans text-sm leading-4.5 text-base-foreground-2 text-center">
+      <div className="mt-8.25 font-sans text-sm leading-4.5 text-base-foreground-2 text-center">
         Balance: {usdFormatter.format(totalSelectedBalance)}
       </div>
 

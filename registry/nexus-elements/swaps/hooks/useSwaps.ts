@@ -17,9 +17,11 @@ import {
   type OnSwapIntentHookData,
   type Source as SwapSource,
   type UserAsset,
+  sortSourcesByPriority,
   parseUnits,
   formatTokenBalance,
 } from "@avail-project/nexus-core";
+import { padHex, type Hex } from "viem";
 import {
   useTransactionSteps,
   SWAP_EXPECTED_STEPS,
@@ -32,6 +34,36 @@ import {
   getIntentMatchedOptionKeys,
   getIntentSourcesSignature,
 } from "../utils/source-matching";
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const EVM_NATIVE_PLACEHOLDER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+
+function normalizeAddress(address: string): string {
+  return address.toLowerCase();
+}
+
+function toComparableSdkAddress(address: string): string {
+  const normalized = normalizeAddress(address);
+  const effectiveAddress =
+    normalized === ZERO_ADDRESS ? EVM_NATIVE_PLACEHOLDER : normalized;
+
+  try {
+    return padHex(effectiveAddress as Hex, { size: 32 }).toLowerCase();
+  } catch {
+    return effectiveAddress;
+  }
+}
+
+type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+  icon?: string;
+};
+
+function getBreakdownTokenIcon(
+  breakdown: UserAsset["breakdown"][number],
+): string {
+  const icon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
+  return typeof icon === "string" && icon.length > 0 ? icon : "";
+}
 
 export type SourceTokenInfo = {
   contractAddress: `0x${string}`;
@@ -192,7 +224,7 @@ const useSwaps = ({
 
   const exactOutSourceOptions = useMemo<ExactOutSourceOption[]>(() => {
     const optionsByKey = new Map<string, ExactOutSourceOption>();
-    const destinationChainId = state.inputs.toChainID;
+    const excludedDestinationChainId = state.inputs.toChainID;
 
     const upsertOption = (option: ExactOutSourceOption) => {
       optionsByKey.set(option.key, option);
@@ -207,8 +239,8 @@ const useSwaps = ({
         const tokenAddress = entry.contractAddress as `0x${string}`;
         const chainId = entry.chain.id;
         if (
-          typeof destinationChainId === "number" &&
-          chainId === destinationChainId
+          typeof excludedDestinationChainId === "number" &&
+          chainId === excludedDestinationChainId
         ) {
           continue;
         }
@@ -218,8 +250,8 @@ const useSwaps = ({
           chainName: entry.chain.name,
           chainLogo: entry.chain.logo,
           tokenAddress,
-          tokenSymbol: asset.symbol,
-          tokenLogo: asset.icon ?? "",
+          tokenSymbol: entry.symbol,
+          tokenLogo: getBreakdownTokenIcon(entry),
           balance,
           decimals: entry.decimals ?? asset.decimals,
         });
@@ -229,8 +261,8 @@ const useSwaps = ({
     for (const source of currentIntentSources) {
       const chainId = source.chain.id;
       if (
-        typeof destinationChainId === "number" &&
-        chainId === destinationChainId
+        typeof excludedDestinationChainId === "number" &&
+        chainId === excludedDestinationChainId
       ) {
         continue;
       }
@@ -253,17 +285,67 @@ const useSwaps = ({
 
     const options = [...optionsByKey.values()];
 
-    options.sort((a, b) => {
+    const destinationChainId = state.inputs.toChainID;
+    const destinationToken = state.inputs.toToken;
+    if (!destinationChainId || !destinationToken || !swapBalance?.length) {
+      return options.sort((a, b) => {
+        if (a.tokenSymbol === b.tokenSymbol) {
+          return a.chainName.localeCompare(b.chainName);
+        }
+        return a.tokenSymbol.localeCompare(b.tokenSymbol);
+      });
+    }
+
+    const priorityByOptionKey = new Map<string, number>();
+    const sortedSources = sortSourcesByPriority(swapBalance, {
+      chainID: destinationChainId,
+      tokenAddress: destinationToken.tokenAddress,
+      symbol: destinationToken.symbol,
+    });
+
+    sortedSources.forEach((source, index) => {
+      const sourceComparableAddress = toComparableSdkAddress(
+        source.tokenAddress,
+      );
+
+      for (const option of options) {
+        if (option.chainId !== source.chainID) continue;
+        const optionComparableAddress = toComparableSdkAddress(
+          option.tokenAddress,
+        );
+        if (optionComparableAddress !== sourceComparableAddress) continue;
+        if (!priorityByOptionKey.has(option.key)) {
+          priorityByOptionKey.set(option.key, index);
+        }
+      }
+    });
+
+    return options.sort((a, b) => {
+      const aPriority =
+        priorityByOptionKey.get(a.key) ?? Number.MAX_SAFE_INTEGER;
+      const bPriority =
+        priorityByOptionKey.get(b.key) ?? Number.MAX_SAFE_INTEGER;
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      const aBalance = Number.parseFloat(a.balance);
+      const bBalance = Number.parseFloat(b.balance);
+      if (Number.isFinite(aBalance) && Number.isFinite(bBalance)) {
+        if (aBalance !== bBalance) {
+          return bBalance - aBalance;
+        }
+      }
+
       if (a.tokenSymbol === b.tokenSymbol) {
         return a.chainName.localeCompare(b.chainName);
       }
       return a.tokenSymbol.localeCompare(b.tokenSymbol);
     });
-
-    return options;
   }, [
     currentIntentSources,
     currentIntentSourcesSignature,
+    state.inputs.toToken,
     state.inputs.toChainID,
     swapBalance,
   ]);
@@ -471,8 +553,13 @@ const useSwaps = ({
       return;
 
     const sourceBalance = swapBalance
-      ?.find((token) => token.symbol === fromToken.symbol)
-      ?.breakdown?.find((chain) => chain.chain?.id === fromChainID);
+      ?.flatMap((token) => token.breakdown ?? [])
+      ?.find(
+        (chain) =>
+          chain.chain?.id === fromChainID &&
+          normalizeAddress(chain.contractAddress) ===
+            normalizeAddress(fromToken.contractAddress),
+      );
     if (
       !sourceBalance ||
       Number.parseFloat(sourceBalance.balance ?? "0") <= 0
@@ -482,10 +569,7 @@ const useSwaps = ({
       );
     }
 
-    const amountBigInt = parseUnits(
-      fromAmount,
-      fromToken.decimals,
-    );
+    const amountBigInt = parseUnits(fromAmount, fromToken.decimals);
     const swapInput: ExactInSwapInput = {
       from: [
         {
@@ -532,10 +616,7 @@ const useSwaps = ({
       throw new Error("Select at least one source with available balance.");
     }
 
-    const amountBigInt = parseUnits(
-      toAmount,
-      toToken.decimals,
-    );
+    const amountBigInt = parseUnits(toAmount, toToken.decimals);
     const swapInput: ExactOutSwapInput = {
       toAmount: amountBigInt,
       toChainId: toChainID,
@@ -665,9 +746,12 @@ const useSwaps = ({
       return undefined;
     return (
       swapBalance
-        ?.find((token) => token.symbol === state.inputs?.fromToken?.symbol)
-        ?.breakdown?.find(
-          (chain) => chain.chain?.id === state.inputs?.fromChainID,
+        ?.flatMap((token) => token.breakdown ?? [])
+        ?.find(
+          (chain) =>
+            chain.chain?.id === state.inputs?.fromChainID &&
+            normalizeAddress(chain.contractAddress) ===
+              normalizeAddress(state.inputs?.fromToken?.contractAddress ?? ""),
         ) ?? undefined
     );
   }, [
@@ -687,20 +771,24 @@ const useSwaps = ({
       return undefined;
     return (
       swapBalance
-        ?.find((token) => token.symbol === state?.inputs?.toToken?.symbol)
-        ?.breakdown?.find(
-          (chain) => chain.chain?.id === state?.inputs?.toChainID,
+        ?.flatMap((token) => token.breakdown ?? [])
+        ?.find(
+          (chain) =>
+            chain.chain?.id === state?.inputs?.toChainID &&
+            normalizeAddress(chain.contractAddress) ===
+              normalizeAddress(state?.inputs?.toToken?.tokenAddress ?? ""),
         ) ?? undefined
     );
   }, [state?.inputs?.toToken, state?.inputs?.toChainID, swapBalance, nexusSDK]);
 
   const availableStables = useMemo(() => {
     if (!nexusSDK || !swapBalance) return [];
-    const filteredToken = swapBalance?.filter((token) => {
-      if (["USDT", "USDC", "ETH", "DAI", "WBTC"].includes(token.symbol)) {
-        return token;
-      }
-    });
+    const stableSymbols = new Set(["USDT", "USDC", "ETH", "DAI", "WBTC"]);
+    const filteredToken = swapBalance.filter((token) =>
+      (token.breakdown ?? []).some((entry) =>
+        stableSymbols.has(entry.symbol.toUpperCase()),
+      ),
+    );
     return filteredToken ?? [];
   }, [swapBalance, nexusSDK]);
 

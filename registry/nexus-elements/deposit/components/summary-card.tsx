@@ -1,11 +1,12 @@
 import { ChevronDownIcon, ChevronUpIcon } from "./icons";
 import { Skeleton } from "../../ui/skeleton";
-import { usdFormatter } from "../../common";
+import { formatUsdForDisplay } from "../../common";
 
 interface SummaryCardProps {
   icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  subText?: React.ReactNode;
   value: string;
   valueSuffix?: string;
   showBreakdown?: boolean;
@@ -13,6 +14,11 @@ interface SummaryCardProps {
   expanded?: boolean;
   onToggleExpand?: () => void;
   children?: React.ReactNode;
+}
+
+function isPlainNumericString(value: string): boolean {
+  const trimmed = value.trim();
+  return /^-?\d+(\.\d+)?$/u.test(trimmed);
 }
 
 function SummaryCard({
@@ -25,6 +31,7 @@ function SummaryCard({
   loading = false,
   expanded = false,
   onToggleExpand,
+  subText,
   children,
 }: SummaryCardProps) {
   return (
@@ -33,13 +40,13 @@ function SummaryCard({
         <div className="flex gap-4 items-center">
           {icon}
           <div className="flex-col flex gap-2">
-            <span className="font-sans text-sm leading-4.5 text-card-foreground">
+            <div className="font-sans text-sm leading-4.5 text-card-foreground">
               {title}
-            </span>
+            </div>
             {subtitle && (
-              <span className="font-sans text-[13px] leading-4.5 text-muted-foreground">
+              <div className="font-sans text-[13px] leading-4.5 text-muted-foreground">
                 {subtitle}
-              </span>
+              </div>
             )}
           </div>
         </div>
@@ -50,8 +57,9 @@ function SummaryCard({
             ) : (
               <>
                 <span className="font-display text-card-foreground tracking-[0.36px] leading-4.5 font-medium">
-                  {valueSuffix === "USD"
-                    ? usdFormatter.format(parseFloat(value))
+                  {valueSuffix === "USD" ||
+                  (!valueSuffix && isPlainNumericString(value))
+                    ? formatUsdForDisplay(parseFloat(value))
                     : value}
                 </span>
                 {valueSuffix && (
@@ -79,6 +87,7 @@ function SummaryCard({
           )}
         </div>
       </div>
+      {subText ? subText : null}
       {expanded && children && (
         <div className="mt-4 p-4 bg-background/30">{children}</div>
       )}

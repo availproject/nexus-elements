@@ -64,6 +64,10 @@ export interface AssetSelectionState {
   expandedTokens: Set<string>;
 }
 
+export interface SetAssetSelectionOptions {
+  markUserModified?: boolean;
+}
+
 export interface DestinationConfig {
   chainId: SUPPORTED_CHAINS_IDS;
   depositTargetLogo?: string;
@@ -152,7 +156,11 @@ export interface DepositWidgetContextValue {
 
   // Asset selection
   assetSelection: AssetSelectionState;
-  setAssetSelection: (selection: Partial<AssetSelectionState>) => void;
+  isManualSelection: boolean;
+  setAssetSelection: (
+    selection: Partial<AssetSelectionState>,
+    options?: SetAssetSelectionOptions,
+  ) => void;
 
   // SDK integration
   swapBalance: UserAsset[] | null;
@@ -189,6 +197,23 @@ export interface DepositWidgetContextValue {
     totalGasFee: number;
     gasUsd: number;
     gasFormatted: string;
+    bridgeUsd: number;
+    bufferUsd: number;
+    totalFeeUsd: number;
+    gasSponsorshipUsd: number;
+    executionGasFeeUsd: number;
+    protocolFeeUsd: number;
+    solverFeeUsd: number;
+    otherBridgeFeeUsd: number;
+    swapImpactUsd: number;
+    swapImpactPercent: number;
+    maxPriceImpactUsd: number;
+    maxPriceImpactPercent: number;
+    bridgeComponents: Array<{
+      key: string;
+      label: string;
+      amountUsd: number;
+    }>;
   };
   steps: Array<{
     id: number;

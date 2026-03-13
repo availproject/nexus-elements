@@ -25,6 +25,7 @@ import {
 } from "../../ui/dialog";
 import { ChevronDown } from "lucide-react";
 import DestinationAssetSelect from "./destination-asset-select";
+import { TOKEN_IMAGES } from "../config/destination";
 
 interface DestinationContainerProps {
   destinationHovered: boolean;
@@ -44,6 +45,10 @@ interface DestinationContainerProps {
     decimals?: number
   ) => string | undefined;
 }
+
+type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+  icon?: string;
+};
 
 const DestinationContainer: React.FC<DestinationContainerProps> = ({
   destinationHovered,
@@ -106,19 +111,28 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
           >
             {quickPickTokens.map(({ token, breakdown }) => (
               <Button
-                key={`${token.symbol}-${breakdown.chain.id}`}
+                key={`${breakdown.symbol}-${breakdown.chain.id}-${breakdown.contractAddress}`}
                 size={"icon-sm"}
                 variant={"secondary"}
                 onClick={() => {
-                  if (!token) return;
+                  const normalizedSymbol = breakdown.symbol.toUpperCase();
+                  const breakdownIcon = (
+                    breakdown as AssetBreakdownWithOptionalIcon
+                  ).icon;
+                  const tokenLogo =
+                    breakdownIcon ||
+                    TOKEN_IMAGES[breakdown.symbol] ||
+                    TOKEN_IMAGES[normalizedSymbol] ||
+                    token.icon ||
+                    "";
                   setInputs({
                     ...inputs,
                     toToken: {
                       tokenAddress: breakdown.contractAddress,
-                      decimals: token.decimals,
-                      logo: token.icon ?? "",
-                      name: token.symbol,
-                      symbol: token.symbol,
+                      decimals: breakdown.decimals ?? token.decimals,
+                      logo: tokenLogo,
+                      name: breakdown.symbol,
+                      symbol: breakdown.symbol,
                     },
                     toChainID: breakdown.chain.id as SUPPORTED_CHAINS_IDS,
                   });
@@ -126,8 +140,14 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 className="bg-transparent rounded-full hover:-translate-y-1 hover:object-scale-down"
               >
                 <TokenIcon
-                  symbol={token?.symbol}
-                  tokenLogo={token?.icon}
+                  symbol={breakdown.symbol}
+                  tokenLogo={
+                    (breakdown as AssetBreakdownWithOptionalIcon).icon ||
+                    TOKEN_IMAGES[breakdown.symbol] ||
+                    TOKEN_IMAGES[breakdown.symbol.toUpperCase()] ||
+                    token.icon ||
+                    ""
+                  }
                   chainLogo={breakdown.chain.logo}
                   size="sm"
                 />

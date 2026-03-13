@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { ChevronDownIcon } from "./icons";
 import type { Token } from "../types";
-import { getTokenCheckState } from "../utils/asset-helpers";
 import { Checkbox } from "../../ui/checkbox";
 import { usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
@@ -15,6 +13,7 @@ import {
 
 interface TokenRowProps {
   token: Token;
+  disabledChainIds: Set<string>;
   selectedChainIds: Set<string>;
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -26,6 +25,7 @@ interface TokenRowProps {
 
 export function TokenRow({
   token,
+  disabledChainIds,
   selectedChainIds,
   isExpanded,
   onToggleExpand,
@@ -35,7 +35,20 @@ export function TokenRow({
   isLast = false,
 }: TokenRowProps) {
   const hasMultipleChains = token.chains.length > 1;
-  const tokenCheckState = getTokenCheckState(token, selectedChainIds);
+  const selectableChains = token.chains.filter(
+    (chain) => !disabledChainIds.has(chain.id),
+  );
+  const hasSelectableChains = selectableChains.length > 0;
+  const selectedSelectableChains = selectableChains.filter((chain) =>
+    selectedChainIds.has(chain.id),
+  ).length;
+  const tokenCheckState: boolean | "indeterminate" =
+    selectedSelectableChains === 0
+      ? false
+      : selectedSelectableChains === selectableChains.length
+        ? true
+        : "indeterminate";
+  const tokenDisabled = !hasSelectableChains;
 
   return (
     <div
@@ -47,14 +60,17 @@ export function TokenRow({
       <div
         className={`${
           isExpanded ? "pt-5 px-5 pb-4" : "pt-5 px-5 pb-5"
-        } flex justify-between items-center cursor-pointer`}
+        } flex justify-between items-center ${
+          hasMultipleChains ? "cursor-pointer" : ""
+        } ${tokenDisabled ? "opacity-60" : ""}`}
         onClick={hasMultipleChains ? onToggleExpand : undefined}
       >
         <div className="flex gap-6 items-center">
           <Checkbox
             checked={tokenCheckState}
-            onCheckedChange={onToggleToken}
-            onClick={(e: any) => e.stopPropagation()}
+            disabled={tokenDisabled}
+            onCheckedChange={tokenDisabled ? undefined : onToggleToken}
+            onClick={(e) => e.stopPropagation()}
           />
           <div className="flex items-center gap-3">
             <img
@@ -116,7 +132,9 @@ export function TokenRow({
               {token.chains.map((chain) => (
                 <div
                   key={chain.id}
-                  className="flex items-center"
+                  className={`flex items-center ${
+                    disabledChainIds.has(chain.id) ? "opacity-60" : ""
+                  }`}
                   style={{ height: `${CHAIN_ITEM_HEIGHT_PX}px` }}
                 >
                   {/* Horizontal line */}
@@ -126,7 +144,11 @@ export function TokenRow({
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={selectedChainIds.has(chain.id)}
-                        onCheckedChange={() => onToggleChain(chain.id)}
+                        disabled={disabledChainIds.has(chain.id)}
+                        onCheckedChange={() => {
+                          if (disabledChainIds.has(chain.id)) return;
+                          onToggleChain(chain.id);
+                        }}
                       />
                       <span className="font-sans text-sm leading-4.5 text-card-foreground">
                         {chain.name}

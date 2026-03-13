@@ -58,6 +58,63 @@ export const DESTINATION_SWAP_TOKENS = new Map<
     ],
   ],
   [
+    SUPPORTED_CHAINS.ETHEREUM,
+    [
+      {
+        decimals: 18,
+        logo: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+        name: "Ether",
+        symbol: "ETH",
+        tokenAddress: "0x0000000000000000000000000000000000000000",
+      },
+      {
+        decimals: 6,
+        logo: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+        name: "USD Coin",
+        symbol: "USDC",
+        tokenAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      },
+    ],
+  ],
+  [
+    SUPPORTED_CHAINS.MONAD,
+    [
+      {
+        decimals: 18,
+        logo: "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/monad/logo.png",
+        name: "Monad",
+        symbol: "MON",
+        tokenAddress: "0x0000000000000000000000000000000000000000",
+      },
+      {
+        decimals: 6,
+        logo: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+        name: "USD Coin",
+        symbol: "USDC",
+        tokenAddress: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+      },
+    ],
+  ],
+  [
+    SUPPORTED_CHAINS.MEGAETH,
+    [
+      {
+        decimals: 18,
+        logo: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+        name: "Ether",
+        symbol: "ETH",
+        tokenAddress: "0x0000000000000000000000000000000000000000",
+      },
+      {
+        decimals: 18,
+        logo: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
+        name: "USDm Coin",
+        symbol: "USDM",
+        tokenAddress: "0xFAfDdbb3FC7688494971a79cc65DCa3EF82079E7",
+      },
+    ],
+  ],
+  [
     SUPPORTED_CHAINS.ARBITRUM,
     [
       {
@@ -187,6 +244,7 @@ export const DESTINATION_SWAP_TOKENS = new Map<
 export const TOKEN_IMAGES: Record<string, string> = {
   USDC: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png",
   USDT: "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png",
+  USDM: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
   "USD₮0":
     "https://coin-images.coingecko.com/coins/images/35023/large/USDT.png",
   WETH: "https://assets.coingecko.com/coins/images/279/large/ethereum.png?1595348880",

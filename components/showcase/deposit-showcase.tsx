@@ -97,14 +97,14 @@ const DepositShowcase = () => {
     >
       <NexusDeposit
         embed={embed}
-        heading={"Deposit USDC"}
+        heading={"Deposit USDC on Aave's Base Market"}
         destination={{
           chainId: SUPPORTED_CHAINS.BASE,
           tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
           tokenSymbol: "USDC",
-          tokenDecimals: TOKEN_METADATA["USDC"].decimals,
-          tokenLogo: TOKEN_METADATA["USDC"].icon,
-          label: "Deposit USDC on Aave Base",
+          tokenDecimals: 6,
+          tokenLogo: TOKEN_METADATA["USDC"]?.icon,
+          label: "Deposit USDC on Aave's Base Market",
           gasTokenSymbol:
             CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import type { MaxSwapInput } from "@avail-project/nexus-core";
 import WidgetHeader from "./widget-header";
 import type { DepositWidgetContextValue } from "../types";
 import AmountCard from "./amount-card";
@@ -10,6 +11,7 @@ import { EmptyBalanceState } from "./empty-balance-state";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
 import { Skeleton } from "../../ui/skeleton";
+import { buildDepositSourcePoolIds, parseSourceId } from "../utils";
 
 interface AmountContainerProps {
   widget: DepositWidgetContextValue;
@@ -36,10 +38,44 @@ const AmountContainer = ({
     [widget.swapBalance],
   );
   const shouldShowEmptyState = isSwapBalanceLoaded && !hasPositiveSwapBalance;
-  const selectedTokenAmount = useMemo(
-    () => widget.totalSelectedBalance,
-    [widget.totalSelectedBalance],
-  );
+  const amountScreenBalance = useMemo(() => {
+    if (widget.assetSelection.filter === "all") {
+      return widget.totalBalance?.usdBalance ?? 0;
+    }
+
+    return widget.totalSelectedBalance;
+  }, [
+    widget.assetSelection.filter,
+    widget.totalBalance?.usdBalance,
+    widget.totalSelectedBalance,
+  ]);
+  const maxSwapInput = useMemo<MaxSwapInput | undefined>(() => {
+    const sourcePoolIds = buildDepositSourcePoolIds({
+      swapBalance: widget.swapBalance,
+      filter: widget.assetSelection.filter,
+      selectedSourceIds: widget.assetSelection.selectedChainIds,
+      isManualSelection: widget.isManualSelection,
+    });
+
+    const fromSources = sourcePoolIds
+      .map((sourceId) => parseSourceId(sourceId))
+      .filter((source): source is NonNullable<typeof source> =>
+        Boolean(source),
+      );
+
+    return {
+      toChainId: widget.destination.chainId,
+      toTokenAddress: widget.destination.tokenAddress,
+      fromSources: fromSources.length > 0 ? fromSources : undefined,
+    };
+  }, [
+    widget.swapBalance,
+    widget.assetSelection.filter,
+    widget.assetSelection.selectedChainIds,
+    widget.isManualSelection,
+    widget.destination.chainId,
+    widget.destination.tokenAddress,
+  ]);
 
   const handleAmountChange = useCallback(
     (amount: string) => {
@@ -75,9 +111,10 @@ const AmountContainer = ({
               totalBalance={widget.totalBalance!}
               amount={widget.inputs.amount ?? ""}
               onAmountChange={handleAmountChange}
-              selectedTokenAmount={selectedTokenAmount}
+              selectedTokenAmount={amountScreenBalance}
+              maxSwapInput={maxSwapInput}
               onErrorStateChange={handleErrorStateChange}
-              totalSelectedBalance={widget.totalSelectedBalance}
+              totalSelectedBalance={amountScreenBalance}
               destinationConfig={widget.destination}
             />
           )}
@@ -90,8 +127,11 @@ const AmountContainer = ({
               <PayUsing
                 onClick={() => widget.goToStep("asset-selection")}
                 selectedChainIds={widget.assetSelection.selectedChainIds}
+                filter={widget.assetSelection.filter}
+                isManualSelection={widget.isManualSelection}
                 amount={widget.inputs.amount}
                 swapBalance={widget.swapBalance}
+                destination={widget.destination}
               />
               <Button
                 className="rounded-t-none"

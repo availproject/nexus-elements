@@ -8,10 +8,12 @@ import type {
   DestinationConfig,
 } from "../types";
 import {
+  ERROR_CODES,
   NEXUS_EVENTS,
   CHAIN_METADATA,
   type SwapStepType,
   type ExecuteParams,
+  type OnSwapIntentHookData,
   type SwapAndExecuteParams,
   type SwapAndExecuteResult,
   parseUnits,
@@ -26,7 +28,10 @@ import {
 import { type Address, type Hex, formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
-import { SIMULATION_POLL_INTERVAL_MS } from "../constants/widget";
+import {
+  MIN_SELECTABLE_SOURCE_BALANCE_USD,
+  SIMULATION_POLL_INTERVAL_MS,
+} from "../constants/widget";
 
 // Import extracted hooks
 import {
@@ -36,6 +41,7 @@ import {
 } from "./use-deposit-state";
 import { useAssetSelection } from "./use-asset-selection";
 import { useDepositComputed } from "./use-deposit-computed";
+import { resolveDepositSourceSelection } from "../utils";
 
 interface UseDepositProps {
   executeDeposit: (
@@ -48,6 +54,25 @@ interface UseDepositProps {
   destination: DestinationConfig;
   onSuccess?: () => void;
   onError?: (error: string) => void;
+}
+
+function parseUsdAmount(value?: string): number {
+  if (!value) return 0;
+  const parsed = Number.parseFloat(value.replace(/,/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return parsed;
+}
+
+function summarizeIntentSources(
+  intentSources: OnSwapIntentHookData["intent"]["sources"] | undefined,
+) {
+  return (intentSources ?? []).map((source) => ({
+    chainId: source.chain.id,
+    chainName: source.chain.name,
+    tokenAddress: source.token.contractAddress,
+    tokenSymbol: source.token.symbol,
+    amount: source.amount,
+  }));
 }
 
 /**
@@ -77,24 +102,44 @@ export function useDepositWidget(
   const [pollingEnabled, setPollingEnabled] = useState(false);
 
   // Asset selection state
-  const { assetSelection, setAssetSelection, resetAssetSelection } =
-    useAssetSelection(swapBalance);
+  const {
+    assetSelection,
+    isManualSelection,
+    setAssetSelection,
+    resetAssetSelection,
+  } = useAssetSelection(swapBalance, destination, state.inputs.amount);
 
   // Refs for tracking
   const hasAutoSelected = useRef(false);
   const initialSimulationDone = useRef(false);
   const determiningSwapComplete = useRef(false);
   const lastSimulationTime = useRef(0);
+  const suppressNextWidgetPreviewCancelError = useRef(false);
 
-  const denyActiveSwapIntent = useCallback(() => {
-    try {
-      swapIntent.current?.deny();
-    } catch (error) {
-      console.error("Failed to deny active swap intent", error);
-    } finally {
-      swapIntent.current = null;
-    }
-  }, [swapIntent]);
+  const denyActiveSwapIntent = useCallback(
+    (options?: { suppressUiError?: boolean }) => {
+      const activeSwapIntent =
+        swapIntent.current ?? state.simulation?.swapIntent;
+
+      if (options?.suppressUiError && activeSwapIntent) {
+        suppressNextWidgetPreviewCancelError.current = true;
+      }
+
+      if (!activeSwapIntent) {
+        return;
+      }
+
+      try {
+        activeSwapIntent.deny();
+      } catch (error) {
+        suppressNextWidgetPreviewCancelError.current = false;
+        console.error("Failed to deny active swap intent", error);
+      } finally {
+        swapIntent.current = null;
+      }
+    },
+    [swapIntent, state.simulation],
+  );
 
   // Transaction steps tracking
   const {
@@ -158,25 +203,36 @@ export function useDepositWidget(
    * Start the swap and execute flow with the SDK
    */
   const start = useCallback(
-    (inputs: SwapAndExecuteParams) => {
+    (inputs: SwapAndExecuteParams, targetAmountUsd?: number) => {
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
+      const requiredAmountUsd =
+        targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
+      const { sourcePoolIds, selectedSourceIds, fromSources } =
+        resolveDepositSourceSelection({
+          swapBalance,
+          destination,
+          filter: assetSelection.filter,
+          selectedSourceIds: assetSelection.selectedChainIds,
+          isManualSelection,
+          minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+          targetAmountUsd: requiredAmountUsd,
+        });
 
-      // Build source list from selected assets
-      const fromSources: Array<{ tokenAddress: Hex; chainId: number }> = [];
-      assetSelection.selectedChainIds.forEach((key) => {
-        const lastDashIndex = key.lastIndexOf("-");
-        const tokenAddress = key.substring(0, lastDashIndex) as Hex;
-        const chainId = parseInt(key.substring(lastDashIndex + 1), 10);
-        fromSources.push({ tokenAddress, chainId });
-      });
+      if (fromSources.length === 0) {
+        const message =
+          "No eligible source balances found. A minimum source balance of $1.00 is required.";
+        dispatch({ type: "setError", payload: message });
+        dispatch({ type: "setStatus", payload: "error" });
+        onError?.(message);
+        return;
+      }
 
       const inputsWithSources = {
         ...inputs,
-        fromSources: fromSources.length > 0 ? fromSources : undefined,
+        fromSources,
       };
-
       nexusSDK
         .swapAndExecute(inputsWithSources, {
           onEvent: (event) => {
@@ -211,6 +267,8 @@ export function useDepositWidget(
           },
         })
         .then((data: SwapAndExecuteResult) => {
+          suppressNextWidgetPreviewCancelError.current = false;
+
           // Extract source swaps from the result
           const sourceSwapsFromResult = data.swapResult?.sourceSwaps ?? [];
           sourceSwapsFromResult.forEach((sourceSwap) => {
@@ -301,7 +359,22 @@ export function useDepositWidget(
           });
         })
         .catch((error) => {
-          const { message } = handleNexusError(error);
+          const { code, message } = handleNexusError(error);
+          const isUserRejectedError =
+            code === ERROR_CODES.USER_DENIED_INTENT ||
+            code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE ||
+            code === ERROR_CODES.USER_DENIED_ALLOWANCE ||
+            code === ERROR_CODES.USER_DENIED_SIWE_SIGNATURE;
+          const shouldSuppressWidgetError =
+            suppressNextWidgetPreviewCancelError.current && isUserRejectedError;
+
+          suppressNextWidgetPreviewCancelError.current = false;
+
+          if (shouldSuppressWidgetError) {
+            onError?.(message);
+            return;
+          }
+
           dispatch({ type: "setError", payload: message });
           dispatch({ type: "setStatus", payload: "error" });
 
@@ -332,11 +405,15 @@ export function useDepositWidget(
       onError,
       handleNexusError,
       assetSelection.selectedChainIds,
+      assetSelection.filter,
+      isManualSelection,
+      swapBalance,
       destination,
       getFiatValue,
       fetchSwapBalance,
       dispatch,
       stopwatch,
+      state.inputs.amount,
     ],
   );
 
@@ -346,16 +423,24 @@ export function useDepositWidget(
   const beginAmountSimulation = useCallback(
     async (totalAmountUsd: number) => {
       if (!nexusSDK) {
-        dispatch({ type: "setError", payload: "Nexus SDK is not initialized." });
+        dispatch({
+          type: "setError",
+          payload: "Nexus SDK is not initialized.",
+        });
         dispatch({ type: "setStatus", payload: "error" });
         return false;
       }
       if (!address) {
-        dispatch({ type: "setError", payload: "Connect your wallet to continue." });
+        dispatch({
+          type: "setError",
+          payload: "Connect your wallet to continue.",
+        });
         dispatch({ type: "setStatus", payload: "error" });
         return false;
       }
-      const destinationRate = await resolveTokenUsdRate(destination.tokenSymbol);
+      const destinationRate = await resolveTokenUsdRate(
+        destination.tokenSymbol,
+      );
       if (
         !destinationRate ||
         !Number.isFinite(destinationRate) ||
@@ -412,7 +497,7 @@ export function useDepositWidget(
       });
       dispatch({ type: "setStatus", payload: "simulation-loading" });
       dispatch({ type: "setSimulationLoading", payload: true });
-      start(newInputs);
+      start(newInputs, totalAmountUsd);
       return true;
     },
     [
@@ -483,12 +568,13 @@ export function useDepositWidget(
   const goBack = useCallback(async () => {
     const previousStep = STEP_HISTORY[state.step];
     if (previousStep) {
+      const suppressUiError = state.step === "confirmation" && !isProcessing;
       dispatch({ type: "setError", payload: null });
       dispatch({
         type: "setStep",
         payload: { step: previousStep, direction: "backward" },
       });
-      denyActiveSwapIntent();
+      denyActiveSwapIntent({ suppressUiError });
       initialSimulationDone.current = false;
       lastSimulationTime.current = 0;
       setPollingEnabled(false);
@@ -496,16 +582,24 @@ export function useDepositWidget(
       stopwatch.reset();
       await fetchSwapBalance();
     }
-  }, [state.step, stopwatch, dispatch, denyActiveSwapIntent, fetchSwapBalance]);
+  }, [
+    state.step,
+    isProcessing,
+    stopwatch,
+    dispatch,
+    denyActiveSwapIntent,
+    fetchSwapBalance,
+  ]);
 
   /**
    * Reset widget to initial state
    */
   const reset = useCallback(async () => {
+    const suppressUiError = state.step === "confirmation" && !isProcessing;
     dispatch({ type: "reset" });
     resetAssetSelection();
     resetSteps();
-    denyActiveSwapIntent();
+    denyActiveSwapIntent({ suppressUiError });
     initialSimulationDone.current = false;
     lastSimulationTime.current = 0;
     setPollingEnabled(false);
@@ -519,6 +613,8 @@ export function useDepositWidget(
     resetAssetSelection,
     denyActiveSwapIntent,
     fetchSwapBalance,
+    state.step,
+    isProcessing,
   ]);
 
   /**
@@ -535,6 +631,7 @@ export function useDepositWidget(
       const updated = await swapIntent.current?.refresh();
       if (updated) {
         swapIntent.current!.intent = updated;
+
         dispatch({
           type: "setSimulation",
           payload: {
@@ -543,7 +640,7 @@ export function useDepositWidget(
         });
       }
     } catch (e) {
-      console.error(e);
+      console.error("Unable to refresh intent", e);
     } finally {
       dispatch({ type: "setSimulationLoading", payload: false });
       stopwatch.reset();
@@ -626,6 +723,7 @@ export function useDepositWidget(
     startTransaction,
     lastResult: state.lastResult,
     assetSelection,
+    isManualSelection,
     setAssetSelection,
     swapBalance,
     activeIntent,

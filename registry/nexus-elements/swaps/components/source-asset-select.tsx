@@ -27,6 +27,10 @@ interface SourceAssetSelectProps {
   swapBalance: UserAsset[] | null;
 }
 
+type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+  icon?: string;
+};
+
 const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   onSelect,
   swapBalance,
@@ -48,16 +52,25 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
       if (!asset?.breakdown?.length) continue;
       for (const breakdown of asset.breakdown) {
         if (Number.parseFloat(breakdown.balance) <= 0) continue;
+        const tokenSymbol = breakdown.symbol;
+        const normalizedTokenSymbol = tokenSymbol.toUpperCase();
+        const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
+        const tokenLogo =
+          breakdownIcon ||
+          TOKEN_IMAGES[tokenSymbol] ||
+          TOKEN_IMAGES[normalizedTokenSymbol] ||
+          asset.icon ||
+          "";
 
         tokens.push({
           contractAddress: breakdown.contractAddress,
           decimals: breakdown.decimals ?? asset.decimals,
-          logo: TOKEN_IMAGES[asset.symbol] ?? "",
-          name: asset.symbol,
-          symbol: asset.symbol,
+          logo: tokenLogo,
+          name: tokenSymbol,
+          symbol: tokenSymbol,
           balance: formatTokenBalance(breakdown?.balance, {
-            symbol: asset.symbol,
-            decimals: asset.decimals,
+            symbol: tokenSymbol,
+            decimals: breakdown.decimals ?? asset.decimals,
           }),
           balanceInFiat: `$${breakdown.balanceInFiat}`,
           chainId: breakdown.chain?.id,

@@ -2,30 +2,42 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import ButtonCard from "./button-card";
 import { RightChevronIcon, CoinIcon } from "./icons";
 import { Skeleton } from "../../ui/skeleton";
-import { LOADING_SKELETON_DELAY_MS } from "../constants/widget";
+import {
+  LOADING_SKELETON_DELAY_MS,
+  MIN_SELECTABLE_SOURCE_BALANCE_USD,
+} from "../constants/widget";
+import type { DestinationConfig, AssetFilterType } from "../types";
+import type { UserAsset } from "@avail-project/nexus-core";
+import { resolveDepositSourceSelection } from "../utils";
+
+function parseUsdAmount(value?: string): number {
+  if (!value) return 0;
+  const parsed = Number.parseFloat(value.replace(/,/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return parsed;
+}
 
 interface PayUsingProps {
   onClick?: () => void;
   selectedChainIds: Set<string>;
+  filter: AssetFilterType;
+  isManualSelection: boolean;
   amount?: string;
-  swapBalance: Array<{
-    symbol: string;
-    decimals: number;
-    icon?: string;
-    breakdown?: Array<{
-      chain: { id: number; name: string; logo?: string };
-      balance: string;
-      balanceInFiat?: number;
-      contractAddress?: `0x${string}`;
-    }>;
-  }> | null;
+  swapBalance: UserAsset[] | null;
+  destination: Pick<
+    DestinationConfig,
+    "chainId" | "tokenAddress" | "tokenSymbol"
+  >;
 }
 
 function PayUsing({
   onClick,
   selectedChainIds,
+  filter,
+  isManualSelection,
   amount,
   swapBalance,
+  destination,
 }: PayUsingProps) {
   const [isLoading, setIsLoading] = useState(false);
   const previousAmountRef = useRef<string | undefined>(undefined);
@@ -47,28 +59,44 @@ function PayUsing({
     previousAmountRef.current = amount;
   }, [amount, hasAmount]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { subtitle, selectedCount, totalUsdValue } = useMemo(() => {
-    const tokenCounts: Record<string, number> = {};
-    let total = 0;
+  const subtitle = useMemo(() => {
+    if (!swapBalance) return "No tokens selected";
+    const symbolBySourceId = new Map<string, string>();
 
-    if (swapBalance) {
-      swapBalance.forEach((asset) => {
-        const selectedChains =
-          asset.breakdown?.filter((c) =>
-            selectedChainIds.has(`${c.contractAddress}-${c.chain.id}`),
-          ) ?? [];
-        if (selectedChains.length > 0) {
-          tokenCounts[asset.symbol] = selectedChains.length;
-          selectedChains.forEach((c) => {
-            total += c.balanceInFiat ?? 0;
-          });
-        }
+    swapBalance.forEach((asset) => {
+      asset.breakdown?.forEach((breakdown) => {
+        const chainId = breakdown.chain?.id;
+        const tokenAddress = breakdown.contractAddress;
+        if (!chainId || !tokenAddress) return;
+        const sourceId = `${tokenAddress}-${chainId}`;
+        symbolBySourceId.set(sourceId, breakdown.symbol);
       });
-    }
+    });
 
-    const symbols = Object.keys(tokenCounts);
-    const count = Object.values(tokenCounts).reduce((a, b) => a + b, 0);
+    const { sourcePoolIds, selectedSourceIds: prioritizedSourceIds } =
+      resolveDepositSourceSelection({
+        swapBalance,
+        destination,
+        filter,
+        selectedSourceIds: selectedChainIds,
+        isManualSelection,
+        minimumBalanceUsd: MIN_SELECTABLE_SOURCE_BALANCE_USD,
+        targetAmountUsd: parseUsdAmount(amount),
+      });
+
+    if (sourcePoolIds.length === 0) return "No tokens selected";
+
+    const orderedSymbols: string[] = [];
+    const seenSymbols = new Set<string>();
+    prioritizedSourceIds.forEach((sourceId) => {
+      const symbol = symbolBySourceId.get(sourceId);
+      if (!symbol || seenSymbols.has(symbol)) return;
+      seenSymbols.add(symbol);
+      orderedSymbols.push(symbol);
+    });
+
+    const symbols = orderedSymbols;
+    const count = prioritizedSourceIds.length;
 
     let text: string;
     if (count === 0) {
@@ -79,12 +107,15 @@ function PayUsing({
       text = `${symbols.slice(0, 2).join(", ")} +${symbols.length - 2} more`;
     }
 
-    return {
-      subtitle: text,
-      selectedCount: count,
-      totalUsdValue: total,
-    };
-  }, [selectedChainIds, swapBalance]);
+    return text;
+  }, [
+    selectedChainIds,
+    filter,
+    isManualSelection,
+    swapBalance,
+    destination,
+    amount,
+  ]);
 
   const renderSubtitle = () => {
     if (!hasAmount) {

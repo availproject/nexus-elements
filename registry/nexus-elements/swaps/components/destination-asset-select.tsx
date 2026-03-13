@@ -51,12 +51,16 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
     }
     return tokens.map((token) => {
       const balance = swapBalance
-        ?.find((t) => t.symbol === token.symbol)
-        ?.breakdown?.find((chain) => chain.chain?.id === token.chainId);
+        ?.flatMap((asset) => asset.breakdown ?? [])
+        ?.find(
+          (chain) =>
+            chain.symbol.toUpperCase() === token.symbol.toUpperCase() &&
+            chain.chain?.id === token.chainId,
+        );
       return {
         ...token,
         balance: formatTokenBalance(balance?.balance ?? "0", {
-          symbol: token.symbol,
+          symbol: balance?.symbol ?? token.symbol,
           decimals: balance?.decimals ?? 0,
         }),
         balanceInFiat: usdFormatter.format(balance?.balanceInFiat ?? 0),

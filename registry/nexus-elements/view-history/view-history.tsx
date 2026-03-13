@@ -17,6 +17,33 @@ import { Separator } from "@/registry/nexus-elements/ui/separator";
 import useViewHistory from "./hooks/useViewHistory";
 import { useEffect, useState } from "react";
 
+const TOKEN_ICON_FALLBACKS: Record<string, string> = {
+  USDM:
+    "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
+};
+
+function resolveTokenMetadata(symbol?: string) {
+  const normalized = symbol?.trim() ?? "";
+  if (!normalized) {
+    return { icon: "", name: "token" };
+  }
+
+  const upper = normalized.toUpperCase();
+  const normalizedMetadata =
+    TOKEN_METADATA[normalized as keyof typeof TOKEN_METADATA];
+  const upperMetadata = TOKEN_METADATA[upper as keyof typeof TOKEN_METADATA];
+
+  const icon =
+    normalizedMetadata?.icon ||
+    upperMetadata?.icon ||
+    TOKEN_ICON_FALLBACKS[normalized] ||
+    TOKEN_ICON_FALLBACKS[upper] ||
+    "";
+  const name = normalizedMetadata?.name || upperMetadata?.name || upper;
+
+  return { icon, name };
+}
+
 const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
   const sourceList = sources ?? [];
   return (
@@ -72,24 +99,27 @@ const DestinationToken = ({
 }) => {
   return (
     <div className="flex items-center">
-      {destination.map((dest, index) => (
-        <div
-          key={dest.token.symbol}
-          className={cn(
-            "rounded-full transition-transform hover:scale-110",
-            index > 0 && "-ml-2"
-          )}
-          style={{ zIndex: destination.length - index }}
-        >
-          <img
-            src={TOKEN_METADATA[dest.token.symbol]?.icon ?? ""}
-            alt={TOKEN_METADATA[dest.token.symbol]?.name}
-            width={24}
-            height={24}
-            className="rounded-full"
-          />
-        </div>
-      ))}
+      {destination.map((dest, index) => {
+        const tokenMeta = resolveTokenMetadata(dest.token.symbol);
+        return (
+          <div
+            key={dest.token.symbol}
+            className={cn(
+              "rounded-full transition-transform hover:scale-110",
+              index > 0 && "-ml-2"
+            )}
+            style={{ zIndex: destination.length - index }}
+          >
+            <img
+              src={tokenMeta.icon}
+              alt={tokenMeta.name}
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };

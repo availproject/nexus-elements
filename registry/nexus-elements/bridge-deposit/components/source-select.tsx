@@ -105,7 +105,7 @@ const SourceSelect = ({
                       </Label>
                     </div>
                     <p className="text-sm font-semibold">
-                      {chain.balance} {token}
+                      {chain.balance} {chain.symbol}
                     </p>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { FC, type RefObject, useMemo } from "react";
+import React, { FC, type RefObject, useMemo, useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -6,15 +6,18 @@ import {
   DialogHeader,
 } from "../../ui/dialog";
 import {
-  NexusSDK,
   type SwapStepType,
   type OnSwapIntentHookData,
   formatTokenBalance,
 } from "@avail-project/nexus-core";
-import { MoveDown, XIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
 import { StackedTokenIcons } from "./stacked-token-icons";
-import { type GenericStep, usdFormatter } from "../../common";
+import {
+  type GenericStep,
+  formatUsdForDisplay,
+  usdFormatter,
+} from "../../common";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Button } from "../../ui/button";
 import {
@@ -33,12 +36,44 @@ import {
 } from "../../ui/accordion";
 import { Checkbox } from "../../ui/checkbox";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+
+function parseNonNegativeNumber(value: unknown): number {
+  const parsed = Number.parseFloat(String(value));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function formatFeeUsd(amountUsd: number): string {
+  if (amountUsd > 0 && amountUsd < 0.001) {
+    return "< $0.001";
+  }
+  return formatUsdForDisplay(amountUsd);
+}
+
+function formatSignedUsd(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return "$0.00";
+  const sign = value < 0 ? "-" : "+";
+  const absolute = Math.abs(value);
+  const absoluteLabel =
+    absolute < 0.001 ? "< $0.001" : formatUsdForDisplay(absolute);
+  return `${sign}${absoluteLabel}`;
+}
+
+function formatImpactPercent(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return "0%";
+  const absolute = Math.abs(value);
+  if (absolute < 0.01) {
+    return "< 0.01%";
+  }
+  const fixed = absolute.toFixed(2);
+  return `${fixed.replace(/\.?0+$/, "")}%`;
+}
 
 interface ViewTransactionProps {
   steps: GenericStep<SwapStepType>[];
   status: TransactionStatus;
   swapMode: SwapMode;
-  nexusSDK: NexusSDK | null;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   getFiatValue: (amount: number, token: string) => number;
   continueSwap: () => void | Promise<void>;
@@ -66,6 +101,7 @@ interface TokenBreakdownProps
     | "reset"
     | "txError"
     | "swapMode"
+    | "nexusSDK"
     | "exactOutSourceOptions"
     | "exactOutSelectedKeys"
     | "toggleExactOutSource"
@@ -80,7 +116,6 @@ interface TokenBreakdownProps
 }
 
 const TokenBreakdown = ({
-  nexusSDK,
   getFiatValue,
   tokenLogo,
   chainLogo,
@@ -157,7 +192,6 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
   steps,
   status,
   swapMode,
-  nexusSDK,
   swapIntent,
   getFiatValue,
   continueSwap,
@@ -171,7 +205,12 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
   txError,
 }) => {
   const transactionIntent = swapIntent.current?.intent;
-  const sources = transactionIntent?.sources ?? [];
+  const [showFeeDetails, setShowFeeDetails] = useState(false);
+  const [showPriceImpactDetails, setShowPriceImpactDetails] = useState(false);
+  const sources = useMemo(
+    () => transactionIntent?.sources ?? [],
+    [transactionIntent?.sources],
+  );
   const hasSources = sources.length > 0;
   const hasMultipleSources = sources.length > 1;
   const usedSourceKeys = useMemo(
@@ -231,6 +270,120 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
 
   const shouldShowExactOutSourceSelection =
     status === "simulating" && swapMode === "exactOut";
+
+  const feeBreakdown = useMemo(() => {
+    const feesAndBuffer = transactionIntent?.feesAndBuffer;
+    const bridgeRaw = feesAndBuffer?.bridge;
+    const caGasUsd = parseNonNegativeNumber(bridgeRaw?.caGas);
+    const collectionUsd = parseNonNegativeNumber(
+      (bridgeRaw as Record<string, string | undefined> | undefined)?.collection,
+    );
+    const fulfilmentUsd = parseNonNegativeNumber(
+      (bridgeRaw as Record<string, string | undefined> | undefined)?.fulfilment,
+    );
+    const gasSuppliedUsd = parseNonNegativeNumber(
+      (bridgeRaw as Record<string, string | undefined> | undefined)
+        ?.gasSupplied,
+    );
+    const protocolFeeUsd = parseNonNegativeNumber(bridgeRaw?.protocol);
+    const solverFeeUsd = parseNonNegativeNumber(bridgeRaw?.solver);
+
+    const hasBridgeBreakdown = Boolean(bridgeRaw);
+    const executionBridgeUsd = collectionUsd + fulfilmentUsd + gasSuppliedUsd;
+    const gasSponsorshipUsd = hasBridgeBreakdown ? caGasUsd : 0;
+
+    const gasAmount = parseNonNegativeNumber(
+      transactionIntent?.destination?.gas?.amount,
+    );
+    const gasSymbol = transactionIntent?.destination?.gas?.token?.symbol;
+    const destinationGasUsd =
+      gasAmount > 0 && gasSymbol
+        ? parseNonNegativeNumber(getFiatValue(gasAmount, gasSymbol))
+        : 0;
+    const executionGasFeeUsd = hasBridgeBreakdown
+      ? executionBridgeUsd
+      : destinationGasUsd;
+
+    const bridgeComponentTotal = Object.entries(bridgeRaw ?? {})
+      .filter(([key]) => key !== "total")
+      .reduce((sum, [, value]) => sum + parseNonNegativeNumber(value), 0);
+    const bridgeExplicitTotal = parseNonNegativeNumber(bridgeRaw?.total);
+    const bridgeUsd =
+      bridgeExplicitTotal > 0 ? bridgeExplicitTotal : bridgeComponentTotal;
+    const knownBridgeRowsUsd =
+      gasSponsorshipUsd +
+      executionGasFeeUsd +
+      protocolFeeUsd +
+      solverFeeUsd;
+    const otherBridgeFeeUsd = Math.max(0, bridgeUsd - knownBridgeRowsUsd);
+
+    const bufferUsd = parseNonNegativeNumber(feesAndBuffer?.buffer);
+    const totalFeeUsd =
+      gasSponsorshipUsd +
+      executionGasFeeUsd +
+      protocolFeeUsd +
+      solverFeeUsd +
+      otherBridgeFeeUsd;
+    const intentSpendUsd = sources.reduce((sum, source) => {
+      const amount = parseNonNegativeNumber(source.amount);
+      const fiatValue = getFiatValue(amount, source.token.symbol);
+      return sum + parseNonNegativeNumber(fiatValue);
+    }, 0);
+    const destinationAmount = parseNonNegativeNumber(
+      transactionIntent?.destination?.amount,
+    );
+    const destinationSymbol = transactionIntent?.destination?.token?.symbol;
+    const destinationValueUsd =
+      destinationAmount > 0 && destinationSymbol
+        ? parseNonNegativeNumber(
+            getFiatValue(destinationAmount, destinationSymbol),
+          )
+        : 0;
+    const swapImpactUsd =
+      destinationValueUsd - intentSpendUsd - totalFeeUsd - bufferUsd;
+    const maxPriceImpactUsd = swapImpactUsd + bufferUsd;
+    const spendBaseUsd = intentSpendUsd - totalFeeUsd - bufferUsd;
+    const swapImpactPercent =
+      spendBaseUsd > 0 ? (swapImpactUsd / spendBaseUsd) * 100 : 0;
+    const maxPriceImpactPercent =
+      spendBaseUsd > 0 ? (maxPriceImpactUsd / spendBaseUsd) * 100 : 0;
+
+    return {
+      totalFeeUsd,
+      gasSponsorshipUsd,
+      executionGasFeeUsd,
+      protocolFeeUsd,
+      solverFeeUsd,
+      otherBridgeFeeUsd,
+      bridgeUsd,
+      bufferUsd,
+      swapImpactUsd,
+      swapImpactPercent,
+      maxPriceImpactUsd,
+      maxPriceImpactPercent,
+    };
+  }, [transactionIntent, getFiatValue, sources]);
+
+  const feeDetailRows = useMemo(
+    () =>
+      [
+        { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
+        {
+          label: "Execution Gas fee",
+          amountUsd:
+            feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
+        },
+        { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
+        { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
+      ],
+    [feeBreakdown],
+  );
+
+  const showFeeBreakdown = feeDetailRows.length > 0;
+  const showPriceImpactBreakdown =
+    Math.abs(feeBreakdown.maxPriceImpactUsd) > 0 ||
+    Math.abs(feeBreakdown.swapImpactUsd) > 0 ||
+    feeBreakdown.bufferUsd > 0;
 
   const exactOutSelectedTotalUsd = useMemo(() => {
     if (!shouldShowExactOutSourceSelection) return 0;
@@ -318,7 +471,6 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
             />
           ) : (
             <TokenBreakdown
-              nexusSDK={nexusSDK}
               getFiatValue={getFiatValue}
               tokenLogo={TOKEN_IMAGES[sources[0].token.symbol] ?? ""}
               chainLogo={sources[0].chain.logo}
@@ -329,7 +481,6 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
           )}
           <MoveDown className="size-5 -ml-1.5 text-muted-foreground" />
           <TokenBreakdown
-            nexusSDK={nexusSDK}
             getFiatValue={getFiatValue}
             tokenLogo={
               TOKEN_IMAGES[transactionIntent?.destination?.token.symbol]
@@ -340,6 +491,116 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
             decimals={transactionIntent?.destination?.token.decimals}
           />
         </div>
+        {(showFeeBreakdown || showPriceImpactBreakdown) && (
+          <div className="w-full space-y-2">
+            {showFeeBreakdown && (
+              <div className="w-full rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Total fees</p>
+                  <p className="text-sm font-medium">
+                    {formatUsdForDisplay(feeBreakdown.totalFeeUsd)}
+                  </p>
+                </div>
+                <div className="mt-1 flex items-center justify-end">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground underline underline-offset-2"
+                    onClick={() => setShowFeeDetails(!showFeeDetails)}
+                  >
+                    <span>View details</span>
+                    {showFeeDetails ? (
+                      <ChevronUp className="size-3.5" />
+                    ) : (
+                      <ChevronDown className="size-3.5" />
+                    )}
+                  </button>
+                </div>
+                {showFeeDetails && (
+                  <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    {feeDetailRows.map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <p className="text-muted-foreground">{row.label}</p>
+                        <p className="text-muted-foreground">
+                          {formatFeeUsd(row.amountUsd)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showPriceImpactBreakdown && (
+              <div className="w-full rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="inline-flex items-center gap-1">
+                    <p className="text-sm font-medium">Max price impact</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Price impact and buffer info"
+                          className="inline-flex size-3.5 items-center justify-center rounded-full border border-muted-foreground/60 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                        >
+                          <Info className="size-2.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent sideOffset={8} className="max-w-xs">
+                        Includes a small buffer to ensure your swaps succeed.
+                        Excess funds are refunded after deducting swap fees and
+                        price impact.
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-sm font-medium text-right">
+                    {formatSignedUsd(feeBreakdown.maxPriceImpactUsd)} (
+                    {formatImpactPercent(feeBreakdown.maxPriceImpactPercent)})
+                  </p>
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Includes a buffer to ensure swaps succeed. Excess funds are
+                    refunded after deducting fees and impact.
+                  </p>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground underline underline-offset-2"
+                    onClick={() =>
+                      setShowPriceImpactDetails(!showPriceImpactDetails)
+                    }
+                  >
+                    <span>View details</span>
+                    {showPriceImpactDetails ? (
+                      <ChevronUp className="size-3.5" />
+                    ) : (
+                      <ChevronDown className="size-3.5" />
+                    )}
+                  </button>
+                </div>
+                {showPriceImpactDetails && (
+                  <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <p className="text-muted-foreground">Swap impact</p>
+                      <p className="text-muted-foreground">
+                        {formatSignedUsd(feeBreakdown.swapImpactUsd)} (
+                        {formatImpactPercent(feeBreakdown.swapImpactPercent)})
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <p className="text-muted-foreground">Swap buffer</p>
+                      <p className="text-muted-foreground">
+                        {formatFeeUsd(feeBreakdown.bufferUsd)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {status === "error" && (
           <p className="text-destructive text-sm">{txError}</p>
         )}

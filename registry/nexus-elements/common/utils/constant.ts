@@ -84,3 +84,28 @@ export const usdFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+const usdFormatterPrecise = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+
+/**
+ * Formats USD values for UI.
+ * Values between 0 and 0.001 are shown as "< $0.001".
+ * Values between 0.001 and 0.01 are shown with 3 decimals.
+ */
+export function formatUsdForDisplay(value: number): string {
+  if (!Number.isFinite(value)) return usdFormatter.format(0);
+  const absValue = Math.abs(value);
+
+  if (absValue === 0) return usdFormatter.format(0);
+  if (absValue < 0.001) return "< $0.001";
+  if (absValue < 0.01) {
+    return usdFormatterPrecise.format(value);
+  }
+
+  return usdFormatter.format(value);
+}
