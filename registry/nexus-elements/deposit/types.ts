@@ -207,8 +207,6 @@ export interface DepositWidgetContextValue {
     otherBridgeFeeUsd: number;
     swapImpactUsd: number;
     swapImpactPercent: number;
-    maxPriceImpactUsd: number;
-    maxPriceImpactPercent: number;
     bridgeComponents: Array<{
       key: string;
       label: string;

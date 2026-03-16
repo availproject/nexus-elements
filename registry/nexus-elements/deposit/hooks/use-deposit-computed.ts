@@ -494,12 +494,9 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     const totalSomething = destinationValueUsd + totalFeeUsd + bufferUsd;
     const swapImpactUsd = totalSomething - sourceValueUsd;
-    const maxPriceImpactUsd = swapImpactUsd + bufferUsd;
     const spendBaseUsd = sourceValueUsd - totalFeeUsd - bufferUsd;
     const swapImpactPercent =
       spendBaseUsd > 0 ? (swapImpactUsd / spendBaseUsd) * 100 : 0;
-    const maxPriceImpactPercent =
-      spendBaseUsd > 0 ? (maxPriceImpactUsd / spendBaseUsd) * 100 : 0;
 
     return {
       totalGasFee: gasUsd,
@@ -515,8 +512,6 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       otherBridgeFeeUsd,
       swapImpactUsd,
       swapImpactPercent,
-      maxPriceImpactUsd,
-      maxPriceImpactPercent,
       bridgeComponents,
     };
   }, [

@@ -12,19 +12,8 @@ import { CardContent } from "../../ui/card";
 import { usdFormatter } from "../../common";
 import { formatTokenBalance } from "@avail-project/nexus-core";
 import { useNexus } from "../../nexus/NexusProvider";
-import {
-  BadgeInfo,
-  BadgePercent,
-  Info,
-  Shield,
-  ShieldCheck,
-} from "lucide-react";
-import {
-  formatFeeUsd,
-  formatImpactPercent,
-  formatSignedUsd,
-  parseNonNegativeNumber,
-} from "../utils";
+import { BadgePercent, ShieldCheck } from "lucide-react";
+import { formatFeeUsd, formatImpactPercent, formatSignedUsd } from "../utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 
 interface ConfirmationContainerProps {
@@ -40,7 +29,6 @@ const ConfirmationContainer = ({
 }: ConfirmationContainerProps) => {
   const [showSpendDetails, setShowSpendDetails] = useState(false);
   const [showFeeDetails, setShowFeeDetails] = useState(false);
-  const [showPriceImpactDetails, setShowPriceImpactDetails] = useState(false);
   const { getFiatValue } = useNexus();
 
   const {
@@ -58,11 +46,7 @@ const ConfirmationContainer = ({
   const receiveAmount =
     confirmationDetails?.receiveAmountAfterSwapUsd?.toFixed(2) ?? "0";
   const timeLabel = confirmationDetails?.estimatedTime ?? "~30s";
-  const requestedDepositUsd = parseNonNegativeNumber(widget.inputs.amount);
-  const amountSpent =
-    requestedDepositUsd > 0
-      ? requestedDepositUsd + feeBreakdown.totalFeeUsd + feeBreakdown.bufferUsd
-      : (confirmationDetails?.amountSpent ?? 0);
+  const amountSpent = confirmationDetails?.amountSpent ?? 0;
   // TODO: Ensure unique names are displayed
   const tokenNames = confirmationDetails?.sources
     .filter((s) => s)
@@ -102,25 +86,24 @@ const ConfirmationContainer = ({
   }, [confirmationDetails]);
 
   const feeDetailRows = useMemo(
-    () => [
-      { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
-      {
-        label: "Execution Gas fee",
-        amountUsd:
-          feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
-      },
-      { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
-      { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
-    ].filter((row) => row.amountUsd > 0),
+    () =>
+      [
+        { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
+        {
+          label: "Execution Gas fee",
+          amountUsd:
+            feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
+        },
+        { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
+        { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
+      ].filter((row) => row.amountUsd > 0),
     [feeBreakdown],
   );
 
   const showFeeBreakdown = !isLoading && feeDetailRows.length > 0;
   const showPriceImpactBreakdown =
     !isLoading &&
-    (Math.abs(feeBreakdown.maxPriceImpactUsd) > 0 ||
-      Math.abs(feeBreakdown.swapImpactUsd) > 0 ||
-      feeBreakdown.bufferUsd > 0);
+    (Math.abs(feeBreakdown.swapImpactUsd) > 0 || feeBreakdown.bufferUsd > 0);
 
   return (
     <>
