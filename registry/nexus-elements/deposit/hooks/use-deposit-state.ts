@@ -7,7 +7,7 @@ import type {
   DepositInputs,
   NavigationDirection,
 } from "../types";
-import type { OnSwapIntentHookData } from "@avail-project/nexus-core";
+import type { SwapAndExecuteOnIntentHookData } from "@avail-project/nexus-sdk-v2";
 
 /**
  * Source swap info collected during transaction execution
@@ -65,7 +65,7 @@ export interface DepositState {
   lastResult: unknown;
   navigationDirection: NavigationDirection;
   simulation: {
-    swapIntent: OnSwapIntentHookData;
+    swapIntent: SwapAndExecuteOnIntentHookData;
   } | null;
   simulationLoading: boolean;
   receiveAmount: string | null;
@@ -93,7 +93,7 @@ export type DepositAction =
   | {
       type: "setSimulation";
       payload: {
-        swapIntent: OnSwapIntentHookData;
+        swapIntent: SwapAndExecuteOnIntentHookData;
       };
     }
   | { type: "setSimulationLoading"; payload: boolean }

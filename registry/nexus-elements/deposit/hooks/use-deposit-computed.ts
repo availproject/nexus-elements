@@ -2,18 +2,42 @@
 
 import { useMemo } from "react";
 import type { DestinationConfig, AssetSelectionState } from "../types";
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
 import type {
-  OnSwapIntentHookData,
-  NexusSDK,
-  UserAsset,
-} from "@avail-project/nexus-core";
-import { CHAIN_METADATA, formatTokenBalance } from "@avail-project/nexus-core";
+  SwapAndExecuteOnIntentHookData,
+  UserAssetDatum,
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2";
 import { usdFormatter } from "../../common";
 import type { SwapSkippedData } from "./use-deposit-state";
+
+type NexusClient = ReturnType<typeof createNexusClient>;
 
 const NATIVE_TOKEN_PLACEHOLDER_ADDRESS =
   "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+// v2: CHAIN_METADATA not exported — hardcode well-known native symbols per chain
+const NATIVE_SYMBOL_BY_CHAIN: Record<number, string> = {
+  1: "ETH",       // Ethereum
+  8453: "ETH",    // Base
+  42161: "ETH",   // Arbitrum
+  10: "ETH",      // Optimism
+  137: "MATIC",   // Polygon
+  43114: "AVAX",  // Avalanche
+  534352: "ETH",  // Scroll
+  56: "BNB",      // BNB
+  8217: "KAIA",   // Kaia
+  6342: "ETH",    // MegaETH
+  10143: "MON",   // Monad
+  999: "HYPE",    // HyperEVM
+  5115: "cBTC",   // Citrea
+  11155111: "ETH", // Sepolia
+  84532: "ETH",   // Base Sepolia
+  421614: "ETH",  // Arbitrum Sepolia
+  11155420: "ETH", // Optimism Sepolia
+  80002: "MATIC", // Polygon Amoy
+};
 
 function normalizeAddress(address?: string | null): string {
   return (address ?? "").toLowerCase();
@@ -37,9 +61,7 @@ function resolvePricingSymbol(params: {
     return fallbackSymbol;
   }
 
-  const nativeSymbol =
-    CHAIN_METADATA[chainId as keyof typeof CHAIN_METADATA]?.nativeCurrency
-      ?.symbol;
+  const nativeSymbol = NATIVE_SYMBOL_BY_CHAIN[chainId];
   return nativeSymbol ?? fallbackSymbol;
 }
 
@@ -73,9 +95,9 @@ function formatFeeKeyLabel(key: string): string {
 }
 
 interface UseDepositComputedProps {
-  swapBalance: UserAsset[] | null;
+  swapBalance: UserAssetDatum[] | null;
   assetSelection: AssetSelectionState;
-  activeIntent: OnSwapIntentHookData | null;
+  activeIntent: SwapAndExecuteOnIntentHookData | null;
   destination: DestinationConfig;
   inputAmount: string | undefined;
   exchangeRate: Record<string, number> | null;
@@ -83,7 +105,30 @@ interface UseDepositComputedProps {
   actualGasFeeUsd: number | null;
   swapSkippedData: SwapSkippedData | null;
   skipSwap: boolean;
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
+}
+
+/**
+ * v2: SwapAndExecuteIntent wraps the inner SwapIntent under .swap when swapRequired=true.
+ * This helper extracts compatible properties for display.
+ */
+type SwapIntentLike = {
+  sources?: { chain: { id: number; name: string; logo: string }; token: { contractAddress: string; symbol: string; decimals: number }; amount: string; value?: string }[];
+  destination?: { chain?: { id?: number; name?: string }; value?: string; gas?: { value?: string } };
+  feesAndBuffer?: { bridge?: Record<string, string | undefined> & { total?: string; caGas?: string; protocol?: string; solver?: string }; buffer?: string };
+};
+
+function getSwapIntentLike(
+  intent: SwapAndExecuteOnIntentHookData["intent"] | undefined | null,
+): SwapIntentLike | null {
+  if (!intent) return null;
+  if (intent.swapRequired) {
+    // v2: inner SwapIntent is at intent.swap
+    const inner = (intent as { swapRequired: true; swap: unknown }).swap;
+    return inner as SwapIntentLike;
+  }
+  // swapRequired=false: no swap data available
+  return null;
 }
 
 /**
@@ -101,7 +146,7 @@ export interface AvailableAsset {
   chainName?: string;
 }
 
-type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+type AssetBreakdownWithOptionalIcon = UserAssetDatum["breakdown"][number] & {
   icon?: string;
 };
 
@@ -144,7 +189,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
           chainId: breakdown.chain.id,
           tokenAddress: breakdown.contractAddress as `0x${string}`,
           decimals: breakdown.decimals ?? asset.decimals,
-          symbol: breakdown.symbol,
+          // v2: breakdown has no .symbol — use parent asset.symbol
+          symbol: asset.symbol,
           balance: breakdown.balance,
           balanceInFiat: breakdown.balanceInFiat,
           tokenLogo: breakdownIcon || "",
@@ -280,7 +326,10 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       isDestinationBalance?: boolean;
     }> = [];
 
-    activeIntent.intent.sources.forEach((source) => {
+    // v2: extract inner SwapIntent from SwapAndExecuteIntent
+    const swapIntent = getSwapIntentLike(activeIntent.intent);
+
+    swapIntent?.sources?.forEach((source) => {
       const sourcePricingSymbol = resolvePricingSymbol({
         chainId: source.chain.id,
         contractAddress: source.token.contractAddress,
@@ -320,17 +369,17 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     });
 
     // Calculate total spent from cross-chain sources
-    const totalAmountSpentUsd = activeIntent.intent.sources?.reduce(
-      (acc, source) => acc + parseNonNegativeNumber(source.value),
+    const totalAmountSpentUsd = swapIntent?.sources?.reduce(
+      (acc: number, source: { value?: string }) => acc + parseNonNegativeNumber(source.value),
       0,
-    );
+    ) ?? 0;
 
     // Get the actual amount arriving on destination (AFTER fees)
     const destinationAmountUsd = parseNonNegativeNumber(
-      activeIntent.intent.destination?.value,
+      swapIntent?.destination?.value,
     );
 
-    const intentFeesAndBuffer = activeIntent.intent.feesAndBuffer;
+    const intentFeesAndBuffer = swapIntent?.feesAndBuffer;
     const bridgeFeeEntries = Object.entries(intentFeesAndBuffer?.bridge ?? {})
       .filter(([key]) => key !== "total")
       .map(([key, value]) => ({
@@ -367,8 +416,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     if (usedFromDestinationUsd > 0) {
       const usedTokenAmount = usedFromDestinationUsd / safeTokenExchangeRate;
-      const chainMeta =
-        CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
+      // v2: no CHAIN_METADATA — chainLogo and chainName are not available here
 
       sources.push({
         chainId: destination.chainId,
@@ -378,8 +426,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         balance: usedTokenAmount.toString(),
         balanceInFiat: usedFromDestinationUsd,
         tokenLogo: destination.tokenLogo,
-        chainLogo: chainMeta?.logo,
-        chainName: chainMeta?.name,
+        chainLogo: undefined,
+        chainName: undefined,
         isDestinationBalance: true,
       });
     }
@@ -398,7 +446,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       receiveAmountAfterSwap,
       receiveTokenLogo: destination.tokenLogo,
       receiveTokenChain: destination.chainId,
-      destinationChainName: activeIntent.intent.destination?.chain?.name,
+      destinationChainName: swapIntent?.destination?.chain?.name,
     };
   }, [
     activeIntent,
@@ -430,13 +478,21 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         estimatedFeeEth,
         destination.gasTokenSymbol ?? "ETH",
       );
-    } else if (activeIntent?.intent?.destination?.gas) {
-      // Otherwise use estimated gas from intent
-      const gas = activeIntent.intent.destination.gas;
-      gasUsd = parseNonNegativeNumber(gas.value);
+    } else if (activeIntent?.intent) {
+      // v2: extract inner SwapIntent for gas info
+      const swapIntentLike = getSwapIntentLike(activeIntent.intent);
+      if (swapIntentLike?.destination?.gas) {
+        // Otherwise use estimated gas from intent
+        const gas = swapIntentLike.destination.gas;
+        gasUsd = parseNonNegativeNumber(gas.value);
+      }
     }
 
-    const bridgeRaw = activeIntent?.intent?.feesAndBuffer?.bridge;
+    const bridgeRaw = (() => {
+      if (!activeIntent?.intent) return undefined;
+      const swapIntentLike = getSwapIntentLike(activeIntent.intent);
+      return swapIntentLike?.feesAndBuffer?.bridge;
+    })();
     const caGasUsd = parseNonNegativeNumber(bridgeRaw?.caGas);
     const gasSuppliedUsd = parseNonNegativeNumber(
       (bridgeRaw as Record<string, string | undefined> | undefined)
@@ -472,7 +528,11 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     // Intent buffer can be displayed for transparency but is not added to total fee.
     const bufferUsd = parseNonNegativeNumber(
-      activeIntent?.intent?.feesAndBuffer?.buffer,
+      (() => {
+        if (!activeIntent?.intent) return undefined;
+        const swapIntentLike2 = getSwapIntentLike(activeIntent.intent);
+        return swapIntentLike2?.feesAndBuffer?.buffer;
+      })(),
     );
 
     const totalFeeUsd =
@@ -483,14 +543,20 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       otherBridgeFeeUsd;
     const gasFormatted = usdFormatter.format(gasUsd);
 
-    const sourceValueUsd = (activeIntent?.intent?.sources ?? []).reduce(
-      (sum, source) => sum + parseNonNegativeNumber(source.value),
-      0,
-    );
+    const sourceValueUsd = (() => {
+      if (!activeIntent?.intent) return 0;
+      const swapIntentLike3 = getSwapIntentLike(activeIntent.intent);
+      return (swapIntentLike3?.sources ?? []).reduce(
+        (sum: number, source: { value?: string }) => sum + parseNonNegativeNumber(source.value),
+        0,
+      );
+    })();
 
-    const destinationValueUsd = parseNonNegativeNumber(
-      activeIntent?.intent?.destination?.value,
-    );
+    const destinationValueUsd = (() => {
+      if (!activeIntent?.intent) return 0;
+      const swapIntentLike4 = getSwapIntentLike(activeIntent.intent);
+      return parseNonNegativeNumber(swapIntentLike4?.destination?.value);
+    })();
 
     const totalSomething = destinationValueUsd + totalFeeUsd + bufferUsd;
     const swapImpactUsd = totalSomething - sourceValueUsd;

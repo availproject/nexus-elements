@@ -1,12 +1,10 @@
-import {
-  type NexusNetwork,
-  NexusSDK,
-  type OnAllowanceHookData,
-  type OnIntentHookData,
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
+import type {
+  NexusNetwork,
+  OnAllowanceHookData,
+  OnIntentHookData,
+  UserAssetDatum,
+} from "@avail-project/nexus-sdk-v2";
 import { useCallback, type RefObject } from "react";
 import { type Address } from "viem";
 import {
@@ -17,18 +15,20 @@ import {
 } from "../../common";
 import { notifyIntentHistoryRefresh } from "../../view-history/history-events";
 
+type NexusClient = ReturnType<typeof createNexusClient>;
+
 export type FastBridgeState = TransactionFlowInputs;
 
 interface UseBridgeProps {
   network: NexusNetwork;
   connectedAddress: Address;
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAsset[] | null;
+  bridgableBalance: UserAssetDatum[] | null;
   prefill?: {
-    token: SUPPORTED_TOKENS;
-    chainId: SUPPORTED_CHAINS_IDS;
+    token: string;
+    chainId: number;
     amount?: string;
     recipient?: Address;
   };
@@ -61,22 +61,34 @@ const useBridge = ({
       amount,
       toChainId,
       recipient,
-      sourceChains,
+      sources,
       onEvent,
     }: TransactionFlowExecuteParams) => {
       if (!nexusSDK) return null;
+      // v2 params: toTokenSymbol, toAmountRaw, sources (not sourceChains)
       return nexusSDK.bridge(
         {
-          token,
-          amount,
+          toTokenSymbol: token,
+          toAmountRaw: amount,
           toChainId,
           recipient: recipient ?? connectedAddress,
-          sourceChains,
+          sources,
         },
-        { onEvent },
+        {
+          onEvent,
+          hooks: {
+            onIntent: (data) => {
+              // hooks are per-operation in v2
+              (intent as RefObject<OnIntentHookData | null>).current = data;
+            },
+            onAllowance: (data) => {
+              (allowance as RefObject<OnAllowanceHookData | null>).current = data;
+            },
+          },
+        },
       );
     },
-    [connectedAddress, nexusSDK],
+    [connectedAddress, nexusSDK, intent, allowance],
   );
 
   const flow = useTransactionFlow({

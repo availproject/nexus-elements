@@ -1,10 +1,5 @@
-import {
-  type BridgeStepType,
-  NEXUS_EVENTS,
-  type NexusSDK,
-  type OnAllowanceHookData,
-  type OnIntentHookData,
-} from "@avail-project/nexus-core";
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
+import type { OnAllowanceHookData, OnIntentHookData } from "@avail-project/nexus-sdk-v2";
 import {
   type Dispatch,
   type RefObject,
@@ -20,6 +15,8 @@ import {
   type TransactionFlowInputs,
 } from "../types/transaction-flow";
 
+type NexusClient = ReturnType<typeof createNexusClient>;
+
 interface NexusErrorInfo {
   code: string;
   message: string;
@@ -29,9 +26,12 @@ interface NexusErrorInfo {
 
 type NexusErrorHandler = (error: unknown) => NexusErrorInfo;
 
+// v2 plan_progress step types for bridge
+const BRIDGE_STEP_INTENT_SIGNED = "request_signing";
+
 interface UseTransactionExecutionProps {
   operationName: "bridge" | "transfer";
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   inputs: TransactionFlowInputs;
@@ -45,8 +45,8 @@ interface UseTransactionExecutionProps {
   areInputsValid: boolean;
   executeTransaction: TransactionFlowExecutor;
   getMaxForCurrentSelection: () => Promise<string | undefined>;
-  onStepsList: (steps: BridgeStepType[]) => void;
-  onStepComplete: (step: BridgeStepType) => void;
+  onStepsList: (steps: { typeID?: string; type?: string; [key: string]: unknown }[]) => void;
+  onStepComplete: (step: { typeID?: string; type?: string; [key: string]: unknown }) => void;
   resetSteps: () => void;
   setStatus: (status: TransactionStatus) => void;
   resetInputs: () => void;
@@ -199,6 +199,7 @@ export function useTransactionExecution({
         return;
       }
 
+      // v2: convertTokenReadableAmountToBigInt(amount, tokenSymbol, chainId)
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs.amount,
         inputs.token,
@@ -249,23 +250,32 @@ export function useTransactionExecution({
       setLastExplorerUrl("");
       setAppliedSourceSelectionKey(sourceSelectionKey);
 
+      // v2 onEvent uses typed discriminated union: { type, ... }
       const onEvent = (event: TransactionFlowEvent) => {
         if (currentRunId !== runIdRef.current) return;
-        if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-          const list = Array.isArray(event.args) ? event.args : [];
-          onStepsList(list as BridgeStepType[]);
+
+        if (event.type === "plan_preview") {
+          // Seed UI with the step list from the plan
+          type StepShape = { typeID?: string; type?: string; [key: string]: unknown };
+          const steps = ((event as { type: string; plan: { steps: StepShape[] } }).plan?.steps ?? []) as StepShape[];
+          onStepsList(steps);
         }
-        if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+
+        if (event.type === "plan_progress") {
+          const progressEvent = event as {
+            type: string;
+            stepType: string;
+            state: string;
+            step: { typeID?: string; type?: string; [key: string]: unknown };
+          };
+          // Start stopwatch when intent is signed (request_signing signed)
           if (
-            !Array.isArray(event.args) &&
-            "type" in event.args &&
-            event.args.type === "INTENT_HASH_SIGNED"
+            progressEvent.stepType === BRIDGE_STEP_INTENT_SIGNED &&
+            progressEvent.state === "signed"
           ) {
             stopwatch.start();
           }
-          if (!Array.isArray(event.args)) {
-            onStepComplete(event.args as BridgeStepType);
-          }
+          onStepComplete(progressEvent.step);
         }
       };
 
@@ -274,7 +284,7 @@ export function useTransactionExecution({
         amount: amountBigInt,
         toChainId: inputs.chain,
         recipient: inputs.recipient,
-        sourceChains: sourceChainsForSdk,
+        sources: sourceChainsForSdk,
         onEvent,
       });
 

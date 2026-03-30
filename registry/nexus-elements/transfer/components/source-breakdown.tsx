@@ -1,9 +1,8 @@
 import {
   formatTokenBalance,
   type ReadableIntent,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+  type UserAssetDatum,
+} from "@avail-project/nexus-sdk-v2";
 import {
   Accordion,
   AccordionContent,
@@ -19,10 +18,10 @@ type SourceCoverageState = "healthy" | "warning" | "error";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  tokenSymbol?: string; // v2: was SUPPORTED_TOKENS
   isLoading?: boolean;
   requiredAmount?: string;
-  availableSources: UserAsset["breakdown"];
+  availableSources: UserAssetDatum["breakdown"]; // v2: uses UserAssetDatum
   selectedSourceChains: number[];
   onToggleSourceChain: (chainId: number) => void;
   onSourceMenuOpenChange?: (open: boolean) => void;
@@ -53,7 +52,7 @@ const SourceBreakdown = ({
   requiredTotal,
   requiredSafetyTotal,
 }: SourceBreakdownProps) => {
-  const displayTokenSymbol = availableSources[0]?.symbol ?? tokenSymbol;
+  const displayTokenSymbol = tokenSymbol ?? availableSources[0]?.chain?.name;
   const normalizedCoverage = Math.max(0, Math.min(100, sourceCoveragePercent));
   const progressRadius = 16;
   const progressCircumference = 2 * Math.PI * progressRadius;
@@ -156,7 +155,7 @@ const SourceBreakdown = ({
                   <p className="text-base font-light">
                     {formatTokenBalance(amountSpend, {
                       symbol: displayTokenSymbol,
-                      decimals: intent?.token?.decimals,
+                      decimals: intent?.allSources?.[0]?.token?.decimals,
                     })}
                   </p>
 
@@ -280,7 +279,7 @@ const SourceBreakdown = ({
                     : false;
 
                   const willUseFromIntent = intent?.sources?.find(
-                    (s) => s.chainID === chainId,
+                    (s) => s.chain.id === chainId,
                   )?.amount;
 
                   return (
@@ -331,17 +330,17 @@ const SourceBreakdown = ({
 
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-sm font-light">
-                          {formatTokenBalance(source.balance, {
-                            symbol: source.symbol,
+                           {formatTokenBalance(source.balance, {
+                            symbol: tokenSymbol ?? source.chain?.name,
                             decimals: source.decimals,
                           })}
                         </p>
                         {willUseFromIntent && (
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
-                            {formatTokenBalance(willUseFromIntent, {
-                              symbol: source.symbol,
-                              decimals: intent?.token?.decimals,
+                             {formatTokenBalance(willUseFromIntent, {
+                              symbol: tokenSymbol ?? source.chain?.name,
+                              decimals: intent?.allSources?.[0]?.token?.decimals,
                             })}
                           </p>
                         )}

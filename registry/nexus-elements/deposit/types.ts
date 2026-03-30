@@ -1,11 +1,20 @@
 import type {
-  SUPPORTED_CHAINS_IDS,
   ExecuteParams,
   OnSwapIntentHookData,
-  SwapStepType,
-  UserAsset,
-} from "@avail-project/nexus-core";
+  SwapAndExecuteOnIntentHookData,
+  UserAssetDatum,
+} from "@avail-project/nexus-sdk-v2";
 import type { Address } from "viem";
+
+// v2: SwapStepType removed — use a local generic step shape
+export type SwapStepType = {
+  typeID?: string;
+  type?: string;
+  [key: string]: unknown;
+};
+
+// Re-export for convenience
+export type { OnSwapIntentHookData };
 
 export type WidgetStep =
   | "amount"
@@ -69,7 +78,7 @@ export interface SetAssetSelectionOptions {
 }
 
 export interface DestinationConfig {
-  chainId: SUPPORTED_CHAINS_IDS;
+  chainId: number; // v2: was SUPPORTED_CHAINS_IDS
   depositTargetLogo?: string;
   tokenAddress: `0x${string}`;
   tokenSymbol: string;
@@ -163,8 +172,8 @@ export interface DepositWidgetContextValue {
   ) => void;
 
   // SDK integration
-  swapBalance: UserAsset[] | null;
-  activeIntent: OnSwapIntentHookData | null;
+  swapBalance: UserAssetDatum[] | null;
+  activeIntent: SwapAndExecuteOnIntentHookData | null;
   confirmationDetails: {
     sourceLabel: string;
     sources: Array<

@@ -1,9 +1,8 @@
 import {
   formatTokenBalance,
   type ReadableIntent,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+  type UserAssetDatum,
+} from "@avail-project/nexus-sdk-v2";
 import {
   Accordion,
   AccordionContent,
@@ -18,9 +17,9 @@ type SourceCoverageState = "healthy" | "warning" | "error";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  tokenSymbol?: string; // v2: was SUPPORTED_TOKENS
   isLoading?: boolean;
-  availableSources: UserAsset["breakdown"];
+  availableSources: UserAssetDatum["breakdown"]; // v2: was UserAsset["breakdown"]
   selectedSourceChains: number[];
   onToggleSourceChain: (chainId: number) => void;
   onSourceMenuOpenChange?: (open: boolean) => void;
@@ -50,7 +49,7 @@ const SourceBreakdown = ({
   requiredTotal,
   requiredSafetyTotal,
 }: SourceBreakdownProps) => {
-  const displayTokenSymbol = availableSources[0]?.symbol ?? tokenSymbol;
+  const displayTokenSymbol = tokenSymbol ?? availableSources[0]?.chain?.name;
   const normalizedCoverage = Math.max(0, Math.min(100, sourceCoveragePercent));
   const progressRadius = 16;
   const progressCircumference = 2 * Math.PI * progressRadius;
@@ -129,14 +128,14 @@ const SourceBreakdown = ({
               </div>
             </>
           ) : (
-            intent?.sources && (
+            intent?.allSources && (
               <>
                 <div className="flex flex-col items-start gap-y-1 min-w-fit">
                   <p className="text-base font-light">You Spend</p>
                   <p className="text-sm font-light">
                     {`${displayTokenSymbol} on ${
-                      intent?.sources?.length
-                    } ${intent?.sources?.length > 1 ? "chains" : "chain"}`}
+                      intent?.allSources?.length
+                    } ${intent?.allSources?.length > 1 ? "chains" : "chain"}`}
                   </p>
                 </div>
 
@@ -144,7 +143,7 @@ const SourceBreakdown = ({
                   <p className="text-base font-light">
                     {formatTokenBalance(intent?.sourcesTotal, {
                       symbol: displayTokenSymbol,
-                      decimals: intent?.token?.decimals,
+                      decimals: intent?.allSources?.[0]?.token?.decimals,
                     })}
                   </p>
                   <AccordionTrigger
@@ -208,7 +207,7 @@ const SourceBreakdown = ({
                       <span className="font-semibold">
                         {formatTokenBalance(parseFloat(selectedTotal ?? "0"), {
                           symbol: displayTokenSymbol,
-                          decimals: intent?.token?.decimals,
+                          decimals: intent?.allSources?.[0]?.token?.decimals,
                         })}
                       </span>
                     </p>
@@ -219,7 +218,7 @@ const SourceBreakdown = ({
                           parseFloat(requiredSafetyTotal ?? "0"),
                           {
                             symbol: displayTokenSymbol,
-                            decimals: intent?.token?.decimals,
+                            decimals: intent?.allSources?.[0]?.token?.decimals,
                           },
                         )}
                       </span>
@@ -274,8 +273,8 @@ const SourceBreakdown = ({
                   const isLastSelected = isSelected
                     ? selectedSourceChains.length === 1
                     : false;
-                  const willUseAmount = intent?.sources?.find(
-                    (s) => s.chainID === chainId,
+                  const willUseAmount = intent?.allSources?.find(
+                    (s) => s.chain.id === chainId,
                   )?.amount;
 
                   return (
@@ -327,7 +326,7 @@ const SourceBreakdown = ({
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-base font-light">
                           {formatTokenBalance(source.balance, {
-                            symbol: source.symbol,
+                            symbol: tokenSymbol ?? source.chain?.name,
                             decimals: source.decimals,
                           })}
                         </p>
@@ -335,8 +334,8 @@ const SourceBreakdown = ({
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
                             {formatTokenBalance(willUseAmount, {
-                              symbol: source.symbol,
-                              decimals: intent?.token?.decimals,
+                              symbol: tokenSymbol ?? source.chain?.name,
+                              decimals: intent?.allSources?.[0]?.token?.decimals,
                             })}
                           </p>
                         )}

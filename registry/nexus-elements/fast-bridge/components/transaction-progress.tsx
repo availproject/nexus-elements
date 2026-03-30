@@ -1,12 +1,8 @@
 import { Check, Circle, LoaderPinwheel, SquareArrowOutUpRight } from "lucide-react";
 import { type FC, memo, useMemo } from "react";
-import {
-  type BridgeStepType,
-  type SwapStepType,
-} from "@avail-project/nexus-core";
 import { Button } from "../../ui/button";
 
-type ProgressStep = BridgeStepType | SwapStepType;
+type ProgressStep = { type?: string; typeID?: string; [key: string]: unknown };
 
 interface TransactionProgressProps {
   timer: number;

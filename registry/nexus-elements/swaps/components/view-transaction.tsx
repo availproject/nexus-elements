@@ -6,10 +6,9 @@ import {
   DialogHeader,
 } from "../../ui/dialog";
 import {
-  type SwapStepType,
   type OnSwapIntentHookData,
   formatTokenBalance,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
 import { ChevronDown, ChevronUp, Info, MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
 import { StackedTokenIcons } from "./stacked-token-icons";
@@ -71,7 +70,8 @@ function formatImpactPercent(value: number): string {
 }
 
 interface ViewTransactionProps {
-  steps: GenericStep<SwapStepType>[];
+// v2: SwapStepType renamed to SwapPlanStep; use generic record for GenericStep
+  steps: GenericStep<{ type?: string; [key: string]: unknown }>[];
   status: TransactionStatus;
   swapMode: SwapMode;
   swapIntent: RefObject<OnSwapIntentHookData | null>;

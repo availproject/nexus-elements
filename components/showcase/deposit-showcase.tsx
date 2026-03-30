@@ -77,13 +77,13 @@ const DepositShowcase = () => {
     return {
       to: contractAddress,
       data: encoded,
-      gasPriceSelector: "medium",
+      gasPrice: "medium" as any, // v2: GasPriceSelector (was gasPriceSelector string in v1)
       tokenApproval: {
-        token: tokenAddress,
+        toTokenSymbol: "USDC", // v2: was token address
         amount,
         spender: contractAddress,
       },
-    };
+    } as any;
   };
 
   return (

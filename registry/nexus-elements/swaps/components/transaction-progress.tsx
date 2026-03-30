@@ -1,12 +1,10 @@
 import { type FC, useMemo } from "react";
-import {
-  type BridgeStepType,
-  type SwapStepType,
-} from "@avail-project/nexus-core";
+// v2: BridgeStepType/SwapStepType removed — use generic record step shape
+type ProgressStep = { type?: string; typeID?: string; [key: string]: unknown };
+
 import { StepFlow } from "./step-flow";
 
 export type DisplayStep = { id: string; label: string; completed: boolean };
-type ProgressStep = BridgeStepType | SwapStepType;
 
 interface TokenSource {
   tokenLogo: string;

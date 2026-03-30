@@ -7,9 +7,8 @@ import {
 } from "../../ui/accordion";
 import {
   formatTokenBalance,
-  SUPPORTED_TOKENS,
   type ReadableIntent,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
 import { Skeleton } from "../../ui/skeleton";
 import { useNexus } from "../../nexus/NexusProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
@@ -17,7 +16,7 @@ import { MessageCircleQuestion } from "lucide-react";
 
 interface FeeBreakdownProps {
   intent: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  tokenSymbol?: string; // v2: was SUPPORTED_TOKENS
   isLoading?: boolean;
 }
 
@@ -72,7 +71,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
               <p className="font-light text-base min-w-max">
                 {formatTokenBalance(intent.fees?.total, {
                   symbol: tokenSymbol,
-                  decimals: intent?.token?.decimals,
+                  decimals: intent?.allSources?.[0]?.token?.decimals,
                 })}
               </p>
             )}
@@ -104,7 +103,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
                       <p className="text-sm font-light">
                         {formatTokenBalance(value, {
                           symbol: tokenSymbol,
-                          decimals: intent?.token?.decimals,
+                          decimals: intent?.allSources?.[0]?.token?.decimals,
                         })}
                       </p>
                     )}

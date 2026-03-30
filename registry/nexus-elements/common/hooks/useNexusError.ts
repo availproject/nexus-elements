@@ -1,4 +1,4 @@
-import { ERROR_CODES, NexusError } from "@avail-project/nexus-core";
+import { ERROR_CODES, NexusError } from "@avail-project/nexus-sdk-v2";
 
 const DEFAULT_ERROR_MESSAGE = "Oops! Something went wrong. Please try again.";
 const USER_REJECTED_MESSAGE = "Transaction was rejected in your wallet.";
@@ -18,8 +18,6 @@ const ERROR_MESSAGE_BY_CODE: Partial<Record<string, string>> = {
     "Chain metadata is unavailable for this route. Please try another chain.",
   [ERROR_CODES.ASSET_NOT_FOUND]:
     "Requested asset was not found in your balances.",
-  [ERROR_CODES.COSMOS_ERROR]:
-    "Cosmos-side operation failed. Please retry in a moment.",
   [ERROR_CODES.TOKEN_NOT_SUPPORTED]:
     "Selected token is not supported for this route.",
   [ERROR_CODES.UNIVERSE_NOT_SUPPORTED]:
@@ -30,21 +28,14 @@ const ERROR_MESSAGE_BY_CODE: Partial<Record<string, string>> = {
     "Selected environment is not recognized.",
   [ERROR_CODES.UNKNOWN_SIGNATURE]:
     "Unsupported signature type for this transaction.",
-  [ERROR_CODES.TRON_DEPOSIT_FAIL]:
-    "TRON deposit transaction failed. Please retry.",
-  [ERROR_CODES.TRON_APPROVAL_FAIL]:
-    "TRON approval transaction failed. Please retry.",
   [ERROR_CODES.LIQUIDITY_TIMEOUT]:
     "Timed out waiting for liquidity. Please retry.",
   [ERROR_CODES.USER_DENIED_INTENT]: USER_REJECTED_MESSAGE,
   [ERROR_CODES.USER_DENIED_ALLOWANCE]: USER_REJECTED_MESSAGE,
   [ERROR_CODES.USER_DENIED_INTENT_SIGNATURE]: USER_REJECTED_MESSAGE,
-  [ERROR_CODES.USER_DENIED_SIWE_SIGNATURE]: USER_REJECTED_MESSAGE,
   [ERROR_CODES.INSUFFICIENT_BALANCE]: "Insufficient balance to proceed.",
   [ERROR_CODES.WALLET_NOT_CONNECTED]:
     "Wallet is not connected. Connect your wallet and try again.",
-  [ERROR_CODES.FETCH_GAS_PRICE_FAILED]:
-    "Unable to estimate gas right now. Please retry.",
   [ERROR_CODES.SIMULATION_FAILED]:
     "Simulation failed. Please review your inputs and try again.",
   [ERROR_CODES.QUOTE_FAILED]:
@@ -96,8 +87,7 @@ function looksLikeUserRejection(err: unknown): boolean {
     return (
       err.code === ERROR_CODES.USER_DENIED_ALLOWANCE ||
       err.code === ERROR_CODES.USER_DENIED_INTENT ||
-      err.code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE ||
-      err.code === ERROR_CODES.USER_DENIED_SIWE_SIGNATURE
+      err.code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE
     );
   }
 
@@ -151,8 +141,8 @@ function handler(err: unknown) {
     return {
       code: err.code,
       message: mappedMessage,
-      context: err?.data?.context,
-      details: err?.data?.details,
+      context: (err as unknown as { data?: { context?: unknown } })?.data?.context,
+      details: (err as unknown as { data?: { details?: unknown } })?.data?.details,
     };
   }
 

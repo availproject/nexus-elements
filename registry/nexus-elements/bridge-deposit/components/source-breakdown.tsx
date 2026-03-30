@@ -1,11 +1,8 @@
 import {
-  CHAIN_METADATA,
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
   type ReadableIntent,
-  type SUPPORTED_TOKENS,
+  type UserAssetDatum,
   formatTokenBalance,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
 import {
   Accordion,
   AccordionContent,
@@ -18,10 +15,10 @@ import { useNexus } from "../../nexus/NexusProvider";
 
 interface SourceBreakdownProps {
   intent?: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  tokenSymbol?: string; // v2: was SUPPORTED_TOKENS
   isLoading?: boolean;
-  chain: SUPPORTED_CHAINS_IDS;
-  bridgableBalance?: UserAsset;
+  chain: number; // v2: was SUPPORTED_CHAINS_IDS
+  bridgableBalance?: UserAssetDatum; // v2: was UserAsset
   requiredAmount?: string;
 }
 
@@ -56,7 +53,7 @@ const SourceBreakdown = ({
       : (requiredAmount ?? "0");
     return formatTokenBalance(amountToFormat, {
       symbol: tokenSymbol,
-      decimals: intent?.token?.decimals,
+      decimals: intent?.allSources?.[0]?.token?.decimals, // v2: no root .token
     });
   }, [requiredAmount, intent, tokenSymbol]);
 
@@ -65,13 +62,21 @@ const SourceBreakdown = ({
       return [
         {
           chainID: chain,
-          chainLogo: CHAIN_METADATA[chain]?.logo,
-          chainName: CHAIN_METADATA[chain]?.name ?? "Destination",
+          chainLogo: undefined, // v2: no CHAIN_METADATA
+          chainName: "Destination",
           amount: requiredAmount ?? "0",
           contractAddress: "",
         },
       ];
-    const baseSources: ReadableIntentSource[] = intent?.sources ?? [];
+    // v2: intent.sources uses {chain:{id,name,logo}, token:{contractAddress,...}} shape
+    const rawSources = intent?.sources ?? [];
+    const baseSources: ReadableIntentSource[] = rawSources.map((s) => ({
+      chainID: s.chain.id,
+      chainLogo: s.chain.logo,
+      chainName: s.chain.name,
+      amount: s.amount,
+      contractAddress: (s.token?.contractAddress ?? "") as `0x${string}`,
+    }));
     const requiredAmountNumber = Number(requiredAmount ?? "0");
     const destUsed = Math.max(
       Math.min(requiredAmountNumber, fundsOnDestination),
@@ -82,17 +87,17 @@ const SourceBreakdown = ({
     }
     const allSources = intent?.allSources ?? [];
     const destDetails = allSources?.find?.(
-      (s: ReadableIntentSource) => s?.chainID === chain,
+      (s) => s?.chain?.id === chain,
     );
     const hasDest = baseSources?.some?.(
       (s: ReadableIntentSource) => s?.chainID === chain,
     );
     const destSource = {
       chainID: chain,
-      chainLogo: destDetails?.chainLogo,
-      chainName: destDetails?.chainName ?? "Destination",
+      chainLogo: destDetails?.chain?.logo,
+      chainName: destDetails?.chain?.name ?? "Destination",
       amount: destUsed.toString(),
-      contractAddress: destDetails?.contractAddress ?? "",
+      contractAddress: destDetails?.token?.contractAddress ?? "",
     };
     if (hasDest) {
       return baseSources.map((s: ReadableIntentSource) =>

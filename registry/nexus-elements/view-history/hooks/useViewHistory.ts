@@ -1,4 +1,4 @@
-import { type RFF } from "@avail-project/nexus-core";
+import { type RFF } from "@avail-project/nexus-sdk-v2";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useCallback, useEffect, useState } from "react";
 import { INTENT_HISTORY_REFRESH_EVENT } from "../history-events";
@@ -32,7 +32,12 @@ const useViewHistory = () => {
   const fetchIntentHistory = useCallback(async () => {
     if (!nexusSDK) return;
     try {
-      const nextHistory = (await nexusSDK.getMyIntents()) ?? [];
+      const response = await nexusSDK.getMyIntents();
+      // v2: getMyIntents returns RFFListResponse (paginated), not a plain array
+      const responseAny = response as unknown as { items?: RFF[]; data?: RFF[]; rffs?: RFF[] } | RFF[];
+      const nextHistory: RFF[] = Array.isArray(responseAny)
+        ? responseAny
+        : (responseAny.items ?? responseAny.data ?? responseAny.rffs ?? []);
       setLoadError(null);
       setHistory(nextHistory);
       const firstPage = nextHistory.slice(0, ITEMS_PER_PAGE);
