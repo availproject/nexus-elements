@@ -183,7 +183,14 @@ const FastTransfer: FC<FastTransferProps> = ({
                   <Skeleton className="h-4 w-36" />
                 ) : (
                   <p className="text-sm font-medium text-right">
-                    on {(intent?.current?.intent?.destination as { chain?: { name?: string } })?.chain?.name}
+                    on{" "}
+                    {
+                      (
+                        intent?.current?.intent?.destination as {
+                          chain?: { name?: string };
+                        }
+                      )?.chain?.name
+                    }
                   </p>
                 )}
               </div>

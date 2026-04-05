@@ -1,7 +1,8 @@
 import { type FC, Fragment, useEffect, useMemo, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
+import { type UserAsset } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type FastBridgeState } from "../hooks/useBridge";
 import {

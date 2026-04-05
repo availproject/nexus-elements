@@ -97,9 +97,10 @@ const DestinationToken = ({
 }: {
   destination: RFF["destinations"];
 }) => {
+  const destList = destination ?? [];
   return (
     <div className="flex items-center">
-      {destination.map((dest, index) => {
+      {destList.map((dest, index) => {
         const tokenMeta = resolveTokenMetadata(dest.token.symbol);
         return (
           <div
@@ -108,7 +109,7 @@ const DestinationToken = ({
               "rounded-full transition-transform hover:scale-110",
               index > 0 && "-ml-2"
             )}
-            style={{ zIndex: destination.length - index }}
+            style={{ zIndex: destList.length - index }}
           >
             <img
               src={tokenMeta.icon}
@@ -161,10 +162,10 @@ const ViewHistory = ({
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <DestinationToken destination={pastIntent?.destinations} />
+                  <DestinationToken destination={pastIntent?.destinations ?? []} />
                   <div className="flex flex-col">
                     <p className="text-sm font-medium">
-                      {pastIntent?.destinations
+                      {(pastIntent?.destinations ?? [])
                         .map((d) => d?.token?.symbol)
                         .join(", ")}
                     </p>

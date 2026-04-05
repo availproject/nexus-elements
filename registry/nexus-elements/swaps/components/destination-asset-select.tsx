@@ -5,8 +5,8 @@ import {
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
   type UserAsset,
-  formatTokenBalance,
 } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { DESTINATION_SWAP_TOKENS } from "../config/destination";
 import { DialogClose } from "../../ui/dialog";
 import {

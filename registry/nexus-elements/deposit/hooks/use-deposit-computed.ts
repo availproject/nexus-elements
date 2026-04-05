@@ -7,7 +7,7 @@ import type {
   SwapAndExecuteOnIntentHookData,
   UserAssetDatum,
 } from "@avail-project/nexus-sdk-v2";
-import { formatTokenBalance } from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { usdFormatter } from "../../common";
 import type { SwapSkippedData } from "./use-deposit-state";
 
@@ -245,7 +245,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         (chain) =>
           chain.chain?.id === destination.chainId &&
           normalizeAddress(chain.contractAddress) ===
-            normalizeAddress(destination.tokenAddress),
+          normalizeAddress(destination.tokenAddress),
       );
   }, [swapBalance, nexusSDK, destination]);
 

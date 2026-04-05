@@ -1,7 +1,6 @@
-import { formatUnits } from "@avail-project/nexus-sdk-v2";
 import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
 import type { NexusNetwork } from "@avail-project/nexus-sdk-v2";
-import { type Address } from "viem";
+import { formatUnits, type Address } from "viem";
 
 type NexusClient = ReturnType<typeof createNexusClient>;
 

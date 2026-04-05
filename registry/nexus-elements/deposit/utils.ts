@@ -36,7 +36,7 @@ export function isStablecoin(symbol: string): boolean {
 }
 
 export function isNative(symbol: string): boolean {
-  return WELL_KNOWN_NATIVE_SYMBOLS.has(symbol.toUpperCase());
+  return WELL_KNOWN_NATIVE_SYMBOLS.has(symbol?.toUpperCase());
 }
 
 /**
@@ -75,6 +75,7 @@ export function checkIfMatchesPreset(
       if (isStablecoin(token.symbol)) {
         stableIds.add(chain.id);
       }
+      console.log("token", token)
       if (isNative(token.symbol)) {
         nativeIds.add(chain.id);
       }
@@ -376,18 +377,18 @@ export function resolveDepositSourceSelection(params: {
 
   const resolvedSelectedSourceIds = isManualSelection
     ? sortSourceIdsByPriority({
-        sourceIds: sourcePoolIds,
-        swapBalance,
-        destination,
-        minimumBalanceUsd,
-      })
+      sourceIds: sourcePoolIds,
+      swapBalance,
+      destination,
+      minimumBalanceUsd,
+    })
     : buildPrioritySelectedSourceIds({
-        swapBalance,
-        destination,
-        minimumBalanceUsd,
-        targetAmountUsd,
-        sourceIds: sourcePoolIds,
-      });
+      swapBalance,
+      destination,
+      minimumBalanceUsd,
+      targetAmountUsd,
+      sourceIds: sourcePoolIds,
+    });
 
   const fromSources = buildSortedFromSources({
     sourceIds: resolvedSelectedSourceIds,
@@ -455,16 +456,16 @@ export function buildPrioritySelectedSourceIds(params: {
   const requestedSourceIds = sourceIds ? [...new Set(sourceIds)] : undefined;
   const orderedCandidateSourceIds = requestedSourceIds
     ? sortSourceIdsByPriority({
-        sourceIds: requestedSourceIds,
-        swapBalance,
-        destination,
-        minimumBalanceUsd,
-      })
+      sourceIds: requestedSourceIds,
+      swapBalance,
+      destination,
+      minimumBalanceUsd,
+    })
     : buildSelectableSourceIds({
-        swapBalance,
-        destination,
-        minimumBalanceUsd,
-      });
+      swapBalance,
+      destination,
+      minimumBalanceUsd,
+    });
 
   if (orderedCandidateSourceIds.length === 0) return [];
 

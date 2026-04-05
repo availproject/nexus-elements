@@ -71,8 +71,8 @@ type NexusProviderProps = {
 };
 
 const defaultConfig: Required<NexusProviderProps["config"]> = {
-  network: "mainnet",
-  debug: false,
+  network: "testnet",
+  debug: true,
 };
 
 const NexusProvider = ({
@@ -93,8 +93,12 @@ const NexusProvider = ({
   const [nexusClient, setNexusClient] = useState<NexusClient | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const supportedChainsAndTokens = useRef<SupportedChainsResult | null>(null);
-  const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(null);
-  const [bridgableBalance, setBridgableBalance] = useState<UserAssetDatum[] | null>(null);
+  const swapSupportedChainsAndTokens = useRef<SupportedChainsResult | null>(
+    null,
+  );
+  const [bridgableBalance, setBridgableBalance] = useState<
+    UserAssetDatum[] | null
+  >(null);
   const [swapBalance, setSwapBalance] = useState<UserAssetDatum[] | null>(null);
   const [exchangeRateState, setExchangeRateState] = useState<Record<
     string,

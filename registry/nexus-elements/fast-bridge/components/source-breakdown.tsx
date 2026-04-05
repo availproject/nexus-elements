@@ -1,8 +1,8 @@
 import {
-  formatTokenBalance,
   type ReadableIntent,
   type UserAssetDatum,
 } from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   Accordion,
   AccordionContent,
@@ -335,7 +335,8 @@ const SourceBreakdown = ({
                             Estimated to use:{" "}
                             {formatTokenBalance(willUseAmount, {
                               symbol: tokenSymbol ?? source.chain?.name,
-                              decimals: intent?.allSources?.[0]?.token?.decimals,
+                              decimals:
+                                intent?.allSources?.[0]?.token?.decimals,
                             })}
                           </p>
                         )}

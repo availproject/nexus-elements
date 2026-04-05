@@ -13,10 +13,10 @@ import { Label } from "../../ui/label";
 import {
   type AllowanceHookSource,
   CHAIN_METADATA,
-  formatTokenBalance,
   type OnAllowanceHookData,
-  parseUnits,
 } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { parseUnits } from "viem";
 import { useNexusError } from "../../common";
 
 interface AllowanceModalProps {

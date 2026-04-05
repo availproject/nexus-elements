@@ -5,10 +5,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import {
-  formatTokenBalance,
-  type ReadableIntent,
-} from "@avail-project/nexus-sdk-v2";
+import { type ReadableIntent } from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { Skeleton } from "../../ui/skeleton";
 import { useNexus } from "../../nexus/NexusProvider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";

@@ -1,8 +1,8 @@
 import {
-  formatTokenBalance,
   type ReadableIntent,
   type UserAssetDatum,
-} from "@avail-project/nexus-sdk-v2";
+} from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   Accordion,
   AccordionContent,
@@ -330,7 +330,7 @@ const SourceBreakdown = ({
 
                       <div className="flex flex-col items-end gap-y-0.5 min-w-fit">
                         <p className="text-sm font-light">
-                           {formatTokenBalance(source.balance, {
+                          {formatTokenBalance(source.balance, {
                             symbol: tokenSymbol ?? source.chain?.name,
                             decimals: source.decimals,
                           })}
@@ -338,9 +338,10 @@ const SourceBreakdown = ({
                         {willUseFromIntent && (
                           <p className="text-xs text-muted-foreground">
                             Estimated to use:{" "}
-                             {formatTokenBalance(willUseFromIntent, {
+                            {formatTokenBalance(willUseFromIntent, {
                               symbol: tokenSymbol ?? source.chain?.name,
-                              decimals: intent?.allSources?.[0]?.token?.decimals,
+                              decimals:
+                                intent?.allSources?.[0]?.token?.decimals,
                             })}
                           </p>
                         )}

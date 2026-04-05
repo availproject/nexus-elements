@@ -14,9 +14,8 @@ import {
   NEXUS_EVENTS,
   type BridgeStepType,
   CHAIN_METADATA,
-  formatTokenBalance,
-  formatUnits,
 } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   useEffect,
   useMemo,
@@ -27,7 +26,7 @@ import {
   type RefObject,
 } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
-import { type Address } from "viem";
+import { formatUnits, type Address } from "viem";
 import {
   useDebouncedValue,
   useNexusError,
@@ -538,8 +537,8 @@ const useDeposit = ({
 
   usePolling(
     Boolean(simulation?.bridgeSimulation?.intent) &&
-      !isProcessing &&
-      !isSuccess,
+    !isProcessing &&
+    !isSuccess,
     async () => {
       await refreshSimulation();
     },

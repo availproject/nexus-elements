@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  formatTokenBalance,
   type SUPPORTED_CHAINS_IDS,
   type UserAsset,
 } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Fragment } from "react";
@@ -39,11 +39,10 @@ const RANGE_OPTIONS = [
 
 const SAFETY_MARGIN = 0.05;
 
-interface AmountInputProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    "onChange" | "value"
-  > {
+interface AmountInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange" | "value"
+> {
   value?: string;
   onChange?: (value: string) => void;
   bridgableBalance?: UserAsset;

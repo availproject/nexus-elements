@@ -16,7 +16,8 @@ import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import TokenRow from "./token-row";
-import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import type { UserAssetDatum } from "@avail-project/nexus-sdk-v2";
 import { usdFormatter } from "../../common";
 import { X } from "lucide-react";
 import {
@@ -50,7 +51,7 @@ type ChainItemWithTokenMeta = ChainItem & {
   tokenLogo: string;
 };
 
-type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+type AssetBreakdownWithOptionalIcon = UserAssetDatum["breakdown"][number] & {
   icon?: string;
 };
 
@@ -61,19 +62,20 @@ function parseNonNegativeNumber(value: unknown): number {
 }
 
 function getBreakdownTokenMeta(
-  breakdown: UserAsset["breakdown"][number],
-  asset: UserAsset,
+  breakdown: UserAssetDatum["breakdown"][number],
+  asset: UserAssetDatum,
 ) {
   const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
   return {
-    symbol: breakdown.symbol,
+    // v2: breakdown has no .symbol — use parent asset.symbol
+    symbol: asset.symbol,
     decimals: breakdown.decimals ?? asset.decimals,
     logo: breakdownIcon || "",
   };
 }
 
 function transformSwapBalanceToTokens(
-  swapBalance: UserAsset[] | null,
+  swapBalance: UserAssetDatum[] | null,
   destination: Pick<
     DepositWidgetContextValue["destination"],
     "chainId" | "tokenAddress" | "tokenSymbol"

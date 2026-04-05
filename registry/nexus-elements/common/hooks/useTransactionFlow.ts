@@ -5,7 +5,7 @@ import type {
   OnIntentHookData,
   UserAssetDatum,
 } from "@avail-project/nexus-sdk-v2";
-import { parseUnits } from "@avail-project/nexus-sdk-v2";
+import { parseUnits } from "viem";
 import {
   useEffect,
   useMemo,
@@ -334,13 +334,13 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
       !nexusSDK || typeof decimals !== "number"
         ? BigInt(0)
         : availableSources.reduce((sum, source) => {
-            if (!selectedChainSet.has(source.chain.id)) return sum;
-            try {
-              return sum + parseUnits(source.balance ?? "0", decimals);
-            } catch {
-              return sum;
-            }
-          }, BigInt(0));
+          if (!selectedChainSet.has(source.chain.id)) return sum;
+          try {
+            return sum + parseUnits(source.balance ?? "0", decimals);
+          } catch {
+            return sum;
+          }
+        }, BigInt(0));
     const selectedTotal =
       !nexusSDK || typeof decimals !== "number"
         ? "0"
@@ -478,9 +478,9 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
 
   usePolling(
     Boolean(intent.current) &&
-      !isDialogOpen &&
-      !isSourceMenuOpen &&
-      !hasPendingSourceSelectionChanges,
+    !isDialogOpen &&
+    !isSourceMenuOpen &&
+    !hasPendingSourceSelectionChanges,
     async () => {
       await refreshIntent();
     },

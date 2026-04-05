@@ -56,7 +56,7 @@ const TokenSelect = ({
             {selectedChain && selectedTokenData && (
               <div className="flex items-center gap-x-2 w-full">
                 <img
-                  src={selectedTokenData?.logo}
+                  src={selectedTokenData?.logo || undefined}
                   alt={selectedTokenData?.symbol}
                   width={24}
                   height={24}
@@ -75,7 +75,7 @@ const TokenSelect = ({
             <SelectItem key={token.symbol} value={token.symbol}>
               <div className="flex items-center gap-x-2 my-1">
                 <img
-                  src={token.logo}
+                  src={token.logo || undefined}
                   alt={token.symbol}
                   width={24}
                   height={24}

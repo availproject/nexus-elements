@@ -6,8 +6,8 @@ import {
   type UserAsset,
   type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
-  formatTokenBalance,
 } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Link2, Loader2, Search, X } from "lucide-react";
 import { DialogClose } from "../../ui/dialog";
@@ -54,7 +54,8 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
         if (Number.parseFloat(breakdown.balance) <= 0) continue;
         const tokenSymbol = breakdown.symbol;
         const normalizedTokenSymbol = tokenSymbol.toUpperCase();
-        const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
+        const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon)
+          .icon;
         const tokenLogo =
           breakdownIcon ||
           TOKEN_IMAGES[tokenSymbol] ||

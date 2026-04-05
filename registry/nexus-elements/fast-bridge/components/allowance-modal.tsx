@@ -12,11 +12,11 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import {
   type AllowanceHookSource,
-  formatTokenBalance,
   type OnAllowanceHookData,
-  parseUnits,
 } from "@avail-project/nexus-sdk-v2";
+import { parseUnits } from "viem";
 import { useNexusError } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 
 interface AllowanceModalProps {
   allowance: RefObject<OnAllowanceHookData | null>;

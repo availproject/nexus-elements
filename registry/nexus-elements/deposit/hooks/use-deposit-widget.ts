@@ -14,8 +14,8 @@ import {
   type SwapAndExecuteOnIntentHookData,
   type SwapAndExecuteParams,
   type SwapAndExecuteResult,
-  parseUnits,
 } from "@avail-project/nexus-sdk-v2";
+import { parseUnits } from "viem";
 
 // v2: SwapStepType removed — use a local step shape
 type SwapStepType = {
@@ -376,7 +376,7 @@ export function useDepositWidget(
             code === ERROR_CODES.USER_DENIED_INTENT ||
             code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE ||
             code === ERROR_CODES.USER_DENIED_ALLOWANCE;
-            // v2: USER_DENIED_SIWE_SIGNATURE removed
+          // v2: USER_DENIED_SIWE_SIGNATURE removed
           const shouldSuppressWidgetError =
             suppressNextWidgetPreviewCancelError.current && isUserRejectedError;
 
@@ -496,11 +496,11 @@ export function useDepositWidget(
           gasPrice: executeParams.gasPrice,
           tokenApproval: executeParams.tokenApproval
             ? ({
-                toTokenAddress: (executeParams.tokenApproval as unknown as { token?: string; toTokenAddress?: string }).toTokenAddress
-                  ?? (executeParams.tokenApproval as unknown as { token?: string }).token,
-                amount: (executeParams.tokenApproval as { amount: bigint }).amount,
-                spender: (executeParams.tokenApproval as { spender: `0x${string}` }).spender,
-              } as { toTokenAddress: `0x${string}`; amount: bigint; spender: `0x${string}` })
+              toTokenAddress: (executeParams.tokenApproval as unknown as { token?: string; toTokenAddress?: string }).toTokenAddress
+                ?? (executeParams.tokenApproval as unknown as { token?: string }).token,
+              amount: (executeParams.tokenApproval as { amount: bigint }).amount,
+              spender: (executeParams.tokenApproval as { spender: `0x${string}` }).spender,
+            } as { toTokenAddress: `0x${string}`; amount: bigint; spender: `0x${string}` })
             : undefined,
           gas: BigInt(400_000),
         },
@@ -706,9 +706,9 @@ export function useDepositWidget(
   // Polling for simulation refresh
   usePolling(
     pollingEnabled &&
-      state.status === "previewing" &&
-      Boolean(swapIntent.current) &&
-      !state.simulationLoading,
+    state.status === "previewing" &&
+    Boolean(swapIntent.current) &&
+    !state.simulationLoading,
     async () => {
       await refreshSimulation();
     },

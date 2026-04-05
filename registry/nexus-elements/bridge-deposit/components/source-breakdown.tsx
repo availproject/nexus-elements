@@ -1,8 +1,8 @@
 import {
   type ReadableIntent,
   type UserAssetDatum,
-  formatTokenBalance,
-} from "@avail-project/nexus-sdk-v2";
+} from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   Accordion,
   AccordionContent,
@@ -86,9 +86,7 @@ const SourceBreakdown = ({
       return baseSources;
     }
     const allSources = intent?.allSources ?? [];
-    const destDetails = allSources?.find?.(
-      (s) => s?.chain?.id === chain,
-    );
+    const destDetails = allSources?.find?.((s) => s?.chain?.id === chain);
     const hasDest = baseSources?.some?.(
       (s: ReadableIntentSource) => s?.chainID === chain,
     );

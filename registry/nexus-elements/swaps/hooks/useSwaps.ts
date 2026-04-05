@@ -17,8 +17,8 @@ import type {
   Source as SwapSource,
   UserAssetDatum,
 } from "@avail-project/nexus-sdk-v2";
-import { parseUnits, formatTokenBalance } from "@avail-project/nexus-sdk-v2";
-import { padHex, type Hex } from "viem";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { padHex, parseUnits, type Hex } from "viem";
 import {
   useTransactionSteps,
   SWAP_EXPECTED_STEPS,
@@ -133,9 +133,9 @@ type Action =
   | { type: "setError"; payload: string | null }
   | { type: "setSwapMode"; payload: SwapMode }
   | {
-      type: "setExplorerUrls";
-      payload: Partial<SwapState["explorerUrls"]>;
-    }
+    type: "setExplorerUrls";
+    payload: Partial<SwapState["explorerUrls"]>;
+  }
   | { type: "reset" };
 
 const initialState: SwapState = {
@@ -579,7 +579,7 @@ const useSwaps = ({
         (chain) =>
           chain.chain?.id === fromChainID &&
           normalizeAddress(chain.contractAddress) ===
-            normalizeAddress(fromToken.contractAddress),
+          normalizeAddress(fromToken.contractAddress),
       );
     if (
       !sourceBalance ||
@@ -775,7 +775,7 @@ const useSwaps = ({
           (chain) =>
             chain.chain?.id === state.inputs?.fromChainID &&
             normalizeAddress(chain.contractAddress) ===
-              normalizeAddress(state.inputs?.fromToken?.contractAddress ?? ""),
+            normalizeAddress(state.inputs?.fromToken?.contractAddress ?? ""),
         ) ?? undefined
     );
   }, [
@@ -800,7 +800,7 @@ const useSwaps = ({
           (chain) =>
             chain.chain?.id === state?.inputs?.toChainID &&
             normalizeAddress(chain.contractAddress) ===
-              normalizeAddress(state?.inputs?.toToken?.tokenAddress ?? ""),
+            normalizeAddress(state?.inputs?.toToken?.tokenAddress ?? ""),
         ) ?? undefined
     );
   }, [state?.inputs?.toToken, state?.inputs?.toChainID, swapBalance, nexusSDK]);
@@ -838,15 +838,15 @@ const useSwaps = ({
     const isValidForCurrentMode =
       state.swapMode === "exactIn"
         ? areExactInInputsValid &&
-          state?.inputs?.fromAmount &&
-          state?.inputs?.fromChainID &&
-          state?.inputs?.fromToken &&
-          state?.inputs?.toChainID &&
-          state?.inputs?.toToken
+        state?.inputs?.fromAmount &&
+        state?.inputs?.fromChainID &&
+        state?.inputs?.fromToken &&
+        state?.inputs?.toChainID &&
+        state?.inputs?.toToken
         : areExactOutInputsValid &&
-          state?.inputs?.toAmount &&
-          state?.inputs?.toChainID &&
-          state?.inputs?.toToken;
+        state?.inputs?.toAmount &&
+        state?.inputs?.toChainID &&
+        state?.inputs?.toToken;
 
     if (!isValidForCurrentMode) {
       swapIntent.current?.deny();
