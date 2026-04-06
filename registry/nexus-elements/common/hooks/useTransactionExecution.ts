@@ -335,8 +335,9 @@ export function useTransactionExecution({
       });
 
       if (currentRunId !== runIdRef.current) {
-        cleanupSupersededExecution();
-        return;
+        cleanupSupersededExecution(); // no-op when completedFromEvent=true
+        if (!completedFromEvent) return; // only bail if not already completed
+        // else fall through — still want to capture explorerUrl from the result
       }
       if (!transactionResult) {
         if (!completedFromEvent) {
@@ -352,11 +353,12 @@ export function useTransactionExecution({
         setLastExplorerUrl(transactionResult.explorerUrl ?? "");
         await onSuccess(transactionResult.explorerUrl);
       } else {
-        // Event-driven success already ran — just update explorerUrl if we have a better one
+        // Event-driven success already ran — capture the explorerUrl from the resolved result
         if (transactionResult.explorerUrl) {
           setLastExplorerUrl(transactionResult.explorerUrl);
         }
       }
+
     } catch (error) {
       if (currentRunId !== runIdRef.current) {
         cleanupSupersededExecution();
