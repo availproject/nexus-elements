@@ -853,6 +853,142 @@
       ]
     },
     {
+      "name": "nexus-one",
+      "type": "registry:component",
+      "title": "Nexus One",
+      "description": "A component built with Nexus for nexus one functionality",
+      "files": [
+        {
+          "path": "registry/nexus-elements/nexus-one/components/amount-input-unified.tsx",
+          "target": "components/nexus-one/components/amount-input-unified.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/nexus-one/components/pay-using-selector.tsx",
+          "target": "components/nexus-one/components/pay-using-selector.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/nexus-one/components/status-alerts.tsx",
+          "target": "components/nexus-one/components/status-alerts.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/nexus-one/nexus-one.tsx",
+          "target": "components/nexus-one/nexus-one.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/nexus-one/types.ts",
+          "target": "components/nexus-one/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
+          "target": "components/common/components/ErrorBoundary.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedCallback.ts",
+          "target": "components/common/hooks/useDebouncedCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useDebouncedValue.ts",
+          "target": "components/common/hooks/useDebouncedValue.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useInterval.ts",
+          "target": "components/common/hooks/useInterval.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useLatest.ts",
+          "target": "components/common/hooks/useLatest.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useNexusError.ts",
+          "target": "components/common/hooks/useNexusError.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/usePolling.ts",
+          "target": "components/common/hooks/usePolling.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStableCallback.ts",
+          "target": "components/common/hooks/useStableCallback.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useStopwatch.ts",
+          "target": "components/common/hooks/useStopwatch.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionExecution.ts",
+          "target": "components/common/hooks/useTransactionExecution.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/hooks/useTransactionFlow.ts",
+          "target": "components/common/hooks/useTransactionFlow.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/index.ts",
+          "target": "components/common/index.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/steps.ts",
+          "target": "components/common/tx/steps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/types.ts",
+          "target": "components/common/tx/types.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/tx/useTransactionSteps.ts",
+          "target": "components/common/tx/useTransactionSteps.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/types/transaction-flow.ts",
+          "target": "components/common/types/transaction-flow.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/constant.ts",
+          "target": "components/common/utils/constant.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/token-pricing.ts",
+          "target": "components/common/utils/token-pricing.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/nexus-elements/common/utils/transaction-flow.ts",
+          "target": "components/common/utils/transaction-flow.ts",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [
+        "@avail-project/nexus-core@1.2.0",
+        "lucide-react",
+        "viem"
+      ],
+      "registryDependencies": [
+        "https://elements.nexus.availproject.org/r/button.json"
+      ]
+    },
+    {
       "name": "nexus-provider",
       "type": "registry:component",
       "title": "Nexus Provider",

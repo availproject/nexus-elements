@@ -25,6 +25,7 @@ const SHOWCASE_MAP: Record<
     import("@/components/showcase/unified-balance-showcase"),
   "fast-transfer": () => import("@/components/showcase/transfer-showcase"),
   "view-history": () => import("@/components/showcase/view-history-showcase"),
+  "nexus-one": () => import("@/components/showcase/nexus-one-showcase"),
 };
 
 export function ComponentPreview({

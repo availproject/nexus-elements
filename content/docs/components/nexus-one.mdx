@@ -1,0 +1,60 @@
+---
+title: Nexus One
+description: A unified element consolidating bridge, swap, transfer, and deposit functionalities into a single interface.
+component: true
+---
+
+## Preview
+
+<ComponentPreview
+  name="nexus-one"
+  description="An all-in-one component for unified bridging, swapping, and asset handling."
+  align="center"
+/>
+
+## Installation
+
+<CodeTabs>
+  <TabsList>
+    <TabsTrigger value="cli">CLI</TabsTrigger>
+    <TabsTrigger value="manual">Manual</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cli">
+    ```bash
+    npx shadcn@latest add @nexus-elements/nexus-one
+    ```
+  </TabsContent>
+  <TabsContent value="manual">
+    <Steps>
+      
+      <Step>Install dependencies</Step>
+```bash
+npm install @avail-project/nexus-core lucide-react class-variance-authority clsx tailwind-merge
+```
+      <Step>Copy and paste the component code into your project.</Step>
+      <div
+        data-slot="code"
+        className="my-4 overflow-hidden **:data-rehype-pretty-code-figure:m-0! **:data-rehype-pretty-code-figure:rounded-t-none **:data-rehype-pretty-code-figure:border-t [&_pre]:max-h-[400px]"
+      >
+        <ComponentSource name="nexus-one" showAllFiles />
+      </div>
+
+    </Steps>
+
+  </TabsContent>
+</CodeTabs>
+
+## Usage
+
+```tsx showLineNumbers
+import { NexusOne } from "@/components/nexus-one/nexus-one";
+
+export default function App() {
+  return (
+    <NexusOne
+      config={{ mode: "deposit" }}
+      connectedAddress={address}
+    />
+  );
+}
+```

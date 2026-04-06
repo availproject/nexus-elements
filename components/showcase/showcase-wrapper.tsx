@@ -14,6 +14,7 @@ type ElementType =
   | "unified-balance"
   | "fast-transfer"
   | "view-history"
+  | "nexus-one"
   | "swap-deposit";
 
 const disabledTestnet = new Set<ElementType>([
