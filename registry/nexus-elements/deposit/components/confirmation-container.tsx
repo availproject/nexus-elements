@@ -78,7 +78,7 @@ const ConfirmationContainer = ({
         tokenSymbol: source.symbol ?? "",
         tokenDecimals: source.decimals ?? 6,
         amount: source.balance ?? "0",
-        amountUsd: source.balanceInFiat,
+        amountUsd: parseFloat(source.value ?? "0"),
         isDestinationBalance: source.isDestinationBalance ?? false,
       });
     }

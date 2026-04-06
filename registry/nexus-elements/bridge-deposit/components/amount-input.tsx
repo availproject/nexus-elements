@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import { type TokenBalance } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
@@ -45,8 +42,9 @@ interface AmountInputProps extends Omit<
 > {
   value?: string;
   onChange?: (value: string) => void;
-  bridgableBalance?: UserAsset;
-  destinationChain: SUPPORTED_CHAINS_IDS;
+  bridgableBalance?: TokenBalance;
+  // v2: chainBalances are chain-level entries; destinationChain used for finding chain decimals
+  destinationChain: number;
 }
 
 const AmountInput = ({
@@ -60,9 +58,10 @@ const AmountInput = ({
   const { nexusSDK, loading } = useNexus();
 
   const hasSelectedSources =
-    bridgableBalance && bridgableBalance.breakdown.length > 0;
+    // v2: chainBalances replaces breakdown
+    bridgableBalance && (bridgableBalance.chainBalances?.length ?? 0) > 0;
   const hasBalance =
-    hasSelectedSources && Number.parseFloat(bridgableBalance.balance) > 0;
+    hasSelectedSources && Number.parseFloat(bridgableBalance!.balance) > 0;
 
   return (
     <div className="flex flex-col items-start gap-y-1 w-full py-2">
@@ -113,7 +112,8 @@ const AmountInput = ({
                     const amount = computeAmountFromFraction(
                       bridgableBalance.balance,
                       option.value,
-                      bridgableBalance?.breakdown.find(
+                      // v2: find chain decimals from chainBalances
+                      bridgableBalance?.chainBalances?.find(
                         (chain) => chain?.chain?.id === destinationChain,
                       )?.decimals ?? bridgableBalance?.decimals,
                       SAFETY_MARGIN,
@@ -137,7 +137,7 @@ const AmountInput = ({
 
           <AccordionContent className="pb-0">
             <div className="space-y-3 py-2 max-h-40 overflow-y-auto no-scrollbar">
-              {bridgableBalance?.breakdown.map((chain) => {
+              {bridgableBalance?.chainBalances?.map((chain: any) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 return (
                   <Fragment key={chain.chain.id}>
@@ -145,7 +145,7 @@ const AmountInput = ({
                       <div className="flex items-center gap-2">
                         <div className="relative h-6 w-6">
                           <img
-                            src={chain?.chain?.logo}
+                            src={chain?.chain?.logo || undefined}
                             alt={chain.chain.name}
                             sizes="100%"
                             className="rounded-full"
@@ -167,7 +167,8 @@ const AmountInput = ({
                           })}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          ${chain.balanceInFiat.toFixed(2)}
+                          {/* v2: value is a string USD amount */}
+                          ${Number.parseFloat(chain.value ?? "0").toFixed(2)}
                         </p>
                       </div>
                     </div>

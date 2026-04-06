@@ -5,7 +5,8 @@ import type { DestinationConfig, AssetSelectionState } from "../types";
 import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
 import type {
   SwapAndExecuteOnIntentHookData,
-  UserAssetDatum,
+  TokenBalance,
+  ChainBalance,
 } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { usdFormatter } from "../../common";
@@ -95,7 +96,7 @@ function formatFeeKeyLabel(key: string): string {
 }
 
 interface UseDepositComputedProps {
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   assetSelection: AssetSelectionState;
   activeIntent: SwapAndExecuteOnIntentHookData | null;
   destination: DestinationConfig;
@@ -140,13 +141,14 @@ export interface AvailableAsset {
   decimals: number;
   symbol: string;
   balance: string;
-  balanceInFiat?: number;
+  value?: string;          // v2: USD value as string (from ChainBalance.value)
+  balanceInFiat?: number;  // kept for legacy callers
   tokenLogo?: string;
   chainLogo?: string;
   chainName?: string;
 }
 
-type AssetBreakdownWithOptionalIcon = UserAssetDatum["breakdown"][number] & {
+type AssetBreakdownWithOptionalIcon = ChainBalance & {
   icon?: string;
 };
 
@@ -177,8 +179,8 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const items: AvailableAsset[] = [];
 
     for (const asset of swapBalance) {
-      if (!asset?.breakdown?.length) continue;
-      for (const breakdown of asset.breakdown) {
+      if (!asset?.chainBalances?.length) continue;
+      for (const breakdown of asset.chainBalances) {
         if (!breakdown?.chain?.id || !breakdown.balance) continue;
         const numericBalance = Number.parseFloat(breakdown.balance);
         if (!Number.isFinite(numericBalance) || numericBalance <= 0) continue;
@@ -192,15 +194,14 @@ export function useDepositComputed(props: UseDepositComputedProps) {
           // v2: breakdown has no .symbol — use parent asset.symbol
           symbol: asset.symbol,
           balance: breakdown.balance,
-          balanceInFiat: breakdown.balanceInFiat,
+          value: breakdown.value,
           tokenLogo: breakdownIcon || "",
           chainLogo: breakdown.chain.logo,
           chainName: breakdown.chain.name,
         });
       }
     }
-    return items.toSorted(
-      (a, b) => (b.balanceInFiat ?? 0) - (a.balanceInFiat ?? 0),
+    return items.toSorted((a: AvailableAsset, b: AvailableAsset) => (parseFloat(b.value ?? "0") ?? 0) - (parseFloat(a.value ?? "0") ?? 0),
     );
   }, [swapBalance]);
 
@@ -212,7 +213,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
       availableAssets.reduce((sum, asset) => {
         const key = `${asset.tokenAddress}-${asset.chainId}`;
         if (assetSelection.selectedChainIds.has(key)) {
-          return sum + (asset.balanceInFiat ?? 0);
+          return sum + (parseFloat(asset.value ?? "0") ?? 0);
         }
         return sum;
       }, 0),
@@ -229,7 +230,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         0,
       ) ?? 0;
     const usdBalance =
-      swapBalance?.reduce((acc, balance) => acc + balance.balanceInFiat, 0) ??
+      swapBalance?.reduce((acc, balance) => acc + parseFloat(balance.value ?? "0"), 0) ??
       0;
     return { balance, usdBalance };
   }, [swapBalance]);
@@ -240,7 +241,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
   const destinationBalance = useMemo(() => {
     if (!nexusSDK || !swapBalance || !destination) return undefined;
     return swapBalance
-      ?.flatMap((token) => token.breakdown ?? [])
+      ?.flatMap((token) => token.chainBalances ?? [])
       ?.find(
         (chain) =>
           chain.chain?.id === destination.chainId &&

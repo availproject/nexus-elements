@@ -2,14 +2,11 @@ import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { Label } from "../../ui/label";
 import { Checkbox } from "../../ui/checkbox";
-import {
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import { type TokenBalance } from "@avail-project/nexus-sdk-v2";
 
 interface SourceSelectProps {
-  token?: SUPPORTED_TOKENS;
-  balanceBreakdown?: UserAsset;
+  token?: string;
+  balanceBreakdown?: TokenBalance;
   selected?: number[];
   onChange?: (selected: number[]) => void;
   disabled?: boolean;
@@ -31,17 +28,18 @@ const SourceSelect = ({
   };
 
   const allSelected =
-    Boolean(balanceBreakdown?.breakdown.length) &&
-    balanceBreakdown?.breakdown.every((chain) =>
+    // v2: chainBalances replaces breakdown
+    Boolean(balanceBreakdown?.chainBalances?.length) &&
+    balanceBreakdown?.chainBalances?.every((chain) =>
       selected.includes(chain.chain.id)
     );
 
   const toggleAll = () => {
-    if (!onChange || disabled || !balanceBreakdown?.breakdown.length) return;
+    if (!onChange || disabled || !balanceBreakdown?.chainBalances?.length) return;
     if (allSelected) {
       onChange([]);
     } else {
-      onChange(balanceBreakdown.breakdown.map((chain) => chain.chain.id));
+      onChange(balanceBreakdown.chainBalances.map((chain) => chain.chain.id));
     }
   };
 
@@ -58,7 +56,7 @@ const SourceSelect = ({
         <ChevronDown className="size-4 text-primary data-[state=open]:rotate-180 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </PopoverTrigger>
       <PopoverContent className="w-max sm:w-sm no-scrollbar">
-        {balanceBreakdown && balanceBreakdown?.breakdown.length > 0 ? (
+        {balanceBreakdown && (balanceBreakdown?.chainBalances?.length ?? 0) > 0 ? (
           <>
             <div className="flex items-center gap-x-2 pb-3 mb-3 border-b border-border w-full">
               <Checkbox
@@ -77,7 +75,7 @@ const SourceSelect = ({
               </Label>
             </div>
             <div className="grid grid-cols-1 gap-1 w-full overflow-y-auto max-h-[300px] no-scrollbar">
-              {balanceBreakdown?.breakdown.map((chain) => (
+              {balanceBreakdown?.chainBalances?.map((chain) => (
                 <div key={chain.chain.id} className="flex items-center gap-x-2">
                   <Checkbox
                     checked={isSelected(chain.chain.id)}
@@ -91,7 +89,7 @@ const SourceSelect = ({
                   <div className="w-full flex items-center justify-between">
                     <div className="flex items-center gap-x-2 p-2">
                       <img
-                        src={chain.chain.logo}
+                        src={chain.chain.logo || undefined}
                         alt={chain.chain.name}
                         width={24}
                         height={24}

@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { STABLECOIN_SYMBOLS } from "./constants/widget";
-import type { UserAssetDatum } from "@avail-project/nexus-sdk-v2";
+import type { TokenBalance } from "@avail-project/nexus-sdk-v2";
 import { AssetFilterType, DestinationConfig, Token } from "./types";
 import { Hex, padHex } from "viem";
 import { formatUsdForDisplay } from "../common";
@@ -185,18 +185,18 @@ export function parseSourceId(sourceId: string): {
 }
 
 function buildSourceFiatByKeyMap(
-  swapBalance: UserAssetDatum[] | null,
+  swapBalance: TokenBalance[] | null,
 ): Map<string, number> {
   const map = new Map<string, number>();
   if (!swapBalance) return map;
 
   for (const asset of swapBalance) {
-    for (const breakdown of asset.breakdown ?? []) {
+    for (const breakdown of asset.chainBalances ?? []) {
       const chainId = breakdown.chain?.id;
       const tokenAddress = breakdown.contractAddress;
       if (!chainId || !tokenAddress) continue;
 
-      const balanceInFiat = parseNonNegativeNumber(breakdown.balanceInFiat);
+      const balanceInFiat = parseNonNegativeNumber(breakdown.value);
 
       map.set(getFiatLookupKey(tokenAddress, chainId), balanceInFiat);
     }
@@ -207,7 +207,7 @@ function buildSourceFiatByKeyMap(
 
 // v2: sortSourcesByPriority removed — build priority rank map by fiat balance descending
 function buildPriorityRankMap(
-  swapBalance: UserAssetDatum[] | null,
+  swapBalance: TokenBalance[] | null,
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -219,7 +219,7 @@ function buildPriorityRankMap(
   // Collect all sources with their fiat values and sort by fiat descending
   const candidates: { key: string; balanceInFiat: number }[] = [];
   for (const asset of swapBalance) {
-    for (const breakdown of asset.breakdown ?? []) {
+    for (const breakdown of asset.chainBalances ?? []) {
       const chainId = breakdown.chain?.id;
       const tokenAddress = breakdown.contractAddress;
       if (!chainId || !tokenAddress) continue;
@@ -227,7 +227,7 @@ function buildPriorityRankMap(
       if (chainId === destination.chainId) continue;
       candidates.push({
         key: getPriorityLookupKey(tokenAddress, chainId),
-        balanceInFiat: parseNonNegativeNumber(breakdown.balanceInFiat),
+        balanceInFiat: parseNonNegativeNumber(breakdown.value),
       });
     }
   }
@@ -238,7 +238,7 @@ function buildPriorityRankMap(
 
 function sortSourceIdsByPriority(params: {
   sourceIds: Iterable<string>;
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -250,7 +250,7 @@ function sortSourceIdsByPriority(params: {
 
 function buildSortedSourceCandidates(params: {
   sourceIds: Iterable<string>;
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -301,7 +301,7 @@ function buildSortedSourceCandidates(params: {
 }
 
 export function buildDepositSourcePoolIds(params: {
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   filter: AssetFilterType;
   selectedSourceIds: Iterable<string>;
   isManualSelection: boolean;
@@ -316,7 +316,7 @@ export function buildDepositSourcePoolIds(params: {
   const sourceIds = new Set<string>();
 
   swapBalance?.forEach((asset) => {
-    asset.breakdown?.forEach((breakdown) => {
+    asset.chainBalances?.forEach((breakdown) => {
       const chainId = breakdown.chain?.id;
       const tokenAddress = breakdown.contractAddress;
       if (!chainId || !tokenAddress) return;
@@ -347,7 +347,7 @@ export interface ResolvedDepositSourceSelection {
 }
 
 export function resolveDepositSourceSelection(params: {
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -405,7 +405,7 @@ export function resolveDepositSourceSelection(params: {
 }
 
 export function buildSelectableSourceIds(params: {
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -418,7 +418,7 @@ export function buildSelectableSourceIds(params: {
   if (!swapBalance) return [];
 
   for (const asset of swapBalance) {
-    for (const breakdown of asset.breakdown ?? []) {
+    for (const breakdown of asset.chainBalances ?? []) {
       const chainId = breakdown.chain?.id;
       const tokenAddress = breakdown.contractAddress;
       if (!chainId || !tokenAddress) continue;
@@ -436,7 +436,7 @@ export function buildSelectableSourceIds(params: {
 }
 
 export function buildPrioritySelectedSourceIds(params: {
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -501,7 +501,7 @@ export function buildPrioritySelectedSourceIds(params: {
 
 export function buildSortedFromSources(params: {
   sourceIds: Iterable<string>;
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"

@@ -47,7 +47,8 @@ const ERROR_MESSAGE_BY_CODE: Partial<Record<string, string>> = {
     "Slippage exceeded tolerance. Refresh quote and retry.",
   [ERROR_CODES.RATES_CHANGED_BEYOND_TOLERANCE]:
     "Rates changed beyond tolerance. Review and retry.",
-  [ERROR_CODES.RFF_FEE_EXPIRED]:
+  // v2: RFF_FEE_EXPIRED was removed; use string key for forward compat
+  ["RFF_FEE_EXPIRED"]:
     "Quote expired. Refresh and try again.",
   [ERROR_CODES.INVALID_INPUT]:
     "Some transaction inputs are invalid. Please review and try again.",

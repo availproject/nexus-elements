@@ -1,20 +1,16 @@
 "use client";
 
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
 import {
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-  NexusSDK,
   type OnIntentHookData,
   type OnAllowanceHookData,
   type ExecuteParams,
   type BridgeAndExecuteParams,
   type BridgeAndExecuteResult,
   type BridgeAndExecuteSimulationResult,
-  NEXUS_EVENTS,
-  type BridgeStepType,
-  CHAIN_METADATA,
-} from "@avail-project/nexus-core";
+  type TokenBalance,
+  type ChainBalance,
+} from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   useEffect,
@@ -35,6 +31,15 @@ import {
   useTransactionSteps,
 } from "../../common";
 
+type NexusClient = ReturnType<typeof createNexusClient>;
+
+// v2 uses a generic step shape
+type BridgeStepType = {
+  typeID?: string;
+  type?: string;
+  [key: string]: unknown;
+};
+
 export type DepositStatus =
   | "idle"
   | "previewing"
@@ -43,25 +48,25 @@ export type DepositStatus =
   | "error";
 
 interface DepositInputs {
-  chain: SUPPORTED_CHAINS_IDS;
+  chain: number;
   amount?: string;
   selectedSources: number[];
 }
 
 interface UseDepositProps {
-  token: SUPPORTED_TOKENS;
-  chain: SUPPORTED_CHAINS_IDS;
-  nexusSDK: NexusSDK | null;
+  token: string;
+  chain: number;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAsset[] | null;
+  bridgableBalance: TokenBalance[] | null;
   fetchBridgableBalance: () => Promise<void>;
   chainOptions?: { id: number; name: string; logo: string }[];
   address: Address;
   executeBuilder?: (
-    token: SUPPORTED_TOKENS,
+    token: string,
     amount: string,
-    chainId: SUPPORTED_CHAINS_IDS,
+    chainId: number,
     userAddress: `0x${string}`,
   ) => Omit<ExecuteParams, "toChainId">;
   executeConfig?: Omit<ExecuteParams, "toChainId">;
@@ -213,25 +218,26 @@ const useDeposit = ({
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
 
-    const nonZeroBreakdown = tokenBalance.breakdown.filter(
+    // v2: chainBalances replaces breakdown
+    const nonZeroChainBalances = tokenBalance.chainBalances.filter(
       (chain) => Number.parseFloat(chain.balance) > 0,
     );
 
-    const totalBalance = nonZeroBreakdown.reduce(
+    const totalBalance = nonZeroChainBalances.reduce(
       (sum, chain) => sum + Number.parseFloat(chain.balance),
       0,
     );
 
-    const totalBalanceInFiat = nonZeroBreakdown.reduce(
-      (sum, chain) => sum + chain.balanceInFiat,
+    const totalValue = nonZeroChainBalances.reduce(
+      (sum, chain) => sum + Number.parseFloat(chain.value ?? "0"),
       0,
     );
 
     return {
       ...tokenBalance,
       balance: totalBalance.toString(),
-      balanceInFiat: totalBalanceInFiat,
-      breakdown: nonZeroBreakdown,
+      value: totalValue.toString(),
+      chainBalances: nonZeroChainBalances,
     };
   }, [bridgableBalance, token]);
 
@@ -240,27 +246,28 @@ const useDeposit = ({
     if (!tokenBalance) return undefined;
 
     const selectedSourcesSet = new Set(inputs.selectedSources);
-    const filteredBreakdown = tokenBalance.breakdown.filter(
+    // v2: chainBalances replaces breakdown
+    const filteredChainBalances = tokenBalance.chainBalances.filter(
       (chain) =>
         selectedSourcesSet.has(chain.chain.id) &&
         Number.parseFloat(chain.balance) > 0,
     );
 
-    const totalBalance = filteredBreakdown.reduce(
+    const totalBalance = filteredChainBalances.reduce(
       (sum, chain) => sum + Number.parseFloat(chain.balance),
       0,
     );
 
-    const totalBalanceInFiat = filteredBreakdown.reduce(
-      (sum, chain) => sum + chain.balanceInFiat,
+    const totalValue = filteredChainBalances.reduce(
+      (sum, chain) => sum + Number.parseFloat(chain.value ?? "0"),
       0,
     );
 
     return {
       ...tokenBalance,
       balance: totalBalance.toString(),
-      balanceInFiat: totalBalanceInFiat,
-      breakdown: filteredBreakdown,
+      value: totalValue.toString(),
+      chainBalances: filteredChainBalances,
     };
   }, [bridgableBalance, token, inputs.selectedSources]);
 
@@ -285,30 +292,31 @@ const useDeposit = ({
         gasUsd: 0,
         gasFormatted: "0",
       };
-    const native = CHAIN_METADATA[chain]?.nativeCurrency;
-    const nativeSymbol = native.symbol;
-    const nativeDecimals = native.decimals;
+    // v2: ExecuteSimulation.estimatedTotalCost (bigint) replaces gasFee
+    const costRaw = simulation?.executeSimulation?.estimatedTotalCost;
+    const nativeDecimals = 18;
+    const nativeSymbol = "ETH";
 
     const gasFormatted =
-      formatTokenBalance(simulation?.executeSimulation?.gasFee, {
+      formatTokenBalance(costRaw, {
         symbol: nativeSymbol,
         decimals: nativeDecimals,
       }) ?? "0";
     const gasUnits = Number.parseFloat(
-      formatUnits(simulation?.executeSimulation?.gasFee, nativeDecimals),
+      formatUnits(costRaw ?? BigInt(0), nativeDecimals),
     );
 
     const gasUsd = getFiatValue(gasUnits, nativeSymbol);
     if (simulation?.bridgeSimulation) {
       const tokenDecimals =
-        simulation?.bridgeSimulation?.intent?.token?.decimals;
+        simulation?.bridgeSimulation?.intent?.destination?.token?.decimals;
       const bridgeFormatted =
         formatTokenBalance(simulation?.bridgeSimulation?.intent?.fees?.total, {
           symbol: token,
           decimals: tokenDecimals,
         }) ?? "0";
       const bridgeUsd = getFiatValue(
-        Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total),
+        Number.parseFloat(simulation?.bridgeSimulation?.intent?.fees?.total ?? "0"),
         token,
       );
 
@@ -351,11 +359,12 @@ const useDeposit = ({
         executeBuilder
           ? executeBuilder(token, inputs.amount, inputs.chain, address)
           : executeConfig;
+      // v2: BridgeAndExecuteParams uses toTokenSymbol, toAmountRaw, sources
       const params: BridgeAndExecuteParams = {
-        token,
-        amount: amountBigInt,
+        toTokenSymbol: token,
+        toAmountRaw: amountBigInt,
         toChainId: inputs.chain,
-        sourceChains: inputs.selectedSources,
+        sources: inputs.selectedSources,
         execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: true,
       };
@@ -364,18 +373,20 @@ const useDeposit = ({
         params,
         {
           onEvent: (event) => {
-            if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-              const list = Array.isArray(event.args) ? event.args : [];
-              onStepsList(list);
+            // v2: events use event.type (not event.name)
+            if (event.type === "plan_preview") {
+              const planEvent = event as { type: string; plan: { steps?: unknown[] } };
+              const list = planEvent.plan?.steps ?? [];
+              onStepsList(list as Parameters<typeof onStepsList>[0]);
             }
-            if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+            if (event.type === "plan_progress") {
               if (
                 !transactionStartedRef.current &&
-                event.args.type === "INTENT_HASH_SIGNED"
+                (event as { stepType?: string })?.stepType === "bridge_request_signing"
               ) {
                 transactionStartedRef.current = true;
               }
-              onStepComplete(event.args);
+              onStepComplete(event as Parameters<typeof onStepComplete>[0]);
             }
           },
         },
@@ -446,11 +457,12 @@ const useDeposit = ({
         executeBuilder
           ? executeBuilder(token, amountToUse, inputs.chain, address)
           : executeConfig;
+      // v2: BridgeAndExecuteParams uses toTokenSymbol, toAmountRaw, sources
       const params: BridgeAndExecuteParams = {
-        token,
-        amount: amountBigInt,
+        toTokenSymbol: token,
+        toAmountRaw: amountBigInt,
         toChainId: inputs.chain,
-        sourceChains: inputs.selectedSources,
+        sources: inputs.selectedSources,
         execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: false,
       };

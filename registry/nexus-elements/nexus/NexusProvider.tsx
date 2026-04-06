@@ -7,7 +7,8 @@ import {
   type OnIntentHookData,
   type OnSwapIntentHookData,
   type SwapAndExecuteOnIntentHookData,
-  type UserAssetDatum,
+  type TokenBalance,
+  type ChainBalance,
 } from "@avail-project/nexus-sdk-v2";
 
 import {
@@ -38,8 +39,8 @@ interface NexusContextType {
   nexusClient: NexusClient | null;
   /** @deprecated use nexusClient */
   nexusSDK: NexusClient | null;
-  bridgableBalance: UserAssetDatum[] | null;
-  swapBalance: UserAssetDatum[] | null;
+  bridgableBalance: TokenBalance[] | null;
+  swapBalance: TokenBalance[] | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   swapIntent: RefObject<SwapAndExecuteOnIntentHookData | null>;
@@ -97,9 +98,9 @@ const NexusProvider = ({
     null,
   );
   const [bridgableBalance, setBridgableBalance] = useState<
-    UserAssetDatum[] | null
+    TokenBalance[] | null
   >(null);
-  const [swapBalance, setSwapBalance] = useState<UserAssetDatum[] | null>(null);
+  const [swapBalance, setSwapBalance] = useState<TokenBalance[] | null>(null);
   const [exchangeRateState, setExchangeRateState] = useState<Record<
     string,
     number
@@ -159,19 +160,18 @@ const NexusProvider = ({
   }, []);
 
   const normalizeUserAssetFiatValues = useCallback(
-    (assets: UserAssetDatum[] | null): UserAssetDatum[] | null => {
+    (assets: TokenBalance[] | null): TokenBalance[] | null => {
       if (!assets) return assets;
 
       return assets.map((asset) => {
         let computedAssetUsd = 0;
 
-        const breakdown = (asset.breakdown ?? []).map((entry) => {
+        // v2: chainBalances replaces breakdown; value is a string instead of number
+        const chainBalances = (asset.chainBalances ?? []).map((entry: ChainBalance) => {
           const balance = Number.parseFloat(String(entry.balance ?? "0"));
           const safeBalance =
             Number.isFinite(balance) && balance > 0 ? balance : 0;
-          const existingUsd = Number.parseFloat(
-            String(entry.balanceInFiat ?? "0"),
-          );
+          const existingUsd = Number.parseFloat(String(entry.value ?? "0"));
           const safeExistingUsd =
             Number.isFinite(existingUsd) && existingUsd >= 0 ? existingUsd : 0;
 
@@ -186,16 +186,14 @@ const NexusProvider = ({
           computedAssetUsd += normalizedUsd;
           return {
             ...entry,
-            balanceInFiat: normalizedUsd,
+            value: normalizedUsd.toString(),
           };
         });
 
         const assetBalance = Number.parseFloat(String(asset.balance ?? "0"));
         const safeAssetBalance =
           Number.isFinite(assetBalance) && assetBalance > 0 ? assetBalance : 0;
-        const rawAssetUsd = Number.parseFloat(
-          String(asset.balanceInFiat ?? "0"),
-        );
+        const rawAssetUsd = Number.parseFloat(String(asset.value ?? "0"));
         const safeAssetUsd =
           Number.isFinite(rawAssetUsd) && rawAssetUsd >= 0 ? rawAssetUsd : 0;
 
@@ -213,8 +211,8 @@ const NexusProvider = ({
 
         return {
           ...asset,
-          balanceInFiat: normalizedAssetUsd,
-          breakdown,
+          value: normalizedAssetUsd.toString(),
+          chainBalances,
         };
       });
     },

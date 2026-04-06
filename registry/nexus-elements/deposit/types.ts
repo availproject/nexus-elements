@@ -2,7 +2,7 @@ import type {
   ExecuteParams,
   OnSwapIntentHookData,
   SwapAndExecuteOnIntentHookData,
-  UserAssetDatum,
+  TokenBalance,
 } from "@avail-project/nexus-sdk-v2";
 import type { Address } from "viem";
 
@@ -172,7 +172,7 @@ export interface DepositWidgetContextValue {
   ) => void;
 
   // SDK integration
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   activeIntent: SwapAndExecuteOnIntentHookData | null;
   confirmationDetails: {
     sourceLabel: string;
@@ -183,7 +183,8 @@ export interface DepositWidgetContextValue {
           decimals: number;
           symbol: string;
           balance: string;
-          balanceInFiat?: number;
+          value?: string;          // v2: string USD value (replaces balanceInFiat: number)
+          balanceInFiat?: number;  // kept for any legacy callers
           tokenLogo?: string;
           chainLogo?: string;
           chainName?: string;

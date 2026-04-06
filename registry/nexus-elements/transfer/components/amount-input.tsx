@@ -1,7 +1,7 @@
 import { type FC, Fragment, useEffect, useMemo, useRef } from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { type UserAsset } from "@avail-project/nexus-core";
+import { type TokenBalance as UserAsset } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type FastTransferState } from "../hooks/useTransfer";
@@ -146,7 +146,7 @@ const AmountInput: FC<AmountInputProps> = ({
           </AccordionTrigger>
           <AccordionContent className="pb-0 bg-muted rounded-lg mt-4">
             <div className="space-y-1 py-2">
-              {bridgableBalance?.breakdown.map((chain) => {
+              {bridgableBalance?.chainBalances?.map((chain: any) => {
                 if (Number.parseFloat(chain.balance) === 0) return null;
                 if (inputs?.chain === chain.chain.id) return null;
                 return (

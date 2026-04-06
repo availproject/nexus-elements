@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { AssetSelectionState, DestinationConfig } from "../types";
-import type { UserAssetDatum } from "@avail-project/nexus-sdk-v2";
+import type { TokenBalance } from "@avail-project/nexus-sdk-v2";
 import { MIN_SELECTABLE_SOURCE_BALANCE_USD } from "../constants/widget";
 import { resolveDepositSourceSelection } from "../utils";
 
@@ -39,7 +39,7 @@ export const createInitialAssetSelection = (): AssetSelectionState => ({
  * Handles selection of tokens/chains for cross-chain swaps.
  */
 export function useAssetSelection(
-  swapBalance: UserAssetDatum[] | null,
+  swapBalance: TokenBalance[] | null,
   destination: Pick<
     DestinationConfig,
     "chainId" | "tokenAddress" | "tokenSymbol"

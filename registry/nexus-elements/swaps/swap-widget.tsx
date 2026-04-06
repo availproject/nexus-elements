@@ -77,7 +77,7 @@ function SwapWidget({
       return;
     }
     const isValidSource = swapBalance?.some((asset) =>
-      (asset.breakdown ?? []).some(
+      (asset.chainBalances ?? []).some(
         (entry) =>
           entry.chain?.id === inputs.toChainID &&
           entry.contractAddress.toLowerCase() ===

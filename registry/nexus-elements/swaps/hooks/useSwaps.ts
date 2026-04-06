@@ -15,7 +15,8 @@ import type {
   SwapPlanStep,
   OnSwapIntentHookData,
   Source as SwapSource,
-  UserAssetDatum,
+  TokenBalance,
+  ChainBalance,
 } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { padHex, parseUnits, type Hex } from "viem";
@@ -53,12 +54,12 @@ function toComparableSdkAddress(address: string): string {
   }
 }
 
-type AssetBreakdownWithOptionalIcon = UserAssetDatum["breakdown"][number] & {
+type AssetBreakdownWithOptionalIcon = ChainBalance & {
   icon?: string;
 };
 
 function getBreakdownTokenIcon(
-  breakdown: UserAssetDatum["breakdown"][number],
+  breakdown: ChainBalance,
 ): string {
   const icon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
   return typeof icon === "string" && icon.length > 0 ? icon : "";
@@ -188,7 +189,7 @@ function reducer(state: SwapState, action: Action): SwapState {
 interface UseSwapsProps {
   nexusSDK: NexusClient | null;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  swapBalance: UserAssetDatum[] | null;
+  swapBalance: TokenBalance[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
@@ -238,7 +239,7 @@ const useSwaps = ({
     };
 
     for (const asset of swapBalance ?? []) {
-      for (const entry of asset.breakdown ?? []) {
+      for (const entry of asset.chainBalances ?? []) {
         const balance = entry.balance ?? "0";
         const parsed = Number.parseFloat(balance);
         if (!Number.isFinite(parsed) || parsed <= 0) continue;
@@ -297,7 +298,7 @@ const useSwaps = ({
     const destinationChainId = state.inputs.toChainID;
     const destinationToken = state.inputs.toToken;
     if (!destinationChainId || !destinationToken || !swapBalance?.length) {
-      return options.sort((a, b) => {
+      return options.sort((a: ExactOutSourceOption, b: ExactOutSourceOption) => {
         if (a.tokenSymbol === b.tokenSymbol) {
           return a.chainName.localeCompare(b.chainName);
         }
@@ -305,7 +306,7 @@ const useSwaps = ({
       });
     }
 
-    return options.sort((a, b) => {
+    return options.sort((a: ExactOutSourceOption, b: ExactOutSourceOption) => {
       const aBalance = Number.parseFloat(a.balance);
       const bBalance = Number.parseFloat(b.balance);
       if (Number.isFinite(aBalance) && Number.isFinite(bBalance)) {
@@ -574,7 +575,7 @@ const useSwaps = ({
       return;
 
     const sourceBalance = swapBalance
-      ?.flatMap((token) => token.breakdown ?? [])
+      ?.flatMap((token) => token.chainBalances ?? [])
       ?.find(
         (chain) =>
           chain.chain?.id === fromChainID &&
@@ -770,7 +771,7 @@ const useSwaps = ({
       return undefined;
     return (
       swapBalance
-        ?.flatMap((token) => token.breakdown ?? [])
+        ?.flatMap((token) => token.chainBalances ?? [])
         ?.find(
           (chain) =>
             chain.chain?.id === state.inputs?.fromChainID &&
@@ -795,7 +796,7 @@ const useSwaps = ({
       return undefined;
     return (
       swapBalance
-        ?.flatMap((token) => token.breakdown ?? [])
+        ?.flatMap((token) => token.chainBalances ?? [])
         ?.find(
           (chain) =>
             chain.chain?.id === state?.inputs?.toChainID &&
@@ -808,7 +809,7 @@ const useSwaps = ({
   const availableStables = useMemo(() => {
     if (!nexusSDK || !swapBalance) return [];
     const stableSymbols = new Set(["USDT", "USDC", "ETH", "DAI", "WBTC"]);
-    // v2: breakdown has no .symbol — use token.symbol from the parent UserAssetDatum
+    // v2: breakdown has no .symbol — use token.symbol from the parent TokenBalance
     const filteredToken = swapBalance.filter((token) =>
       stableSymbols.has(token.symbol.toUpperCase()),
     );

@@ -3,7 +3,8 @@ import type {
   NexusNetwork,
   OnAllowanceHookData,
   OnIntentHookData,
-  UserAssetDatum,
+  TokenBalance,
+  ChainBalance,
 } from "@avail-project/nexus-sdk-v2";
 import { parseUnits } from "viem";
 import {
@@ -54,7 +55,7 @@ interface BaseTransactionFlowProps {
   nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAssetDatum[] | null;
+  bridgableBalance: TokenBalance[] | null;
   prefill?: TransactionFlowPrefill;
   onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
@@ -185,9 +186,10 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   }, [bridgableBalance, inputs?.token]);
 
   const availableSources = useMemo(() => {
-    const breakdown = filteredBridgableBalance?.breakdown ?? [];
+    // v2: chainBalances replaces breakdown
+    const chainBalances = filteredBridgableBalance?.chainBalances ?? [];
     const destinationChainId = inputs?.chain;
-    const nonZero = breakdown.filter((source) => {
+    const nonZero = chainBalances.filter((source: ChainBalance) => {
       if (Number.parseFloat(source.balance ?? "0") <= 0) return false;
       if (typeof destinationChainId === "number") {
         return source.chain.id !== destinationChainId;
@@ -200,7 +202,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance),
       );
     }
-    return nonZero.sort((a, b) => {
+    return nonZero.sort((a: ChainBalance, b: ChainBalance) => {
       try {
         const aRaw = parseUnits(a.balance ?? "0", decimals);
         const bRaw = parseUnits(b.balance ?? "0", decimals);
@@ -212,20 +214,20 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     });
   }, [
     inputs?.chain,
-    filteredBridgableBalance?.breakdown,
+    filteredBridgableBalance?.chainBalances,
     filteredBridgableBalance?.decimals,
     nexusSDK,
   ]);
 
   const allAvailableSourceChainIds = useMemo(
-    () => availableSources.map((source) => source.chain.id),
+    () => availableSources.map((source: ChainBalance) => source.chain.id),
     [availableSources],
   );
 
   const effectiveSelectedSourceChains = useMemo(() => {
     if (selectedSourceChains && selectedSourceChains.length > 0) {
       const availableSet = new Set(allAvailableSourceChainIds);
-      const filteredSelection = selectedSourceChains.filter((id) =>
+      const filteredSelection = selectedSourceChains.filter((id: number) =>
         availableSet.has(id),
       );
       if (filteredSelection.length > 0) {
@@ -245,7 +247,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     if (!selectedSourceChains || selectedSourceChains.length === 0) {
       return "ALL";
     }
-    return [...effectiveSelectedSourceChains].sort((a, b) => a - b).join("|");
+    return [...effectiveSelectedSourceChains].sort((a: number, b: number) => a - b).join("|");
   }, [
     allAvailableSourceChainIds.length,
     effectiveSelectedSourceChains,
@@ -269,7 +271,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     const selectedSet = new Set(
       sourceChainsForSdk ?? allAvailableSourceChainIds,
     );
-    const totalRaw = availableSources.reduce((sum, source) => {
+    const totalRaw = availableSources.reduce((sum: bigint, source: ChainBalance) => {
       if (!selectedSet.has(source.chain.id)) return sum;
       try {
         return sum + parseUnits(source.balance ?? "0", decimals);
@@ -306,7 +308,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         const current =
           prev && prev.length > 0 ? prev : allAvailableSourceChainIds;
         const next = current.includes(chainId)
-          ? current.filter((id) => id !== chainId)
+          ? current.filter((id: number) => id !== chainId)
           : [...current, chainId];
         if (next.length === 0) {
           return current;
@@ -333,7 +335,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     const selectedTotalRaw =
       !nexusSDK || typeof decimals !== "number"
         ? BigInt(0)
-        : availableSources.reduce((sum, source) => {
+        : availableSources.reduce((sum: bigint, source: ChainBalance) => {
           if (!selectedChainSet.has(source.chain.id)) return sum;
           try {
             return sum + parseUnits(source.balance ?? "0", decimals);

@@ -1,7 +1,4 @@
-import {
-  type ReadableIntent,
-  type UserAssetDatum,
-} from "@avail-project/nexus-core";
+import { type BridgeIntent, type ChainBalance } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   Accordion,
@@ -17,11 +14,12 @@ import { cn } from "@/lib/utils";
 type SourceCoverageState = "healthy" | "warning" | "error";
 
 interface SourceBreakdownProps {
-  intent?: ReadableIntent;
-  tokenSymbol?: string; // v2: was SUPPORTED_TOKENS
+  intent?: BridgeIntent;
+  tokenSymbol?: string;
   isLoading?: boolean;
   requiredAmount?: string;
-  availableSources: UserAssetDatum["breakdown"]; // v2: uses UserAssetDatum
+  // v2: ChainBalance replaces UserAssetDatum["breakdown"] items
+  availableSources: ChainBalance[];
   selectedSourceChains: number[];
   onToggleSourceChain: (chainId: number) => void;
   onSourceMenuOpenChange?: (open: boolean) => void;
@@ -109,9 +107,9 @@ const SourceBreakdown = ({
   };
 
   const spendOnSources = useMemo(() => {
-    if (!intent || (intent?.sources?.length ?? 0) < 2)
+    if (!intent || (intent?.availableSources?.length ?? 0) < 2)
       return `1 asset on 1 chain`;
-    return `${intent?.sources?.length} Assets on ${intent?.sources?.length} chains`;
+    return `${intent?.availableSources?.length} Assets on ${intent?.availableSources?.length} chains`;
   }, [intent]);
 
   const amountSpend = useMemo(() => {
@@ -153,9 +151,10 @@ const SourceBreakdown = ({
 
                 <div className="flex flex-col items-end gap-y-1 min-w-fit">
                   <p className="text-base font-light">
-                    {formatTokenBalance(amountSpend, {
+                     {formatTokenBalance(amountSpend, {
                       symbol: displayTokenSymbol,
-                      decimals: intent?.allSources?.[0]?.token?.decimals,
+                      // v2: BridgeIntent.availableSources replaces allSources
+                      decimals: intent?.availableSources?.[0]?.token?.decimals,
                     })}
                   </p>
 
@@ -278,8 +277,8 @@ const SourceBreakdown = ({
                     ? selectedSourceChains.length === 1
                     : false;
 
-                  const willUseFromIntent = intent?.sources?.find(
-                    (s) => s.chain.id === chainId,
+                  const willUseFromIntent = intent?.availableSources?.find(
+                    (s: any) => s.chain.id === chainId,
                   )?.amount;
 
                   return (
@@ -317,7 +316,7 @@ const SourceBreakdown = ({
                           aria-label={`Select ${source.chain.name} as a source`}
                         />
                         <img
-                          src={source.chain.logo}
+                          src={source.chain.logo || undefined}
                           alt={source.chain.name}
                           width={20}
                           height={20}
@@ -340,8 +339,9 @@ const SourceBreakdown = ({
                             Estimated to use:{" "}
                             {formatTokenBalance(willUseFromIntent, {
                               symbol: tokenSymbol ?? source.chain?.name,
+                              // v2: BridgeIntent.availableSources replaces allSources
                               decimals:
-                                intent?.allSources?.[0]?.token?.decimals,
+                                intent?.availableSources?.[0]?.token?.decimals,
                             })}
                           </p>
                         )}

@@ -2,11 +2,7 @@
 import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
-import {
-  type UserAsset,
-  type SUPPORTED_CHAINS_IDS,
-  CHAIN_METADATA,
-} from "@avail-project/nexus-core";
+import { type TokenBalance, type ChainBalance } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Link2, Loader2, Search, X } from "lucide-react";
@@ -23,11 +19,12 @@ import { SHORT_CHAIN_NAME } from "../../common";
 import { type SourceTokenInfo } from "../hooks/useSwaps";
 
 interface SourceAssetSelectProps {
-  onSelect: (chainId: SUPPORTED_CHAINS_IDS, token: SourceTokenInfo) => void;
-  swapBalance: UserAsset[] | null;
+  onSelect: (chainId: number, token: SourceTokenInfo) => void;
+  swapBalance: TokenBalance[] | null;
 }
 
-type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+// v2: ChainBalance replaces UserAsset["breakdown"]
+type ChainBalanceWithOptionalIcon = ChainBalance & {
   icon?: string;
 };
 
@@ -49,32 +46,34 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
     const tokens: SourceTokenInfo[] = [];
 
     for (const asset of swapBalance) {
-      if (!asset?.breakdown?.length) continue;
-      for (const breakdown of asset.breakdown) {
-        if (Number.parseFloat(breakdown.balance) <= 0) continue;
-        const tokenSymbol = breakdown.symbol;
+      // v2: chainBalances replaces breakdown
+      if (!asset?.chainBalances?.length) continue;
+      for (const chainBal of asset.chainBalances) {
+        if (Number.parseFloat(chainBal.balance) <= 0) continue;
+        const tokenSymbol = chainBal.symbol;
         const normalizedTokenSymbol = tokenSymbol.toUpperCase();
-        const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon)
-          .icon;
+        // v2: logo is on chain.logo for ChainBalance; contractAddress is the token address
         const tokenLogo =
-          breakdownIcon ||
+          (chainBal as ChainBalanceWithOptionalIcon).icon ||
+          chainBal.chain.logo ||
           TOKEN_IMAGES[tokenSymbol] ||
           TOKEN_IMAGES[normalizedTokenSymbol] ||
-          asset.icon ||
+          asset.logo ||
           "";
 
         tokens.push({
-          contractAddress: breakdown.contractAddress,
-          decimals: breakdown.decimals ?? asset.decimals,
+          contractAddress: chainBal.contractAddress,
+          decimals: chainBal.decimals ?? asset.decimals,
           logo: tokenLogo,
           name: tokenSymbol,
           symbol: tokenSymbol,
-          balance: formatTokenBalance(breakdown?.balance, {
+          balance: formatTokenBalance(chainBal?.balance, {
             symbol: tokenSymbol,
-            decimals: breakdown.decimals ?? asset.decimals,
+            decimals: chainBal.decimals ?? asset.decimals,
           }),
-          balanceInFiat: `$${breakdown.balanceInFiat}`,
-          chainId: breakdown.chain?.id,
+          // v2: value is a string USD amount per ChainBalance
+          balanceInFiat: `$${Number.parseFloat(chainBal.value ?? "0").toFixed(2)}`,
+          chainId: chainBal.chain?.id,
         });
       }
     }
@@ -123,7 +122,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   const handlePick = (tok: SourceTokenInfo) => {
     const chainId = tempChain?.id ?? tok.chainId;
     if (!chainId) return;
-    onSelect(chainId as SUPPORTED_CHAINS_IDS, tok);
+    onSelect(chainId, tok);
   };
 
   if (!swapBalance)
@@ -224,7 +223,8 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
                         <TokenIcon
                           symbol={t.symbol}
                           tokenLogo={t.logo}
-                          chainLogo={CHAIN_METADATA[t.chainId ?? 1]?.logo}
+                          // v2: look up chain logo from swapSupportedChainsAndTokens
+                          chainLogo={swapSupportedChainsAndTokens?.find(c => c.id === (t.chainId ?? 1))?.logo || undefined}
                           className="border border-border rounded-full"
                         />
                       </div>

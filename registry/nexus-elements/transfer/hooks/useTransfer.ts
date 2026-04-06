@@ -3,7 +3,7 @@ import type {
   NexusNetwork,
   OnAllowanceHookData,
   OnIntentHookData,
-  UserAssetDatum,
+  TokenBalance,
 } from "@avail-project/nexus-sdk-v2";
 import { useCallback, type RefObject } from "react";
 import { type Address } from "viem";
@@ -24,7 +24,7 @@ interface UseTransferProps {
   nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAssetDatum[] | null;
+  bridgableBalance: TokenBalance[] | null;
   prefill?: {
     token: string;
     chainId: number;

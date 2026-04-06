@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/registry/nexus-elements/ui/dialog";
 import { Clock, LoaderPinwheel, SquareArrowOutUpRight } from "lucide-react";
-import { TOKEN_METADATA, type RFF } from "@avail-project/nexus-core";
+import { type IntentRecord } from "@avail-project/nexus-sdk-v2";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/registry/nexus-elements/ui/badge";
 import { Button } from "@/registry/nexus-elements/ui/button";
@@ -17,34 +17,8 @@ import { Separator } from "@/registry/nexus-elements/ui/separator";
 import useViewHistory from "./hooks/useViewHistory";
 import { useEffect, useState } from "react";
 
-const TOKEN_ICON_FALLBACKS: Record<string, string> = {
-  USDM:
-    "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
-};
-
-function resolveTokenMetadata(symbol?: string) {
-  const normalized = symbol?.trim() ?? "";
-  if (!normalized) {
-    return { icon: "", name: "token" };
-  }
-
-  const upper = normalized.toUpperCase();
-  const normalizedMetadata =
-    TOKEN_METADATA[normalized as keyof typeof TOKEN_METADATA];
-  const upperMetadata = TOKEN_METADATA[upper as keyof typeof TOKEN_METADATA];
-
-  const icon =
-    normalizedMetadata?.icon ||
-    upperMetadata?.icon ||
-    TOKEN_ICON_FALLBACKS[normalized] ||
-    TOKEN_ICON_FALLBACKS[upper] ||
-    "";
-  const name = normalizedMetadata?.name || upperMetadata?.name || upper;
-
-  return { icon, name };
-}
-
-const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
+// v2: IntentRecord.sources[].chain.logo directly available
+const SourceChains = ({ sources }: { sources: IntentRecord["sources"] }) => {
   const sourceList = sources ?? [];
   return (
     <div className="flex items-center">
@@ -58,7 +32,7 @@ const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
           style={{ zIndex: sourceList.length - index }}
         >
           <img
-            src={source?.chain?.logo}
+            src={source?.chain?.logo || undefined}
             alt={source?.chain?.name}
             width={24}
             height={24}
@@ -92,16 +66,16 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// v2: IntentRecord.destinations[].token.logo is directly available
 const DestinationToken = ({
   destination,
 }: {
-  destination: RFF["destinations"];
+  destination: IntentRecord["destinations"];
 }) => {
   const destList = destination ?? [];
   return (
     <div className="flex items-center">
       {destList.map((dest, index) => {
-        const tokenMeta = resolveTokenMetadata(dest.token.symbol);
         return (
           <div
             key={dest.token.symbol}
@@ -112,8 +86,8 @@ const DestinationToken = ({
             style={{ zIndex: destList.length - index }}
           >
             <img
-              src={tokenMeta.icon}
-              alt={tokenMeta.name}
+              src={dest.token.logo || undefined}
+              alt={dest.token.name || dest.token.symbol}
               width={24}
               height={24}
               className="rounded-full"
@@ -157,7 +131,7 @@ const ViewHistory = ({
         <>
           {displayedHistory?.map((pastIntent) => (
             <Card
-              key={pastIntent.id}
+              key={pastIntent.requestHash}
               className="p-4 hover:shadow-md transition-shadow duration-200 border-border/50 gap-3"
             >
               <div className="flex items-start justify-between gap-4">
@@ -170,7 +144,7 @@ const ViewHistory = ({
                         .join(", ")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Intent #{pastIntent?.id}
+                      Intent #{pastIntent?.requestHash?.slice(0, 10)}...
                     </p>
                   </div>
                 </div>

@@ -11,7 +11,8 @@ import {
 } from "../../ui/collapsible";
 import { ChevronRight, ExternalLink, Loader2 } from "lucide-react";
 import { type DepositStatus } from "../hooks/useDeposit";
-import { type BridgeStepType } from "@avail-project/nexus-core";
+// v2: BridgeStepType is locally defined
+type BridgeStepType = { typeID?: string; type?: string; stepType?: string; state?: string; [key: string]: unknown };
 
 interface DepositTransactionStatusProps {
   status: DepositStatus;

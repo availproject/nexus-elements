@@ -1,4 +1,4 @@
-import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
+const SUPPORTED_CHAINS = { OPTIMISM: 10, ETHEREUM: 1, MONAD: 143, MEGAETH: 4326, ARBITRUM: 42161, SCROLL: 534352, BASE: 8453, BNB: 56 } as const;
 
 export const DESTINATION_SWAP_TOKENS = new Map<
   number,

@@ -5,7 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../ui/accordion";
-import { type ReadableIntent } from "@avail-project/nexus-core";
+import { type BridgeIntent } from "@avail-project/nexus-sdk-v2";
 import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { Skeleton } from "../../ui/skeleton";
 import { useNexus } from "../../nexus/NexusProvider";
@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { MessageCircleQuestion } from "lucide-react";
 
 interface FeeBreakdownProps {
-  intent: ReadableIntent;
+  intent: BridgeIntent;
   tokenSymbol?: string; // v2: was SUPPORTED_TOKENS
   isLoading?: boolean;
 }
@@ -34,9 +34,9 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
         "Gas cost required to execute the transfer on the destination chain.",
     },
     {
-      key: "gasSupplied",
+      key: "caGas",
       label: "Gas Supplied",
-      value: intent?.fees?.gasSupplied,
+      value: intent?.fees?.caGas,
       description:
         "Extra gas tokens supplied to ensure the transfer completes on-chain.",
     },
@@ -68,7 +68,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
               <p className="font-light text-base min-w-max">
                 {formatTokenBalance(intent.fees?.total, {
                   symbol: tokenSymbol,
-                  decimals: intent?.allSources?.[0]?.token?.decimals,
+                  decimals: intent?.availableSources?.[0]?.token?.decimals,
                 })}
               </p>
             )}
@@ -100,7 +100,7 @@ const FeeBreakdown: FC<FeeBreakdownProps> = ({
                       <p className="text-sm font-light">
                         {formatTokenBalance(value, {
                           symbol: tokenSymbol,
-                          decimals: intent?.allSources?.[0]?.token?.decimals,
+                          decimals: intent?.availableSources?.[0]?.token?.decimals,
                         })}
                       </p>
                     )}
