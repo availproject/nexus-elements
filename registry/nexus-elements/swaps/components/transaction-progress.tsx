@@ -33,20 +33,20 @@ interface TransactionProgressProps {
 }
 
 const STEP_TYPES = {
-  INTENT_VERIFICATION: ["CREATE_PERMIT_FOR_SOURCE_SWAP"],
+  // v2 step type strings (snake_case)
+  INTENT_VERIFICATION: ["bridge_intent_submission", "request_signing"],
   SOURCE_STEP_TYPES: [
-    "CREATE_PERMIT_EOA_TO_EPHEMERAL",
-    "CREATE_PERMIT_FOR_SOURCE_SWAP",
-    "SOURCE_SWAP_BATCH_TX",
-    "SOURCE_SWAP_HASH",
+    "eoa_to_ephemeral_transfer",
+    "source_swap",
+    "bridge_deposit",
+    "bridge_intent_submission",
   ],
-  SOURCE_TRANSACTION: ["SOURCE_SWAP_HASH", "SOURCE_SWAP_BATCH_TX"],
+  SOURCE_TRANSACTION: ["source_swap", "bridge_deposit"],
   DESTINATION_STEP_TYPES: [
-    "DESTINATION_SWAP_BATCH_TX",
-    "DESTINATION_SWAP_HASH",
-    "SWAP_COMPLETE",
+    "bridge_fill",
+    "destination_swap",
   ],
-  TRANSACTION_COMPLETE: ["SWAP_COMPLETE"],
+  TRANSACTION_COMPLETE: ["bridge_fill", "destination_swap"],
 };
 
 const TransactionProgress: FC<TransactionProgressProps> = ({
@@ -68,8 +68,9 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       steps
         ?.filter((s) => {
           const st = s?.step ?? {};
+          // v2: emitted steps have chain, id, or other properties merged in
           return (
-            "explorerURL" in st || "chain" in st || "completed" in st // present when event args were merged into step
+            "chain" in st || "id" in st || "explorerURL" in st || "completed" in st
           );
         })
         .map((s) => s?.step?.type)
@@ -78,10 +79,14 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       types.some((t) => completedTypes.has(t));
     const sawAny = (types: string[]) => types.some((t) => eventfulTypes.has(t));
 
-    const intentVerified = hasAny(["DETERMINING_SWAP", "SWAP_START"]);
+    // v2: intent is verified once the bridge_intent_submission step completes,
+    // OR implicitly if any source/destination step is already done
+    const intentVerified =
+      hasAny(STEP_TYPES.INTENT_VERIFICATION) ||
+      hasAny(STEP_TYPES.SOURCE_STEP_TYPES) ||
+      hasAny(STEP_TYPES.DESTINATION_STEP_TYPES);
 
     // If the flow does not include SOURCE_* steps, consider it implicitly collected
-
     const collectedOnSources =
       (sawAny(STEP_TYPES.SOURCE_STEP_TYPES) &&
         hasAny(STEP_TYPES.SOURCE_TRANSACTION)) ||
@@ -104,7 +109,7 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       },
     ];
 
-    // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
+    // Mark overall completion ONLY when the SDK reports the final destination step
     const done = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
     const current = displaySteps.findIndex((st) => !st.completed);
     return {

@@ -495,7 +495,7 @@ const useSwaps = ({
    * SwapEvent is a typed discriminated union: { type: 'plan_preview' | 'plan_progress' | ... }
    * Explorer URLs are on the event itself (not on step.explorerURL)
    */
-  const handleSwapEvent = useCallback((event: SwapEvent, runId: number) => {
+  const handleSwapEvent = useCallback((event: SwapEvent, runId: number, completedFromEventRef: { current: boolean }) => {
     if (swapRunIdRef.current !== runId) return;
 
     if (event.type === "plan_preview") {
@@ -519,6 +519,7 @@ const useSwaps = ({
         state: string;
         step: SwapPlanStep;
         explorerUrl?: string;
+        error?: string;
       };
 
       // v2: explorerUrl is on the event, not step.explorerURL
@@ -553,10 +554,31 @@ const useSwaps = ({
         ...step,
         explorerURL: explorerUrl,
       });
-    }
-  }, [seed, onStepComplete]);
 
-  const handleExactInSwap = async (runId: number) => {
+      // Drive success/failure from events, not from the SDK promise resolution
+      if (progressEvent.state === "failed" && !completedFromEventRef.current) {
+        completedFromEventRef.current = true;
+        const errorMessage = progressEvent.error ?? "Swap failed";
+        dispatch({ type: "setStatus", payload: "error" });
+        dispatch({ type: "setError", payload: errorMessage });
+        onError?.(errorMessage);
+        return;
+      }
+
+      if (
+        progressEvent.stepType === "destination_swap" &&
+        progressEvent.state === "completed" &&
+        !completedFromEventRef.current
+      ) {
+        completedFromEventRef.current = true;
+        dispatch({ type: "setStatus", payload: "success" });
+        onComplete?.(swapIntent.current?.intent?.destination?.amount);
+        void fetchBalance();
+      }
+    }
+  }, [seed, onStepComplete, dispatch, onError, onComplete, fetchBalance, swapRunIdRef, swapIntent]);
+
+  const handleExactInSwap = async (runId: number, completedFromEventRef: { current: boolean }) => {
     const fromToken = state.inputs.fromToken;
     const toToken = state.inputs.toToken;
     const fromAmount = state.inputs.fromAmount;
@@ -608,7 +630,7 @@ const useSwaps = ({
 
     // v2: returns SuccessfulSwapResult directly; throws on error (no .success wrapper)
     await nexusSDK.swapWithExactIn(swapInput, {
-      onEvent: (event) => handleSwapEvent(event, runId),
+      onEvent: (event) => handleSwapEvent(event, runId, completedFromEventRef),
       hooks: {
         onIntent: (data) => {
           swapIntent.current = data;
@@ -617,7 +639,7 @@ const useSwaps = ({
     });
   };
 
-  const handleExactOutSwap = async (runId: number) => {
+  const handleExactOutSwap = async (runId: number, completedFromEventRef: { current: boolean }) => {
     const toToken = state.inputs.toToken;
     const toAmount = state.inputs.toAmount;
     const toChainID = state.inputs.toChainID;
@@ -651,7 +673,7 @@ const useSwaps = ({
 
     // v2: returns SuccessfulSwapResult directly; throws on error
     await nexusSDK.swapWithExactOut(swapInput, {
-      onEvent: (event) => handleSwapEvent(event, runId),
+      onEvent: (event) => handleSwapEvent(event, runId, completedFromEventRef),
       hooks: {
         onIntent: (data) => {
           swapIntent.current = data;
@@ -662,6 +684,9 @@ const useSwaps = ({
 
   const runSwap = async (runId: number) => {
     if (!nexusSDK || !areInputsValid || !swapBalance) return;
+
+    // Used by handleSwapEvent to signal completion without waiting for the promise
+    const completedFromEventRef = { current: false };
 
     try {
       onStart?.();
@@ -676,17 +701,21 @@ const useSwaps = ({
       }
 
       if (state.swapMode === "exactIn") {
-        await handleExactInSwap(runId);
+        await handleExactInSwap(runId, completedFromEventRef);
       } else {
-        await handleExactOutSwap(runId);
+        await handleExactOutSwap(runId, completedFromEventRef);
       }
 
       if (swapRunIdRef.current !== runId) return;
-      dispatch({ type: "setStatus", payload: "success" });
-      onComplete?.(swapIntent.current?.intent?.destination?.amount);
-      await fetchBalance();
+      if (!completedFromEventRef.current) {
+        // Fallback: SDK resolved but terminal event never arrived (single-step flows)
+        dispatch({ type: "setStatus", payload: "success" });
+        onComplete?.(swapIntent.current?.intent?.destination?.amount);
+        await fetchBalance();
+      }
     } catch (error) {
       if (swapRunIdRef.current !== runId) return;
+      if (completedFromEventRef.current) return; // event already handled failure
       const { message } = handleNexusError(error);
       dispatch({ type: "setStatus", payload: "error" });
       dispatch({ type: "setError", payload: message });

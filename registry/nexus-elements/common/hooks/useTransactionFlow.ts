@@ -552,6 +552,15 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     setSelectedSourceChains(null);
   }, [inputs?.token]);
 
+  // Safety-net: stop the stopwatch as soon as status reaches a terminal state.
+  // This ensures the timer freezes even if the onEvent closure's stopwatch.stop()
+  // didn't fire (e.g. stale closure reference or SDK promise resolved oddly).
+  useEffect(() => {
+    if (state.status === "success" || state.status === "error") {
+      stopwatch.stop();
+    }
+  }, [state.status, stopwatch]);
+
   useEffect(() => {
     if (isDialogOpen) return;
     stopwatch.stop();
@@ -568,6 +577,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
       setTxError(null);
     }
   }, [inputs, txError]);
+
 
   return {
     inputs,
