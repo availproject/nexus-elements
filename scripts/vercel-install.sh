@@ -1,1 +1,1 @@
-git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/" && git config --global url."https://${GH_PAT}@github.com/".insteadOf "ssh://git@github.com/" && pnpm install
+git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" && git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "ssh://git@github.com/" && pnpm install
