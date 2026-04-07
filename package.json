@@ -6,12 +6,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 8080 --turbopack",
-    "build": "pnpm postinstall && next build",
+    "build": "fumadocs-mdx && next build",
     "start": "next start",
     "lint": "next lint",
     "build:registry": "shadcn build",
-    "build:registry:json": "npx tsx scripts/build-registry/index.ts",
-    "postinstall": "fumadocs-mdx"
+    "build:registry:json": "npx tsx scripts/build-registry/index.ts"
   },
   "dependencies": {
     "@avail-project/nexus-core": "1.2.0",
