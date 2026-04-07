@@ -1,3 +1,11 @@
 #!/bin/sh
-# set -e
-git config --global url."https://${GH_PAT}@github.com/".insteadOf "git@github.com:" && git config --global url."https://${GH_PAT}@github.com/".insteadOf "ssh://git@github.com/" && git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/" && pnpm install
+set -e
+
+REWRITE="https://${GH_PAT}@github.com/"
+
+git config --global --add url."${REWRITE}".insteadOf "https://git@github.com:"
+git config --global --add url."${REWRITE}".insteadOf "git@github.com:"
+git config --global --add url."${REWRITE}".insteadOf "ssh://git@github.com/"
+git config --global --add url."${REWRITE}".insteadOf "https://github.com/"
+
+pnpm install
