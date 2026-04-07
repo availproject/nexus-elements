@@ -3,18 +3,18 @@ import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
 
-const NexusOneShowcase = () => {
+const NexusOneBridgeShowcase = () => {
   return (
     <ShowcaseWrapper
       type="nexus-one"
-      connectLabel="Connect wallet to use Nexus One"
+      connectLabel="Connect wallet to use Nexus One Bridge"
     >
       <NexusOne
-        config={{ mode: ["bridge", "swap", "deposit", "transfer"] }}
+        config={{ mode: "bridge" }}
         connectedAddress={"0x0000000000000000000000000000000000000000"}
       />
     </ShowcaseWrapper>
   );
 };
 
-export default NexusOneShowcase;
+export default NexusOneBridgeShowcase;

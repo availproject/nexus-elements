@@ -47,6 +47,22 @@ export function NexusOne({ config, connectedAddress, onComplete, onStart, onErro
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
+        {Array.isArray(config.mode) && config.mode.length > 1 && (
+          <div className="flex items-center gap-x-2 bg-gray-50 p-1 rounded-lg w-full">
+            {config.mode.map((m) => (
+              <button
+                key={m}
+                onClick={() => setActiveMode(m)}
+                className={`flex-1 flex justify-center py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${
+                  activeMode === m ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Amount Input */}
         <AmountInputUnified
           amount={amount}
