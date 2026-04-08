@@ -1,11 +1,8 @@
 import {
-  CHAIN_METADATA,
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
-  type ReadableIntent,
-  type SUPPORTED_TOKENS,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+  type BridgeIntent,
+  type TokenBalance,
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   Accordion,
   AccordionContent,
@@ -17,11 +14,11 @@ import { useMemo } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 
 interface SourceBreakdownProps {
-  intent?: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  intent?: BridgeIntent;
+  tokenSymbol?: string;
   isLoading?: boolean;
-  chain: SUPPORTED_CHAINS_IDS;
-  bridgableBalance?: UserAsset;
+  chain: number;
+  bridgableBalance?: TokenBalance;
   requiredAmount?: string;
 }
 
@@ -44,19 +41,22 @@ const SourceBreakdown = ({
   const { nexusSDK } = useNexus();
   const fundsOnDestination = useMemo(() => {
     return Number.parseFloat(
-      bridgableBalance?.breakdown?.find((b) => b.chain?.id === chain)
+      // v2: chainBalances replaces breakdown
+      bridgableBalance?.chainBalances?.find((b: any) => b.chain?.id === chain)
         ?.balance ?? "0",
     );
   }, [bridgableBalance, chain]);
 
   const amountSpend = useMemo(() => {
+    // v2: BridgeIntent.selectedSources[0].token.decimals for decimals
+    const decimals = intent?.selectedSources?.[0]?.token?.decimals;
     const amountToFormat = intent
       ? Number.parseFloat(requiredAmount ?? "0") +
         Number.parseFloat(intent?.fees?.total ?? "0")
       : (requiredAmount ?? "0");
     return formatTokenBalance(amountToFormat, {
       symbol: tokenSymbol,
-      decimals: intent?.token?.decimals,
+      decimals,
     });
   }, [requiredAmount, intent, tokenSymbol]);
 
@@ -65,13 +65,21 @@ const SourceBreakdown = ({
       return [
         {
           chainID: chain,
-          chainLogo: CHAIN_METADATA[chain]?.logo,
-          chainName: CHAIN_METADATA[chain]?.name ?? "Destination",
+          chainLogo: undefined,
+          chainName: "Destination",
           amount: requiredAmount ?? "0",
           contractAddress: "",
         },
       ];
-    const baseSources: ReadableIntentSource[] = intent?.sources ?? [];
+    // v2: BridgeIntent.selectedSources has {chain:{id,name,logo}, token:{contractAddress,...}} shape
+    const rawSources = intent?.selectedSources ?? [];
+    const baseSources: ReadableIntentSource[] = rawSources.map((s: BridgeIntent["selectedSources"][0]) => ({
+      chainID: s.chain.id,
+      chainLogo: s.chain.logo,
+      chainName: s.chain.name,
+      amount: s.amount,
+      contractAddress: (s.token?.contractAddress ?? "") as `0x${string}`,
+    }));
     const requiredAmountNumber = Number(requiredAmount ?? "0");
     const destUsed = Math.max(
       Math.min(requiredAmountNumber, fundsOnDestination),
@@ -80,19 +88,18 @@ const SourceBreakdown = ({
     if (destUsed <= 0) {
       return baseSources;
     }
-    const allSources = intent?.allSources ?? [];
-    const destDetails = allSources?.find?.(
-      (s: ReadableIntentSource) => s?.chainID === chain,
-    );
+    // v2: BridgeIntent.availableSources replaces allSources
+    const allSources = intent?.availableSources ?? [];
+    const destDetails = allSources?.find?.((s) => s?.chain?.id === chain);
     const hasDest = baseSources?.some?.(
       (s: ReadableIntentSource) => s?.chainID === chain,
     );
     const destSource = {
       chainID: chain,
-      chainLogo: destDetails?.chainLogo,
-      chainName: destDetails?.chainName ?? "Destination",
+      chainLogo: destDetails?.chain?.logo,
+      chainName: destDetails?.chain?.name ?? "Destination",
       amount: destUsed.toString(),
-      contractAddress: destDetails?.contractAddress ?? "",
+      contractAddress: destDetails?.token?.contractAddress ?? "",
     };
     if (hasDest) {
       return baseSources.map((s: ReadableIntentSource) =>

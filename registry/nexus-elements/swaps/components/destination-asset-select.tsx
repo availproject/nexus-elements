@@ -1,12 +1,8 @@
 "use client";
 import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
-import {
-  type SUPPORTED_CHAINS_IDS,
-  CHAIN_METADATA,
-  type UserAsset,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+import { type TokenBalance } from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { DESTINATION_SWAP_TOKENS } from "../config/destination";
 import { DialogClose } from "../../ui/dialog";
 import {
@@ -23,9 +19,9 @@ import { useNexus } from "../../nexus/NexusProvider";
 import { type DestinationTokenInfo } from "../hooks/useSwaps";
 
 interface DestinationAssetSelectProps {
-  swapBalance: UserAsset[] | null;
+  swapBalance: TokenBalance[] | null;
   onSelect: (
-    chainId: SUPPORTED_CHAINS_IDS,
+    chainId: number,
     token: DestinationTokenInfo,
   ) => void;
 }
@@ -34,9 +30,20 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
   swapBalance,
   onSelect,
 }) => {
-  const { nexusSDK } = useNexus();
+  const { nexusSDK, supportedChainsAndTokens } = useNexus();
   const [tempChain, setTempChain] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // v2: look up chain name/logo from supportedChainsAndTokens instead of CHAIN_METADATA
+  const chainMetaById = useMemo(() => {
+    const map = new Map<number, { name: string; logo: string }>();
+    (supportedChainsAndTokens ?? []).forEach((chain) => {
+      map.set(chain.id, { name: chain.name, logo: chain.logo ?? "" });
+    });
+    return map;
+  }, [supportedChainsAndTokens]);
+  const getChainMeta = (id?: number | null) =>
+    id != null ? chainMetaById.get(id) ?? { name: "Chain "+id, logo: "" } : { name: "", logo: "" };
 
   // Get all tokens from all chains with their chain info
   const allTokens: DestinationTokenInfo[] = useMemo(() => {
@@ -50,8 +57,9 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
       }
     }
     return tokens.map((token) => {
+      // v2: chainBalances replaces breakdown; value is a string USD amount
       const balance = swapBalance
-        ?.flatMap((asset) => asset.breakdown ?? [])
+        ?.flatMap((asset) => asset.chainBalances ?? [])
         ?.find(
           (chain) =>
             chain.symbol.toUpperCase() === token.symbol.toUpperCase() &&
@@ -63,7 +71,9 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
           symbol: balance?.symbol ?? token.symbol,
           decimals: balance?.decimals ?? 0,
         }),
-        balanceInFiat: usdFormatter.format(balance?.balanceInFiat ?? 0),
+        balanceInFiat: usdFormatter.format(
+          Number.parseFloat(balance?.value ?? "0"),
+        ),
       };
     });
   }, [swapBalance]);
@@ -99,17 +109,17 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
   const handlePick = (tok: DestinationTokenInfo) => {
     const chainId = tempChain ?? tok.chainId;
     if (!chainId) return;
-    onSelect(chainId as SUPPORTED_CHAINS_IDS, tok);
+    onSelect(chainId, tok);
   };
 
   return (
     <div className="w-full">
       <div className="w-full flex flex-col gap-y-3">
-        <Select
-          value={tempChain ? CHAIN_METADATA[tempChain].name : ""}
+          <Select
+          value={tempChain ? getChainMeta(tempChain).name : ""}
           onValueChange={(value) => {
             const matchedChain = chainsWithTokens.find(
-              (chain) => String(chain) === value,
+              (chain: any) => String((chain as any).id) === value,
             );
             if (matchedChain) {
               setTempChain(matchedChain);
@@ -138,8 +148,8 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
             <SelectTrigger className="rounded-full border-none cursor-pointer bg-transparent!">
               {tempChain ? (
                 <img
-                  src={CHAIN_METADATA[tempChain].logo}
-                  alt={CHAIN_METADATA[tempChain].name}
+                  src={getChainMeta(tempChain).logo || undefined}
+                  alt={getChainMeta(tempChain).name}
                   width={24}
                   height={24}
                   className="rounded-full size-6"
@@ -157,13 +167,13 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                 <SelectItem key={c} value={String(c)}>
                   <div className="flex items-center justify-between gap-x-2">
                     <img
-                      src={CHAIN_METADATA[c].logo}
-                      alt={CHAIN_METADATA[c].name}
+                      src={getChainMeta(c).logo || undefined}
+                      alt={getChainMeta(c).name}
                       width={20}
                       height={20}
                       className="rounded-full size-5"
                     />
-                    <span className="text-sm">{CHAIN_METADATA[c].name}</span>
+                    <span className="text-sm">{getChainMeta(c).name}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -191,7 +201,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
                           <TokenIcon
                             symbol={t.symbol}
                             tokenLogo={t.logo}
-                            chainLogo={CHAIN_METADATA[t.chainId ?? 1]?.logo}
+                            chainLogo={getChainMeta(t.chainId ?? 1).logo || undefined}
                             className="border border-border rounded-full"
                           />
                         </div>

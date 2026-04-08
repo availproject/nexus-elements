@@ -1,3 +1,5 @@
 onlyBuiltDependencies:
   - "@avail-project/ca-common"
   - "@avail-project/nexus-core"
+  - "@avail-project/nexus-sdk-v2"
+  - "@avail-project/nexus-types"

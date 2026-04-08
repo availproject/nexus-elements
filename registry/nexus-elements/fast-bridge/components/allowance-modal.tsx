@@ -12,12 +12,11 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import {
   type AllowanceHookSource,
-  CHAIN_METADATA,
-  formatTokenBalance,
   type OnAllowanceHookData,
-  parseUnits,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
+import { parseUnits } from "viem";
 import { useNexusError } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 
 interface AllowanceModalProps {
   allowance: RefObject<OnAllowanceHookData | null>;
@@ -228,7 +227,7 @@ const AllowanceModal: FC<AllowanceModalProps> = ({
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-inner">
                   <img
-                    src={CHAIN_METADATA[source.chain.id]?.logo}
+                    src={(source.chain as { logo?: string }).logo}
                     alt={source.chain.name}
                     width={24}
                     height={24}

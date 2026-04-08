@@ -10,7 +10,7 @@ import type { DepositWidgetContextValue } from "../types";
 import { Button } from "../../ui/button";
 import { CardContent } from "../../ui/card";
 import { usdFormatter } from "../../common";
-import { formatTokenBalance } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { useNexus } from "../../nexus/NexusProvider";
 import { BadgePercent, ShieldCheck } from "lucide-react";
 import { formatFeeUsd, formatImpactPercent, formatSignedUsd } from "../utils";
@@ -78,7 +78,7 @@ const ConfirmationContainer = ({
         tokenSymbol: source.symbol ?? "",
         tokenDecimals: source.decimals ?? 6,
         amount: source.balance ?? "0",
-        amountUsd: source.balanceInFiat,
+        amountUsd: parseFloat(source.value ?? "0"),
         isDestinationBalance: source.isDestinationBalance ?? false,
       });
     }

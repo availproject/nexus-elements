@@ -1,4 +1,4 @@
-import { type RFF } from "@avail-project/nexus-core";
+import { type IntentRecord } from "@avail-project/nexus-sdk-v2";
 import { useNexus } from "../../nexus/NexusProvider";
 import { useCallback, useEffect, useState } from "react";
 import { INTENT_HISTORY_REFRESH_EVENT } from "../history-events";
@@ -17,9 +17,9 @@ function formatExpiryDate(timestamp: number) {
 
 const useViewHistory = () => {
   const { nexusSDK } = useNexus();
-  const [history, setHistory] = useState<RFF[] | null>(null);
+  const [history, setHistory] = useState<IntentRecord[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [displayedHistory, setDisplayedHistory] = useState<RFF[]>([]);
+  const [displayedHistory, setDisplayedHistory] = useState<IntentRecord[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -32,7 +32,8 @@ const useViewHistory = () => {
   const fetchIntentHistory = useCallback(async () => {
     if (!nexusSDK) return;
     try {
-      const nextHistory = (await nexusSDK.getMyIntents()) ?? [];
+      // v2: listIntents() replaces getMyIntents(); returns { intents, total }
+      const { intents: nextHistory } = await nexusSDK.listIntents({ page: 1 });
       setLoadError(null);
       setHistory(nextHistory);
       const firstPage = nextHistory.slice(0, ITEMS_PER_PAGE);
@@ -111,16 +112,13 @@ const useViewHistory = () => {
     };
   }, [sentinelNode, loadMore, hasMore, isLoadingMore, displayedHistory.length]);
 
-  const getStatus = (pastIntent: RFF) => {
-    if (pastIntent?.fulfilled) {
-      return "Fulfilled";
-    } else if (pastIntent?.deposited) {
-      return "Deposited";
-    } else if (pastIntent?.refunded) {
-      return "Refunded";
-    } else {
-      return "Failed";
-    }
+  const getStatus = (pastIntent: IntentRecord) => {
+    // v2: status is a string field, not boolean flags
+    const s = pastIntent?.status;
+    if (s === "fulfilled") return "Fulfilled";
+    if (s === "deposited") return "Deposited";
+    if (s === "expired") return "Expired";
+    return "Created";
   };
 
   return {

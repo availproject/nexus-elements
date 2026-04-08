@@ -7,21 +7,19 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  NexusSDK,
-  type SUPPORTED_CHAINS_IDS,
-  type ExactInSwapInput,
-  type ExactOutSwapInput,
-  NEXUS_EVENTS,
-  type SwapStepType,
-  type OnSwapIntentHookData,
-  type Source as SwapSource,
-  type UserAsset,
-  sortSourcesByPriority,
-  parseUnits,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
-import { padHex, type Hex } from "viem";
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
+import type {
+  SwapExactInParams,
+  SwapExactOutParams,
+  SwapEvent,
+  SwapPlanStep,
+  OnSwapIntentHookData,
+  Source as SwapSource,
+  TokenBalance,
+  ChainBalance,
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { padHex, parseUnits, type Hex } from "viem";
 import {
   useTransactionSteps,
   SWAP_EXPECTED_STEPS,
@@ -34,6 +32,8 @@ import {
   getIntentMatchedOptionKeys,
   getIntentSourcesSignature,
 } from "../utils/source-matching";
+
+type NexusClient = ReturnType<typeof createNexusClient>;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const EVM_NATIVE_PLACEHOLDER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
@@ -54,12 +54,12 @@ function toComparableSdkAddress(address: string): string {
   }
 }
 
-type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+type AssetBreakdownWithOptionalIcon = ChainBalance & {
   icon?: string;
 };
 
 function getBreakdownTokenIcon(
-  breakdown: UserAsset["breakdown"][number],
+  breakdown: ChainBalance,
 ): string {
   const icon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
   return typeof icon === "string" && icon.length > 0 ? icon : "";
@@ -109,10 +109,10 @@ export type TransactionStatus =
 export type SwapMode = "exactIn" | "exactOut";
 
 export interface SwapInputs {
-  fromChainID?: SUPPORTED_CHAINS_IDS;
+  fromChainID?: number;
   fromToken?: SourceTokenInfo;
   fromAmount?: string;
-  toChainID?: SUPPORTED_CHAINS_IDS;
+  toChainID?: number;
   toToken?: DestinationTokenInfo;
   toAmount?: string;
 }
@@ -134,9 +134,9 @@ type Action =
   | { type: "setError"; payload: string | null }
   | { type: "setSwapMode"; payload: SwapMode }
   | {
-      type: "setExplorerUrls";
-      payload: Partial<SwapState["explorerUrls"]>;
-    }
+    type: "setExplorerUrls";
+    payload: Partial<SwapState["explorerUrls"]>;
+  }
   | { type: "reset" };
 
 const initialState: SwapState = {
@@ -187,14 +187,22 @@ function reducer(state: SwapState, action: Action): SwapState {
 }
 
 interface UseSwapsProps {
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  swapBalance: UserAsset[] | null;
+  swapBalance: TokenBalance[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
 }
+
+// v2 swap step shape (minimal, used for step-tracking)
+type SwapStep = {
+  typeID?: string;
+  type?: string;
+  explorerURL?: string;
+  [key: string]: unknown;
+};
 
 const useSwaps = ({
   nexusSDK,
@@ -211,7 +219,7 @@ const useSwaps = ({
     seed,
     onStepComplete,
     reset: resetSteps,
-  } = useTransactionSteps<SwapStepType>();
+  } = useTransactionSteps<SwapStep>();
   const swapRunIdRef = useRef(0);
   const lastSyncedIntentSourcesSignatureRef = useRef("");
   const lastSyncedIntentSelectionKeyRef = useRef("");
@@ -231,7 +239,7 @@ const useSwaps = ({
     };
 
     for (const asset of swapBalance ?? []) {
-      for (const entry of asset.breakdown ?? []) {
+      for (const entry of asset.chainBalances ?? []) {
         const balance = entry.balance ?? "0";
         const parsed = Number.parseFloat(balance);
         if (!Number.isFinite(parsed) || parsed <= 0) continue;
@@ -250,7 +258,8 @@ const useSwaps = ({
           chainName: entry.chain.name,
           chainLogo: entry.chain.logo,
           tokenAddress,
-          tokenSymbol: entry.symbol,
+          // v2: breakdown has no .symbol — use parent asset.symbol
+          tokenSymbol: asset.symbol,
           tokenLogo: getBreakdownTokenIcon(entry),
           balance,
           decimals: entry.decimals ?? asset.decimals,
@@ -285,10 +294,11 @@ const useSwaps = ({
 
     const options = [...optionsByKey.values()];
 
+    // v2: sortSourcesByPriority removed — sort by balance descending
     const destinationChainId = state.inputs.toChainID;
     const destinationToken = state.inputs.toToken;
     if (!destinationChainId || !destinationToken || !swapBalance?.length) {
-      return options.sort((a, b) => {
+      return options.sort((a: ExactOutSourceOption, b: ExactOutSourceOption) => {
         if (a.tokenSymbol === b.tokenSymbol) {
           return a.chainName.localeCompare(b.chainName);
         }
@@ -296,47 +306,12 @@ const useSwaps = ({
       });
     }
 
-    const priorityByOptionKey = new Map<string, number>();
-    const sortedSources = sortSourcesByPriority(swapBalance, {
-      chainID: destinationChainId,
-      tokenAddress: destinationToken.tokenAddress,
-      symbol: destinationToken.symbol,
-    });
-
-    sortedSources.forEach((source, index) => {
-      const sourceComparableAddress = toComparableSdkAddress(
-        source.tokenAddress,
-      );
-
-      for (const option of options) {
-        if (option.chainId !== source.chainID) continue;
-        const optionComparableAddress = toComparableSdkAddress(
-          option.tokenAddress,
-        );
-        if (optionComparableAddress !== sourceComparableAddress) continue;
-        if (!priorityByOptionKey.has(option.key)) {
-          priorityByOptionKey.set(option.key, index);
-        }
-      }
-    });
-
-    return options.sort((a, b) => {
-      const aPriority =
-        priorityByOptionKey.get(a.key) ?? Number.MAX_SAFE_INTEGER;
-      const bPriority =
-        priorityByOptionKey.get(b.key) ?? Number.MAX_SAFE_INTEGER;
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-
+    return options.sort((a: ExactOutSourceOption, b: ExactOutSourceOption) => {
       const aBalance = Number.parseFloat(a.balance);
       const bBalance = Number.parseFloat(b.balance);
       if (Number.isFinite(aBalance) && Number.isFinite(bBalance)) {
-        if (aBalance !== bBalance) {
-          return bBalance - aBalance;
-        }
+        if (aBalance !== bBalance) return bBalance - aBalance;
       }
-
       if (a.tokenSymbol === b.tokenSymbol) {
         return a.chainName.localeCompare(b.chainName);
       }
@@ -474,6 +449,7 @@ const useSwaps = ({
 
     return sources.length > 0 ? sources : undefined;
   }, [state.swapMode, effectiveExactOutSelectedKeys, exactOutSourceOptions]);
+
   const isExactOutSourceSelectionDirty = useMemo(() => {
     return (
       state.swapMode === "exactOut" &&
@@ -514,27 +490,95 @@ const useSwaps = ({
 
   const handleNexusError = useNexusError();
 
-  // Event handler shared between exact-in and exact-out
-  const handleSwapEvent = (event: { name: string; args: SwapStepType }) => {
-    if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-      const step = event.args;
-      if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
-        dispatch({
-          type: "setExplorerUrls",
-          payload: { sourceExplorerUrl: step.explorerURL },
-        });
-      }
-      if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
-        dispatch({
-          type: "setExplorerUrls",
-          payload: { destinationExplorerUrl: step.explorerURL },
-        });
-      }
-      onStepComplete(step);
-    }
-  };
+  /**
+   * v2 swap event handler
+   * SwapEvent is a typed discriminated union: { type: 'plan_preview' | 'plan_progress' | ... }
+   * Explorer URLs are on the event itself (not on step.explorerURL)
+   */
+  const handleSwapEvent = useCallback((event: SwapEvent, runId: number, completedFromEventRef: { current: boolean }) => {
+    if (swapRunIdRef.current !== runId) return;
 
-  const handleExactInSwap = async (runId: number) => {
+    if (event.type === "plan_preview") {
+      // Seed step tracker from plan; cast to our internal step shape
+      const planSteps = (event as { type: string; plan: { steps: SwapPlanStep[] } }).plan?.steps ?? [];
+      seed(planSteps.map((s, i) => {
+        const stepType = (s as { type?: string }).type ?? `step-${i}`;
+        return {
+          typeID: `step-${i}`,
+          stepType,
+          ...s,
+        };
+      }));
+      return;
+    }
+
+    if (event.type === "plan_progress") {
+      const progressEvent = event as {
+        type: string;
+        stepType: string;
+        state: string;
+        step: SwapPlanStep;
+        explorerUrl?: string;
+        error?: string;
+      };
+
+      // v2: explorerUrl is on the event, not step.explorerURL
+      const explorerUrl = progressEvent.explorerUrl;
+
+      if (
+        progressEvent.stepType === "source_swap" &&
+        (progressEvent.state === "submitted" || progressEvent.state === "confirmed") &&
+        explorerUrl
+      ) {
+        dispatch({
+          type: "setExplorerUrls",
+          payload: { sourceExplorerUrl: explorerUrl },
+        });
+      }
+
+      if (
+        progressEvent.stepType === "destination_swap" &&
+        (progressEvent.state === "submitted" || progressEvent.state === "confirmed") &&
+        explorerUrl
+      ) {
+        dispatch({
+          type: "setExplorerUrls",
+          payload: { destinationExplorerUrl: explorerUrl },
+        });
+      }
+
+      const step = progressEvent.step as SwapStep;
+      onStepComplete({
+        typeID: progressEvent.stepType,
+        type: progressEvent.stepType,
+        ...step,
+        explorerURL: explorerUrl,
+      });
+
+      // Drive success/failure from events, not from the SDK promise resolution
+      if (progressEvent.state === "failed" && !completedFromEventRef.current) {
+        completedFromEventRef.current = true;
+        const errorMessage = progressEvent.error ?? "Swap failed";
+        dispatch({ type: "setStatus", payload: "error" });
+        dispatch({ type: "setError", payload: errorMessage });
+        onError?.(errorMessage);
+        return;
+      }
+
+      if (
+        progressEvent.stepType === "destination_swap" &&
+        progressEvent.state === "completed" &&
+        !completedFromEventRef.current
+      ) {
+        completedFromEventRef.current = true;
+        dispatch({ type: "setStatus", payload: "success" });
+        onComplete?.(swapIntent.current?.intent?.destination?.amount);
+        void fetchBalance();
+      }
+    }
+  }, [seed, onStepComplete, dispatch, onError, onComplete, fetchBalance, swapRunIdRef, swapIntent]);
+
+  const handleExactInSwap = async (runId: number, completedFromEventRef: { current: boolean }) => {
     const fromToken = state.inputs.fromToken;
     const toToken = state.inputs.toToken;
     const fromAmount = state.inputs.fromAmount;
@@ -553,12 +597,12 @@ const useSwaps = ({
       return;
 
     const sourceBalance = swapBalance
-      ?.flatMap((token) => token.breakdown ?? [])
+      ?.flatMap((token) => token.chainBalances ?? [])
       ?.find(
         (chain) =>
           chain.chain?.id === fromChainID &&
           normalizeAddress(chain.contractAddress) ===
-            normalizeAddress(fromToken.contractAddress),
+          normalizeAddress(fromToken.contractAddress),
       );
     if (
       !sourceBalance ||
@@ -570,31 +614,32 @@ const useSwaps = ({
     }
 
     const amountBigInt = parseUnits(fromAmount, fromToken.decimals);
-    const swapInput: ExactInSwapInput = {
-      from: [
+
+    // v2: SwapExactInParams — sources replaces `from`, amountRaw in source
+    const swapInput: SwapExactInParams = {
+      sources: [
         {
           chainId: fromChainID,
-          amount: amountBigInt,
           tokenAddress: fromToken.contractAddress,
+          amountRaw: amountBigInt,
         },
       ],
       toChainId: toChainID,
       toTokenAddress: toToken.tokenAddress,
     };
 
-    const result = await nexusSDK.swapWithExactIn(swapInput, {
-      onEvent: (event) => {
-        if (swapRunIdRef.current !== runId) return;
-        handleSwapEvent(event as { name: string; args: SwapStepType });
+    // v2: returns SuccessfulSwapResult directly; throws on error (no .success wrapper)
+    await nexusSDK.swapWithExactIn(swapInput, {
+      onEvent: (event) => handleSwapEvent(event, runId, completedFromEventRef),
+      hooks: {
+        onIntent: (data) => {
+          swapIntent.current = data;
+        },
       },
     });
-
-    if (!result?.success) {
-      throw new Error(result?.error || "Swap failed");
-    }
   };
 
-  const handleExactOutSwap = async (runId: number) => {
+  const handleExactOutSwap = async (runId: number, completedFromEventRef: { current: boolean }) => {
     const toToken = state.inputs.toToken;
     const toAmount = state.inputs.toAmount;
     const toChainID = state.inputs.toChainID;
@@ -617,26 +662,31 @@ const useSwaps = ({
     }
 
     const amountBigInt = parseUnits(toAmount, toToken.decimals);
-    const swapInput: ExactOutSwapInput = {
-      toAmount: amountBigInt,
+
+    // v2: SwapExactOutParams — toAmountRaw replaces toAmount
+    const swapInput: SwapExactOutParams = {
+      toAmountRaw: amountBigInt,
       toChainId: toChainID,
       toTokenAddress: toToken.tokenAddress,
-      ...(exactOutFromSources ? { fromSources: exactOutFromSources } : {}),
+      ...(exactOutFromSources ? { sources: exactOutFromSources } : {}),
     };
 
-    const result = await nexusSDK.swapWithExactOut(swapInput, {
-      onEvent: (event) => {
-        if (swapRunIdRef.current !== runId) return;
-        handleSwapEvent(event as { name: string; args: SwapStepType });
+    // v2: returns SuccessfulSwapResult directly; throws on error
+    await nexusSDK.swapWithExactOut(swapInput, {
+      onEvent: (event) => handleSwapEvent(event, runId, completedFromEventRef),
+      hooks: {
+        onIntent: (data) => {
+          swapIntent.current = data;
+        },
       },
     });
-    if (!result?.success) {
-      throw new Error(result?.error || "Swap failed");
-    }
   };
 
   const runSwap = async (runId: number) => {
     if (!nexusSDK || !areInputsValid || !swapBalance) return;
+
+    // Used by handleSwapEvent to signal completion without waiting for the promise
+    const completedFromEventRef = { current: false };
 
     try {
       onStart?.();
@@ -651,17 +701,21 @@ const useSwaps = ({
       }
 
       if (state.swapMode === "exactIn") {
-        await handleExactInSwap(runId);
+        await handleExactInSwap(runId, completedFromEventRef);
       } else {
-        await handleExactOutSwap(runId);
+        await handleExactOutSwap(runId, completedFromEventRef);
       }
 
       if (swapRunIdRef.current !== runId) return;
-      dispatch({ type: "setStatus", payload: "success" });
-      onComplete?.(swapIntent.current?.intent?.destination?.amount);
-      await fetchBalance();
+      if (!completedFromEventRef.current) {
+        // Fallback: SDK resolved but terminal event never arrived (single-step flows)
+        dispatch({ type: "setStatus", payload: "success" });
+        onComplete?.(swapIntent.current?.intent?.destination?.amount);
+        await fetchBalance();
+      }
     } catch (error) {
       if (swapRunIdRef.current !== runId) return;
+      if (completedFromEventRef.current) return; // event already handled failure
       const { message } = handleNexusError(error);
       dispatch({ type: "setStatus", payload: "error" });
       dispatch({ type: "setError", payload: message });
@@ -746,12 +800,12 @@ const useSwaps = ({
       return undefined;
     return (
       swapBalance
-        ?.flatMap((token) => token.breakdown ?? [])
+        ?.flatMap((token) => token.chainBalances ?? [])
         ?.find(
           (chain) =>
             chain.chain?.id === state.inputs?.fromChainID &&
             normalizeAddress(chain.contractAddress) ===
-              normalizeAddress(state.inputs?.fromToken?.contractAddress ?? ""),
+            normalizeAddress(state.inputs?.fromToken?.contractAddress ?? ""),
         ) ?? undefined
     );
   }, [
@@ -771,12 +825,12 @@ const useSwaps = ({
       return undefined;
     return (
       swapBalance
-        ?.flatMap((token) => token.breakdown ?? [])
+        ?.flatMap((token) => token.chainBalances ?? [])
         ?.find(
           (chain) =>
             chain.chain?.id === state?.inputs?.toChainID &&
             normalizeAddress(chain.contractAddress) ===
-              normalizeAddress(state?.inputs?.toToken?.tokenAddress ?? ""),
+            normalizeAddress(state?.inputs?.toToken?.tokenAddress ?? ""),
         ) ?? undefined
     );
   }, [state?.inputs?.toToken, state?.inputs?.toChainID, swapBalance, nexusSDK]);
@@ -784,10 +838,9 @@ const useSwaps = ({
   const availableStables = useMemo(() => {
     if (!nexusSDK || !swapBalance) return [];
     const stableSymbols = new Set(["USDT", "USDC", "ETH", "DAI", "WBTC"]);
+    // v2: breakdown has no .symbol — use token.symbol from the parent TokenBalance
     const filteredToken = swapBalance.filter((token) =>
-      (token.breakdown ?? []).some((entry) =>
-        stableSymbols.has(entry.symbol.toUpperCase()),
-      ),
+      stableSymbols.has(token.symbol.toUpperCase()),
     );
     return filteredToken ?? [];
   }, [swapBalance, nexusSDK]);
@@ -815,15 +868,15 @@ const useSwaps = ({
     const isValidForCurrentMode =
       state.swapMode === "exactIn"
         ? areExactInInputsValid &&
-          state?.inputs?.fromAmount &&
-          state?.inputs?.fromChainID &&
-          state?.inputs?.fromToken &&
-          state?.inputs?.toChainID &&
-          state?.inputs?.toToken
+        state?.inputs?.fromAmount &&
+        state?.inputs?.fromChainID &&
+        state?.inputs?.fromToken &&
+        state?.inputs?.toChainID &&
+        state?.inputs?.toToken
         : areExactOutInputsValid &&
-          state?.inputs?.toAmount &&
-          state?.inputs?.toChainID &&
-          state?.inputs?.toToken;
+        state?.inputs?.toAmount &&
+        state?.inputs?.toChainID &&
+        state?.inputs?.toToken;
 
     if (!isValidForCurrentMode) {
       swapIntent.current?.deny();

@@ -5,11 +5,8 @@ import {
   DialogContent,
   DialogHeader,
 } from "../../ui/dialog";
-import {
-  type SwapStepType,
-  type OnSwapIntentHookData,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+import { type OnSwapIntentHookData } from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { ChevronDown, ChevronUp, Info, MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
 import { StackedTokenIcons } from "./stacked-token-icons";
@@ -71,7 +68,8 @@ function formatImpactPercent(value: number): string {
 }
 
 interface ViewTransactionProps {
-  steps: GenericStep<SwapStepType>[];
+  // v2: SwapStepType renamed to SwapPlanStep; use generic record for GenericStep
+  steps: GenericStep<{ type?: string; [key: string]: unknown }>[];
   status: TransactionStatus;
   swapMode: SwapMode;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
@@ -90,24 +88,23 @@ interface ViewTransactionProps {
   txError: string | null;
 }
 
-interface TokenBreakdownProps
-  extends Omit<
-    ViewTransactionProps,
-    | "swapIntent"
-    | "continueSwap"
-    | "status"
-    | "explorerUrls"
-    | "steps"
-    | "reset"
-    | "txError"
-    | "swapMode"
-    | "nexusSDK"
-    | "exactOutSourceOptions"
-    | "exactOutSelectedKeys"
-    | "toggleExactOutSource"
-    | "isExactOutSourceSelectionDirty"
-    | "updatingExactOutSources"
-  > {
+interface TokenBreakdownProps extends Omit<
+  ViewTransactionProps,
+  | "swapIntent"
+  | "continueSwap"
+  | "status"
+  | "explorerUrls"
+  | "steps"
+  | "reset"
+  | "txError"
+  | "swapMode"
+  | "nexusSDK"
+  | "exactOutSourceOptions"
+  | "exactOutSelectedKeys"
+  | "toggleExactOutSource"
+  | "isExactOutSourceSelectionDirty"
+  | "updatingExactOutSources"
+> {
   tokenLogo: string;
   chainLogo: string;
   symbol: string;
@@ -311,10 +308,7 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
     const bridgeUsd =
       bridgeExplicitTotal > 0 ? bridgeExplicitTotal : bridgeComponentTotal;
     const knownBridgeRowsUsd =
-      gasSponsorshipUsd +
-      executionGasFeeUsd +
-      protocolFeeUsd +
-      solverFeeUsd;
+      gasSponsorshipUsd + executionGasFeeUsd + protocolFeeUsd + solverFeeUsd;
     const otherBridgeFeeUsd = Math.max(0, bridgeUsd - knownBridgeRowsUsd);
 
     const bufferUsd = parseNonNegativeNumber(feesAndBuffer?.buffer);
@@ -365,17 +359,16 @@ const ViewTransaction: FC<ViewTransactionProps> = ({
   }, [transactionIntent, getFiatValue, sources]);
 
   const feeDetailRows = useMemo(
-    () =>
-      [
-        { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
-        {
-          label: "Execution Gas fee",
-          amountUsd:
-            feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
-        },
-        { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
-        { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
-      ],
+    () => [
+      { label: "Gas sponsorship", amountUsd: feeBreakdown.gasSponsorshipUsd },
+      {
+        label: "Execution Gas fee",
+        amountUsd:
+          feeBreakdown.executionGasFeeUsd + feeBreakdown.otherBridgeFeeUsd,
+      },
+      { label: "Protocol fee", amountUsd: feeBreakdown.protocolFeeUsd },
+      { label: "Solver fee", amountUsd: feeBreakdown.solverFeeUsd },
+    ],
     [feeBreakdown],
   );
 

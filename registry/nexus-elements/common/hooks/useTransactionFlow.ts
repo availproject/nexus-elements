@@ -1,12 +1,12 @@
-import {
-  type BridgeStepType,
-  type NexusNetwork,
-  NexusSDK,
-  type OnAllowanceHookData,
-  type OnIntentHookData,
-  parseUnits,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
+import type {
+  NexusNetwork,
+  OnAllowanceHookData,
+  OnIntentHookData,
+  TokenBalance,
+  ChainBalance,
+} from "@avail-project/nexus-sdk-v2";
+import { parseUnits } from "viem";
 import {
   useEffect,
   useMemo,
@@ -40,13 +40,22 @@ import {
   normalizeMaxAmount,
 } from "../utils/transaction-flow";
 
+type NexusClient = ReturnType<typeof createNexusClient>;
+
+// v2 uses a generic step shape; minimal type to satisfy getStepKey constraint
+type BridgePlanStep = {
+  typeID?: string;
+  type?: string;
+  [key: string]: unknown;
+};
+
 interface BaseTransactionFlowProps {
   type: TransactionFlowType;
   network: NexusNetwork;
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAsset[] | null;
+  bridgableBalance: TokenBalance[] | null;
   prefill?: TransactionFlowPrefill;
   onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
@@ -153,7 +162,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     onStepsList,
     onStepComplete,
     reset: resetSteps,
-  } = useTransactionSteps<BridgeStepType>();
+  } = useTransactionSteps<BridgePlanStep>();
   const configuredMaxAmount = useMemo(
     () => normalizeMaxAmount(maxAmount),
     [maxAmount],
@@ -177,9 +186,10 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   }, [bridgableBalance, inputs?.token]);
 
   const availableSources = useMemo(() => {
-    const breakdown = filteredBridgableBalance?.breakdown ?? [];
+    // v2: chainBalances replaces breakdown
+    const chainBalances = filteredBridgableBalance?.chainBalances ?? [];
     const destinationChainId = inputs?.chain;
-    const nonZero = breakdown.filter((source) => {
+    const nonZero = chainBalances.filter((source: ChainBalance) => {
       if (Number.parseFloat(source.balance ?? "0") <= 0) return false;
       if (typeof destinationChainId === "number") {
         return source.chain.id !== destinationChainId;
@@ -192,7 +202,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance),
       );
     }
-    return nonZero.sort((a, b) => {
+    return nonZero.sort((a: ChainBalance, b: ChainBalance) => {
       try {
         const aRaw = parseUnits(a.balance ?? "0", decimals);
         const bRaw = parseUnits(b.balance ?? "0", decimals);
@@ -204,20 +214,20 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     });
   }, [
     inputs?.chain,
-    filteredBridgableBalance?.breakdown,
+    filteredBridgableBalance?.chainBalances,
     filteredBridgableBalance?.decimals,
     nexusSDK,
   ]);
 
   const allAvailableSourceChainIds = useMemo(
-    () => availableSources.map((source) => source.chain.id),
+    () => availableSources.map((source: ChainBalance) => source.chain.id),
     [availableSources],
   );
 
   const effectiveSelectedSourceChains = useMemo(() => {
     if (selectedSourceChains && selectedSourceChains.length > 0) {
       const availableSet = new Set(allAvailableSourceChainIds);
-      const filteredSelection = selectedSourceChains.filter((id) =>
+      const filteredSelection = selectedSourceChains.filter((id: number) =>
         availableSet.has(id),
       );
       if (filteredSelection.length > 0) {
@@ -237,7 +247,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     if (!selectedSourceChains || selectedSourceChains.length === 0) {
       return "ALL";
     }
-    return [...effectiveSelectedSourceChains].sort((a, b) => a - b).join("|");
+    return [...effectiveSelectedSourceChains].sort((a: number, b: number) => a - b).join("|");
   }, [
     allAvailableSourceChainIds.length,
     effectiveSelectedSourceChains,
@@ -247,17 +257,34 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     sourceSelectionKey !== appliedSourceSelectionKey;
   const intentSourceSpendAmount = intent.current?.intent?.sourcesTotal;
 
+  /**
+   * v2: calculateMaxForBridge is removed. Use simulateBridge to get the max amount,
+   * or fall back to summing available source balances directly.
+   */
   const getMaxForCurrentSelection = useCallback(async () => {
     if (!nexusSDK || !inputs?.token || !inputs?.chain) return undefined;
-    const maxBalAvailable = await nexusSDK.calculateMaxForBridge({
-      token: inputs.token,
-      toChainId: inputs.chain,
-      recipient: inputs.recipient,
-      sourceChains: sourceChainsForSdk,
-    });
-    if (!maxBalAvailable?.amount) return "0";
+
+    // Sum balances from selected sources as a direct proxy for max
+    const decimals = filteredBridgableBalance?.decimals;
+    if (typeof decimals !== "number") return "0";
+
+    const selectedSet = new Set(
+      sourceChainsForSdk ?? allAvailableSourceChainIds,
+    );
+    const totalRaw = availableSources.reduce((sum: bigint, source: ChainBalance) => {
+      if (!selectedSet.has(source.chain.id)) return sum;
+      try {
+        return sum + parseUnits(source.balance ?? "0", decimals);
+      } catch {
+        return sum;
+      }
+    }, BigInt(0));
+
+    const totalReadable = formatToBigIntReadable(totalRaw, decimals);
+    if (!totalReadable) return "0";
+
     return clampAmountToMax({
-      amount: maxBalAvailable.amount,
+      amount: totalReadable,
       maxAmount: configuredMaxAmount,
       nexusSDK,
       token: inputs.token,
@@ -266,10 +293,12 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   }, [
     configuredMaxAmount,
     inputs?.chain,
-    inputs?.recipient,
     inputs?.token,
     nexusSDK,
     sourceChainsForSdk,
+    allAvailableSourceChainIds,
+    availableSources,
+    filteredBridgableBalance?.decimals,
   ]);
 
   const toggleSourceChain = useCallback(
@@ -279,7 +308,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         const current =
           prev && prev.length > 0 ? prev : allAvailableSourceChainIds;
         const next = current.includes(chainId)
-          ? current.filter((id) => id !== chainId)
+          ? current.filter((id: number) => id !== chainId)
           : [...current, chainId];
         if (next.length === 0) {
           return current;
@@ -306,14 +335,14 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     const selectedTotalRaw =
       !nexusSDK || typeof decimals !== "number"
         ? BigInt(0)
-        : availableSources.reduce((sum, source) => {
-            if (!selectedChainSet.has(source.chain.id)) return sum;
-            try {
-              return sum + parseUnits(source.balance ?? "0", decimals);
-            } catch {
-              return sum;
-            }
-          }, BigInt(0));
+        : availableSources.reduce((sum: bigint, source: ChainBalance) => {
+          if (!selectedChainSet.has(source.chain.id)) return sum;
+          try {
+            return sum + parseUnits(source.balance ?? "0", decimals);
+          } catch {
+            return sum;
+          }
+        }, BigInt(0));
     const selectedTotal =
       !nexusSDK || typeof decimals !== "number"
         ? "0"
@@ -335,6 +364,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     }
 
     try {
+      // v2: convertTokenReadableAmountToBigInt(amount, tokenSymbol, chainId)
       const requiredRaw = nexusSDK.convertTokenReadableAmountToBigInt(
         amount,
         inputs.token,
@@ -450,9 +480,9 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
 
   usePolling(
     Boolean(intent.current) &&
-      !isDialogOpen &&
-      !isSourceMenuOpen &&
-      !hasPendingSourceSelectionChanges,
+    !isDialogOpen &&
+    !isSourceMenuOpen &&
+    !hasPendingSourceSelectionChanges,
     async () => {
       await refreshIntent();
     },
@@ -522,6 +552,15 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     setSelectedSourceChains(null);
   }, [inputs?.token]);
 
+  // Safety-net: stop the stopwatch as soon as status reaches a terminal state.
+  // This ensures the timer freezes even if the onEvent closure's stopwatch.stop()
+  // didn't fire (e.g. stale closure reference or SDK promise resolved oddly).
+  useEffect(() => {
+    if (state.status === "success" || state.status === "error") {
+      stopwatch.stop();
+    }
+  }, [state.status, stopwatch]);
+
   useEffect(() => {
     if (isDialogOpen) return;
     stopwatch.stop();
@@ -538,6 +577,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
       setTxError(null);
     }
   }, [inputs, txError]);
+
 
   return {
     inputs,
@@ -574,4 +614,15 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     maxAvailableAmount: selectedSourcesMaxAmount ?? undefined,
     isInputsValid: areInputsValid,
   };
+}
+
+/** Helper: format a bigint rawAmount with decimals into a readable decimal string. */
+function formatToBigIntReadable(raw: bigint, decimals: number): string {
+  if (raw <= BigInt(0)) return "0";
+  const divisor = BigInt(10 ** decimals);
+  const whole = raw / divisor;
+  const fraction = raw % divisor;
+  if (fraction === BigInt(0)) return whole.toString();
+  const fractionStr = fraction.toString().padStart(decimals, "0").replace(/0+$/, "");
+  return `${whole}.${fractionStr}`;
 }

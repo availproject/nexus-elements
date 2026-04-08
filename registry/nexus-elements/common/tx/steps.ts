@@ -1,37 +1,25 @@
-import type { SwapStepType } from "@avail-project/nexus-core";
+// v2: SwapStepType is no longer exported from the SDK — use a local step shape
+// that matches v2 SwapPlanStep discriminator pattern
+export type SwapStepType = {
+  typeID?: string;
+  type?: string;
+  [key: string]: unknown;
+};
+
 import type { GenericStep } from "./types";
 import { getStepKey } from "./types";
 
 /**
  * Predefined expected steps for swaps to seed UI before events arrive.
- * Kept here to avoid duplication across exact-in and exact-out hooks.
+ * Uses v2 stepType names that match SwapPlanProgressEvent.stepType discriminators.
  */
 export const SWAP_EXPECTED_STEPS: SwapStepType[] = [
-  { type: "SWAP_START", typeID: "SWAP_START" } as SwapStepType,
-  { type: "DETERMINING_SWAP", typeID: "DETERMINING_SWAP" } as SwapStepType,
-  {
-    type: "CREATE_PERMIT_FOR_SOURCE_SWAP",
-    typeID:
-      "CREATE_PERMIT_FOR_SOURCE_SWAP" as unknown as SwapStepType["typeID"],
-  } as SwapStepType,
-  {
-    type: "SOURCE_SWAP_BATCH_TX",
-    typeID: "SOURCE_SWAP_BATCH_TX",
-  } as SwapStepType,
-  {
-    type: "SOURCE_SWAP_HASH",
-    typeID: "SOURCE_SWAP_HASH" as unknown as SwapStepType["typeID"],
-  } as SwapStepType,
-  { type: "RFF_ID", typeID: "RFF_ID" } as SwapStepType,
-  {
-    type: "DESTINATION_SWAP_BATCH_TX",
-    typeID: "DESTINATION_SWAP_BATCH_TX",
-  } as SwapStepType,
-  {
-    type: "DESTINATION_SWAP_HASH",
-    typeID: "DESTINATION_SWAP_HASH" as unknown as SwapStepType["typeID"],
-  } as SwapStepType,
-  { type: "SWAP_COMPLETE", typeID: "SWAP_COMPLETE" } as SwapStepType,
+  { type: "source_swap", typeID: "source_swap" },
+  { type: "eoa_to_ephemeral_transfer", typeID: "eoa_to_ephemeral_transfer" },
+  { type: "bridge_deposit", typeID: "bridge_deposit" },
+  { type: "bridge_intent_submission", typeID: "bridge_intent_submission" },
+  { type: "bridge_fill", typeID: "bridge_fill" },
+  { type: "destination_swap", typeID: "destination_swap" },
 ];
 
 export function seedSteps<T>(expected: T[]): Array<GenericStep<T>> {

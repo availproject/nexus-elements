@@ -22,7 +22,7 @@ function SwapWidget({
 }>) {
   const sourceContainer = useRef<HTMLDivElement | null>(null);
   const destinationContainer = useRef<HTMLDivElement | null>(null);
-  const { nexusSDK, swapIntent, swapBalance, fetchSwapBalance, getFiatValue } =
+  const { nexusSDK, swapWidgetIntent, swapBalance, fetchSwapBalance, getFiatValue } =
     useNexus();
   const {
     status,
@@ -47,7 +47,7 @@ function SwapWidget({
     updatingExactOutSources,
   } = useSwaps({
     nexusSDK,
-    swapIntent,
+    swapIntent: swapWidgetIntent,
     swapBalance,
     fetchBalance: fetchSwapBalance,
     onComplete,
@@ -58,8 +58,8 @@ function SwapWidget({
   const destinationHovered = useHover(destinationContainer);
 
   const handleInputSwitch = useCallback(() => {
-    swapIntent.current?.deny();
-    swapIntent.current = null;
+    swapWidgetIntent.current?.deny();
+    swapWidgetIntent.current = null;
 
     // Always reset to exactIn mode and clear amounts when switching
     setSwapMode("exactIn");
@@ -77,7 +77,7 @@ function SwapWidget({
       return;
     }
     const isValidSource = swapBalance?.some((asset) =>
-      (asset.breakdown ?? []).some(
+      (asset.chainBalances ?? []).some(
         (entry) =>
           entry.chain?.id === inputs.toChainID &&
           entry.contractAddress.toLowerCase() ===
@@ -123,7 +123,7 @@ function SwapWidget({
       toAmount: undefined,
     };
     setInputs(switched);
-  }, [inputs, swapIntent, swapBalance, setSwapMode, setInputs]);
+  }, [inputs, swapWidgetIntent, swapBalance, setSwapMode, setInputs]);
 
   const buttonIcons = useMemo(() => {
     if (status === "simulating") {
@@ -151,7 +151,7 @@ function SwapWidget({
               availableBalance={availableBalance}
               swapBalance={swapBalance}
               swapMode={swapMode}
-              swapIntent={swapIntent}
+              swapIntent={swapWidgetIntent}
               setInputs={setInputs}
               setSwapMode={setSwapMode}
               setTxError={setTxError}
@@ -182,7 +182,7 @@ function SwapWidget({
               destinationHovered={destinationHovered}
               inputs={inputs}
               setInputs={setInputs}
-              swapIntent={swapIntent}
+              swapIntent={swapWidgetIntent}
               destinationBalance={destinationBalance}
               swapBalance={swapBalance}
               availableStables={availableStables}
@@ -206,7 +206,7 @@ function SwapWidget({
           steps={steps}
           status={status}
           swapMode={swapMode}
-          swapIntent={swapIntent}
+          swapIntent={swapWidgetIntent}
           getFiatValue={getFiatValue}
           continueSwap={continueSwap}
           exactOutSourceOptions={exactOutSourceOptions}

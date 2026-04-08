@@ -5,7 +5,7 @@ import { Check, Edit } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type Address } from "viem";
-import { truncateAddress } from "@avail-project/nexus-core";
+import { truncateAddress } from "@avail-project/nexus-sdk-v2/utils";
 
 interface RecipientAddressProps {
   address?: Address;

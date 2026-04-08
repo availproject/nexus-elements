@@ -4,7 +4,7 @@ import { ChevronDownIcon } from "./icons";
 import type { Token } from "../types";
 import { Checkbox } from "../../ui/checkbox";
 import { usdFormatter } from "../../common";
-import { formatTokenBalance } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { TOKEN_IMAGES } from "../constants/assets";
 import {
   CHAIN_ITEM_HEIGHT_PX,
@@ -76,8 +76,8 @@ export function TokenRow({
             <img
               src={
                 Object.keys(TOKEN_IMAGES).includes(token.symbol)
-                  ? TOKEN_IMAGES[token.symbol]
-                  : token.logo
+                  ? TOKEN_IMAGES[token.symbol] || undefined
+                  : token.logo || undefined
               }
               alt={token.symbol}
               width={24}

@@ -16,7 +16,8 @@ import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import TokenRow from "./token-row";
-import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import type { TokenBalance, ChainBalance } from "@avail-project/nexus-sdk-v2";
 import { usdFormatter } from "../../common";
 import { X } from "lucide-react";
 import {
@@ -50,7 +51,8 @@ type ChainItemWithTokenMeta = ChainItem & {
   tokenLogo: string;
 };
 
-type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+// v2: ChainBalance replaces UserAssetDatum["breakdown"][number]
+type AssetBreakdownWithOptionalIcon = ChainBalance & {
   icon?: string;
 };
 
@@ -61,19 +63,20 @@ function parseNonNegativeNumber(value: unknown): number {
 }
 
 function getBreakdownTokenMeta(
-  breakdown: UserAsset["breakdown"][number],
-  asset: UserAsset,
+  breakdown: ChainBalance,
+  asset: TokenBalance
 ) {
+  // v2: logo replaces icon; value (string) replaces balanceInFiat (number)
   const breakdownIcon = (breakdown as AssetBreakdownWithOptionalIcon).icon;
   return {
-    symbol: breakdown.symbol,
+    symbol: asset.symbol,
     decimals: breakdown.decimals ?? asset.decimals,
-    logo: breakdownIcon || "",
+    logo: breakdownIcon || breakdown.chain.logo || asset.logo || "",
   };
 }
 
 function transformSwapBalanceToTokens(
-  swapBalance: UserAsset[] | null,
+  swapBalance: TokenBalance[] | null,
   destination: Pick<
     DepositWidgetContextValue["destination"],
     "chainId" | "tokenAddress" | "tokenSymbol"
@@ -91,7 +94,8 @@ function transformSwapBalanceToTokens(
 
   const allSourceIds = new Set<string>();
   swapBalance.forEach((asset) => {
-    asset.breakdown?.forEach((breakdown) => {
+    // v2: chainBalances replaces breakdown
+    asset.chainBalances?.forEach((breakdown) => {
       if (!breakdown.chain?.id || !breakdown.contractAddress) return;
       allSourceIds.add(`${breakdown.contractAddress}-${breakdown.chain.id}`);
     });
@@ -158,16 +162,16 @@ function transformSwapBalanceToTokens(
   const belowMinimumTokens: TokenWithMeta[] = [];
 
   for (const asset of swapBalance) {
-    if (!asset.breakdown?.length) continue;
+    if (!asset.chainBalances?.length) continue;
     const chainsBySymbol = new Map<string, ChainItemWithTokenMeta[]>();
 
-    asset.breakdown
-      .filter((b) => b.chain && b.balance)
+    asset.chainBalances
+      .filter((b: any) => b.chain && b.balance)
       .forEach((b) => {
         const balanceNum = parseFloat(b.balance);
         if (!Number.isFinite(balanceNum) || balanceNum <= 0) return;
 
-        const usdValue = parseNonNegativeNumber(b.balanceInFiat);
+        const usdValue = parseNonNegativeNumber(parseFloat(b.value ?? "0"));
         const tokenMeta = getBreakdownTokenMeta(b, asset);
         const existing = chainsBySymbol.get(tokenMeta.symbol) ?? [];
         existing.push({

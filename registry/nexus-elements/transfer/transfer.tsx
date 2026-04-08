@@ -17,10 +17,6 @@ import {
 } from "../ui/dialog";
 import TransactionProgress from "./components/transaction-progress";
 import SourceBreakdown from "./components/source-breakdown";
-import {
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-} from "@avail-project/nexus-core";
 import { type Address } from "viem";
 import { Skeleton } from "../ui/skeleton";
 import RecipientAddress from "./components/recipient-address";
@@ -31,8 +27,8 @@ import ViewHistory from "../view-history/view-history";
 interface FastTransferProps {
   maxAmount?: string | number;
   prefill?: {
-    token: SUPPORTED_TOKENS;
-    chainId: SUPPORTED_CHAINS_IDS;
+    token: string; // v2: was SUPPORTED_TOKENS
+    chainId: number; // v2: was SUPPORTED_CHAINS_IDS
     amount?: string;
     recipient?: Address;
   };
@@ -153,7 +149,7 @@ const FastTransfer: FC<FastTransferProps> = ({
           <>
             <SourceBreakdown
               intent={intent?.current?.intent}
-              tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+              tokenSymbol={filteredBridgableBalance?.symbol}
               isLoading={refreshing}
               requiredAmount={inputs?.amount}
               availableSources={availableSources}
@@ -187,7 +183,14 @@ const FastTransfer: FC<FastTransferProps> = ({
                   <Skeleton className="h-4 w-36" />
                 ) : (
                   <p className="text-sm font-medium text-right">
-                    on {intent?.current?.intent?.destination?.chainName}
+                    on{" "}
+                    {
+                      (
+                        intent?.current?.intent?.destination as {
+                          chain?: { name?: string };
+                        }
+                      )?.chain?.name
+                    }
                   </p>
                 )}
               </div>
@@ -195,7 +198,7 @@ const FastTransfer: FC<FastTransferProps> = ({
             <FeeBreakdown
               intent={intent?.current?.intent}
               isLoading={refreshing}
-              tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+              tokenSymbol={filteredBridgableBalance?.symbol}
             />
           </>
         )}

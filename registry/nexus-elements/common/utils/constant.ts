@@ -1,28 +1,25 @@
-import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
 import { formatUnits, parseUnits } from "viem";
 
+// v2: SUPPORTED_CHAINS removed — using literal EVM chain IDs
 export const SHORT_CHAIN_NAME: Record<number, string> = {
-  [SUPPORTED_CHAINS.ETHEREUM]: "Ethereum",
-  [SUPPORTED_CHAINS.BASE]: "Base",
-  [SUPPORTED_CHAINS.ARBITRUM]: "Arbitrum",
-  [SUPPORTED_CHAINS.OPTIMISM]: "Optimism",
-  [SUPPORTED_CHAINS.POLYGON]: "Polygon",
-  [SUPPORTED_CHAINS.AVALANCHE]: "Avalanche",
-  [SUPPORTED_CHAINS.SCROLL]: "Scroll",
-  [SUPPORTED_CHAINS.MEGAETH]: "MegaETH",
-  [SUPPORTED_CHAINS.KAIA]: "Kaia",
-  [SUPPORTED_CHAINS.BNB]: "BNB",
-  [SUPPORTED_CHAINS.MONAD]: "Monad",
-  [SUPPORTED_CHAINS.HYPEREVM]: "HyperEVM",
-  [SUPPORTED_CHAINS.CITREA]: "Citrea",
-  // [SUPPORTED_CHAINS.TRON]: "Tron",
-  [SUPPORTED_CHAINS.SEPOLIA]: "Sepolia",
-  [SUPPORTED_CHAINS.BASE_SEPOLIA]: "Base Sepolia",
-  [SUPPORTED_CHAINS.ARBITRUM_SEPOLIA]: "Arbitrum Sepolia",
-  [SUPPORTED_CHAINS.OPTIMISM_SEPOLIA]: "Optimism Sepolia",
-  [SUPPORTED_CHAINS.POLYGON_AMOY]: "Polygon Amoy",
-  [SUPPORTED_CHAINS.MONAD_TESTNET]: "Monad Testnet",
-  // [SUPPORTED_CHAINS.TRON_SHASTA]: "Tron Shasta",
+  1: "Ethereum",
+  8453: "Base",
+  42161: "Arbitrum",
+  10: "Optimism",
+  137: "Polygon",
+  43114: "Avalanche",
+  534352: "Scroll",
+  6342: "MegaETH",
+  8217: "Kaia",
+  56: "BNB",
+  10143: "Monad",
+  999: "HyperEVM",
+  5115: "Citrea",
+  11155111: "Sepolia",
+  84532: "Base Sepolia",
+  421614: "Arbitrum Sepolia",
+  11155420: "Optimism Sepolia",
+  80002: "Polygon Amoy",
 } as const;
 
 const DEFAULT_SAFETY_MARGIN = 0.01; // 1%
