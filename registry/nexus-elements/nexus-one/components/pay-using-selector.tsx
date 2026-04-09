@@ -1,44 +1,78 @@
 import React from "react";
-import { ChevronRight, Settings } from "lucide-react";
+import { Pencil, Settings } from "lucide-react";
 
 export interface PayUsingSelectorProps {
-  label?: string; // "Pay using"
-  sublabel?: string; // "Auto-selected based on amount" or "USDC, ETH"
+  label?: string;
+  sublabel?: string;
   onClick?: () => void;
   disabled?: boolean;
 }
 
 export function PayUsingSelector({
-  label = "Pay using",
+  label = "Paying with",
   sublabel = "Auto-selected based on amount",
   onClick,
   disabled = false,
 }: PayUsingSelectorProps) {
   return (
     <div className="w-full">
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className="w-full flex items-center justify-between p-4 border rounded-xl bg-[#F8F9FA] hover:bg-[#F0F2F5] transition-colors disabled:opacity-50 group text-left"
+      <div
+        className="w-full flex items-center justify-between px-4 py-3"
+        style={{
+          background: "var(--background-secondary, #F5F5F4)",
+          borderRadius: "12px",
+          border: "1px solid var(--border-default, #E8E8E7)",
+        }}
       >
         <div className="flex items-center gap-x-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white border shrink-0 text-gray-500">
-            <Settings className="w-4 h-4" />
+          <div
+            className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+            style={{
+              background: "var(--background-tertiary, #F0F0EF)",
+            }}
+          >
+            <Settings className="w-4 h-4 text-gray-500" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-gray-900 leading-none mb-1">
+          <div className="flex flex-col gap-y-0.5">
+            <span
+              style={{
+                fontFamily: "var(--font-geist-sans), sans-serif",
+                fontWeight: 500,
+                fontSize: "13px",
+                color: "var(--foreground-primary, #161615)",
+              }}
+            >
               {label}
             </span>
-            <span className="text-xs text-gray-500 leading-none">
+            <span
+              style={{
+                fontFamily: "var(--font-geist-sans), sans-serif",
+                fontSize: "11px",
+                color: "var(--foreground-muted, #848483)",
+              }}
+            >
               {sublabel}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-x-1 text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
-          <span>Edit</span>
-          <ChevronRight className="w-4 h-4" />
-        </div>
-      </button>
+
+        {/* Edit button */}
+        <button
+          onClick={onClick}
+          disabled={disabled}
+          className="flex items-center gap-x-1.5 px-2.5 py-1.5 rounded-lg hover:bg-black/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{
+            fontFamily: "var(--font-geist-sans), sans-serif",
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "var(--interactive-button-primary-background, #006BF4)",
+          }}
+        >
+          <Pencil className="w-3 h-3" />
+          Edit
+        </button>
+      </div>
     </div>
   );
 }
+
