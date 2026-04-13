@@ -872,7 +872,7 @@ export function NexusOne({
                     amount={amount}
                     onChange={setAmount}
                     maxAvailableAmount={maxBalance}
-                    unifiedBalances={currentAsset ? [currentAsset] : undefined}
+                    unifiedBalances={swapBalance!}
                     usdValue={
                       amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
                     }
@@ -934,7 +934,7 @@ export function NexusOne({
                 amount={amount}
                 onChange={setAmount}
                 maxAvailableAmount={maxBalance}
-                unifiedBalances={currentAsset ? [currentAsset] : undefined}
+                unifiedBalances={swapBalance!}
                 usdValue={
                   amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
                 }

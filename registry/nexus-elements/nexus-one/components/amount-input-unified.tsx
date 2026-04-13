@@ -30,19 +30,17 @@ export function AmountInputUnified({
   tokenSymbol,
 }: AmountInputUnifiedProps) {
   const handleMax = () => {
-    if (!maxAvailableAmount) return;
-    onChange(maxAvailableAmount);
-    onCommit?.(maxAvailableAmount);
+    if (!totalBalance) return;
+    onChange(totalBalance);
+    onCommit?.(totalBalance);
   };
 
   const totalBalance = useMemo(() => {
     if (!unifiedBalances || !unifiedBalances.length) return "0";
-    return {
-      balance: unifiedBalances
-        .reduce((acc, curr) => acc.add(curr.balanceInFiat), new Decimal(0))
-        .toDecimalPlaces(2)
-        .toFixed(),
-    };
+    return unifiedBalances
+      .reduce((acc, curr) => acc.add(curr.balanceInFiat), new Decimal(0))
+      .toDecimalPlaces(2)
+      .toFixed();
   }, [unifiedBalances]);
 
   return (
@@ -62,7 +60,7 @@ export function AmountInputUnified({
           style={{
             fontSize: "40px",
             fontWeight: 500,
-            gap: "4px",
+            gap: "2px",
           }}
         >
           $

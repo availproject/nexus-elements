@@ -290,10 +290,12 @@ const NexusProvider = ({
     usdPeggedSymbols.current = buildUsdPeggedSymbolSet(list ?? null);
     const swapList = sdk.utils.getSwapSupportedChainsAndTokens();
     swapSupportedChainsAndTokens.current = swapList ?? null;
-    const [bridgeAbleBalanceResult, rates] = await Promise.allSettled([
-      sdk.getBalancesForBridge(),
-      sdk.utils.getCoinbaseRates(),
-    ]);
+    const [bridgeAbleBalanceResult, swapBalanceResult, rates] =
+      await Promise.allSettled([
+        sdk.getBalancesForBridge(),
+        sdk.getBalancesForSwap(false),
+        sdk.utils.getCoinbaseRates(),
+      ]);
 
     if (rates?.status === "fulfilled") {
       // Coinbase returns "units per USD" (e.g., 1 USD = 0.00028 ETH).
@@ -314,6 +316,10 @@ const NexusProvider = ({
       setBridgableBalance(
         normalizeUserAssetFiatValues(bridgeAbleBalanceResult.value),
       );
+    }
+
+    if (swapBalanceResult.status === "fulfilled") {
+      setSwapBalance(normalizeUserAssetFiatValues(swapBalanceResult.value));
     }
   }, [sdk, config?.network, normalizeUserAssetFiatValues]);
 
@@ -424,7 +430,9 @@ const NexusProvider = ({
 
   const fetchSwapBalance = useCallback(async () => {
     try {
+      console.log("====fetchSwapBalance====");
       const updatedBalance = await sdk.getBalancesForSwap(false);
+      console.log("====updatedBalance====", updatedBalance);
       setSwapBalance(normalizeUserAssetFiatValues(updatedBalance));
     } catch (error) {
       console.error("Error fetching swap balance:", error);
