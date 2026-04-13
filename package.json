@@ -34,6 +34,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "connectkit": "^1.9.1",
+    "decimal.js": "^10.6.0",
     "front-matter": "^4.0.2",
     "fumadocs-core": "^16.0.10",
     "fumadocs-mdx": "^13.0.7",

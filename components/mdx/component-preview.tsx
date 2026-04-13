@@ -26,7 +26,6 @@ const SHOWCASE_MAP: Record<
   "fast-transfer": () => import("@/components/showcase/transfer-showcase"),
   "view-history": () => import("@/components/showcase/view-history-showcase"),
   "nexus-one": () => import("@/components/showcase/nexus-one-showcase"),
-  "nexus-one-bridge": () => import("@/components/showcase/nexus-one-bridge-showcase"),
   "nexus-one-transfer": () => import("@/components/showcase/nexus-one-transfer-showcase"),
   "nexus-one-swap": () => import("@/components/showcase/nexus-one-swap-showcase"),
   "nexus-one-deposit": () => import("@/components/showcase/nexus-one-deposit-showcase"),

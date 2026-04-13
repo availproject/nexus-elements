@@ -1,28 +1,37 @@
 "use client";
 
 import React, { useState } from "react";
-import { type NexusOneProps, type NexusOneMode, type SwapType, type DepositOpportunity } from "./types";
+import {
+  type NexusOneProps,
+  type NexusOneMode,
+  type SwapType,
+  type DepositOpportunity,
+} from "./types";
 import { AmountInputUnified } from "./components/amount-input-unified";
 import { PayUsingSelector } from "./components/pay-using-selector";
 import { RecipientInput } from "./components/recipient-input";
 import { StatusAlert } from "./components/status-alerts";
-import { SwapAssetSelector, type SwapTokenOption } from "./components/swap-asset-selector";
+import {
+  SwapAssetSelector,
+  type SwapTokenOption,
+} from "./components/swap-asset-selector";
 import { SwapIntentPreview } from "./components/swap-intent-preview";
 import { OpportunityList } from "./components/opportunity-list";
 import { ChevronDown, X, ArrowLeft } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNexus } from "../nexus/NexusProvider";
+import CardBG from "./card-bg.png";
 
 // ---------------------------------------------------------------------------
 // Types for swap step machine
 // ---------------------------------------------------------------------------
 
 type SwapStep =
-  | "idle"               // main screen
-  | "choose-swap-asset"  // pick source token (exactIn) or dest token (exactOut)
+  | "idle" // main screen
+  | "choose-swap-asset" // pick source token (exactIn) or dest token (exactOut)
   | "choose-receive-asset" // pick receive token (exactIn only)
-  | "preview-intent"     // intent preview card
-  | "progress";          // transaction in flight
+  | "preview-intent" // intent preview card
+  | "progress"; // transaction in flight
 
 // ---------------------------------------------------------------------------
 // NexusOne
@@ -50,21 +59,38 @@ export function NexusOne({
   const [swapType, setSwapType] = useState<SwapType>("exactIn");
   const [swapTypeOpen, setSwapTypeOpen] = useState(false);
   const [swapStep, setSwapStep] = useState<SwapStep>("idle");
-  const [fromToken, setFromToken] = useState<SwapTokenOption | undefined>(undefined);
-  const [toToken, setToToken] = useState<SwapTokenOption | undefined>(undefined);
-  const [intentToAmount, setIntentToAmount] = useState<string | undefined>(undefined);
-  const [intentFeeUsd, setIntentFeeUsd] = useState<string | undefined>(undefined);
+  const [fromToken, setFromToken] = useState<SwapTokenOption | undefined>(
+    undefined,
+  );
+  const [toToken, setToToken] = useState<SwapTokenOption | undefined>(
+    undefined,
+  );
+  const [intentToAmount, setIntentToAmount] = useState<string | undefined>(
+    undefined,
+  );
+  const [intentFeeUsd, setIntentFeeUsd] = useState<string | undefined>(
+    undefined,
+  );
   const [intentLoading, setIntentLoading] = useState(false);
 
   // Deposit-specific
-  const [selectedOpportunity, setSelectedOpportunity] = useState<DepositOpportunity | undefined>(undefined);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<
+    DepositOpportunity | undefined
+  >(undefined);
 
   // Balance helpers
   const activeBalanceArray = swapBalance;
   const selectedToken = config.prefill?.token ?? "USDC";
-  const currentAsset = activeBalanceArray?.find((a) => a.symbol === selectedToken) || activeBalanceArray?.[0];
-  const maxBalance = currentAsset?.balance ? String(currentAsset.balance) : undefined;
-  const usdValue = getFiatValue(Number(amount) || 0, currentAsset?.symbol || "USDC");
+  const currentAsset =
+    activeBalanceArray?.find((a) => a.symbol === selectedToken) ||
+    activeBalanceArray?.[0];
+  const maxBalance = currentAsset?.balance
+    ? String(currentAsset.balance)
+    : undefined;
+  const usdValue = getFiatValue(
+    Number(amount) || 0,
+    currentAsset?.symbol || "USDC",
+  );
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -86,7 +112,10 @@ export function NexusOne({
     if (!nexusSDK || !currentAsset || !amount || Number(amount) <= 0) return;
 
     try {
-      const amountBigInt = nexusSDK.utils.parseUnits(amount, currentAsset.decimals || 18);
+      const amountBigInt = nexusSDK.utils.parseUnits(
+        amount,
+        currentAsset.decimals || 18,
+      );
       const assetDetail = currentAsset.breakdown?.[0];
       if (!assetDetail?.chain?.id || !assetDetail?.contractAddress) {
         throw new Error("No chain/token address found for selected asset.");
@@ -97,7 +126,12 @@ export function NexusOne({
           toChainId: assetDetail.chain.id,
           toTokenAddress: assetDetail.contractAddress,
           toAmount: amountBigInt,
-          fromSources: [{ chainId: assetDetail.chain.id, tokenAddress: assetDetail.contractAddress }],
+          fromSources: [
+            {
+              chainId: assetDetail.chain.id,
+              tokenAddress: assetDetail.contractAddress,
+            },
+          ],
           execute: {
             to: "0x0000000000000000000000000000000000000000",
             data: "0x",
@@ -110,7 +144,12 @@ export function NexusOne({
           toChainId: assetDetail.chain.id,
           toTokenAddress: assetDetail.contractAddress,
           toAmount: amountBigInt,
-          fromSources: [{ chainId: assetDetail.chain.id, tokenAddress: assetDetail.contractAddress }],
+          fromSources: [
+            {
+              chainId: assetDetail.chain.id,
+              tokenAddress: assetDetail.contractAddress,
+            },
+          ],
           execute: {
             to: recipientAddress as `0x${string}`,
             value: amountBigInt,
@@ -149,15 +188,20 @@ export function NexusOne({
     setSwapStep("progress");
 
     try {
-      const amountBigInt = nexusSDK.utils.parseUnits(amount, fromToken.decimals || 18);
+      const amountBigInt = nexusSDK.utils.parseUnits(
+        amount,
+        fromToken.decimals || 18,
+      );
 
       if (swapType === "exactIn") {
         await nexusSDK.swapWithExactIn({
-          from: [{
-            chainId: fromToken.chainId!,
-            tokenAddress: fromToken.contractAddress as `0x${string}`,
-            amount: amountBigInt,
-          }],
+          from: [
+            {
+              chainId: fromToken.chainId!,
+              tokenAddress: fromToken.contractAddress as `0x${string}`,
+              amount: amountBigInt,
+            },
+          ],
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
         });
@@ -167,7 +211,14 @@ export function NexusOne({
           toTokenAddress: toToken.contractAddress as `0x${string}`,
           toAmount: amountBigInt,
           ...(fromToken.chainId
-            ? { fromSources: [{ chainId: fromToken.chainId, tokenAddress: fromToken.contractAddress as `0x${string}` }] }
+            ? {
+                fromSources: [
+                  {
+                    chainId: fromToken.chainId,
+                    tokenAddress: fromToken.contractAddress as `0x${string}`,
+                  },
+                ],
+              }
             : {}),
         });
       }
@@ -185,26 +236,43 @@ export function NexusOne({
   // ---------------------------------------------------------------------------
   const getTitle = () => {
     if (activeMode === "swap") {
-      if (swapStep === "choose-swap-asset")   return swapType === "exactIn" ? "Choose asset to Swap" : "Choose asset to Receive";
+      if (swapStep === "choose-swap-asset")
+        return swapType === "exactIn"
+          ? "Choose asset to Swap"
+          : "Choose asset to Receive";
       if (swapStep === "choose-receive-asset") return "Choose asset to Receive";
-      if (swapStep === "preview-intent")       return "Confirm Swap";
-      if (swapStep === "progress")             return "Swapping…";
+      if (swapStep === "preview-intent") return "Confirm Swap";
+      if (swapStep === "progress") return "Swapping…";
       return "Swap";
     }
-    if (activeMode === "deposit") return selectedOpportunity ? `Deposit into ${selectedOpportunity.protocol}` : "Deposit to";
-    if (activeMode === "transfer") return "Send transfer";
+    if (activeMode === "deposit")
+      return selectedOpportunity
+        ? `Deposit into ${selectedOpportunity.protocol}`
+        : "Deposit to";
+    if (activeMode === "transfer") return "Send assets";
     return "Nexus One";
   };
 
-  const canGoBack = swapStep !== "idle" || (activeMode === "deposit" && selectedOpportunity);
+  const canGoBack =
+    swapStep !== "idle" || (activeMode === "deposit" && selectedOpportunity);
   const handleBack = () => {
     if (activeMode === "deposit" && selectedOpportunity) {
       setSelectedOpportunity(undefined);
       return;
     }
-    if (swapStep === "choose-receive-asset") { setSwapStep("choose-swap-asset"); return; }
-    if (swapStep === "preview-intent")       { setSwapStep(swapType === "exactIn" ? "choose-receive-asset" : "choose-swap-asset"); return; }
-    if (swapStep === "progress")             { return; } // can't go back during tx
+    if (swapStep === "choose-receive-asset") {
+      setSwapStep("choose-swap-asset");
+      return;
+    }
+    if (swapStep === "preview-intent") {
+      setSwapStep(
+        swapType === "exactIn" ? "choose-receive-asset" : "choose-swap-asset",
+      );
+      return;
+    }
+    if (swapStep === "progress") {
+      return;
+    } // can't go back during tx
     setSwapStep("idle");
   };
 
@@ -219,7 +287,6 @@ export function NexusOne({
         background: "var(--widget-background, #F9F9F8)",
         boxShadow: "0px 1px 12px 0px #5B5B5B0D",
         border: "1px solid var(--border-default, #E8E8E7)",
-        minHeight: "420px",
       }}
     >
       {/* card-bg.png blended texture */}
@@ -229,22 +296,21 @@ export function NexusOne({
         style={{ zIndex: 0 }}
       >
         <img
-          src="/nexus-one/card-bg.png"
+          src={CardBG.src}
           alt=""
           className="w-full h-full object-cover"
-          style={{ opacity: 0.07, mixBlendMode: "multiply" }}
+          style={{ opacity: 0.4, mixBlendMode: "multiply" }}
         />
       </div>
 
       {/* All content above texture */}
       <div className="relative z-10 flex flex-col flex-1">
-
         {/* ------------------------------------------------------------------ */}
         {/* Header */}
         {/* ------------------------------------------------------------------ */}
         <div
           className="flex items-center justify-between px-4 pt-4 pb-3"
-          style={{ borderBottom: "1px solid var(--border-default, #E8E8E7)" }}
+          // style={{ borderBottom: "1px solid var(--border-default, #E8E8E7)" }}
         >
           {/* Back button or logo */}
           {canGoBack ? (
@@ -256,9 +322,10 @@ export function NexusOne({
               <ArrowLeft className="w-4 h-4 text-gray-600" />
             </button>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-              <div className="w-4 h-4 rounded-full border-2 border-current" />
-            </div>
+            // <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+            //   <div className="w-4 h-4 rounded-full border-2 border-current" />
+            // </div>
+            <div></div>
           )}
 
           {/* Title + Swap type dropdown */}
@@ -266,7 +333,7 @@ export function NexusOne({
             <h2
               style={{
                 fontFamily: "var(--font-geist-sans), sans-serif",
-                fontWeight: 600,
+                fontWeight: 400,
                 fontSize: "14px",
                 color: "var(--foreground-primary, #161615)",
               }}
@@ -279,16 +346,16 @@ export function NexusOne({
               <div className="relative">
                 <button
                   onClick={() => setSwapTypeOpen((v) => !v)}
-                  className="flex items-center gap-x-1 px-2 py-0.5 rounded-full hover:bg-black/5 transition-colors"
+                  className="flex items-center gap-1 pl-2 pr-1.5 py-1 rounded-[4px] hover:bg-black/5 transition-colors"
                   style={{
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                    fontSize: "12px",
+                    fontFamily: "var(--font-geist-mono), sans-serif",
+                    fontSize: "10px",
                     fontWeight: 500,
                     color: "var(--foreground-muted, #848483)",
                     background: "var(--background-tertiary, #F0F0EF)",
                   }}
                 >
-                  {swapType === "exactIn" ? "Exact In" : "Exact Out"}
+                  {swapType === "exactIn" ? "ExactIn" : "ExactOut"}
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {swapTypeOpen && (
@@ -304,13 +371,21 @@ export function NexusOne({
                     {(["exactIn", "exactOut"] as SwapType[]).map((t) => (
                       <button
                         key={t}
-                        onClick={() => { setSwapType(t); setSwapTypeOpen(false); setFromToken(undefined); setToToken(undefined); }}
+                        onClick={() => {
+                          setSwapType(t);
+                          setSwapTypeOpen(false);
+                          setFromToken(undefined);
+                          setToToken(undefined);
+                        }}
                         className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors"
                         style={{
                           fontFamily: "var(--font-geist-sans), sans-serif",
                           fontSize: "13px",
                           fontWeight: swapType === t ? 600 : 400,
-                          color: swapType === t ? "var(--interactive-button-primary-background, #006BF4)" : "var(--foreground-primary, #161615)",
+                          color:
+                            swapType === t
+                              ? "var(--interactive-button-primary-background, #006BF4)"
+                              : "var(--foreground-primary, #161615)",
                         }}
                       >
                         {t === "exactIn" ? "Exact In" : "Exact Out"}
@@ -323,7 +398,10 @@ export function NexusOne({
           </div>
 
           {/* Close */}
-          <button className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors" aria-label="Close">
+          <button
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+            aria-label="Close"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -331,35 +409,37 @@ export function NexusOne({
         {/* ------------------------------------------------------------------ */}
         {/* Mode tabs — only when multiple modes and on idle/main screens */}
         {/* ------------------------------------------------------------------ */}
-        {Array.isArray(config.mode) && config.mode.length > 1 && swapStep === "idle" && !selectedOpportunity && (
-          <div className="px-4 pt-3">
-            <div
-              className="flex items-center p-1 rounded-xl w-full"
-              style={{ background: "var(--background-tertiary, #F0F0EF)" }}
-            >
-              {(config.mode as NexusOneMode[]).map((m: NexusOneMode) => (
-                <button
-                  key={m}
-                  onClick={() => handleModeChange(m)}
-                  className={`flex-1 flex justify-center py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${
-                    activeMode === m
-                      ? "bg-white shadow-sm text-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                  style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-                >
-                  {m}
-                </button>
-              ))}
+        {Array.isArray(config.mode) &&
+          config.mode.length > 1 &&
+          swapStep === "idle" &&
+          !selectedOpportunity && (
+            <div className="px-4 pt-3">
+              <div
+                className="flex items-center p-1 rounded-xl w-full"
+                style={{ background: "var(--background-tertiary, #F0F0EF)" }}
+              >
+                {(config.mode as NexusOneMode[]).map((m: NexusOneMode) => (
+                  <button
+                    key={m}
+                    onClick={() => handleModeChange(m)}
+                    className={`flex-1 flex justify-center py-1.5 text-sm font-medium rounded-xl transition-all capitalize ${
+                      activeMode === m
+                        ? "bg-white shadow-sm text-gray-900"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                    style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* ------------------------------------------------------------------ */}
         {/* Main content area */}
         {/* ------------------------------------------------------------------ */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 pt-3 space-y-3">
-
           {/* =============================================================== */}
           {/* SWAP MODE                                                        */}
           {/* =============================================================== */}
@@ -368,7 +448,11 @@ export function NexusOne({
               {/* Panel: choose-swap-asset */}
               {swapStep === "choose-swap-asset" && (
                 <SwapAssetSelector
-                  title={swapType === "exactIn" ? "Swap (Choose Asset)" : "Receive (Choose Asset)"}
+                  title={
+                    swapType === "exactIn"
+                      ? "Swap (Choose Asset)"
+                      : "Receive (Choose Asset)"
+                  }
                   swapBalance={swapBalance}
                   onSelect={(token) => {
                     if (swapType === "exactIn") {
@@ -414,7 +498,13 @@ export function NexusOne({
               {swapStep === "progress" && (
                 <div className="flex flex-col items-center justify-center py-8 gap-y-4">
                   <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
-                  <p style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "14px", color: "var(--foreground-muted, #848483)" }}>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-geist-sans), sans-serif",
+                      fontSize: "14px",
+                      color: "var(--foreground-muted, #848483)",
+                    }}
+                  >
                     Swapping {fromToken?.symbol} → {toToken?.symbol}…
                   </p>
                 </div>
@@ -427,9 +517,15 @@ export function NexusOne({
                   <AmountInputUnified
                     amount={amount}
                     onChange={setAmount}
-                    maxAvailableAmount={fromToken ? String(fromToken.balance).replace(/[^0-9.]/g, "") : maxBalance}
-                    bridgableBalance={currentAsset}
-                    usdValue={amount && usdValue > 0 ? usdValue.toFixed(2) : undefined}
+                    maxAvailableAmount={
+                      fromToken
+                        ? String(fromToken.balance).replace(/[^0-9.]/g, "")
+                        : maxBalance
+                    }
+                    unifiedBalances={swapBalance!}
+                    usdValue={
+                      amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
+                    }
                   />
 
                   {/* Swap asset chip */}
@@ -446,32 +542,67 @@ export function NexusOne({
                       {fromToken ? (
                         <>
                           {fromToken.logo ? (
-                            <img src={fromToken.logo} alt={fromToken.symbol} className="w-7 h-7 rounded-full border border-gray-100 object-cover" />
+                            <img
+                              src={fromToken.logo}
+                              alt={fromToken.symbol}
+                              className="w-7 h-7 rounded-full border border-gray-100 object-cover"
+                            />
                           ) : (
                             <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600">
                               {fromToken.symbol.slice(0, 2)}
                             </div>
                           )}
                           <div className="flex flex-col items-start">
-                            <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", fontWeight: 500, color: "var(--foreground-primary, #161615)" }}>
+                            <span
+                              style={{
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
+                                fontSize: "13px",
+                                fontWeight: 500,
+                                color: "var(--foreground-primary, #161615)",
+                              }}
+                            >
                               {fromToken.symbol}
                             </span>
                             {fromToken.chainName && (
-                              <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "11px", color: "var(--foreground-muted, #848483)" }}>
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "11px",
+                                  color: "var(--foreground-muted, #848483)",
+                                }}
+                              >
                                 {fromToken.chainName}
                               </span>
                             )}
                           </div>
                         </>
                       ) : (
-                        <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", color: "var(--foreground-muted, #848483)" }}>
-                          {swapType === "exactIn" ? "Swap (Choose Asset)" : "Paying with (auto)"}
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "13px",
+                            color: "var(--foreground-muted, #848483)",
+                          }}
+                        >
+                          {swapType === "exactIn"
+                            ? "Swap (Choose Asset)"
+                            : "Paying with (auto)"}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-x-1">
                       {fromToken && (
-                        <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "11px", color: "var(--interactive-button-primary-background, #006BF4)", fontWeight: 500 }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "11px",
+                            color:
+                              "var(--interactive-button-primary-background, #006BF4)",
+                            fontWeight: 500,
+                          }}
+                        >
                           Edit
                         </span>
                       )}
@@ -494,32 +625,65 @@ export function NexusOne({
                         {toToken ? (
                           <>
                             {toToken.logo ? (
-                              <img src={toToken.logo} alt={toToken.symbol} className="w-7 h-7 rounded-full border border-gray-100 object-cover" />
+                              <img
+                                src={toToken.logo}
+                                alt={toToken.symbol}
+                                className="w-7 h-7 rounded-full border border-gray-100 object-cover"
+                              />
                             ) : (
                               <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
                                 {toToken.symbol.slice(0, 2)}
                               </div>
                             )}
                             <div className="flex flex-col items-start">
-                              <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", fontWeight: 500, color: "var(--foreground-primary, #161615)" }}>
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "13px",
+                                  fontWeight: 500,
+                                  color: "var(--foreground-primary, #161615)",
+                                }}
+                              >
                                 {toToken.symbol}
                               </span>
                               {toToken.chainName && (
-                                <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "11px", color: "var(--foreground-muted, #848483)" }}>
+                                <span
+                                  style={{
+                                    fontFamily:
+                                      "var(--font-geist-sans), sans-serif",
+                                    fontSize: "11px",
+                                    color: "var(--foreground-muted, #848483)",
+                                  }}
+                                >
                                   {toToken.chainName}
                                 </span>
                               )}
                             </div>
                           </>
                         ) : (
-                          <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", color: "var(--foreground-muted, #848483)" }}>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-geist-sans), sans-serif",
+                              fontSize: "13px",
+                              color: "var(--foreground-muted, #848483)",
+                            }}
+                          >
                             Receive (Choose Asset)
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-x-1">
                         {toToken && (
-                          <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "11px", color: "var(--interactive-button-primary-background, #006BF4)", fontWeight: 500 }}>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-geist-sans), sans-serif",
+                              fontSize: "11px",
+                              color:
+                                "var(--interactive-button-primary-background, #006BF4)",
+                              fontWeight: 500,
+                            }}
+                          >
                             Edit
                           </span>
                         )}
@@ -543,32 +707,65 @@ export function NexusOne({
                         {toToken ? (
                           <>
                             {toToken.logo ? (
-                              <img src={toToken.logo} alt={toToken.symbol} className="w-7 h-7 rounded-full border border-gray-100 object-cover" />
+                              <img
+                                src={toToken.logo}
+                                alt={toToken.symbol}
+                                className="w-7 h-7 rounded-full border border-gray-100 object-cover"
+                              />
                             ) : (
                               <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
                                 {toToken.symbol.slice(0, 2)}
                               </div>
                             )}
                             <div className="flex flex-col items-start">
-                              <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", fontWeight: 500, color: "var(--foreground-primary, #161615)" }}>
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "13px",
+                                  fontWeight: 500,
+                                  color: "var(--foreground-primary, #161615)",
+                                }}
+                              >
                                 {toToken.symbol}
                               </span>
                               {toToken.chainName && (
-                                <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "11px", color: "var(--foreground-muted, #848483)" }}>
+                                <span
+                                  style={{
+                                    fontFamily:
+                                      "var(--font-geist-sans), sans-serif",
+                                    fontSize: "11px",
+                                    color: "var(--foreground-muted, #848483)",
+                                  }}
+                                >
                                   {toToken.chainName}
                                 </span>
                               )}
                             </div>
                           </>
                         ) : (
-                          <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", color: "var(--foreground-muted, #848483)" }}>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-geist-sans), sans-serif",
+                              fontSize: "13px",
+                              color: "var(--foreground-muted, #848483)",
+                            }}
+                          >
                             Receive (Choose Asset)
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-x-1">
                         {toToken && (
-                          <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "11px", color: "var(--interactive-button-primary-background, #006BF4)", fontWeight: 500 }}>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-geist-sans), sans-serif",
+                              fontSize: "11px",
+                              color:
+                                "var(--interactive-button-primary-background, #006BF4)",
+                              fontWeight: 500,
+                            }}
+                          >
                             Edit
                           </span>
                         )}
@@ -590,7 +787,8 @@ export function NexusOne({
                     }
                     className="w-full font-medium text-white transition-opacity hover:opacity-90 active:opacity-100 text-[14px]"
                     style={{
-                      background: "var(--interactive-button-primary-background, #006BF4)",
+                      background:
+                        "var(--interactive-button-primary-background, #006BF4)",
                       boxShadow: "0px 1px 4px 0px #5555550D",
                       height: "48px",
                       borderRadius: "12px",
@@ -609,41 +807,61 @@ export function NexusOne({
           {activeMode === "deposit" && (
             <>
               {/* Opportunity list */}
-              {config.opportunities && config.opportunities.length > 0 && !selectedOpportunity && (
-                <>
-                  <p
-                    className="pb-1"
-                    style={{
-                      fontFamily: "var(--font-geist-sans), sans-serif",
-                      fontSize: "12px",
-                      color: "var(--foreground-muted, #848483)",
-                    }}
-                  >
-                    Choose a protocol to deposit into
-                  </p>
-                  <OpportunityList
-                    opportunities={config.opportunities}
-                    onSelect={(opp) => setSelectedOpportunity(opp)}
-                  />
-                </>
-              )}
+              {config.opportunities &&
+                config.opportunities.length > 0 &&
+                !selectedOpportunity && (
+                  <>
+                    <p
+                      className="pb-1"
+                      style={{
+                        fontFamily: "var(--font-geist-sans), sans-serif",
+                        fontSize: "12px",
+                        color: "var(--foreground-muted, #848483)",
+                      }}
+                    >
+                      Choose a protocol to deposit into
+                    </p>
+                    <OpportunityList
+                      opportunities={config.opportunities}
+                      onSelect={(opp) => setSelectedOpportunity(opp)}
+                    />
+                  </>
+                )}
 
               {/* After opportunity selected (or no opportunities configured) — show deposit form */}
-              {(!config.opportunities || config.opportunities.length === 0 || selectedOpportunity) && (
+              {(!config.opportunities ||
+                config.opportunities.length === 0 ||
+                selectedOpportunity) && (
                 <>
                   {selectedOpportunity && (
                     <div
                       className="flex items-center gap-x-2 px-3 py-2 rounded-xl mb-1"
-                      style={{ background: "var(--background-secondary, #F5F5F4)" }}
+                      style={{
+                        background: "var(--background-secondary, #F5F5F4)",
+                      }}
                     >
                       {selectedOpportunity.logo && (
-                        <img src={selectedOpportunity.logo} alt={selectedOpportunity.protocol} className="w-6 h-6 rounded-full border border-gray-100 object-cover" />
+                        <img
+                          src={selectedOpportunity.logo}
+                          alt={selectedOpportunity.protocol}
+                          className="w-6 h-6 rounded-full border border-gray-100 object-cover"
+                        />
                       )}
-                      <span style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontSize: "13px", fontWeight: 500, color: "var(--foreground-primary, #161615)" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-geist-sans), sans-serif",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "var(--foreground-primary, #161615)",
+                        }}
+                      >
                         {selectedOpportunity.label}
                       </span>
                       {selectedOpportunity.apy && (
-                        <span className="ml-auto px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: "#ECFDF5", color: "#16A34A" }}>
+                        <span
+                          className="ml-auto px-2 py-0.5 rounded-full text-xs font-semibold"
+                          style={{ background: "#ECFDF5", color: "#16A34A" }}
+                        >
                           {selectedOpportunity.apy} APY
                         </span>
                       )}
@@ -655,7 +873,9 @@ export function NexusOne({
                     onChange={setAmount}
                     maxAvailableAmount={maxBalance}
                     bridgableBalance={currentAsset}
-                    usdValue={amount && usdValue > 0 ? usdValue.toFixed(2) : undefined}
+                    usdValue={
+                      amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
+                    }
                   />
 
                   <PayUsingSelector
@@ -670,7 +890,8 @@ export function NexusOne({
                     onClick={handleContinue}
                     className="w-full font-medium text-white transition-opacity hover:opacity-90 active:opacity-100 text-[14px]"
                     style={{
-                      background: "var(--interactive-button-primary-background, #006BF4)",
+                      background:
+                        "var(--interactive-button-primary-background, #006BF4)",
                       boxShadow: "0px 1px 4px 0px #5555550D",
                       height: "48px",
                       borderRadius: "12px",
@@ -714,13 +935,19 @@ export function NexusOne({
                 onChange={setAmount}
                 maxAvailableAmount={maxBalance}
                 bridgableBalance={currentAsset}
-                usdValue={amount && usdValue > 0 ? usdValue.toFixed(2) : undefined}
+                usdValue={
+                  amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
+                }
               />
 
               {/* 3. Send (Choose Asset) */}
               <PayUsingSelector
                 label="Send (Choose Asset)"
-                sublabel={currentAsset?.symbol ? `Sending ${currentAsset.symbol}` : "Auto-selected based on amount"}
+                sublabel={
+                  currentAsset?.symbol
+                    ? `Sending ${currentAsset.symbol}`
+                    : "Auto-selected based on amount"
+                }
                 onClick={() => console.log("Open Asset Selector")}
               />
 
@@ -730,7 +957,8 @@ export function NexusOne({
                 onClick={handleContinue}
                 className="w-full font-medium text-white transition-opacity hover:opacity-90 active:opacity-100 text-[14px]"
                 style={{
-                  background: "var(--interactive-button-primary-background, #006BF4)",
+                  background:
+                    "var(--interactive-button-primary-background, #006BF4)",
                   boxShadow: "0px 1px 4px 0px #5555550D",
                   height: "48px",
                   borderRadius: "12px",
@@ -740,7 +968,6 @@ export function NexusOne({
               </Button>
             </>
           )}
-
         </div>
       </div>
     </div>
