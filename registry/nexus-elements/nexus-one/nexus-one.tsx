@@ -461,7 +461,8 @@ export function NexusOne({
             <>
               {/* Panel: choose-swap-asset */}
               {swapStep === "choose-swap-asset" && (
-                <SwapAssetSelector
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full">
+                  <SwapAssetSelector
                   title={
                     swapType === "exactIn"
                       ? "Choose assets to Swap"
@@ -500,12 +501,14 @@ export function NexusOne({
                   }}
                   onBack={() => setSwapStep("idle")}
                 />
+                </div>
               )}
 
               {/* Panel: choose-receive-asset */}
               {swapStep === "choose-receive-asset" && (
-                <SwapAssetSelector
-                  title="Receive (Choose Asset)"
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full">
+                  <SwapAssetSelector
+                    title="Receive (Choose Asset)"
                   swapBalance={swapBalance}
                   onSelect={(token) => {
                     setToToken(token);
@@ -513,12 +516,14 @@ export function NexusOne({
                   }}
                   onBack={() => setSwapStep("choose-swap-asset")}
                 />
+                </div>
               )}
 
               {/* Panel: preview-intent */}
               {swapStep === "preview-intent" && (
-                <SwapIntentPreview
-                  fromToken={fromTokens[0]}
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full h-full">
+                  <SwapIntentPreview
+                    fromToken={fromTokens[0]}
                   toToken={toToken}
                   fromAmount={amount}
                   toAmount={intentToAmount}
@@ -527,6 +532,7 @@ export function NexusOne({
                   onAccept={handleSwapAccept}
                   onReject={() => setSwapStep("idle")}
                 />
+                </div>
               )}
 
               {/* Panel: progress */}
@@ -547,7 +553,7 @@ export function NexusOne({
 
               {/* Main swap idle screen */}
               {swapStep === "idle" && (
-                <>
+                <div className="animate-in fade-in slide-in-from-left-4 duration-500 space-y-3 w-full">
                   {/* Amount input */}
                   <AmountInputUnified
                     amount={amount}
@@ -808,7 +814,7 @@ export function NexusOne({
                   >
                     Proceed to Swap
                   </Button>
-                </>
+                </div>
               )}
             </>
           )}

@@ -7,6 +7,7 @@ import {
   formatTokenBalance,
 } from "@avail-project/nexus-core";
 
+
 export interface SwapTokenOption {
   contractAddress: string;
   symbol: string;
@@ -468,11 +469,17 @@ export function SwapAssetSelector({
                     </div>
                   </button>
                   
-                  {isExpanded && (
-                    <div className="flex flex-col pl-6 mt-1 space-y-1">
-                      {group.tokens.map((token) => renderTokenRow(token))}
+                  <div
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="flex flex-col pl-6 mt-1 space-y-1 py-1">
+                        {group.tokens.map((token) => renderTokenRow(token))}
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}
