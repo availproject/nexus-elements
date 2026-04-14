@@ -16,6 +16,7 @@ import {
   type SwapTokenOption,
 } from "./components/swap-asset-selector";
 import { SwapIntentPreview } from "./components/swap-intent-preview";
+import { ReceiveAssetSelector } from "./components/receive-asset-selector";
 import { OpportunityList } from "./components/opportunity-list";
 import {
   ChevronDown,
@@ -503,22 +504,18 @@ export function NexusOne({
                 />
                 </div>
               )}
-
               {/* Panel: choose-receive-asset */}
               {swapStep === "choose-receive-asset" && (
-                <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full">
-                  <SwapAssetSelector
-                    title="Receive (Choose Asset)"
-                  swapBalance={swapBalance}
-                  onSelect={(token) => {
-                    setToToken(token);
-                    setSwapStep("idle");
-                  }}
-                  onBack={() => setSwapStep("choose-swap-asset")}
-                />
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full -mx-4 -mb-4 -mt-3 px-4 pb-4 pt-3 flex flex-col bg-[var(--widget-background,#F9F9F8)] z-10 relative">
+                  <ReceiveAssetSelector
+                    onSelect={(token) => {
+                      setToToken(token);
+                      setSwapStep("idle");
+                    }}
+                    onBack={() => setSwapStep("idle")}
+                  />
                 </div>
               )}
-
               {/* Panel: preview-intent */}
               {swapStep === "preview-intent" && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full h-full">
