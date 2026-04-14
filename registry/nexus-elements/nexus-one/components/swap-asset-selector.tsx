@@ -29,6 +29,10 @@ interface SwapAssetSelectorProps {
   staticOptions?: SwapTokenOption[];
   onSelect: (token: SwapTokenOption) => void;
   onBack: () => void;
+  isMulti?: boolean;
+  selectedTokens?: SwapTokenOption[];
+  onToggle?: (token: SwapTokenOption) => void;
+  onDone?: () => void;
 }
 
 /** Derive flat list of SwapTokenOption from UserAsset[] */
@@ -67,12 +71,55 @@ function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] {
   return Array.from(seen.values());
 }
 
+const CheckboxBox = ({ selected }: { selected: boolean }) => {
+  if (selected) {
+    return (
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{
+          width: "20px",
+          height: "20px",
+          borderRadius: "4px",
+          background: "#006BF4",
+        }}
+      >
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "2px",
+            background: "var(--white-0, #FFFFFE)",
+          }}
+        />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="shrink-0"
+      style={{
+        width: "20px",
+        height: "20px",
+        borderRadius: "4px",
+        borderWidth: "2px",
+        background: "var(--widget-card-background-primary, #FFFFFE)",
+        borderColor: "var(--widget-card-border, #E8E8E7)",
+        borderStyle: "solid",
+      }}
+    />
+  );
+};
+
 export function SwapAssetSelector({
   title,
   swapBalance,
   staticOptions,
   onSelect,
   onBack,
+  isMulti,
+  selectedTokens = [],
+  onToggle,
+  onDone,
 }: SwapAssetSelectorProps) {
   const [query, setQuery] = useState("");
 
@@ -96,59 +143,56 @@ export function SwapAssetSelector({
   const isLoading = !staticOptions && swapBalance === null;
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* Panel header */}
-      {/* <div
-        className="flex items-center gap-x-3 px-4 pb-3 pt-1"
-        style={{ borderBottom: "1px solid var(--border-default, #E8E8E7)" }}
-      >
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/5 transition-colors shrink-0"
-          aria-label="Back"
-        >
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
-        </button>
-        <span
-          style={{
-            fontFamily: "var(--font-geist-sans), sans-serif",
-            fontWeight: 600,
-            fontSize: "14px",
-            color: "var(--foreground-primary, #161615)",
-          }}
-        >
-          {title}
-        </span>
-      </div> */}
-
+    <div className="flex flex-col h-full w-full antialiased">
       {/* Search */}
-      <div className="px-4 py-3">
+      <div className="pb-3">
         <div
-          className="flex items-center gap-x-2 px-3"
+          className="flex items-center"
           style={{
+            height: "44px",
+            gap: "8px",
+            borderRadius: "12px",
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: "var(--border-default, #E8E8E7)",
+            paddingTop: "12px",
+            paddingRight: "16px",
+            paddingBottom: "12px",
+            paddingLeft: "16px",
             background: "var(--background-tertiary, #F0F0EF)",
-            borderRadius: "10px",
-            height: "38px",
           }}
         >
-          <Search className="w-4 h-4 text-gray-400 shrink-0" />
+          <Search
+            style={{
+              width: "20px",
+              height: "20px",
+              color: "var(--foreground-muted, #848483)",
+            }}
+            className="shrink-0"
+          />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search..."
-            className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
-            style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+            className="flex-1 bg-transparent border-none outline-none placeholder:text-[#848483]"
+            style={{
+              fontFamily: "Geist, var(--font-geist-sans), sans-serif",
+              fontWeight: 400,
+              fontSize: "14px",
+              lineHeight: "18px",
+              color: "var(--widget-card-foreground-primary, #161615)",
+            }}
           />
           {query && (
             <button onClick={() => setQuery("")} className="shrink-0">
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="w-4 h-4 text-[#848483]" />
             </button>
           )}
         </div>
       </div>
 
       {/* Token list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
+      <div className="flex-1 overflow-y-auto pb-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-10 gap-y-3">
             <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
@@ -159,55 +203,101 @@ export function SwapAssetSelector({
             No tokens found
           </p>
         ) : (
-          filtered.map((token) => (
-            <button
-              key={`${token.contractAddress}-${token.chainId}`}
-              onClick={() => onSelect(token)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
-            >
-              <div className="flex items-center gap-x-3">
-                {/* Token + Chain Icon stack */}
-                <div className="relative shrink-0">
-                  {token.logo ? (
-                    <img
-                      src={token.logo}
-                      alt={token.symbol}
-                      className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+          <div
+            style={{
+              border: "1px solid var(--widget-card-border, #E8E8E7)",
+              maxHeight: "288px",
+              borderRadius: "8px",
+              borderWidth: "1px",
+              overflowY: "auto",
+              background: "var(--widget-card-background-primary, #FFFFFE)",
+            }}
+            className="flex flex-col p-1 space-y-1"
+          >
+            {filtered.map((token) => {
+              const isSelected = selectedTokens.some(
+                (st) =>
+                  st.contractAddress === token.contractAddress &&
+                  st.chainId === token.chainId
+              );
+              return (
+                <button
+                  key={`${token.contractAddress}-${token.chainId}`}
+                  onClick={() => {
+                    if (isMulti && onToggle) {
+                      onToggle(token);
+                    } else if (!isMulti) {
+                      onSelect(token);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
+                >
+                  <div className="flex items-center gap-x-3">
+                    {isMulti && <CheckboxBox selected={isSelected} />}
+                    <div className="relative shrink-0">
+                      {token.logo ? (
+                        <img
+                          src={token.logo}
+                          alt={token.symbol}
+                          className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                          style={{
+                            background:
+                              "var(--interactive-button-primary-background, #006BF4)",
+                          }}
+                        >
+                          {token.symbol.slice(0, 2)}
+                        </div>
+                      )}
+                      {token.chainLogo && (
+                        <img
+                          src={token.chainLogo}
+                          alt={token.chainName}
+                          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-white shadow-sm object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span
+                        style={{
+                          fontFamily: "var(--font-geist-sans), sans-serif",
+                          fontWeight: 500,
+                          fontSize: "14px",
+                          color: "var(--foreground-primary, #161615)",
+                        }}
+                      >
+                        {token.symbol}
+                      </span>
+                      {token.chainName && (
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "12px",
+                            color: "var(--foreground-muted, #848483)",
+                          }}
+                        >
+                          {token.chainName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span
                       style={{
-                        background:
-                          "var(--interactive-button-primary-background, #006BF4)",
+                        fontFamily: "var(--font-geist-sans), sans-serif",
+                        fontWeight: 500,
+                        fontSize: "13px",
+                        color: "var(--foreground-primary, #161615)",
                       }}
                     >
-                      {token.symbol.slice(0, 2)}
-                    </div>
-                  )}
-                  {token.chainLogo && (
-                    <img
-                      src={token.chainLogo}
-                      alt={token.chainName}
-                      className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-white shadow-sm object-cover"
-                    />
-                  )}
-                </div>
-                <div className="flex flex-col items-start">
-                  <span
-                    style={{
-                      fontFamily: "var(--font-geist-sans), sans-serif",
-                      fontWeight: 500,
-                      fontSize: "14px",
-                      color: "var(--foreground-primary, #161615)",
-                    }}
-                  >
-                    {token.symbol}
-                  </span>
-                  {token.chainName && (
+                      {token.balanceInFiat}
+                    </span>
                     <span
                       style={{
                         fontFamily: "var(--font-geist-sans), sans-serif",
@@ -215,36 +305,35 @@ export function SwapAssetSelector({
                         color: "var(--foreground-muted, #848483)",
                       }}
                     >
-                      {token.chainName}
+                      {token.balance}
                     </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col items-end">
-                <span
-                  style={{
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                    fontWeight: 500,
-                    fontSize: "13px",
-                    color: "var(--foreground-primary, #161615)",
-                  }}
-                >
-                  {token.balance}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                    fontSize: "12px",
-                    color: "var(--foreground-muted, #848483)",
-                  }}
-                >
-                  {token.balanceInFiat}
-                </span>
-              </div>
-            </button>
-          ))
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
+
+      {isMulti && (
+        <div className="pb-4 mt-auto">
+          <button
+            onClick={onDone}
+            disabled={selectedTokens.length === 0}
+            className="w-full font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 active:opacity-100 flex items-center justify-center cursor-pointer"
+            style={{
+              background: "#006BF4",
+              boxShadow: "0px 1px 4px 0px #5555550D",
+              height: "48px",
+              borderRadius: "12px",
+              fontSize: "14px",
+            }}
+          >
+            Done
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+

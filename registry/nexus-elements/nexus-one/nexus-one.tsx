@@ -65,9 +65,7 @@ export function NexusOne({
   const [swapType, setSwapType] = useState<SwapType>("exactIn");
   const [swapTypeOpen, setSwapTypeOpen] = useState(false);
   const [swapStep, setSwapStep] = useState<SwapStep>("idle");
-  const [fromToken, setFromToken] = useState<SwapTokenOption | undefined>(
-    undefined,
-  );
+  const [fromTokens, setFromTokens] = useState<SwapTokenOption[]>([]);
   const [toToken, setToToken] = useState<SwapTokenOption | undefined>(
     undefined,
   );
@@ -107,7 +105,7 @@ export function NexusOne({
     setAmount("");
     setTxError(null);
     setSwapStep("idle");
-    setFromToken(undefined);
+    setFromTokens([]);
     setToToken(undefined);
     setSelectedOpportunity(undefined);
   };
@@ -172,7 +170,7 @@ export function NexusOne({
 
   /** Simulate/fetch intent when entering preview step */
   const handleEnterPreview = async () => {
-    if (!fromToken || !toToken || !amount) return;
+    if (fromTokens.length === 0 || !toToken || !amount) return;
     setSwapStep("preview-intent");
     setIntentLoading(true);
     setIntentToAmount(undefined);
@@ -189,25 +187,23 @@ export function NexusOne({
 
   /** Execute the swap after user accepts the preview */
   const handleSwapAccept = async () => {
-    if (!nexusSDK || !fromToken || !toToken || !amount) return;
+    if (!nexusSDK || fromTokens.length === 0 || !toToken || !amount) return;
     onStart?.();
     setSwapStep("progress");
 
     try {
       const amountBigInt = nexusSDK.utils.parseUnits(
         amount,
-        fromToken.decimals || 18,
+        fromTokens[0].decimals || 18,
       );
 
       if (swapType === "exactIn") {
         await nexusSDK.swapWithExactIn({
-          from: [
-            {
-              chainId: fromToken.chainId!,
-              tokenAddress: fromToken.contractAddress as `0x${string}`,
-              amount: amountBigInt,
-            },
-          ],
+          from: fromTokens.map((token) => ({
+            chainId: token.chainId!,
+            tokenAddress: token.contractAddress as `0x${string}`,
+            amount: amountBigInt / BigInt(fromTokens.length || 1),
+          })),
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
         });
@@ -216,14 +212,12 @@ export function NexusOne({
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
           toAmount: amountBigInt,
-          ...(fromToken.chainId
+          ...(fromTokens.length > 0
             ? {
-                fromSources: [
-                  {
-                    chainId: fromToken.chainId,
-                    tokenAddress: fromToken.contractAddress as `0x${string}`,
-                  },
-                ],
+                fromSources: fromTokens.map((token) => ({
+                  chainId: token.chainId!,
+                  tokenAddress: token.contractAddress as `0x${string}`,
+                })),
               }
             : {}),
         });
@@ -336,7 +330,7 @@ export function NexusOne({
             )}
 
             {/* Title + Swap type dropdown */}
-            <div className="flex flex-col items-center gap-x-1">
+            <div className="flex flex-col flex-1 items-start gap-x-1">
               <h2
                 style={{
                   fontFamily: "var(--font-geist-sans), sans-serif",
@@ -346,15 +340,19 @@ export function NexusOne({
               >
                 {getTitle()}
               </h2>
-              <span
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "13px",
-                  color: "var(--foreground-muted, #848483)",
-                }}
-              >
-                {} asset(s) selected
-              </span>
+              {activeMode === "swap" &&
+                swapStep === "choose-swap-asset" &&
+                swapType === "exactIn" && (
+                  <span
+                    style={{
+                      fontFamily: "var(--font-geist-sans), sans-serif",
+                      fontSize: "13px",
+                      color: "var(--foreground-muted, #848483)",
+                    }}
+                  >
+                    {fromTokens.length} asset(s) selected
+                  </span>
+                )}
             </div>
 
             {/* Exact In / Exact Out dropdown — only on main swap screen */}
@@ -390,7 +388,7 @@ export function NexusOne({
                         onClick={() => {
                           setSwapType(t);
                           setSwapTypeOpen(false);
-                          setFromToken(undefined);
+                          setFromTokens([]);
                           setToToken(undefined);
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors"
@@ -466,13 +464,34 @@ export function NexusOne({
                 <SwapAssetSelector
                   title={
                     swapType === "exactIn"
-                      ? "Swap (Choose Asset)"
-                      : "Receive (Choose Asset)"
+                      ? "Choose assets to Swap"
+                      : "Choose asset to Receive"
                   }
                   swapBalance={swapBalance}
+                  isMulti={swapType === "exactIn"}
+                  selectedTokens={fromTokens}
+                  onToggle={(token) => {
+                    setFromTokens((prev) => {
+                      const exists = prev.find(
+                        (t) =>
+                          t.contractAddress === token.contractAddress &&
+                          t.chainId === token.chainId,
+                      );
+                      if (exists)
+                        return prev.filter(
+                          (t) =>
+                            !(
+                              t.contractAddress === token.contractAddress &&
+                              t.chainId === token.chainId
+                            ),
+                        );
+                      return [...prev, token];
+                    });
+                  }}
+                  onDone={() => setSwapStep("idle")}
                   onSelect={(token) => {
                     if (swapType === "exactIn") {
-                      setFromToken(token);
+                      setFromTokens([token]);
                       setSwapStep("choose-receive-asset");
                     } else {
                       setToToken(token);
@@ -499,7 +518,7 @@ export function NexusOne({
               {/* Panel: preview-intent */}
               {swapStep === "preview-intent" && (
                 <SwapIntentPreview
-                  fromToken={fromToken}
+                  fromToken={fromTokens[0]}
                   toToken={toToken}
                   fromAmount={amount}
                   toAmount={intentToAmount}
@@ -521,7 +540,7 @@ export function NexusOne({
                       color: "var(--foreground-muted, #848483)",
                     }}
                   >
-                    Swapping {fromToken?.symbol} → {toToken?.symbol}…
+                    Swapping {fromTokens[0]?.symbol} → {toToken?.symbol}…
                   </p>
                 </div>
               )}
@@ -534,8 +553,8 @@ export function NexusOne({
                     amount={amount}
                     onChange={setAmount}
                     maxAvailableAmount={
-                      fromToken
-                        ? String(fromToken.balance).replace(/[^0-9.]/g, "")
+                      fromTokens.length > 0
+                        ? String(fromTokens[0].balance).replace(/[^0-9.]/g, "")
                         : maxBalance
                     }
                     unifiedBalances={swapBalance!}
@@ -545,217 +564,154 @@ export function NexusOne({
                   />
 
                   {/* Swap asset chip */}
-                  <button
-                    onClick={() => setSwapStep("choose-swap-asset")}
-                    className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
-                    style={{
-                      borderRadius: "12px",
-                      border: "1px solid var(--border-default, #E8E8E7)",
-                      boxShadow: "0px 1px 12px 0px #5B5B5B0D",
-                      background: "#FFFFFF",
-                    }}
-                  >
-                    <div className="flex items-center gap-x-3">
-                      {fromToken ? (
-                        <>
-                          {fromToken.logo ? (
-                            <img
-                              src={fromToken.logo}
-                              alt={fromToken.symbol}
-                              className="w-7 h-7 rounded-full border border-gray-100 object-cover"
-                            />
-                          ) : (
-                            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600">
-                              {fromToken.symbol.slice(0, 2)}
+                  {swapType === "exactIn" && (
+                    <button
+                      onClick={() => setSwapStep("choose-swap-asset")}
+                      className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
+                      style={{
+                        borderRadius: "12px",
+                        border: "1px solid var(--border-default, #E8E8E7)",
+                        boxShadow: "0px 1px 12px 0px #5B5B5B0D",
+                        background: "#FFFFFF",
+                      }}
+                    >
+                      <div className="flex items-center gap-x-3 w-full justify-between">
+                        {fromTokens.length > 0 ? (
+                          <div className="flex items-center gap-x-3">
+                            <div className="relative shrink-0">
+                              {fromTokens[0].logo ? (
+                                <img
+                                  src={fromTokens[0].logo}
+                                  alt={fromTokens[0].symbol}
+                                  className="w-9 h-9 rounded-full border border-gray-100 object-cover"
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600">
+                                  {fromTokens[0].symbol.slice(0, 2)}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          <div className="flex flex-col items-start">
-                            <span
-                              style={{
-                                fontFamily:
-                                  "var(--font-geist-sans), sans-serif",
-                                fontSize: "13px",
-                                fontWeight: 500,
-                                color: "var(--foreground-primary, #161615)",
-                              }}
-                            >
-                              {fromToken.symbol}
-                            </span>
-                            {fromToken.chainName && (
+                            <div className="flex flex-col items-start justify-center">
                               <span
                                 style={{
                                   fontFamily:
                                     "var(--font-geist-sans), sans-serif",
-                                  fontSize: "11px",
+                                  fontSize: "14px",
+                                  fontWeight: 500,
+                                  color: "var(--foreground-primary, #161615)",
+                                }}
+                              >
+                                {fromTokens[0].symbol}{" "}
+                                {fromTokens.length > 1
+                                  ? `+ ${fromTokens.length - 1}`
+                                  : ""}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "12px",
                                   color: "var(--foreground-muted, #848483)",
                                 }}
                               >
-                                {fromToken.chainName}
+                                {fromTokens.length > 1
+                                  ? `${fromTokens.length} Chains`
+                                  : fromTokens[0].chainName}
                               </span>
-                            )}
+                            </div>
                           </div>
-                        </>
-                      ) : (
-                        <div className="flex gap-4 items-center">
-                          <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
-                            <PlusIcon className="h-4 w-4 text-white" />
-                          </div>
-                          <div className="flex flex-col gap-1 items-start">
-                            <span
-                              style={{
-                                fontFamily:
-                                  "var(--font-geist-sans), sans-serif",
-                                fontSize: "14px",
-                                color: "var(--foreground-primary, #161615)",
-                              }}
-                            >
-                              {swapType === "exactIn" && "Swap"}
-                            </span>
-                            <span
-                              style={{
-                                fontFamily:
-                                  "var(--font-geist-sans), sans-serif",
-                                fontSize: "13px",
-                                color:
-                                  "var(--widget-card-foreground-muted, #848483)",
-                              }}
-                            >
-                              Choose asset
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-x-1">
-                      {fromToken && (
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), sans-serif",
-                            fontSize: "11px",
-                            color:
-                              "var(--interactive-button-primary-background, #006BF4)",
-                            fontWeight: 500,
-                          }}
-                        >
-                          Edit
-                        </span>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Receive asset chip — only for exactIn after source is chosen */}
-                  {swapType === "exactIn" && (
-                    <button
-                      onClick={() => setSwapStep("choose-receive-asset")}
-                      className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-black/5"
-                      style={{
-                        background: "#FFFFFF",
-                        borderRadius: "12px",
-                        border: "1px solid var(--border-default, #E8E8E7)",
-                      }}
-                    >
-                      <div className="flex items-center gap-x-3">
-                        {toToken ? (
-                          <>
-                            {toToken.logo ? (
-                              <img
-                                src={toToken.logo}
-                                alt={toToken.symbol}
-                                className="w-7 h-7 rounded-full border border-gray-100 object-cover"
-                              />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
-                                {toToken.symbol.slice(0, 2)}
-                              </div>
-                            )}
-                            <div className="flex flex-col items-start">
+                        ) : (
+                          <div className="flex gap-4 items-center">
+                            <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
+                              <PlusIcon className="h-4 w-4 text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1 items-start">
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "14px",
+                                  color: "var(--foreground-primary, #161615)",
+                                }}
+                              >
+                                Swap
+                              </span>
                               <span
                                 style={{
                                   fontFamily:
                                     "var(--font-geist-sans), sans-serif",
                                   fontSize: "13px",
-                                  fontWeight: 500,
-                                  color: "var(--foreground-primary, #161615)",
+                                  color:
+                                    "var(--widget-card-foreground-muted, #848483)",
                                 }}
                               >
-                                {toToken.symbol}
+                                Choose asset
                               </span>
-                              {toToken.chainName && (
-                                <span
-                                  style={{
-                                    fontFamily:
-                                      "var(--font-geist-sans), sans-serif",
-                                    fontSize: "11px",
-                                    color: "var(--foreground-muted, #848483)",
-                                  }}
-                                >
-                                  {toToken.chainName}
-                                </span>
-                              )}
                             </div>
-                          </>
-                        ) : (
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), sans-serif",
-                              fontSize: "13px",
-                              color: "var(--foreground-muted, #848483)",
-                            }}
-                          >
-                            Receive (Choose Asset)
-                          </span>
+                          </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-x-1">
-                        {toToken && (
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), sans-serif",
-                              fontSize: "11px",
-                              color:
-                                "var(--interactive-button-primary-background, #006BF4)",
-                              fontWeight: 500,
-                            }}
-                          >
-                            Edit
-                          </span>
-                        )}
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
+
+                        <div className="flex items-center gap-x-1">
+                          {fromTokens.length > 0 && (
+                            <span
+                              style={{
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
+                                fontSize: "11px",
+                                color:
+                                  "var(--interactive-button-primary-background, #006BF4)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              Edit
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </button>
                   )}
 
-                  {/* Exact Out — only "Receive" chip first, then from is auto */}
-                  {swapType === "exactOut" && (
+                  {/* Receive asset chip — shown in exactOut ALWAYS, or in exactIn IF fromTokens chosen */}
+                  {(swapType === "exactOut" ||
+                    (swapType === "exactIn" && fromTokens.length > 0)) && (
                     <button
-                      onClick={() => setSwapStep("choose-swap-asset")}
-                      className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-black/5"
+                      onClick={() =>
+                        setSwapStep(
+                          swapType === "exactOut"
+                            ? "choose-swap-asset"
+                            : "choose-receive-asset",
+                        )
+                      }
+                      className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
                       style={{
-                        background: "#FFFFFF",
                         borderRadius: "12px",
                         border: "1px solid var(--border-default, #E8E8E7)",
+                        boxShadow: "0px 1px 12px 0px #5B5B5B0D",
+                        background: "#FFFFFF",
                       }}
                     >
-                      <div className="flex items-center gap-x-3">
+                      <div className="flex items-center gap-x-3 w-full justify-between">
                         {toToken ? (
-                          <>
-                            {toToken.logo ? (
-                              <img
-                                src={toToken.logo}
-                                alt={toToken.symbol}
-                                className="w-7 h-7 rounded-full border border-gray-100 object-cover"
-                              />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
-                                {toToken.symbol.slice(0, 2)}
-                              </div>
-                            )}
-                            <div className="flex flex-col items-start">
+                          <div className="flex items-center gap-x-3">
+                            <div className="relative shrink-0">
+                              {toToken.logo ? (
+                                <img
+                                  src={toToken.logo}
+                                  alt={toToken.symbol}
+                                  className="w-9 h-9 rounded-full border border-gray-100 object-cover"
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
+                                  {toToken.symbol.slice(0, 2)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-start justify-center">
                               <span
                                 style={{
                                   fontFamily:
                                     "var(--font-geist-sans), sans-serif",
-                                  fontSize: "13px",
+                                  fontSize: "14px",
                                   fontWeight: 500,
                                   color: "var(--foreground-primary, #161615)",
                                 }}
@@ -767,7 +723,7 @@ export function NexusOne({
                                   style={{
                                     fontFamily:
                                       "var(--font-geist-sans), sans-serif",
-                                    fontSize: "11px",
+                                    fontSize: "12px",
                                     color: "var(--foreground-muted, #848483)",
                                   }}
                                 >
@@ -775,34 +731,54 @@ export function NexusOne({
                                 </span>
                               )}
                             </div>
-                          </>
+                          </div>
                         ) : (
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), sans-serif",
-                              fontSize: "13px",
-                              color: "var(--foreground-muted, #848483)",
-                            }}
-                          >
-                            Receive (Choose Asset)
-                          </span>
+                          <div className="flex gap-4 items-center">
+                            <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
+                              <PlusIcon className="h-4 w-4 text-white" />
+                            </div>
+                            <div className="flex flex-col gap-1 items-start">
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "14px",
+                                  color: "var(--foreground-primary, #161615)",
+                                }}
+                              >
+                                Receive
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily:
+                                    "var(--font-geist-sans), sans-serif",
+                                  fontSize: "13px",
+                                  color:
+                                    "var(--widget-card-foreground-muted, #848483)",
+                                }}
+                              >
+                                Choose asset
+                              </span>
+                            </div>
+                          </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-x-1">
-                        {toToken && (
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), sans-serif",
-                              fontSize: "11px",
-                              color:
-                                "var(--interactive-button-primary-background, #006BF4)",
-                              fontWeight: 500,
-                            }}
-                          >
-                            Edit
-                          </span>
-                        )}
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
+
+                        <div className="flex items-center gap-x-1">
+                          {toToken && (
+                            <span
+                              style={{
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
+                                fontSize: "11px",
+                                color:
+                                  "var(--interactive-button-primary-background, #006BF4)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              Edit
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </button>
                   )}
@@ -815,7 +791,8 @@ export function NexusOne({
                     disabled={
                       !amount ||
                       Number(amount) <= 0 ||
-                      (swapType === "exactIn" && (!fromToken || !toToken)) ||
+                      (swapType === "exactIn" &&
+                        (fromTokens.length === 0 || !toToken)) ||
                       (swapType === "exactOut" && !toToken)
                     }
                     className="w-full font-medium text-white transition-opacity hover:opacity-90 active:opacity-100 text-[14px]"
