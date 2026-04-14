@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { Search, X, ChevronLeft, Loader2 } from "lucide-react";
+import { Search, X, ChevronLeft, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   type UserAsset,
   CHAIN_METADATA,
@@ -140,6 +140,163 @@ export function SwapAssetSelector({
     );
   }, [allTokens, query]);
 
+  const groupedFiltered = useMemo(() => {
+    const groups: Record<string, SwapTokenOption[]> = {};
+    for (const token of filtered) {
+      if (!groups[token.symbol]) groups[token.symbol] = [];
+      groups[token.symbol].push(token);
+    }
+    
+    return Object.values(groups).map((group) => {
+      let totalFiatVal = 0;
+      let totalBalVal = 0;
+      
+      for (const t of group) {
+        totalFiatVal += Number(t.balanceInFiat.replace(/[^0-9.]/g, "") || 0);
+        totalBalVal += Number(t.balance.replace(/[^0-9.]/g, "") || 0);
+      }
+      
+      return {
+        symbol: group[0].symbol,
+        logo: group[0].logo,
+        totalFiat: `$${totalFiatVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+        totalBal: `${totalBalVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })} ${group[0].symbol}`,
+        tokens: group,
+      };
+    }).sort((a, b) => {
+      const aFiat = Number(a.totalFiat.replace(/[^0-9.]/g, "") || 0);
+      const bFiat = Number(b.totalFiat.replace(/[^0-9.]/g, "") || 0);
+      return bFiat - aFiat;
+    });
+  }, [filtered]);
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (symbol: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(symbol)) next.delete(symbol);
+      else next.add(symbol);
+      return next;
+    });
+  };
+
+  const toggleGroupSelection = (groupTokens: SwapTokenOption[], isFullySelected: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isMulti || !onToggle) return;
+    
+    if (isFullySelected) {
+      // Deselect all
+      groupTokens.forEach(t => {
+        if (selectedTokens.some(st => st.contractAddress === t.contractAddress && st.chainId === t.chainId)) {
+          onToggle(t);
+        }
+      });
+    } else {
+      // Select all
+      groupTokens.forEach(t => {
+        if (!selectedTokens.some(st => st.contractAddress === t.contractAddress && st.chainId === t.chainId)) {
+          onToggle(t);
+        }
+      });
+    }
+  };
+
+  const renderTokenRow = (token: SwapTokenOption) => {
+    const isSelected = selectedTokens.some(
+      (st) =>
+        st.contractAddress === token.contractAddress &&
+        st.chainId === token.chainId
+    );
+    return (
+      <button
+        key={`${token.contractAddress}-${token.chainId}`}
+        onClick={() => {
+          if (isMulti && onToggle) {
+            onToggle(token);
+          } else if (!isMulti) {
+            onSelect(token);
+          }
+        }}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
+      >
+        <div className="flex items-center gap-x-3">
+          {isMulti && <CheckboxBox selected={isSelected} />}
+           <div className="relative shrink-0">
+            {token.logo ? (
+              <img
+                src={token.logo}
+                alt={token.symbol}
+                className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                style={{
+                  background:
+                    "var(--interactive-button-primary-background, #006BF4)",
+                }}
+              >
+                {token.symbol.slice(0, 2)}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col items-start">
+            <span
+              style={{
+                fontFamily: "var(--font-geist-sans), sans-serif",
+                fontWeight: 500,
+                fontSize: "14px",
+                color: "var(--foreground-primary, #161615)",
+              }}
+            >
+              {token.symbol}
+            </span>
+            {token.chainName && (
+              <span
+                style={{
+                  fontFamily: "var(--font-geist-sans), sans-serif",
+                  fontSize: "12px",
+                  color: "var(--foreground-muted, #848483)",
+                }}
+              >
+                {token.chainName}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-x-3">
+          <div className="flex flex-col items-end">
+            <span
+              style={{
+                fontFamily: "var(--font-geist-sans), sans-serif",
+                fontWeight: 500,
+                fontSize: "13px",
+                color: "var(--foreground-primary, #161615)",
+              }}
+            >
+              {token.balanceInFiat}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-geist-sans), sans-serif",
+                fontSize: "12px",
+                color: "var(--foreground-muted, #848483)",
+              }}
+            >
+              {token.balance}
+            </span>
+          </div>
+          <div className="w-5 h-5 shrink-0" />
+        </div>
+      </button>
+    );
+  };
+
   const isLoading = !staticOptions && swapBalance === null;
 
   return (
@@ -214,67 +371,63 @@ export function SwapAssetSelector({
             }}
             className="flex flex-col p-1 space-y-1"
           >
-            {filtered.map((token) => {
-              const isSelected = selectedTokens.some(
-                (st) =>
-                  st.contractAddress === token.contractAddress &&
-                  st.chainId === token.chainId
-              );
+            {groupedFiltered.map((group) => {
+              if (group.tokens.length === 1) {
+                return renderTokenRow(group.tokens[0]);
+              }
+
+              const isExpanded = expandedGroups.has(group.symbol);
+              const selectedCount = group.tokens.filter(t => 
+                selectedTokens.some(st => st.contractAddress === t.contractAddress && st.chainId === t.chainId)
+              ).length;
+              const isFullySelected = selectedCount === group.tokens.length;
+              const hasSelection = selectedCount > 0;
+
               return (
-                <button
-                  key={`${token.contractAddress}-${token.chainId}`}
-                  onClick={() => {
-                    if (isMulti && onToggle) {
-                      onToggle(token);
-                    } else if (!isMulti) {
-                      onSelect(token);
-                    }
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
-                >
-                  <div className="flex items-center gap-x-3">
-                    {isMulti && <CheckboxBox selected={isSelected} />}
-                    <div className="relative shrink-0">
-                      {token.logo ? (
-                        <img
-                          src={token.logo}
-                          alt={token.symbol}
-                          className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                          style={{
-                            background:
-                              "var(--interactive-button-primary-background, #006BF4)",
-                          }}
-                        >
-                          {token.symbol.slice(0, 2)}
+                <div key={group.symbol} className="flex flex-col w-full">
+                  <button
+                    onClick={(e) => toggleGroup(group.symbol, e)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
+                  >
+                    <div className="flex items-center gap-x-3">
+                      {isMulti && (
+                        <div onClick={(e) => toggleGroupSelection(group.tokens, isFullySelected, e)}>
+                          <CheckboxBox selected={hasSelection} />
                         </div>
                       )}
-                      {token.chainLogo && (
-                        <img
-                          src={token.chainLogo}
-                          alt={token.chainName}
-                          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border border-white shadow-sm object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span
-                        style={{
-                          fontFamily: "var(--font-geist-sans), sans-serif",
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          color: "var(--foreground-primary, #161615)",
-                        }}
-                      >
-                        {token.symbol}
-                      </span>
-                      {token.chainName && (
+                      <div className="relative shrink-0">
+                        {group.logo ? (
+                          <img
+                            src={group.logo}
+                            alt={group.symbol}
+                            className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                            style={{
+                              background:
+                                "var(--interactive-button-primary-background, #006BF4)",
+                            }}
+                          >
+                            {group.symbol.slice(0, 2)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontWeight: 500,
+                            fontSize: "14px",
+                            color: "var(--foreground-primary, #161615)",
+                          }}
+                        >
+                          {group.symbol}
+                        </span>
                         <span
                           style={{
                             fontFamily: "var(--font-geist-sans), sans-serif",
@@ -282,33 +435,45 @@ export function SwapAssetSelector({
                             color: "var(--foreground-muted, #848483)",
                           }}
                         >
-                          {token.chainName}
+                          {group.tokens.length} Chains
                         </span>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span
-                      style={{
-                        fontFamily: "var(--font-geist-sans), sans-serif",
-                        fontWeight: 500,
-                        fontSize: "13px",
-                        color: "var(--foreground-primary, #161615)",
-                      }}
-                    >
-                      {token.balanceInFiat}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-geist-sans), sans-serif",
-                        fontSize: "12px",
-                        color: "var(--foreground-muted, #848483)",
-                      }}
-                    >
-                      {token.balance}
-                    </span>
-                  </div>
-                </button>
+                    
+                    <div className="flex items-center gap-x-3">
+                      <div className="flex flex-col items-end">
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontWeight: 500,
+                            fontSize: "13px",
+                            color: "var(--foreground-primary, #161615)",
+                          }}
+                        >
+                          {group.totalFiat}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "12px",
+                            color: "var(--foreground-muted, #848483)",
+                          }}
+                        >
+                          {group.totalBal}
+                        </span>
+                      </div>
+                      <div className="text-gray-400 shrink-0">
+                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </div>
+                    </div>
+                  </button>
+                  
+                  {isExpanded && (
+                    <div className="flex flex-col pl-6 mt-1 space-y-1">
+                      {group.tokens.map((token) => renderTokenRow(token))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

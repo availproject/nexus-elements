@@ -561,10 +561,77 @@ export function NexusOne({
                     usdValue={
                       amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
                     }
+                    header={
+                      swapType === "exactIn" && fromTokens.length > 0 ? (() => {
+                        const distinctTokens = Array.from(new Map(fromTokens.map(t => [t.symbol, t])).values());
+                        return (
+                        <div
+                          onClick={() => setSwapStep("choose-swap-asset")}
+                          className="flex items-center gap-x-3 w-full justify-between cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-x-3 pl-1">
+                            <div className="relative shrink-0 flex items-center -space-x-3">
+                              {distinctTokens.slice(0, 4).map((t, idx) => t.logo ? (
+                                <img
+                                  key={`${t.contractAddress}-${t.chainId}`}
+                                  src={t.logo}
+                                  alt={t.symbol}
+                                  className="w-9 h-9 rounded-full object-cover relative"
+                                  style={{ zIndex: 4 - idx }}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  key={`${t.contractAddress}-${t.chainId}`}
+                                  className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 relative"
+                                  style={{ zIndex: 4 - idx }}
+                                >
+                                  {t.symbol.slice(0,2)}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex flex-col items-start justify-center ml-1">
+                              <span
+                                style={{
+                                  fontFamily: "var(--font-geist-sans), sans-serif",
+                                  fontSize: "14px",
+                                  fontWeight: 500,
+                                  color: "var(--foreground-primary, #161615)",
+                                }}
+                              >
+                                Swapping
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: "var(--font-geist-sans), sans-serif",
+                                  fontSize: "13px",
+                                  color: "var(--foreground-muted, #848483)",
+                                }}
+                              >
+                                {distinctTokens[0].symbol}{distinctTokens.length > 1 ? `, ${distinctTokens[1].symbol}` : ""}{distinctTokens.length > 2 ? ` +${distinctTokens.length - 2} more` : ""}
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-geist-sans), sans-serif",
+                              fontSize: "12px",
+                              color: "var(--foreground-muted, #848483)",
+                            }}
+                            className="group-hover:text-gray-600 transition-colors pr-1"
+                          >
+                            Edit
+                          </span>
+                        </div>
+                        );
+                      })() : undefined
+                    }
                   />
 
                   {/* Swap asset chip */}
-                  {swapType === "exactIn" && (
+                  {swapType === "exactIn" && fromTokens.length === 0 && (
                     <button
                       onClick={() => setSwapStep("choose-swap-asset")}
                       className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
@@ -576,99 +643,34 @@ export function NexusOne({
                       }}
                     >
                       <div className="flex items-center gap-x-3 w-full justify-between">
-                        {fromTokens.length > 0 ? (
-                          <div className="flex items-center gap-x-3">
-                            <div className="relative shrink-0">
-                              {fromTokens[0].logo ? (
-                                <img
-                                  src={fromTokens[0].logo}
-                                  alt={fromTokens[0].symbol}
-                                  className="w-9 h-9 rounded-full border border-gray-100 object-cover"
-                                />
-                              ) : (
-                                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600">
-                                  {fromTokens[0].symbol.slice(0, 2)}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-start justify-center">
-                              <span
-                                style={{
-                                  fontFamily:
-                                    "var(--font-geist-sans), sans-serif",
-                                  fontSize: "14px",
-                                  fontWeight: 500,
-                                  color: "var(--foreground-primary, #161615)",
-                                }}
-                              >
-                                {fromTokens[0].symbol}{" "}
-                                {fromTokens.length > 1
-                                  ? `+ ${fromTokens.length - 1}`
-                                  : ""}
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily:
-                                    "var(--font-geist-sans), sans-serif",
-                                  fontSize: "12px",
-                                  color: "var(--foreground-muted, #848483)",
-                                }}
-                              >
-                                {fromTokens.length > 1
-                                  ? `${fromTokens.length} Chains`
-                                  : fromTokens[0].chainName}
-                              </span>
-                            </div>
+                        <div className="flex gap-4 items-center">
+                          <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
+                            <PlusIcon className="h-4 w-4 text-white" />
                           </div>
-                        ) : (
-                          <div className="flex gap-4 items-center">
-                            <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
-                              <PlusIcon className="h-4 w-4 text-white" />
-                            </div>
-                            <div className="flex flex-col gap-1 items-start">
-                              <span
-                                style={{
-                                  fontFamily:
-                                    "var(--font-geist-sans), sans-serif",
-                                  fontSize: "14px",
-                                  color: "var(--foreground-primary, #161615)",
-                                }}
-                              >
-                                Swap
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily:
-                                    "var(--font-geist-sans), sans-serif",
-                                  fontSize: "13px",
-                                  color:
-                                    "var(--widget-card-foreground-muted, #848483)",
-                                }}
-                              >
-                                Choose asset
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-x-1">
-                          {fromTokens.length > 0 && (
+                          <div className="flex flex-col gap-1 items-start">
                             <span
                               style={{
-                                fontFamily:
-                                  "var(--font-geist-sans), sans-serif",
-                                fontSize: "11px",
-                                color:
-                                  "var(--interactive-button-primary-background, #006BF4)",
-                                fontWeight: 500,
+                                fontFamily: "var(--font-geist-sans), sans-serif",
+                                fontSize: "14px",
+                                color: "var(--foreground-primary, #161615)",
                               }}
                             >
-                              Edit
+                              Swap
                             </span>
-                          )}
+                            <span
+                              style={{
+                                fontFamily: "var(--font-geist-sans), sans-serif",
+                                fontSize: "13px",
+                                color: "var(--widget-card-foreground-muted, #848483)",
+                              }}
+                            >
+                              Choose asset
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </button>
+
+                    </div>
+                  </button>
                   )}
 
                   {/* Receive asset chip — shown in exactOut ALWAYS, or in exactIn IF fromTokens chosen */}

@@ -16,6 +16,7 @@ interface AmountInputUnifiedProps {
   usdValue?: string;
   /** Label shown beside Balance text, e.g. "USDC" */
   tokenSymbol?: string;
+  header?: React.ReactNode;
 }
 
 export function AmountInputUnified({
@@ -28,6 +29,7 @@ export function AmountInputUnified({
   tokenIcon,
   usdValue,
   tokenSymbol,
+  header,
 }: AmountInputUnifiedProps) {
   const handleMax = () => {
     if (!totalBalance) return;
@@ -45,7 +47,7 @@ export function AmountInputUnified({
 
   return (
     <div
-      className="w-full flex flex-col items-center justify-center p-5 bg-white gap-y-3 min-h-[200px]"
+      className="w-full flex flex-col bg-white min-h-[200px]"
       style={{
         borderRadius: "12px",
         border: "1px solid var(--border-default, #E8E8E7)",
@@ -53,8 +55,14 @@ export function AmountInputUnified({
         background: "#FFFFFF",
       }}
     >
+      {header && (
+        <div className="w-full border-b border-[#E8E8E7] px-5 py-4">
+          {header}
+        </div>
+      )}
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-5 gap-y-3">
       {/* Central Input row: large amount + MAX button inline */}
-      <div className="flex items-center justify-center w-full gap-x-3 flex-1">
+      <div className="flex items-center justify-center w-full gap-x-3">
         <div
           className="flex items-center justify-center text-center"
           style={{
@@ -141,6 +149,7 @@ export function AmountInputUnified({
           Balance: {totalBalance ? `$${totalBalance}` : `$0`}
         </p>
       )}
+      </div>
     </div>
   );
 }
