@@ -17,7 +17,13 @@ import {
 } from "./components/swap-asset-selector";
 import { SwapIntentPreview } from "./components/swap-intent-preview";
 import { OpportunityList } from "./components/opportunity-list";
-import { ChevronDown, X, ArrowLeft } from "lucide-react";
+import {
+  ChevronDown,
+  X,
+  ArrowLeft,
+  PlusCircleIcon,
+  PlusIcon,
+} from "lucide-react";
 import { Button } from "../ui/button";
 import { useNexus } from "../nexus/NexusProvider";
 import CardBG from "./card-bg.png";
@@ -238,7 +244,7 @@ export function NexusOne({
     if (activeMode === "swap") {
       if (swapStep === "choose-swap-asset")
         return swapType === "exactIn"
-          ? "Choose asset to Swap"
+          ? "Choose assets to Swap"
           : "Choose asset to Receive";
       if (swapStep === "choose-receive-asset") return "Choose asset to Receive";
       if (swapStep === "preview-intent") return "Confirm Swap";
@@ -312,34 +318,44 @@ export function NexusOne({
           className="flex items-center justify-between px-4 pt-4 pb-3"
           // style={{ borderBottom: "1px solid var(--border-default, #E8E8E7)" }}
         >
-          {/* Back button or logo */}
-          {canGoBack ? (
-            <button
-              onClick={handleBack}
-              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors"
-              aria-label="Back"
-            >
-              <ArrowLeft className="w-4 h-4 text-gray-600" />
-            </button>
-          ) : (
-            // <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-            //   <div className="w-4 h-4 rounded-full border-2 border-current" />
-            // </div>
-            <div></div>
-          )}
-
-          {/* Title + Swap type dropdown */}
           <div className="flex items-center gap-x-2">
-            <h2
-              style={{
-                fontFamily: "var(--font-geist-sans), sans-serif",
-                fontWeight: 400,
-                fontSize: "14px",
-                color: "var(--foreground-primary, #161615)",
-              }}
-            >
-              {getTitle()}
-            </h2>
+            {/* Back button or logo */}
+            {canGoBack ? (
+              <button
+                onClick={handleBack}
+                className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-4 h-4 text-gray-600" />
+              </button>
+            ) : (
+              // <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              //   <div className="w-4 h-4 rounded-full border-2 border-current" />
+              // </div>
+              <div></div>
+            )}
+
+            {/* Title + Swap type dropdown */}
+            <div className="flex flex-col items-center gap-x-1">
+              <h2
+                style={{
+                  fontFamily: "var(--font-geist-sans), sans-serif",
+                  fontSize: "14px",
+                  color: "var(--foreground-primary, #161615)",
+                }}
+              >
+                {getTitle()}
+              </h2>
+              <span
+                style={{
+                  fontFamily: "var(--font-geist-sans), sans-serif",
+                  fontSize: "13px",
+                  color: "var(--foreground-muted, #848483)",
+                }}
+              >
+                {} asset(s) selected
+              </span>
+            </div>
 
             {/* Exact In / Exact Out dropdown — only on main swap screen */}
             {activeMode === "swap" && swapStep === "idle" && (
@@ -531,11 +547,12 @@ export function NexusOne({
                   {/* Swap asset chip */}
                   <button
                     onClick={() => setSwapStep("choose-swap-asset")}
-                    className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-black/5"
+                    className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
                     style={{
-                      background: "#FFFFFF",
                       borderRadius: "12px",
                       border: "1px solid var(--border-default, #E8E8E7)",
+                      boxShadow: "0px 1px 12px 0px #5B5B5B0D",
+                      background: "#FFFFFF",
                     }}
                   >
                     <div className="flex items-center gap-x-3">
@@ -579,17 +596,34 @@ export function NexusOne({
                           </div>
                         </>
                       ) : (
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), sans-serif",
-                            fontSize: "13px",
-                            color: "var(--foreground-muted, #848483)",
-                          }}
-                        >
-                          {swapType === "exactIn"
-                            ? "Swap (Choose Asset)"
-                            : "Paying with (auto)"}
-                        </span>
+                        <div className="flex gap-4 items-center">
+                          <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
+                            <PlusIcon className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span
+                              style={{
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
+                                fontSize: "14px",
+                                color: "var(--foreground-primary, #161615)",
+                              }}
+                            >
+                              {swapType === "exactIn" && "Swap"}
+                            </span>
+                            <span
+                              style={{
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
+                                fontSize: "13px",
+                                color:
+                                  "var(--widget-card-foreground-muted, #848483)",
+                              }}
+                            >
+                              Choose asset
+                            </span>
+                          </div>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-x-1">
@@ -606,7 +640,6 @@ export function NexusOne({
                           Edit
                         </span>
                       )}
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                   </button>
 

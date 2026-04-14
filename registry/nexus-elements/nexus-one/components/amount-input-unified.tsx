@@ -54,7 +54,7 @@ export function AmountInputUnified({
       }}
     >
       {/* Central Input row: large amount + MAX button inline */}
-      <div className="flex items-center justify-center w-full gap-x-3">
+      <div className="flex items-center justify-center w-full gap-x-3 flex-1">
         <div
           className="flex items-center justify-center text-center"
           style={{

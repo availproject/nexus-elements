@@ -44,11 +44,15 @@ function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] {
         name: bd.symbol ?? asset.symbol,
         logo: asset.icon ?? "",
         decimals: bd.decimals ?? asset.decimals ?? 18,
-        balance: formatTokenBalance(bd.balance, {
-          symbol: bd.symbol ?? asset.symbol,
-          decimals: bd.decimals ?? asset.decimals ?? 18,
-        }) ?? bd.balance,
-        balanceInFiat: bd.balanceInFiat != null ? `$${Number(bd.balanceInFiat).toFixed(2)}` : "$0.00",
+        balance:
+          formatTokenBalance(bd.balance, {
+            symbol: bd.symbol ?? asset.symbol,
+            decimals: bd.decimals ?? asset.decimals ?? 18,
+          }) ?? bd.balance,
+        balanceInFiat:
+          bd.balanceInFiat != null
+            ? `$${Number(bd.balanceInFiat).toFixed(2)}`
+            : "$0.00",
         chainId: bd.chain?.id,
         chainName: chainMeta?.name ?? bd.chain?.name,
         chainLogo: chainMeta?.logo ?? bd.chain?.logo,
@@ -85,7 +89,7 @@ export function SwapAssetSelector({
       (t) =>
         t.symbol.toLowerCase().includes(q) ||
         t.name.toLowerCase().includes(q) ||
-        (t.chainName ?? "").toLowerCase().includes(q)
+        (t.chainName ?? "").toLowerCase().includes(q),
     );
   }, [allTokens, query]);
 
@@ -94,7 +98,7 @@ export function SwapAssetSelector({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Panel header */}
-      <div
+      {/* <div
         className="flex items-center gap-x-3 px-4 pb-3 pt-1"
         style={{ borderBottom: "1px solid var(--border-default, #E8E8E7)" }}
       >
@@ -115,7 +119,7 @@ export function SwapAssetSelector({
         >
           {title}
         </span>
-      </div>
+      </div> */}
 
       {/* Search */}
       <div className="px-4 py-3">
@@ -151,7 +155,9 @@ export function SwapAssetSelector({
             <p className="text-sm text-gray-400">Loading assets…</p>
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-center text-gray-400 py-8">No tokens found</p>
+          <p className="text-sm text-center text-gray-400 py-8">
+            No tokens found
+          </p>
         ) : (
           filtered.map((token) => (
             <button
@@ -174,7 +180,10 @@ export function SwapAssetSelector({
                   ) : (
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                      style={{ background: "var(--interactive-button-primary-background, #006BF4)" }}
+                      style={{
+                        background:
+                          "var(--interactive-button-primary-background, #006BF4)",
+                      }}
                     >
                       {token.symbol.slice(0, 2)}
                     </div>
