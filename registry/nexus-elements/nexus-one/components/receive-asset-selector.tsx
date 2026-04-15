@@ -107,7 +107,7 @@ export function ReceiveAssetSelector({
   };
 
   return (
-    <div className="flex flex-col h-full w-full antialiased relative overflow-hidden bg-transparent">
+    <div className="flex flex-col h-full w-full antialiased bg-transparent">
       <div className="flex-1 overflow-y-auto px-4 pb-4 pt-1 bg-transparent flex flex-col gap-4">
         {/* Search */}
         <div
@@ -190,7 +190,7 @@ export function ReceiveAssetSelector({
 
       {/* Backdrop */}
       <div 
-        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 z-10 ${
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 z-40 ${
           selectedToken ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`} 
         onClick={() => setSelectedToken(null)}
@@ -198,10 +198,14 @@ export function ReceiveAssetSelector({
 
       {/* Slide-up Chain Modal */}
       <div
-        className={`absolute inset-x-0 bottom-0 bg-[var(--widget-card-background-primary,#FFFFFE)] rounded-t-2xl flex flex-col transition-transform duration-300 ease-in-out z-20 ${
+        className={`absolute inset-x-0 bottom-0 rounded-t-2xl flex flex-col transition-transform duration-300 ease-in-out z-50 ${
           selectedToken ? "translate-y-0" : "translate-y-full"
         }`}
-        style={{ height: "calc(100% - 24px)" }}
+        style={{ 
+          height: "calc(100% - 24px)", 
+          background: "var(--widget-background, #F9F9F8)",
+          boxShadow: "0px 1px 12px 0px #5B5B5B0D"
+        }}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <span

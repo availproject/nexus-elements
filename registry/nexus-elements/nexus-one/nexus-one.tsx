@@ -506,7 +506,7 @@ export function NexusOne({
               )}
               {/* Panel: choose-receive-asset */}
               {swapStep === "choose-receive-asset" && (
-                <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full -mx-4 -mb-4 -mt-3 px-4 pb-4 pt-3 flex flex-col bg-[var(--widget-background,#F9F9F8)] z-10 relative">
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 h-full -mx-4 -mb-4 -mt-3 flex flex-col bg-[var(--widget-background,#F9F9F8)]">
                   <ReceiveAssetSelector
                     onSelect={(token) => {
                       setToToken(token);
