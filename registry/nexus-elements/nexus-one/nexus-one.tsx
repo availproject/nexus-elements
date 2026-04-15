@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   type NexusOneProps,
   type NexusOneMode,
@@ -15,7 +15,7 @@ import {
   SwapAssetSelector,
   type SwapTokenOption,
 } from "./components/swap-asset-selector";
-import { SwapIntentPreview } from "./components/swap-intent-preview";
+import { SwapIntentPreview, type SwapIntentData } from "./components/swap-intent-preview";
 import { ReceiveAssetSelector } from "./components/receive-asset-selector";
 import { OpportunityList } from "./components/opportunity-list";
 import {
@@ -77,6 +77,39 @@ export function NexusOne({
     undefined,
   );
   const [intentLoading, setIntentLoading] = useState(false);
+  const [intentData, setIntentData] = useState<SwapIntentData | null>(null);
+
+  // Ref to store swap intent hook allow/deny callbacks
+  const swapIntentRef = useRef<{
+    allow: () => void;
+    deny: () => void;
+    refresh: () => Promise<any>;
+  } | null>(null);
+
+  // Set up swap intent hook once SDK is available
+  useEffect(() => {
+    if (!nexusSDK) return;
+    nexusSDK.setOnSwapIntentHook(async ({ intent, allow, deny, refresh }) => {
+      // Store callbacks so accept/reject buttons can call them
+      swapIntentRef.current = { allow, deny, refresh };
+      // Populate intent data for preview
+      setIntentData(intent);
+      // Compute receive amount from intent
+      const receiveAmt = intent.destination?.amount
+        ? String(Number(intent.destination.amount))
+        : undefined;
+      setIntentToAmount(receiveAmt);
+      // Compute fee from sources sum - destination
+      const totalIn = intent.sources.reduce(
+        (sum: number, s: any) => sum + Number(s.amount || 0),
+        0,
+      );
+      const totalOut = Number(intent.destination?.amount || 0);
+      const fee = totalIn - totalOut;
+      setIntentFeeUsd(fee > 0 ? fee.toFixed(2) : "0.00");
+      setIntentLoading(false);
+    });
+  }, [nexusSDK]);
 
   // Deposit-specific
   const [selectedOpportunity, setSelectedOpportunity] = useState<
@@ -169,46 +202,49 @@ export function NexusOne({
     }
   };
 
-  /** Simulate/fetch intent when entering preview step */
+  /** Start swap flow — SDK will trigger setOnSwapIntentHook for preview */
   const handleEnterPreview = async () => {
     if (fromTokens.length === 0 || !toToken || !amount) return;
     setSwapStep("preview-intent");
     setIntentLoading(true);
     setIntentToAmount(undefined);
     setIntentFeeUsd(undefined);
+    setIntentData(null);
+    swapIntentRef.current = null;
 
-    // TODO: call nexusSDK.swapWithExactIn / swapWithExactOut to get intent
-    // For now simulate a small delay and mock data:
-    await new Promise((r) => setTimeout(r, 1200));
-    const mockReceive = (Number(amount) * 0.997).toFixed(4);
-    setIntentToAmount(mockReceive);
-    setIntentFeeUsd("$0.18");
-    setIntentLoading(false);
-  };
-
-  /** Execute the swap after user accepts the preview */
-  const handleSwapAccept = async () => {
-    if (!nexusSDK || fromTokens.length === 0 || !toToken || !amount) return;
-    onStart?.();
-    setSwapStep("progress");
+    if (!nexusSDK) {
+      // Fallback mock if SDK not available
+      await new Promise((r) => setTimeout(r, 1200));
+      const mockReceive = (Number(amount) * 0.997).toFixed(4);
+      setIntentToAmount(mockReceive);
+      setIntentFeeUsd("0.18");
+      setIntentLoading(false);
+      return;
+    }
 
     try {
-      const amountBigInt = nexusSDK.utils.parseUnits(
-        amount,
-        fromTokens[0].decimals || 18,
-      );
-
       if (swapType === "exactIn") {
+        // Start exact-in swap — the intent hook will fire and populate preview
         await nexusSDK.swapWithExactIn({
           from: fromTokens.map((token) => ({
             chainId: token.chainId!,
             tokenAddress: token.contractAddress as `0x${string}`,
-            amount: amountBigInt / BigInt(fromTokens.length || 1),
+            amount: nexusSDK.utils.parseUnits(
+              String(Number(amount) / (fromTokens.length || 1)),
+              token.decimals || 18,
+            ),
           })),
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
         });
+        // If we reach here, swap completed successfully
+        onComplete?.();
+        setSwapStep("idle");
       } else {
+        const amountBigInt = nexusSDK.utils.parseUnits(
+          amount,
+          toToken.decimals || 18,
+        );
         await nexusSDK.swapWithExactOut({
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
@@ -222,13 +258,37 @@ export function NexusOne({
               }
             : {}),
         });
+        onComplete?.();
+        setSwapStep("idle");
       }
-
-      onComplete?.();
     } catch (err: any) {
-      setTxError(err?.message || "Swap failed");
-      onError?.(err?.message || "Swap failed");
-      setSwapStep("preview-intent");
+      // If user denied via the hook, just go back
+      if (err?.code === "USER_DENIED_INTENT") {
+        setSwapStep("idle");
+        return;
+      }
+      // If the hook never fired (intentData still null), fall back to mock data
+      // so the preview still shows something useful
+      if (!intentData) {
+        const mockReceive = (Number(amount) * 0.997).toFixed(4);
+        setIntentToAmount(mockReceive);
+        setIntentFeeUsd((Number(amount) * 0.003).toFixed(2));
+      }
+      if (err?.message) {
+        setTxError(err.message);
+        onError?.(err.message);
+      }
+      setIntentLoading(false);
+    }
+  };
+
+  /** User accepted swap from the preview — call allow() from the intent hook */
+  const handleSwapAccept = () => {
+    if (swapIntentRef.current) {
+      onStart?.();
+      setSwapStep("progress");
+      swapIntentRef.current.allow();
+      // The swap promise in handleEnterPreview will resolve/reject
     }
   };
 
@@ -254,6 +314,16 @@ export function NexusOne({
     return "Nexus One";
   };
 
+  // Titles that should be center-aligned (main screens / confirm screens)
+  // Left-aligned: choose-swap-asset, choose-receive-asset (sub-screens with subtitles)
+  const isTitleCentered = () => {
+    if (activeMode === "swap") {
+      if (swapStep === "choose-swap-asset" || swapStep === "choose-receive-asset") return false;
+      return true; // idle, preview-intent, progress
+    }
+    return true; // deposit, transfer, etc.
+  };
+
   const canGoBack =
     swapStep !== "idle" || (activeMode === "deposit" && selectedOpportunity);
   const handleBack = () => {
@@ -262,13 +332,11 @@ export function NexusOne({
       return;
     }
     if (swapStep === "choose-receive-asset") {
-      setSwapStep("choose-swap-asset");
+      setSwapStep("idle");
       return;
     }
     if (swapStep === "preview-intent") {
-      setSwapStep(
-        swapType === "exactIn" ? "choose-receive-asset" : "choose-swap-asset",
-      );
+      setSwapStep("idle");
       return;
     }
     if (swapStep === "progress") {
@@ -310,11 +378,10 @@ export function NexusOne({
         {/* Header */}
         {/* ------------------------------------------------------------------ */}
         <div
-          className="flex items-center justify-between px-4 pt-4 pb-3"
-          // style={{ borderBottom: "1px solid var(--border-default, #E8E8E7)" }}
+          className="flex items-center justify-between px-4 pt-4 pb-3 relative"
         >
-          <div className="flex items-center gap-x-2">
-            {/* Back button or logo */}
+          {/* Left: Back button or placeholder */}
+          <div className="flex items-center gap-x-2 z-10">
             {canGoBack ? (
               <button
                 onClick={handleBack}
@@ -324,37 +391,36 @@ export function NexusOne({
                 <ArrowLeft className="w-4 h-4 text-gray-600" />
               </button>
             ) : (
-              // <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-              //   <div className="w-4 h-4 rounded-full border-2 border-current" />
-              // </div>
               <div></div>
             )}
 
-            {/* Title + Swap type dropdown */}
-            <div className="flex flex-col flex-1 items-start gap-x-1">
-              <h2
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "14px",
-                  color: "var(--foreground-primary, #161615)",
-                }}
-              >
-                {getTitle()}
-              </h2>
-              {activeMode === "swap" &&
-                swapStep === "choose-swap-asset" &&
-                swapType === "exactIn" && (
-                  <span
-                    style={{
-                      fontFamily: "var(--font-geist-sans), sans-serif",
-                      fontSize: "13px",
-                      color: "var(--foreground-muted, #848483)",
-                    }}
-                  >
-                    {fromTokens.length} asset(s) selected
-                  </span>
-                )}
-            </div>
+            {/* Left-aligned title block (sub-screens only) */}
+            {!isTitleCentered() && (
+              <div className="flex flex-col items-start">
+                <h2
+                  style={{
+                    fontFamily: "var(--font-geist-sans), sans-serif",
+                    fontSize: "14px",
+                    color: "var(--foreground-primary, #161615)",
+                  }}
+                >
+                  {getTitle()}
+                </h2>
+                {activeMode === "swap" &&
+                  swapStep === "choose-swap-asset" &&
+                  swapType === "exactIn" && (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-geist-sans), sans-serif",
+                        fontSize: "13px",
+                        color: "var(--foreground-muted, #848483)",
+                      }}
+                    >
+                      {fromTokens.length} asset(s) selected
+                    </span>
+                  )}
+              </div>
+            )}
 
             {/* Exact In / Exact Out dropdown — only on main swap screen */}
             {activeMode === "swap" && swapStep === "idle" && (
@@ -412,9 +478,24 @@ export function NexusOne({
             )}
           </div>
 
+          {/* Center-aligned title (main screens) */}
+          {isTitleCentered() && (
+            <div className="absolute inset-x-0 flex items-center justify-center pointer-events-none">
+              <h2
+                style={{
+                  fontFamily: "var(--font-geist-sans), sans-serif",
+                  fontSize: "14px",
+                  color: "var(--foreground-primary, #161615)",
+                }}
+              >
+                {getTitle()}
+              </h2>
+            </div>
+          )}
+
           {/* Close */}
           <button
-            className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors z-10"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -520,15 +601,25 @@ export function NexusOne({
               {swapStep === "preview-intent" && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full h-full">
                   <SwapIntentPreview
+                    fromTokens={fromTokens}
                     fromToken={fromTokens[0]}
-                  toToken={toToken}
-                  fromAmount={amount}
-                  toAmount={intentToAmount}
-                  totalFeeUsd={intentFeeUsd}
-                  isLoading={intentLoading}
-                  onAccept={handleSwapAccept}
-                  onReject={() => setSwapStep("idle")}
-                />
+                    toToken={toToken}
+                    fromAmount={amount}
+                    fromAmountUsd={amount}
+                    toAmount={intentToAmount}
+                    toAmountUsd={intentToAmount}
+                    toAmountTokens={intentToAmount ? `${intentToAmount}` : undefined}
+                    totalFeeUsd={intentFeeUsd}
+                    estimatedTime="10s"
+                    isLoading={intentLoading}
+                    intentData={intentData}
+                    onAccept={handleSwapAccept}
+                    onReject={() => {
+                      swapIntentRef.current?.deny();
+                      swapIntentRef.current = null;
+                      setSwapStep("idle");
+                    }}
+                  />
                 </div>
               )}
 

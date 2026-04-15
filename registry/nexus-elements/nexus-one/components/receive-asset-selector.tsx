@@ -2,107 +2,92 @@
 import React, { useState, useMemo } from "react";
 import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { type SwapTokenOption } from "./swap-asset-selector";
+import { useNexus } from "../../nexus/NexusProvider";
 
 interface ReceiveAssetSelectorProps {
   onSelect: (token: SwapTokenOption) => void;
   onBack: () => void;
 }
 
-const TOKEN_LIST = [
-  {
-    symbol: "USDC",
-    name: "USDC",
-    logo: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdc/logo.png",
-    chains: [
-      "Ethereum",
-      "Arbitrum",
-      "Base",
-      "OP Mainnet",
-      "Polygon",
-      "Monad",
-      "Kaia",
-      "Citrea",
-      "Avalanche",
-      "Scroll",
-    ],
-  },
-  {
-    symbol: "USDT",
-    name: "USDT",
-    logo: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdt/logo.png",
-    chains: [
-      "Ethereum",
-      "Arbitrum",
-      "Base",
-      "OP Mainnet",
-      "Polygon",
-      "Monad",
-      "Kaia",
-      "Citrea",
-      "Avalanche",
-      "Scroll",
-      "MegaETH"
-    ],
-  },
-  {
-    symbol: "USDM",
-    name: "USDM",
-    logo: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/usdm/logo.png",
-    chains: ["MegaETH"],
-  },
-  {
-    symbol: "ETH",
-    name: "ETH",
-    logo: "https://raw.githubusercontent.com/availproject/nexus-assets/main/tokens/eth/logo.png",
-    chains: ["Ethereum", "Scroll", "Base", "Arbitrum", "OP Mainnet"],
-  },
-];
-
-const CHAIN_LOGOS: Record<string, string> = {
-  "Ethereum": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/ethereum/logo.png",
-  "Arbitrum": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/arbitrum/logo.png",
-  "Base": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/base/logo.png",
-  "OP Mainnet": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/optimism/logo.png",
-  "Polygon": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/polygon/logo.png",
-  "Monad": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/monad/logo.png",
-  "Kaia": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/kaia/logo.png",
-  "Citrea": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/citrea/logo.png",
-  "Avalanche": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/avalanche/logo.png",
-  "Scroll": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/scroll/logo.png",
-  "MegaETH": "https://raw.githubusercontent.com/availproject/nexus-assets/main/chains/megaeth/logo.png",
-};
-
 export function ReceiveAssetSelector({
   onSelect,
   onBack,
 }: ReceiveAssetSelectorProps) {
+  const { supportedChainsAndTokens, swapSupportedChainsAndTokens } = useNexus();
   const [query, setQuery] = useState("");
-  const [selectedToken, setSelectedToken] = useState<typeof TOKEN_LIST[0] | null>(null);
+  const [selectedTokenHash, setSelectedTokenHash] = useState<string | null>(null);
+
+  // Group tokens by symbol
+  const tokenList = useMemo(() => {
+    if (!supportedChainsAndTokens || !swapSupportedChainsAndTokens) return [];
+    
+    // Create a Set of swap-supported chain IDs for fast lookup
+    const swapChainIds = new Set(swapSupportedChainsAndTokens.map(c => c.id));
+
+    const tokensBySymbol = new Map<string, {
+      symbol: string;
+      name: string;
+      logo: string;
+      supportedChains: {
+        chainId: number;
+        chainName: string;
+        chainLogo: string;
+        contractAddress: string;
+        decimals: number;
+      }[];
+    }>();
+
+    for (const chain of supportedChainsAndTokens) {
+      if (!swapChainIds.has(chain.id)) continue;
+      
+      for (const t of chain.tokens || []) {
+        if (!tokensBySymbol.has(t.symbol)) {
+          tokensBySymbol.set(t.symbol, {
+            symbol: t.symbol,
+            name: t.name,
+            logo: t.logo,
+            supportedChains: [],
+          });
+        }
+        tokensBySymbol.get(t.symbol)!.supportedChains.push({
+          chainId: chain.id,
+          chainName: chain.name,
+          chainLogo: chain.logo,
+          contractAddress: t.contractAddress,
+          decimals: t.decimals,
+        });
+      }
+    }
+    return Array.from(tokensBySymbol.values());
+  }, [supportedChainsAndTokens, swapSupportedChainsAndTokens]);
 
   const filteredTokens = useMemo(() => {
-    if (!query.trim()) return TOKEN_LIST;
+    if (!query.trim()) return tokenList;
     const q = query.toLowerCase();
-    return TOKEN_LIST.filter(
+    return tokenList.filter(
       (t) =>
         t.symbol.toLowerCase().includes(q) ||
         t.name.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, tokenList]);
 
-  const handleChainSelect = (chainName: string) => {
+  const selectedToken = useMemo(() => {
+    return tokenList.find((t) => t.symbol === selectedTokenHash) || null;
+  }, [selectedTokenHash, tokenList]);
+
+  const handleChainSelect = (chainDetails: typeof tokenList[0]["supportedChains"][0]) => {
     if (!selectedToken) return;
-    // Construct minimal required SwapTokenOption payload just to maintain UI structure
     onSelect({
-      contractAddress: "0xMockAddress",
+      contractAddress: chainDetails.contractAddress,
       symbol: selectedToken.symbol,
       name: selectedToken.name,
       logo: selectedToken.logo,
-      decimals: 18,
+      decimals: chainDetails.decimals,
       balance: "0",
       balanceInFiat: "$0.00",
-      chainId: 1, // Mock chainId as required type
-      chainName: chainName,
-      chainLogo: CHAIN_LOGOS[chainName],
+      chainId: chainDetails.chainId,
+      chainName: chainDetails.chainName,
+      chainLogo: chainDetails.chainLogo,
     });
   };
 
@@ -154,7 +139,7 @@ export function ReceiveAssetSelector({
             filteredTokens.map((token) => (
               <button
                 key={token.symbol}
-                onClick={() => setSelectedToken(token)}
+                onClick={() => setSelectedTokenHash(token.symbol)}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/5 transition-colors group"
               >
                 <div className="flex items-center gap-x-3">
@@ -193,7 +178,7 @@ export function ReceiveAssetSelector({
         className={`absolute inset-0 bg-black/40 transition-opacity duration-300 z-40 ${
           selectedToken ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`} 
-        onClick={() => setSelectedToken(null)}
+        onClick={() => setSelectedTokenHash(null)}
       />
 
       {/* Slide-up Chain Modal */}
@@ -219,7 +204,7 @@ export function ReceiveAssetSelector({
             Select a Chain
           </span>
           <button
-            onClick={() => setSelectedToken(null)}
+            onClick={() => setSelectedTokenHash(null)}
             className="p-1 rounded-full hover:bg-black/5 transition-colors"
           >
             <X className="w-5 h-5 text-gray-400" />
@@ -236,18 +221,18 @@ export function ReceiveAssetSelector({
             }}
             className="flex flex-col divide-y divide-[#E8E8E7]"
           >
-            {selectedToken?.chains.map((chainName) => (
+            {selectedToken?.supportedChains.map((chain) => (
               <button
-                key={chainName}
-                onClick={() => handleChainSelect(chainName)}
+                key={chain.chainId}
+                onClick={() => handleChainSelect(chain)}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/5 transition-colors"
               >
                 <div className="flex items-center gap-x-3">
                   <div className="relative shrink-0 w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center overflow-hidden bg-white">
-                    {CHAIN_LOGOS[chainName] ? (
+                    {chain.chainLogo ? (
                       <img
-                        src={CHAIN_LOGOS[chainName]}
-                        alt={chainName}
+                        src={chain.chainLogo}
+                        alt={chain.chainName}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = "none";
@@ -255,7 +240,7 @@ export function ReceiveAssetSelector({
                       />
                     ) : (
                       <span className="text-xs font-medium text-gray-500">
-                        {chainName.charAt(0)}
+                        {chain.chainName.charAt(0)}
                       </span>
                     )}
                   </div>
@@ -267,7 +252,7 @@ export function ReceiveAssetSelector({
                       color: "var(--foreground-primary, #161615)",
                     }}
                   >
-                    {chainName === "Ethereum" ? "Mainnet" : chainName}
+                    {chain.chainName === "Ethereum" ? "Mainnet" : chain.chainName}
                   </span>
                 </div>
               </button>
