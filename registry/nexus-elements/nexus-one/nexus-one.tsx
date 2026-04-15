@@ -15,7 +15,10 @@ import {
   SwapAssetSelector,
   type SwapTokenOption,
 } from "./components/swap-asset-selector";
-import { SwapIntentPreview, type SwapIntentData } from "./components/swap-intent-preview";
+import {
+  SwapIntentPreview,
+  type SwapIntentData,
+} from "./components/swap-intent-preview";
 import { ReceiveAssetSelector } from "./components/receive-asset-selector";
 import { OpportunityList } from "./components/opportunity-list";
 import {
@@ -51,7 +54,7 @@ export function NexusOne({
   onStart,
   onError,
 }: NexusOneProps) {
-  const { nexusSDK, bridgableBalance, swapBalance, getFiatValue } = useNexus();
+  const { nexusSDK, bridgableBalance, swapBalance, getFiatValue, resolveTokenUsdRate } = useNexus();
 
   // Mode tab
   const initialMode = Array.isArray(config.mode) ? config.mode[0] : config.mode;
@@ -94,6 +97,7 @@ export function NexusOne({
       swapIntentRef.current = { allow, deny, refresh };
       // Populate intent data for preview
       setIntentData(intent);
+      console.log("on hook intent swap intent", intent, "swap intent");
       // Compute receive amount from intent
       const receiveAmt = intent.destination?.amount
         ? String(Number(intent.destination.amount))
@@ -110,6 +114,14 @@ export function NexusOne({
       setIntentLoading(false);
     });
   }, [nexusSDK]);
+
+  useEffect(() => {
+    console.log("SWAP INTENT");
+    console.log("intentData", intentData);
+    console.log("intentFeeUsd", intentFeeUsd);
+    console.log("intentLoading", intentLoading);
+    console.log("intentToAmount", intentToAmount);
+  }, [intentData, intentFeeUsd, intentLoading, intentToAmount]);
 
   // Deposit-specific
   const [selectedOpportunity, setSelectedOpportunity] = useState<
@@ -213,27 +225,52 @@ export function NexusOne({
     swapIntentRef.current = null;
 
     if (!nexusSDK) {
-      // Fallback mock if SDK not available
-      await new Promise((r) => setTimeout(r, 1200));
-      const mockReceive = (Number(amount) * 0.997).toFixed(4);
-      setIntentToAmount(mockReceive);
-      setIntentFeeUsd("0.18");
+      setTxError("SDK not initialized");
+      setSwapStep("idle");
       setIntentLoading(false);
       return;
     }
 
     try {
       if (swapType === "exactIn") {
-        // Start exact-in swap — the intent hook will fire and populate preview
-        await nexusSDK.swapWithExactIn({
-          from: fromTokens.map((token) => ({
+        let remainingDesiredUsd = Number(amount);
+        const fromPayload: { chainId: number; tokenAddress: `0x${string}`; amount: bigint }[] = [];
+
+        const totalUsdStr = fromTokens.reduce((acc, curr) => acc + Number(curr.balanceInFiat || 0), 0).toFixed(2);
+        const isMax = Number(amount).toFixed(2) === totalUsdStr;
+
+        for (const token of fromTokens) {
+          if (isMax) {
+            fromPayload.push({
+              chainId: token.chainId!,
+              tokenAddress: token.contractAddress as `0x${string}`,
+              amount: nexusSDK.utils.parseUnits(String(token.balance), token.decimals || 18)
+            });
+            continue;
+          }
+
+          if (remainingDesiredUsd <= 0.0001) break;
+
+          const balanceUsd = Number(token.balanceInFiat) || 0;
+          if (balanceUsd <= 0) continue;
+
+          const takeUsd = Math.min(remainingDesiredUsd, balanceUsd);
+          const ratioToTake = takeUsd / balanceUsd;
+          
+          const exactTokenAmountToTake = Number(token.balance) * ratioToTake;
+          const safeTokenAmountStr = exactTokenAmountToTake.toFixed(Math.min(token.decimals || 18, 18));
+
+          fromPayload.push({
             chainId: token.chainId!,
             tokenAddress: token.contractAddress as `0x${string}`,
-            amount: nexusSDK.utils.parseUnits(
-              String(Number(amount) / (fromTokens.length || 1)),
-              token.decimals || 18,
-            ),
-          })),
+            amount: nexusSDK.utils.parseUnits(safeTokenAmountStr, token.decimals || 18)
+          });
+          remainingDesiredUsd -= takeUsd;
+        }
+
+        // Start exact-in swap — the intent hook will fire and populate preview
+        await nexusSDK.swapWithExactIn({
+          from: fromPayload,
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
         });
@@ -241,10 +278,14 @@ export function NexusOne({
         onComplete?.();
         setSwapStep("idle");
       } else {
+        const usdRate = await resolveTokenUsdRate(toToken.symbol);
+        const exactTokenAmount = usdRate && usdRate > 0 ? Number(amount) / usdRate : Number(amount);
+
         const amountBigInt = nexusSDK.utils.parseUnits(
-          amount,
+          exactTokenAmount.toFixed(Math.min(toToken.decimals || 18, 18)),
           toToken.decimals || 18,
         );
+        
         await nexusSDK.swapWithExactOut({
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
@@ -267,12 +308,9 @@ export function NexusOne({
         setSwapStep("idle");
         return;
       }
-      // If the hook never fired (intentData still null), fall back to mock data
-      // so the preview still shows something useful
+      // If the hook never fired (intentData still null), revert to idle to show error
       if (!intentData) {
-        const mockReceive = (Number(amount) * 0.997).toFixed(4);
-        setIntentToAmount(mockReceive);
-        setIntentFeeUsd((Number(amount) * 0.003).toFixed(2));
+        setSwapStep("idle");
       }
       if (err?.message) {
         setTxError(err.message);
@@ -318,7 +356,11 @@ export function NexusOne({
   // Left-aligned: choose-swap-asset, choose-receive-asset (sub-screens with subtitles)
   const isTitleCentered = () => {
     if (activeMode === "swap") {
-      if (swapStep === "choose-swap-asset" || swapStep === "choose-receive-asset") return false;
+      if (
+        swapStep === "choose-swap-asset" ||
+        swapStep === "choose-receive-asset"
+      )
+        return false;
       return true; // idle, preview-intent, progress
     }
     return true; // deposit, transfer, etc.
@@ -377,9 +419,7 @@ export function NexusOne({
         {/* ------------------------------------------------------------------ */}
         {/* Header */}
         {/* ------------------------------------------------------------------ */}
-        <div
-          className="flex items-center justify-between px-4 pt-4 pb-3 relative"
-        >
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 relative">
           {/* Left: Back button or placeholder */}
           <div className="flex items-center gap-x-2 z-10">
             {canGoBack ? (
@@ -545,44 +585,44 @@ export function NexusOne({
               {swapStep === "choose-swap-asset" && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full">
                   <SwapAssetSelector
-                  title={
-                    swapType === "exactIn"
-                      ? "Choose assets to Swap"
-                      : "Choose asset to Receive"
-                  }
-                  swapBalance={swapBalance}
-                  isMulti={swapType === "exactIn"}
-                  selectedTokens={fromTokens}
-                  onToggle={(token) => {
-                    setFromTokens((prev) => {
-                      const exists = prev.find(
-                        (t) =>
-                          t.contractAddress === token.contractAddress &&
-                          t.chainId === token.chainId,
-                      );
-                      if (exists)
-                        return prev.filter(
-                          (t) =>
-                            !(
-                              t.contractAddress === token.contractAddress &&
-                              t.chainId === token.chainId
-                            ),
-                        );
-                      return [...prev, token];
-                    });
-                  }}
-                  onDone={() => setSwapStep("idle")}
-                  onSelect={(token) => {
-                    if (swapType === "exactIn") {
-                      setFromTokens([token]);
-                      setSwapStep("choose-receive-asset");
-                    } else {
-                      setToToken(token);
-                      setSwapStep("idle");
+                    title={
+                      swapType === "exactIn"
+                        ? "Choose assets to Swap"
+                        : "Choose asset to Receive"
                     }
-                  }}
-                  onBack={() => setSwapStep("idle")}
-                />
+                    swapBalance={swapBalance}
+                    isMulti={swapType === "exactIn"}
+                    selectedTokens={fromTokens}
+                    onToggle={(token) => {
+                      setFromTokens((prev) => {
+                        const exists = prev.find(
+                          (t) =>
+                            t.contractAddress === token.contractAddress &&
+                            t.chainId === token.chainId,
+                        );
+                        if (exists)
+                          return prev.filter(
+                            (t) =>
+                              !(
+                                t.contractAddress === token.contractAddress &&
+                                t.chainId === token.chainId
+                              ),
+                          );
+                        return [...prev, token];
+                      });
+                    }}
+                    onDone={() => setSwapStep("idle")}
+                    onSelect={(token) => {
+                      if (swapType === "exactIn") {
+                        setFromTokens([token]);
+                        setSwapStep("choose-receive-asset");
+                      } else {
+                        setToToken(token);
+                        setSwapStep("idle");
+                      }
+                    }}
+                    onBack={() => setSwapStep("idle")}
+                  />
                 </div>
               )}
               {/* Panel: choose-receive-asset */}
@@ -608,7 +648,9 @@ export function NexusOne({
                     fromAmountUsd={amount}
                     toAmount={intentToAmount}
                     toAmountUsd={intentToAmount}
-                    toAmountTokens={intentToAmount ? `${intentToAmount}` : undefined}
+                    toAmountTokens={
+                      intentToAmount ? `${intentToAmount}` : undefined
+                    }
                     totalFeeUsd={intentFeeUsd}
                     estimatedTime="10s"
                     isLoading={intentLoading}
@@ -656,71 +698,92 @@ export function NexusOne({
                       amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
                     }
                     header={
-                      swapType === "exactIn" && fromTokens.length > 0 ? (() => {
-                        const distinctTokens = Array.from(new Map(fromTokens.map(t => [t.symbol, t])).values());
-                        return (
-                        <div
-                          onClick={() => setSwapStep("choose-swap-asset")}
-                          className="flex items-center gap-x-3 w-full justify-between cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-x-3 pl-1">
-                            <div className="relative shrink-0 flex items-center -space-x-3">
-                              {distinctTokens.slice(0, 4).map((t, idx) => t.logo ? (
-                                <img
-                                  key={`${t.contractAddress}-${t.chainId}`}
-                                  src={t.logo}
-                                  alt={t.symbol}
-                                  className="w-9 h-9 rounded-full object-cover relative"
-                                  style={{ zIndex: 4 - idx }}
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                <div
-                                  key={`${t.contractAddress}-${t.chainId}`}
-                                  className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 relative"
-                                  style={{ zIndex: 4 - idx }}
-                                >
-                                  {t.symbol.slice(0,2)}
+                      swapType === "exactIn" && fromTokens.length > 0
+                        ? (() => {
+                            const distinctTokens = Array.from(
+                              new Map(
+                                fromTokens.map((t) => [t.symbol, t]),
+                              ).values(),
+                            );
+                            return (
+                              <div
+                                onClick={() => setSwapStep("choose-swap-asset")}
+                                className="flex items-center gap-x-3 w-full justify-between cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-x-3 pl-1">
+                                  <div className="relative shrink-0 flex items-center -space-x-3">
+                                    {distinctTokens.slice(0, 4).map((t, idx) =>
+                                      t.logo ? (
+                                        <img
+                                          key={`${t.contractAddress}-${t.chainId}`}
+                                          src={t.logo}
+                                          alt={t.symbol}
+                                          className="w-9 h-9 rounded-full object-cover relative"
+                                          style={{ zIndex: 4 - idx }}
+                                          onError={(e) => {
+                                            (
+                                              e.target as HTMLImageElement
+                                            ).style.display = "none";
+                                          }}
+                                        />
+                                      ) : (
+                                        <div
+                                          key={`${t.contractAddress}-${t.chainId}`}
+                                          className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 relative"
+                                          style={{ zIndex: 4 - idx }}
+                                        >
+                                          {t.symbol.slice(0, 2)}
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col items-start justify-center ml-1">
+                                    <span
+                                      style={{
+                                        fontFamily:
+                                          "var(--font-geist-sans), sans-serif",
+                                        fontSize: "14px",
+                                        fontWeight: 500,
+                                        color:
+                                          "var(--foreground-primary, #161615)",
+                                      }}
+                                    >
+                                      Swapping
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontFamily:
+                                          "var(--font-geist-sans), sans-serif",
+                                        fontSize: "13px",
+                                        color:
+                                          "var(--foreground-muted, #848483)",
+                                      }}
+                                    >
+                                      {distinctTokens[0].symbol}
+                                      {distinctTokens.length > 1
+                                        ? `, ${distinctTokens[1].symbol}`
+                                        : ""}
+                                      {distinctTokens.length > 2
+                                        ? ` +${distinctTokens.length - 2} more`
+                                        : ""}
+                                    </span>
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
-                            <div className="flex flex-col items-start justify-center ml-1">
-                              <span
-                                style={{
-                                  fontFamily: "var(--font-geist-sans), sans-serif",
-                                  fontSize: "14px",
-                                  fontWeight: 500,
-                                  color: "var(--foreground-primary, #161615)",
-                                }}
-                              >
-                                Swapping
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily: "var(--font-geist-sans), sans-serif",
-                                  fontSize: "13px",
-                                  color: "var(--foreground-muted, #848483)",
-                                }}
-                              >
-                                {distinctTokens[0].symbol}{distinctTokens.length > 1 ? `, ${distinctTokens[1].symbol}` : ""}{distinctTokens.length > 2 ? ` +${distinctTokens.length - 2} more` : ""}
-                              </span>
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), sans-serif",
-                              fontSize: "12px",
-                              color: "var(--foreground-muted, #848483)",
-                            }}
-                            className="group-hover:text-gray-600 transition-colors pr-1"
-                          >
-                            Edit
-                          </span>
-                        </div>
-                        );
-                      })() : undefined
+                                <span
+                                  style={{
+                                    fontFamily:
+                                      "var(--font-geist-sans), sans-serif",
+                                    fontSize: "12px",
+                                    color: "var(--foreground-muted, #848483)",
+                                  }}
+                                  className="group-hover:text-gray-600 transition-colors pr-1"
+                                >
+                                  Edit
+                                </span>
+                              </div>
+                            );
+                          })()
+                        : undefined
                     }
                   />
 
@@ -744,7 +807,8 @@ export function NexusOne({
                           <div className="flex flex-col gap-1 items-start">
                             <span
                               style={{
-                                fontFamily: "var(--font-geist-sans), sans-serif",
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
                                 fontSize: "14px",
                                 color: "var(--foreground-primary, #161615)",
                               }}
@@ -753,18 +817,19 @@ export function NexusOne({
                             </span>
                             <span
                               style={{
-                                fontFamily: "var(--font-geist-sans), sans-serif",
+                                fontFamily:
+                                  "var(--font-geist-sans), sans-serif",
                                 fontSize: "13px",
-                                color: "var(--widget-card-foreground-muted, #848483)",
+                                color:
+                                  "var(--widget-card-foreground-muted, #848483)",
                               }}
                             >
                               Choose asset
                             </span>
                           </div>
                         </div>
-
-                    </div>
-                  </button>
+                      </div>
+                    </button>
                   )}
 
                   {/* Receive asset chip — shown in exactOut ALWAYS, or in exactIn IF fromTokens chosen */}
