@@ -84,14 +84,15 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       types.some((t) => completedTypes.has(t));
     const sawAny = (types: string[]) => types.some((t) => eventfulTypes.has(t));
 
-    // If the flow does not include SOURCE_* steps, consider it implicitly collected
-    const collectedOnSources =
-      (sawAny(STEP_TYPES.SOURCE_STEP_TYPES) &&
-        hasAny(STEP_TYPES.SOURCE_TRANSACTION)) ||
-      (!sawAny(STEP_TYPES.SOURCE_STEP_TYPES) &&
-        hasAny(STEP_TYPES.DESTINATION_STEP_TYPES));
+    // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
+    const baseDone = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
 
-    const filledOnDestination = hasAny(STEP_TYPES.DESTINATION_STEP_TYPES);
+    // Collected on sources requires destination relayer to pick it up or full completion
+    const collectedOnSources =
+      hasAny(STEP_TYPES.DESTINATION_STEP_TYPES) || baseDone;
+
+    // Filled on destination requires full on-chain swap completion
+    const filledOnDestination = baseDone;
 
     const intentVerified =
       hasAny(["DETERMINING_SWAP", "SWAP_START"]) ||
@@ -115,9 +116,6 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
         explorerUrl: explorerUrls.destinationExplorerUrl,
       },
     ];
-    // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
-    const baseDone = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
-
     if (isTransferMode) {
       displaySteps.push({
         id: "transfer",
