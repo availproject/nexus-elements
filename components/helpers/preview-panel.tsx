@@ -27,8 +27,11 @@ export function PreviewPanel({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         request: (args: unknown) => walletClient.request(args as any),
       };
-      const desktopProvider = await connector?.getProvider();
-      const effectiveProvider = isMobile ? mobileProvider : desktopProvider;
+      const desktopProvider = (await connector?.getProvider()) as any;
+      const effectiveProvider =
+        desktopProvider && typeof desktopProvider.request === "function"
+          ? desktopProvider
+          : mobileProvider;
 
       await handleInit(effectiveProvider as EthereumProvider);
       if (nexusSDK) {

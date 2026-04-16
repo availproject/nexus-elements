@@ -54,7 +54,15 @@ export function NexusOne({
   onStart,
   onError,
 }: NexusOneProps) {
-  const { nexusSDK, bridgableBalance, swapBalance, getFiatValue, resolveTokenUsdRate } = useNexus();
+  const {
+    nexusSDK,
+    bridgableBalance,
+    swapBalance,
+    getFiatValue,
+    resolveTokenUsdRate,
+    swapSupportedChainsAndTokens,
+    supportedChainsAndTokens,
+  } = useNexus();
 
   // Mode tab
   const initialMode = Array.isArray(config.mode) ? config.mode[0] : config.mode;
@@ -89,8 +97,8 @@ export function NexusOne({
     refresh: () => Promise<any>;
   } | null>(null);
 
-  // Set up swap intent hook once SDK is available
-  useEffect(() => {
+  // Register swap intent hook immediately before executing a swap to prevent race conditions across multiple components
+  const registerIntentHook = () => {
     if (!nexusSDK) return;
     nexusSDK.setOnSwapIntentHook(async ({ intent, allow, deny, refresh }) => {
       // Store callbacks so accept/reject buttons can call them
@@ -98,22 +106,30 @@ export function NexusOne({
       // Populate intent data for preview
       setIntentData(intent);
       console.log("on hook intent swap intent", intent, "swap intent");
-      // Compute receive amount from intent
-      const receiveAmt = intent.destination?.amount
-        ? String(Number(intent.destination.amount))
-        : undefined;
-      setIntentToAmount(receiveAmt);
-      // Compute fee from sources sum - destination
-      const totalIn = intent.sources.reduce(
-        (sum: number, s: any) => sum + Number(s.amount || 0),
-        0,
-      );
-      const totalOut = Number(intent.destination?.amount || 0);
-      const fee = totalIn - totalOut;
-      setIntentFeeUsd(fee > 0 ? fee.toFixed(2) : "0.00");
+      // SDK returns amount as human-readable strings (e.g. "0.91") and value as USD fiat string
+      setIntentToAmount(intent.destination?.amount || undefined);
+
+      try {
+        // [Regenerated] Computed fee natively using FIAT string parsing
+        const totalInUsd = intent.sources.reduce(
+          (sum: number, s: any) => sum + Number(s.value || s.amount || 0),
+          0,
+        );
+        const totalOutUsd = Number(
+          intent.destination?.value || intent.destination?.amount || 0,
+        );
+
+        const fee = totalInUsd - totalOutUsd;
+        setIntentFeeUsd(fee > 0 ? fee.toFixed(2) : "0.00");
+      } catch (err) {
+        console.warn("Could not calculate proper feeUsd", err);
+        setIntentFeeUsd("0.00");
+      }
+      
+      console.log("[DEBUG] Successfully parsed intent data! Removing loader.");
       setIntentLoading(false);
     });
-  }, [nexusSDK]);
+  };
 
   useEffect(() => {
     console.log("SWAP INTENT");
@@ -216,7 +232,22 @@ export function NexusOne({
 
   /** Start swap flow — SDK will trigger setOnSwapIntentHook for preview */
   const handleEnterPreview = async () => {
-    if (fromTokens.length === 0 || !toToken || !amount) return;
+    console.log("[DEBUG] handleEnterPreview called!", {
+      swapType,
+      amount,
+      toToken,
+      fromTokens,
+    });
+    if (!toToken || !amount) {
+      console.log("[DEBUG] Aborted: missing toToken or amount");
+      return;
+    }
+    if (swapType === "exactIn" && fromTokens.length === 0) {
+      console.log("[DEBUG] Aborted: exactIn but no fromTokens");
+      return;
+    }
+
+    console.log("[DEBUG] Proceeding to set preview-intent state...");
     setSwapStep("preview-intent");
     setIntentLoading(true);
     setIntentToAmount(undefined);
@@ -231,12 +262,28 @@ export function NexusOne({
       return;
     }
 
+    console.log("Entering preview...", {
+      swapType,
+      toToken,
+      amount,
+      fromTokens,
+    });
+    
+    // Claim ownership of global singleton hook before executing SDK swap
+    registerIntentHook();
+    
     try {
       if (swapType === "exactIn") {
         let remainingDesiredUsd = Number(amount);
-        const fromPayload: { chainId: number; tokenAddress: `0x${string}`; amount: bigint }[] = [];
+        const fromPayload: {
+          chainId: number;
+          tokenAddress: `0x${string}`;
+          amount: bigint;
+        }[] = [];
 
-        const totalUsdStr = fromTokens.reduce((acc, curr) => acc + Number(curr.balanceInFiat || 0), 0).toFixed(2);
+        const totalUsdStr = fromTokens
+          .reduce((acc, curr) => acc + Number(curr.balanceInFiat || 0), 0)
+          .toFixed(2);
         const isMax = Number(amount).toFixed(2) === totalUsdStr;
 
         for (const token of fromTokens) {
@@ -244,7 +291,10 @@ export function NexusOne({
             fromPayload.push({
               chainId: token.chainId!,
               tokenAddress: token.contractAddress as `0x${string}`,
-              amount: nexusSDK.utils.parseUnits(String(token.balance), token.decimals || 18)
+              amount: nexusSDK.utils.parseUnits(
+                String(token.balance),
+                token.decimals || 18,
+              ),
             });
             continue;
           }
@@ -256,18 +306,28 @@ export function NexusOne({
 
           const takeUsd = Math.min(remainingDesiredUsd, balanceUsd);
           const ratioToTake = takeUsd / balanceUsd;
-          
+
           const exactTokenAmountToTake = Number(token.balance) * ratioToTake;
-          const safeTokenAmountStr = exactTokenAmountToTake.toFixed(Math.min(token.decimals || 18, 18));
+          const safeTokenAmountStr = exactTokenAmountToTake.toFixed(
+            Math.min(token.decimals || 18, 18),
+          );
 
           fromPayload.push({
             chainId: token.chainId!,
             tokenAddress: token.contractAddress as `0x${string}`,
-            amount: nexusSDK.utils.parseUnits(safeTokenAmountStr, token.decimals || 18)
+            amount: nexusSDK.utils.parseUnits(
+              safeTokenAmountStr,
+              token.decimals || 18,
+            ),
           });
           remainingDesiredUsd -= takeUsd;
         }
 
+        console.log("SWAPPING WITH EXACTIN", {
+          from: fromPayload,
+          toChainId: toToken.chainId!,
+          toTokenAddress: toToken.contractAddress as `0x${string}`,
+        });
         // Start exact-in swap — the intent hook will fire and populate preview
         await nexusSDK.swapWithExactIn({
           from: fromPayload,
@@ -278,14 +338,36 @@ export function NexusOne({
         onComplete?.();
         setSwapStep("idle");
       } else {
+        console.log(
+          "[DEBUG] ExactOut detected. Resolving USD rate for:",
+          toToken.symbol,
+        );
         const usdRate = await resolveTokenUsdRate(toToken.symbol);
-        const exactTokenAmount = usdRate && usdRate > 0 ? Number(amount) / usdRate : Number(amount);
+        console.log("[DEBUG] USD Rate resolved:", usdRate);
+        const exactTokenAmount =
+          usdRate && usdRate > 0 ? Number(amount) / usdRate : Number(amount);
+        console.log("[DEBUG] exactTokenAmount computed:", exactTokenAmount);
 
+        console.log("[DEBUG] Parsing units using decimals:", toToken.decimals);
         const amountBigInt = nexusSDK.utils.parseUnits(
           exactTokenAmount.toFixed(Math.min(toToken.decimals || 18, 18)),
           toToken.decimals || 18,
         );
-        
+        console.log("[DEBUG] amountBigInt generated:", amountBigInt);
+
+        console.log("SWAPPING WITH EXACTOUT", {
+          toChainId: toToken.chainId!,
+          toTokenAddress: toToken.contractAddress as `0x${string}`,
+          toAmount: amountBigInt,
+          ...(fromTokens.length > 0
+            ? {
+                fromSources: fromTokens.map((token) => ({
+                  chainId: token.chainId!,
+                  tokenAddress: token.contractAddress as `0x${string}`,
+                })),
+              }
+            : {}),
+        });
         await nexusSDK.swapWithExactOut({
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
@@ -303,19 +385,21 @@ export function NexusOne({
         setSwapStep("idle");
       }
     } catch (err: any) {
-      // If user denied via the hook, just go back
+      console.error("Error in handleEnterPreview:", err);
       if (err?.code === "USER_DENIED_INTENT") {
         setSwapStep("idle");
         return;
       }
-      // If the hook never fired (intentData still null), revert to idle to show error
       if (!intentData) {
         setSwapStep("idle");
       }
-      if (err?.message) {
-        setTxError(err.message);
-        onError?.(err.message);
-      }
+      const errorMessage =
+        err?.message ||
+        (typeof err === "string"
+          ? err
+          : "Transaction failed. Please try again or check console.");
+      setTxError(errorMessage);
+      onError?.(errorMessage);
       setIntentLoading(false);
     }
   };
@@ -655,6 +739,8 @@ export function NexusOne({
                     estimatedTime="10s"
                     isLoading={intentLoading}
                     intentData={intentData}
+                    swapBalances={swapBalance}
+                    supportedTokenAssets={supportedChainsAndTokens}
                     onAccept={handleSwapAccept}
                     onReject={() => {
                       swapIntentRef.current?.deny();
@@ -836,13 +922,7 @@ export function NexusOne({
                   {(swapType === "exactOut" ||
                     (swapType === "exactIn" && fromTokens.length > 0)) && (
                     <button
-                      onClick={() =>
-                        setSwapStep(
-                          swapType === "exactOut"
-                            ? "choose-swap-asset"
-                            : "choose-receive-asset",
-                        )
-                      }
+                      onClick={() => setSwapStep("choose-receive-asset")}
                       className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
                       style={{
                         borderRadius: "12px",

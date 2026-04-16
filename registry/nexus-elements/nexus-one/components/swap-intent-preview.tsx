@@ -55,6 +55,10 @@ export interface SwapIntentPreviewProps {
   isLoading?: boolean;
   /** Actual SDK intent data from setOnSwapIntentHook */
   intentData?: SwapIntentData | null;
+  /** Pass the full user swap balances to reliably map token logos for exactOut */
+  swapBalances?: any[] | null;
+  /** Global asset dictionary mapped across all topologies, guaranteeing data even when balances===0 */
+  supportedTokenAssets?: any[] | null;
   onAccept: () => void;
   onReject: () => void;
 }
@@ -72,30 +76,78 @@ export function SwapIntentPreview({
   estimatedTime = "~10s",
   isLoading,
   intentData,
+  swapBalances,
+  supportedTokenAssets,
   onAccept,
   onReject,
 }: SwapIntentPreviewProps) {
   const [showDetails, setShowDetails] = useState(false);
 
-  // Resolve display sources — prefer intent data if available
-  const sources =
-    fromTokens && fromTokens.length > 0
-      ? fromTokens
-      : fromToken
-        ? [fromToken]
-        : [];
-
-  // Use intent sources if available for detail breakdown
   const intentSources = intentData?.sources ?? [];
   const intentDest = intentData?.destination;
 
+  const getTokenLogo = (chainId: number, contractAddress?: string, symbol?: string) => {
+    // 1. Immediately prioritize dynamic balances (since they guarantee verified holding context)
+    if (swapBalances && Array.isArray(swapBalances)) {
+      for (const asset of swapBalances) {
+        if (!asset.breakdown || !Array.isArray(asset.breakdown)) continue;
+        for (const bd of asset.breakdown) {
+          const matchChain = bd.chain?.id === chainId;
+          const matchAddress = contractAddress && bd.contractAddress
+            ? bd.contractAddress.toLowerCase() === contractAddress.toLowerCase()
+            : false;
+          const matchSymbol = bd.symbol === symbol || asset.symbol === symbol;
+          
+          if (matchChain && (matchAddress || matchSymbol)) {
+            if (asset.icon) return asset.icon;
+          }
+        }
+      }
+    }
+    
+    // 2. Fall back to the absolute registry for tokens the user lacks balances for (e.g. MATIC destination limits)
+    if (supportedTokenAssets && Array.isArray(supportedTokenAssets)) {
+      const chain = supportedTokenAssets.find((c: any) => c.id === chainId);
+      if (chain && Array.isArray(chain.tokens)) {
+        const token = chain.tokens.find((t: any) => {
+          if (contractAddress && t.contractAddress) {
+             return t.contractAddress.toLowerCase() === contractAddress.toLowerCase();
+          }
+          return t.symbol === symbol;
+        });
+        if (token?.logo) return token.logo;
+      }
+    }
+
+    return undefined;
+  };
+
+  // Resolve display sources — prefer intent data if available
+  const sources =
+    intentSources.length > 0
+      ? intentSources.map((s) => ({
+          symbol: s.token.symbol,
+          contractAddress: s.token.contractAddress,
+          chainId: s.chain.id,
+          logo: getTokenLogo(s.chain.id, s.token.contractAddress, s.token.symbol),
+          name: s.token.symbol,
+          chainName: s.chain.name,
+          chainLogo: s.chain.logo,
+          decimals: s.token.decimals,
+        }))
+      : fromTokens && fromTokens.length > 0
+        ? fromTokens
+        : fromToken
+          ? [fromToken]
+          : [];
+
   // Compute actual USD values from intent if available
   const displayFromAmountUsd = intentSources.length > 0
-    ? intentSources.reduce((sum, s) => sum + Number(s.amount || 0), 0).toFixed(2)
+    ? intentSources.reduce((sum, s) => sum + Number((s as any).value || s.amount || 0), 0).toFixed(2)
     : (fromAmountUsd || fromAmount);
 
   const displayToAmountUsd = intentDest
-    ? Number(intentDest.amount || 0).toFixed(2)
+    ? Number((intentDest as any).value || intentDest.amount || 0).toFixed(2)
     : (toAmountUsd || toAmount || "—");
 
   const displayToAmountTokens = intentDest
@@ -104,8 +156,8 @@ export function SwapIntentPreview({
 
   const displayFeeUsd = (() => {
     if (intentSources.length > 0 && intentDest) {
-      const totalIn = intentSources.reduce((sum, s) => sum + Number(s.amount || 0), 0);
-      const totalOut = Number(intentDest.amount || 0);
+      const totalIn = intentSources.reduce((sum, s) => sum + Number((s as any).value || s.amount || 0), 0);
+      const totalOut = Number((intentDest as any).value || intentDest.amount || 0);
       const fee = totalIn - totalOut;
       return fee > 0 ? fee.toFixed(2) : "0.00";
     }
@@ -125,7 +177,8 @@ export function SwapIntentPreview({
     return `${syms[0]}, ${syms[1]} +${syms.length - 2} more`;
   })();
 
-  const hasBreakdown = intentSources.length > 1 || sources.length > 1;
+  // Enable details breakdown even if there is exactly 1 source as requested by user
+  const hasBreakdown = intentSources.length > 0 || sources.length > 0;
   const destTokenSymbol = intentDest?.token.symbol || toToken?.symbol || "—";
 
   return (
@@ -383,16 +436,18 @@ export function SwapIntentPreview({
               padding: "4px 0",
             }}
           >
-            {intentSources.map((src, idx) => (
+            {intentSources.map((src, idx) => {
+              const tokenLogo = getTokenLogo(src.chain.id, src.token.contractAddress, src.token.symbol);
+              return (
               <div
                 key={`intent-src-${idx}`}
                 className="flex items-center justify-between px-3 py-2"
               >
                 <div className="flex items-center gap-x-2">
-                  {src.chain.logo ? (
+                  {tokenLogo ? (
                     <img
-                      src={src.chain.logo}
-                      alt={src.chain.name}
+                      src={tokenLogo}
+                      alt={src.token.symbol}
                       className="rounded-full object-cover"
                       style={{ width: 24, height: 24 }}
                     />
@@ -443,7 +498,7 @@ export function SwapIntentPreview({
                       color: "var(--foreground-primary, #161615)",
                     }}
                   >
-                    ${Number(src.amount || 0).toFixed(2)}
+                    ${Number((src as any).value || src.amount || 0).toFixed(2)}
                   </span>
                   <span
                     style={{
@@ -457,7 +512,7 @@ export function SwapIntentPreview({
                   </span>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
 
