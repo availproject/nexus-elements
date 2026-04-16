@@ -41,7 +41,7 @@ import {
   TOKEN_METADATA,
 } from "@avail-project/nexus-core";
 import { useWalletClient, usePublicClient } from "wagmi";
-import { erc20Abi, isAddress, createPublicClient, http } from "viem";
+import { erc20Abi, isAddress, createPublicClient, http, encodeFunctionData } from "viem";
 import { normalize } from "viem/ens";
 import { mainnet } from "viem/chains";
 
@@ -118,8 +118,6 @@ export function NexusOne({
   );
   const [intentLoading, setIntentLoading] = useState(false);
   const [intentData, setIntentData] = useState<SwapIntentData | null>(null);
-  const [transferCompleted, setTransferCompleted] = useState<boolean>(false);
-  const [transferFailed, setTransferFailed] = useState<boolean>(false);
   const [transferExplorerUrl, setTransferExplorerUrl] = useState<string | null>(
     null,
   );
@@ -283,9 +281,6 @@ export function NexusOne({
     setIntentToAmount(undefined);
     setIntentFeeUsd(undefined);
     setIntentData(null);
-    setTransferCompleted(false);
-    setTransferFailed(false);
-    setTransferExplorerUrl(null);
     swapIntentRef.current = null;
 
     if (!nexusSDK) {
@@ -466,19 +461,45 @@ export function NexusOne({
               }
             : {};
 
+        const isNative =
+          !toToken.contractAddress ||
+          toToken.contractAddress.toLowerCase() ===
+            "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
+          toToken.contractAddress ===
+            "0x0000000000000000000000000000000000000000";
+
+        let executeConfig: any;
         if (activeMode === "deposit" && selectedOpportunity?.execute) {
+          executeConfig = typeof selectedOpportunity.execute === "function"
+              ? selectedOpportunity.execute(amountBigInt, connectedAddress as `0x${string}`)
+              : selectedOpportunity.execute;
+        } else if (activeMode === "transfer") {
+          if (isNative) {
+            executeConfig = {
+              to: resolvedRecipientAddress as `0x${string}`,
+              value: amountBigInt,
+              gas: BigInt(100000),
+            };
+          } else {
+            executeConfig = {
+              to: toToken.contractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: erc20Abi,
+                functionName: "transfer",
+                args: [resolvedRecipientAddress as `0x${string}`, amountBigInt],
+              }),
+              gas: BigInt(100000),
+            };
+          }
+        }
+
+        if (executeConfig) {
           await nexusSDK.swapAndExecute(
             {
               toChainId: toToken.chainId!,
               toTokenAddress: toToken.contractAddress as `0x${string}`,
               toAmount: amountBigInt,
-              execute:
-                typeof selectedOpportunity.execute === "function"
-                  ? selectedOpportunity.execute(
-                      amountBigInt,
-                      connectedAddress as `0x${string}`,
-                    )
-                  : selectedOpportunity.execute,
+              execute: executeConfig,
               ...fromSourcesPayload,
             },
             {
@@ -503,97 +524,6 @@ export function NexusOne({
               },
             },
           );
-        }
-
-        if (activeMode === "transfer" && walletClient && publicClient) {
-          try {
-            const isNative =
-              !toToken.contractAddress ||
-              toToken.contractAddress.toLowerCase() ===
-                "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
-              toToken.contractAddress ===
-                "0x0000000000000000000000000000000000000000";
-            let txHash: `0x${string}` | undefined;
-            if (isNative) {
-              txHash = await walletClient.sendTransaction({
-                to: resolvedRecipientAddress as `0x${string}`,
-                value: amountBigInt,
-                chain: walletClient.chain,
-              });
-            } else {
-              txHash = await walletClient.writeContract({
-                address: toToken.contractAddress as `0x${string}`,
-                abi: erc20Abi,
-                functionName: "transfer",
-                args: [resolvedRecipientAddress as `0x${string}`, amountBigInt],
-                chain: walletClient.chain,
-              });
-            }
-
-            if (txHash) {
-              const explorerBase =
-                publicClient.chain?.blockExplorers?.default?.url;
-              if (explorerBase) {
-                setTransferExplorerUrl(`${explorerBase}/tx/${txHash}`);
-              }
-
-              let receipt;
-              try {
-                // Determine if we have a custom Avail RPC for this chain
-                const AVAIL_RPCS: Record<number, string> = {
-                  1: "https://rpcs.avail.so/eth",
-                  8453: "https://rpcs.avail.so/base",
-                  42161: "https://rpcs.avail.so/arbitrum",
-                  10: "https://rpcs.avail.so/optimism",
-                  137: "https://rpcs.avail.so/polygon",
-                  43114: "https://rpcs.avail.so/avalanche",
-                  534352: "https://rpcs.avail.so/scroll",
-                  8217: "https://rpcs.avail.so/kaia",
-                  4114: "https://rpcs.avail.so/citrea",
-                  56: "https://rpcs.avail.so/bsc",
-                  999: "https://rpcs.avail.so/hyperevm",
-                  4326: "https://rpcs.avail.so/megaeth",
-                  143: "https://rpcs.avail.so/monad",
-                  11155111: "https://rpcs.avail.so/sepolia",
-                  84532: "https://rpcs.avail.so/basesepolia",
-                  421614: "https://rpcs.avail.so/arbitrumsepolia",
-                  5115: "https://rpcs.avail.so/citrea-testnet",
-                  11155420: "https://rpcs.avail.so/optimismsepolia",
-                  80002: "https://rpcs.avail.so/polygonamoy",
-                  10143: "https://rpcs.avail.so/monadtestnet",
-                };
-
-                const customRpc = walletClient.chain?.id
-                  ? AVAIL_RPCS[walletClient.chain.id]
-                  : undefined;
-
-                // EIP-1193 providers (MetaMask) can hang on waitForTransactionReceipt.
-                // Creating a direct http poll bypasses the extension's buggy subscription model.
-                const independentClient = createPublicClient({
-                  chain: walletClient.chain,
-                  transport: http(customRpc),
-                });
-                receipt = await independentClient.waitForTransactionReceipt({
-                  hash: txHash,
-                });
-              } catch (fallbackErr) {
-                // If direct HTTP fails, fallback to the original publicClient
-                receipt = await publicClient.waitForTransactionReceipt({
-                  hash: txHash,
-                });
-              }
-
-              if (receipt && receipt.status === "success") {
-                setTransferCompleted(true);
-              } else {
-                setTransferFailed(true);
-              }
-            }
-          } catch (e: any) {
-            console.error("Transfer part failed", e);
-            setTransferFailed(true);
-            // Do not throw an error, so the UI can stay on the progress pane and show the "Failed" indicator
-          }
         }
 
         onComplete?.();
@@ -1039,9 +969,6 @@ export function NexusOne({
                             : undefined
                         }
                         isTransferMode={activeMode === "transfer"}
-                        transferCompleted={transferCompleted}
-                        transferFailed={transferFailed}
-                        transferExplorerUrl={transferExplorerUrl}
                         depositOpportunityName={
                           activeMode === "deposit"
                             ? selectedOpportunity?.title ||

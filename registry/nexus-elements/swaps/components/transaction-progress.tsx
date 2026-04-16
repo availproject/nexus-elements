@@ -33,9 +33,6 @@ interface TransactionProgressProps {
   hasMultipleSources?: boolean;
   sources?: TokenSource[];
   isTransferMode?: boolean;
-  transferCompleted?: boolean;
-  transferFailed?: boolean;
-  transferExplorerUrl?: string | null;
   depositOpportunityName?: string;
 }
 
@@ -66,9 +63,6 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   hasMultipleSources,
   sources,
   isTransferMode,
-  transferCompleted,
-  transferFailed,
-  transferExplorerUrl,
   depositOpportunityName,
 }) => {
   const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
@@ -121,19 +115,18 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
         explorerUrl: explorerUrls.destinationExplorerUrl,
       },
     ];
+    // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
+    const baseDone = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
 
     if (isTransferMode) {
       displaySteps.push({
         id: "transfer",
-        label: "Token transfer",
-        completed: Boolean(transferCompleted),
-        failed: Boolean(transferFailed),
-        explorerUrl: transferExplorerUrl,
+        label: "Sent to recipient",
+        completed: baseDone,
+        explorerUrl: explorerUrls.destinationExplorerUrl,
       });
     }
 
-    // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
-    const baseDone = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
 
     if (depositOpportunityName) {
       displaySteps.push({
@@ -145,7 +138,7 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       });
     }
 
-    const done = isTransferMode ? (baseDone && (Boolean(transferCompleted) || Boolean(transferFailed))) : baseDone;
+    const done = baseDone;
     const current = displaySteps.findIndex((st) => !st.completed && !st.failed);
     return {
       effectiveSteps: displaySteps,
@@ -156,9 +149,6 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
     steps,
     isTransferMode,
     depositOpportunityName,
-    transferCompleted,
-    transferFailed,
-    transferExplorerUrl,
     explorerUrls.sourceExplorerUrl,
     explorerUrls.destinationExplorerUrl,
   ]);
