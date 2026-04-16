@@ -80,10 +80,7 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
       types.some((t) => completedTypes.has(t));
     const sawAny = (types: string[]) => types.some((t) => eventfulTypes.has(t));
 
-    const intentVerified = hasAny(["DETERMINING_SWAP", "SWAP_START"]);
-
     // If the flow does not include SOURCE_* steps, consider it implicitly collected
-
     const collectedOnSources =
       (sawAny(STEP_TYPES.SOURCE_STEP_TYPES) &&
         hasAny(STEP_TYPES.SOURCE_TRANSACTION)) ||
@@ -91,6 +88,13 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
         hasAny(STEP_TYPES.DESTINATION_STEP_TYPES));
 
     const filledOnDestination = hasAny(STEP_TYPES.DESTINATION_STEP_TYPES);
+
+    const intentVerified =
+      hasAny(["DETERMINING_SWAP", "SWAP_START"]) ||
+      sawAny(STEP_TYPES.SOURCE_STEP_TYPES) ||
+      sawAny(STEP_TYPES.DESTINATION_STEP_TYPES) ||
+      collectedOnSources ||
+      filledOnDestination;
 
     const displaySteps: DisplayStep[] = [
       { id: "intent", label: "Intent verified", completed: intentVerified },

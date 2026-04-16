@@ -103,22 +103,15 @@ const StepItem: FC<StepItemProps> = memo(
       >
         {/* Left Indicator */}
         {isCurrent ? (
-          <div className="rounded-full relative">
-            <div
-              className={cn(
-                "rounded-full flex items-center justify-center ring-2 ring-chart-1 ring-offset-2 ring-offset-background transition-all duration-300 animate-pulse",
-                hasMultipleSources ? "min-w-max px-1" : "size-6"
-              )}
-            >
-              {renderIcon()}
-            </div>
+          <div className="size-6 shrink-0 flex items-center justify-center rounded-full bg-chart-1/20 animate-pulse">
+            <span className="size-2.5 rounded-full bg-chart-1" />
           </div>
         ) : isCompleted ? (
-          <div className="size-6 flex items-center justify-center rounded-full bg-chart-1/10">
+          <div className="size-6 shrink-0 flex items-center justify-center rounded-full bg-chart-1/10">
             <span className="size-2 rounded-full bg-chart-1" />
           </div>
         ) : (
-          <div className="size-6 flex items-center justify-center rounded-full">
+          <div className="size-6 shrink-0 flex items-center justify-center rounded-full">
             <span className="size-2 rounded-full bg-muted-foreground/50" />
           </div>
         )}
@@ -156,7 +149,7 @@ const StepItem: FC<StepItemProps> = memo(
               Step {index + 1} of {totalSteps}
             </p>
           )}
-          {isCompleted && <CircleCheck className="size-5 text-chart-1" />}
+          {isCompleted && <CircleCheck className="size-5 shrink-0 text-chart-1" />}
         </div>
       </div>
     );

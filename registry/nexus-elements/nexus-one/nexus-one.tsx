@@ -31,6 +31,10 @@ import {
 import { Button } from "../ui/button";
 import { useNexus } from "../nexus/NexusProvider";
 import CardBG from "./card-bg.png";
+import { useTransactionSteps } from "../common/tx/useTransactionSteps";
+import { SWAP_EXPECTED_STEPS } from "../common/tx/steps";
+import TransactionProgress from "../swaps/components/transaction-progress";
+import { NEXUS_EVENTS, type SwapStepType } from "@avail-project/nexus-core";
 
 // ---------------------------------------------------------------------------
 // Types for swap step machine
@@ -81,6 +85,18 @@ export function NexusOne({
   const [toToken, setToToken] = useState<SwapTokenOption | undefined>(
     undefined,
   );
+
+  const {
+    steps,
+    seed,
+    onStepComplete,
+    reset: resetSteps,
+  } = useTransactionSteps<SwapStepType>();
+  const [explorerUrls, setExplorerUrls] = useState<{
+    sourceExplorerUrl: string | null;
+    destinationExplorerUrl: string | null;
+  }>({ sourceExplorerUrl: null, destinationExplorerUrl: null });
+  const swapRunIdRef = useRef(0);
   const [intentToAmount, setIntentToAmount] = useState<string | undefined>(
     undefined,
   );
@@ -272,6 +288,19 @@ export function NexusOne({
     // Claim ownership of global singleton hook before executing SDK swap
     registerIntentHook();
     
+    const handleSwapEvent = (event: { name: string; args: SwapStepType }) => {
+      if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
+        const step = event.args;
+        if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
+          setExplorerUrls((prev) => ({ ...prev, sourceExplorerUrl: step.explorerURL }));
+        }
+        if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
+          setExplorerUrls((prev) => ({ ...prev, destinationExplorerUrl: step.explorerURL }));
+        }
+        onStepComplete(step);
+      }
+    };
+
     try {
       if (swapType === "exactIn") {
         let remainingDesiredUsd = Number(amount);
@@ -328,15 +357,23 @@ export function NexusOne({
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
         });
+        swapRunIdRef.current += 1;
+        const runId = swapRunIdRef.current;
+        setExplorerUrls({ sourceExplorerUrl: null, destinationExplorerUrl: null });
         // Start exact-in swap — the intent hook will fire and populate preview
         await nexusSDK.swapWithExactIn({
           from: fromPayload,
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
+        }, {
+          onEvent: (event: any) => {
+            if (swapRunIdRef.current !== runId) return;
+            handleSwapEvent(event);
+          }
         });
         // If we reach here, swap completed successfully
         onComplete?.();
-        setSwapStep("idle");
+        setSwapStep("success");
       } else {
         console.log(
           "[DEBUG] ExactOut detected. Resolving USD rate for:",
@@ -368,6 +405,9 @@ export function NexusOne({
               }
             : {}),
         });
+        swapRunIdRef.current += 1;
+        const runId = swapRunIdRef.current;
+        setExplorerUrls({ sourceExplorerUrl: null, destinationExplorerUrl: null });
         await nexusSDK.swapWithExactOut({
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
@@ -380,9 +420,14 @@ export function NexusOne({
                 })),
               }
             : {}),
+        }, {
+          onEvent: (event: any) => {
+            if (swapRunIdRef.current !== runId) return;
+            handleSwapEvent(event);
+          }
         });
         onComplete?.();
-        setSwapStep("idle");
+        setSwapStep("success");
       }
     } catch (err: any) {
       console.error("Error in handleEnterPreview:", err);
@@ -390,9 +435,7 @@ export function NexusOne({
         setSwapStep("idle");
         return;
       }
-      if (!intentData) {
-        setSwapStep("idle");
-      }
+      setSwapStep("idle");
       const errorMessage =
         err?.message ||
         (typeof err === "string"
@@ -409,6 +452,7 @@ export function NexusOne({
     if (swapIntentRef.current) {
       onStart?.();
       setSwapStep("progress");
+      seed(SWAP_EXPECTED_STEPS);
       swapIntentRef.current.allow();
       // The swap promise in handleEnterPreview will resolve/reject
     }
@@ -546,66 +590,13 @@ export function NexusOne({
               </div>
             )}
 
-            {/* Exact In / Exact Out dropdown — only on main swap screen */}
-            {activeMode === "swap" && swapStep === "idle" && (
-              <div className="relative">
-                <button
-                  onClick={() => setSwapTypeOpen((v) => !v)}
-                  className="flex items-center gap-1 pl-2 pr-1.5 py-1 rounded-[4px] hover:bg-black/5 transition-colors"
-                  style={{
-                    fontFamily: "var(--font-geist-mono), sans-serif",
-                    fontSize: "10px",
-                    fontWeight: 500,
-                    color: "var(--foreground-muted, #848483)",
-                    background: "var(--background-tertiary, #F0F0EF)",
-                  }}
-                >
-                  {swapType === "exactIn" ? "ExactIn" : "ExactOut"}
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-                {swapTypeOpen && (
-                  <div
-                    className="absolute top-full left-0 mt-1 z-50 py-1 min-w-[120px]"
-                    style={{
-                      background: "#FFFFFF",
-                      borderRadius: "10px",
-                      border: "1px solid var(--border-default, #E8E8E7)",
-                      boxShadow: "0px 4px 16px 0px #00000014",
-                    }}
-                  >
-                    {(["exactIn", "exactOut"] as SwapType[]).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => {
-                          setSwapType(t);
-                          setSwapTypeOpen(false);
-                          setFromTokens([]);
-                          setToToken(undefined);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors"
-                        style={{
-                          fontFamily: "var(--font-geist-sans), sans-serif",
-                          fontSize: "13px",
-                          fontWeight: swapType === t ? 600 : 400,
-                          color:
-                            swapType === t
-                              ? "var(--interactive-button-primary-background, #006BF4)"
-                              : "var(--foreground-primary, #161615)",
-                        }}
-                      >
-                        {t === "exactIn" ? "Exact In" : "Exact Out"}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Center-aligned title (main screens) */}
           {isTitleCentered() && (
-            <div className="absolute inset-x-0 flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-x-0 flex items-center justify-center gap-x-2 pointer-events-none">
               <h2
+                className="pointer-events-auto"
                 style={{
                   fontFamily: "var(--font-geist-sans), sans-serif",
                   fontSize: "14px",
@@ -614,6 +605,60 @@ export function NexusOne({
               >
                 {getTitle()}
               </h2>
+              {/* Exact In / Exact Out dropdown appended next to Title */}
+              {activeMode === "swap" && swapStep === "idle" && (
+                <div className="relative pointer-events-auto">
+                  <button
+                    onClick={() => setSwapTypeOpen((v) => !v)}
+                    className="flex items-center gap-1 pl-2 pr-1.5 py-1 rounded-[4px] hover:bg-black/5 transition-colors"
+                    style={{
+                      fontFamily: "var(--font-geist-mono), sans-serif",
+                      fontSize: "10px",
+                      fontWeight: 500,
+                      color: "var(--foreground-muted, #848483)",
+                      background: "var(--background-tertiary, #F0F0EF)",
+                    }}
+                  >
+                    {swapType === "exactIn" ? "ExactIn" : "ExactOut"}
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {swapTypeOpen && (
+                    <div
+                      className="absolute top-full left-0 mt-1 z-50 py-1 min-w-[120px]"
+                      style={{
+                        background: "#FFFFFF",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border-default, #E8E8E7)",
+                        boxShadow: "0px 4px 16px 0px #00000014",
+                      }}
+                    >
+                      {(["exactIn", "exactOut"] as SwapType[]).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => {
+                            setSwapType(t);
+                            setSwapTypeOpen(false);
+                            setFromTokens([]);
+                            setToToken(undefined);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors"
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "13px",
+                            fontWeight: swapType === t ? 600 : 400,
+                            color:
+                              swapType === t
+                                ? "var(--interactive-button-primary-background, #006BF4)"
+                                : "var(--foreground-primary, #161615)",
+                          }}
+                        >
+                          {t === "exactIn" ? "Exact In" : "Exact Out"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -751,20 +796,44 @@ export function NexusOne({
                 </div>
               )}
 
-              {/* Panel: progress */}
-              {swapStep === "progress" && (
-                <div className="flex flex-col items-center justify-center py-8 gap-y-4">
-                  <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
-                  <p
-                    style={{
-                      fontFamily: "var(--font-geist-sans), sans-serif",
-                      fontSize: "14px",
-                      color: "var(--foreground-muted, #848483)",
+              {/* Panel: progress AND SUCCESS */}
+              {(swapStep === "progress" || swapStep === "success") && (
+                 <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+                  <TransactionProgress
+                    steps={steps}
+                    explorerUrls={explorerUrls}
+                    sourceSymbol={fromTokens.length > 1 ? `${fromTokens.length} sources` : (fromTokens[0]?.symbol ?? "Unknown")}
+                    destinationSymbol={toToken?.symbol ?? "Unknown"}
+                    sourceLogos={{
+                      token: fromTokens[0]?.logo ?? "",
+                      chain: fromTokens[0]?.chainLogo ?? ""
                     }}
-                  >
-                    Swapping {fromTokens[0]?.symbol} → {toToken?.symbol}…
-                  </p>
-                </div>
+                    destinationLogos={{
+                      token: toToken?.logo ?? "",
+                      chain: toToken?.chainLogo ?? ""
+                    }}
+                    hasMultipleSources={fromTokens.length > 1}
+                    sources={fromTokens.length > 1 ? fromTokens.map((t) => ({
+                       tokenLogo: t.logo ?? "",
+                       chainLogo: t.chainLogo ?? "",
+                       symbol: t.symbol
+                    })) : undefined}
+                  />
+                  {swapStep === "success" && (
+                    <Button 
+                      onClick={() => handleModeChange(activeMode)} 
+                      className="w-full mt-6"
+                      style={{
+                        background: "var(--interactive-button-primary-background, #006BF4)",
+                        color: "var(--foreground-inverse, #F0F0EF)",
+                        height: "48px",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      Done
+                    </Button>
+                  )}
+                 </div>
               )}
 
               {/* Main swap idle screen */}
