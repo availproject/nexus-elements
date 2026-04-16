@@ -79,8 +79,10 @@ export function NexusOne({
   } = useNexus();
 
   // Mode tab
-  const initialMode = Array.isArray(config.mode) ? config.mode[0] : config.mode;
+  const availableModes = Array.isArray(config.mode) ? config.mode : [config.mode];
+  const initialMode = availableModes[0];
   const [activeMode, setActiveMode] = useState<NexusOneMode>(initialMode);
+  const [prevMode, setPrevMode] = useState<NexusOneMode>(initialMode);
 
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
@@ -199,6 +201,7 @@ export function NexusOne({
   // ---------------------------------------------------------------------------
 
   const handleModeChange = (mode: NexusOneMode) => {
+    setPrevMode(activeMode);
     setActiveMode(mode);
     setAmount("");
     setRecipientAddress("");
@@ -620,6 +623,15 @@ export function NexusOne({
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+  const getSlideDirection = () => {
+    const prevIdx = availableModes.indexOf(prevMode);
+    const currIdx = availableModes.indexOf(activeMode);
+    if (currIdx > prevIdx) return "slide-in-from-right-4";
+    if (currIdx < prevIdx) return "slide-in-from-left-4";
+    return "slide-in-from-bottom-4";
+  };
+  const slideClass = `animate-in fade-in ${getSlideDirection()} duration-500 space-y-3 w-full`;
+
   return (
     <div
       className="w-full max-w-sm relative overflow-hidden flex flex-col font-geist"
@@ -1001,7 +1013,7 @@ export function NexusOne({
           {/* SWAP IDLE SCREEN                                                 */}
           {/* =============================================================== */}
           {activeMode === "swap" && swapStep === "idle" && (
-            <div className="animate-in fade-in slide-in-from-left-4 duration-500 space-y-3 w-full">
+            <div className={slideClass}>
               {/* Amount input */}
               <AmountInputUnified
                 amount={amount}
@@ -1278,7 +1290,7 @@ export function NexusOne({
           {/* DEPOSIT MODE LAYOUT                                              */}
           {/* =============================================================== */}
           {activeMode === "deposit" && swapStep === "idle" && (
-            <>
+            <div className={slideClass}>
               {/* Opportunity list */}
               {config.opportunities &&
                 config.opportunities.length > 0 &&
@@ -1399,14 +1411,14 @@ export function NexusOne({
                   </Button>
                 </>
               )}
-            </>
+            </div>
           )}
 
           {/* =============================================================== */}
           {/* TRANSFER MODE — recipient first, then amount, then asset         */}
           {/* =============================================================== */}
           {activeMode === "transfer" && swapStep === "idle" && (
-            <div className="animate-in fade-in slide-in-from-left-4 duration-500 space-y-3 w-full">
+            <div className={slideClass}>
               {/* 1. Recipient input */}
               <div className="flex flex-col w-full mb-3">
                 <RecipientInput
