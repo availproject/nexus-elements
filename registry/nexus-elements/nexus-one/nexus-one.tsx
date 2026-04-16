@@ -311,11 +311,20 @@ export function NexusOne({
         }[] = [];
 
         const totalUsdStr = fromTokens
-          .reduce((acc, curr) => acc + Number(curr.balanceInFiat || 0), 0)
+          .reduce((acc, curr) => {
+            const cleanVal = Number(String(curr.balanceInFiat || "").replace(/[^0-9.]/g, "")) || 0;
+            return acc + cleanVal;
+          }, 0)
           .toFixed(2);
         const isMax = Number(amount).toFixed(2) === totalUsdStr;
 
-        for (const token of fromTokens) {
+        const sortedFromTokens = [...fromTokens].sort((a, b) => {
+          const cleanA = Number(String(a.balanceInFiat || "").replace(/[^0-9.]/g, "")) || 0;
+          const cleanB = Number(String(b.balanceInFiat || "").replace(/[^0-9.]/g, "")) || 0;
+          return cleanB - cleanA;
+        });
+
+        for (const token of sortedFromTokens) {
           if (isMax) {
             fromPayload.push({
               chainId: token.chainId!,
@@ -330,13 +339,16 @@ export function NexusOne({
 
           if (remainingDesiredUsd <= 0.0001) break;
 
-          const balanceUsd = Number(token.balanceInFiat) || 0;
+          const safeBalanceUsdNum = Number(String(token.balanceInFiat || "").replace(/[^0-9.]/g, "")) || 0;
+          const balanceUsd = safeBalanceUsdNum;
           if (balanceUsd <= 0) continue;
 
           const takeUsd = Math.min(remainingDesiredUsd, balanceUsd);
           const ratioToTake = takeUsd / balanceUsd;
-
-          const exactTokenAmountToTake = Number(token.balance) * ratioToTake;
+          
+          const cleanTokenBalance = Number(String(token.balance || "").replace(/[^0-9.]/g, "")) || 0;
+          const exactTokenAmountToTake = cleanTokenBalance * ratioToTake;
+          
           const safeTokenAmountStr = exactTokenAmountToTake.toFixed(
             Math.min(token.decimals || 18, 18),
           );
@@ -799,26 +811,36 @@ export function NexusOne({
               {/* Panel: progress AND SUCCESS */}
               {(swapStep === "progress" || swapStep === "success") && (
                  <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
-                  <TransactionProgress
-                    steps={steps}
-                    explorerUrls={explorerUrls}
-                    sourceSymbol={fromTokens.length > 1 ? `${fromTokens.length} sources` : (fromTokens[0]?.symbol ?? "Unknown")}
-                    destinationSymbol={toToken?.symbol ?? "Unknown"}
-                    sourceLogos={{
-                      token: fromTokens[0]?.logo ?? "",
-                      chain: fromTokens[0]?.chainLogo ?? ""
+                  <div
+                    style={{
+                      background: "#FFFFFF",
+                      borderRadius: "12px",
+                      border: "1px solid var(--border-default, #E8E8E7)",
+                      boxShadow: "0px 1px 12px 0px #5B5B5B0D",
+                      padding: "16px",
                     }}
-                    destinationLogos={{
-                      token: toToken?.logo ?? "",
-                      chain: toToken?.chainLogo ?? ""
-                    }}
-                    hasMultipleSources={fromTokens.length > 1}
-                    sources={fromTokens.length > 1 ? fromTokens.map((t) => ({
-                       tokenLogo: t.logo ?? "",
-                       chainLogo: t.chainLogo ?? "",
-                       symbol: t.symbol
-                    })) : undefined}
-                  />
+                  >
+                    <TransactionProgress
+                      steps={steps}
+                      explorerUrls={explorerUrls}
+                      sourceSymbol={fromTokens.length > 1 ? `${fromTokens.length} sources` : (fromTokens[0]?.symbol ?? "Unknown")}
+                      destinationSymbol={toToken?.symbol ?? "Unknown"}
+                      sourceLogos={{
+                        token: fromTokens[0]?.logo ?? "",
+                        chain: fromTokens[0]?.chainLogo ?? ""
+                      }}
+                      destinationLogos={{
+                        token: toToken?.logo ?? "",
+                        chain: toToken?.chainLogo ?? ""
+                      }}
+                      hasMultipleSources={fromTokens.length > 1}
+                      sources={fromTokens.length > 1 ? fromTokens.map((t) => ({
+                         tokenLogo: t.logo ?? "",
+                         chainLogo: t.chainLogo ?? "",
+                         symbol: t.symbol
+                      })) : undefined}
+                    />
+                  </div>
                   {swapStep === "success" && (
                     <Button 
                       onClick={() => handleModeChange(activeMode)} 
