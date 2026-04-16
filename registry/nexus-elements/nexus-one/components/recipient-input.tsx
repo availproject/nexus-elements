@@ -23,13 +23,13 @@ export function RecipientInput({
         borderRadius: "12px",
         borderWidth: "1px",
         borderColor: "transparent",
-        gap: "24px",
+        gap: "12px",
         paddingTop: "12px",
         paddingBottom: "12px",
       }}
     >
       <div
-        className="shrink-0 font-geist select-none flex items-center pr-2"
+        className="shrink-0 font-geist select-none flex items-center"
         style={{
           color: "var(--foreground-primary, #161615)",
           fontSize: "14px",

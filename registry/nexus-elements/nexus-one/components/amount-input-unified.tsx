@@ -60,9 +60,9 @@ export function AmountInputUnified({
           {header}
         </div>
       )}
-      <div className="flex-1 w-full flex flex-col items-center justify-center p-5 gap-y-3">
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-5 relative">
       {/* Central Input row: large amount + MAX button inline */}
-      <div className="flex items-center justify-center w-full gap-x-3">
+      <div className="flex items-center justify-center w-full gap-x-3 mb-2">
         <div
           className="flex items-center justify-center text-center"
           style={{
@@ -128,26 +128,23 @@ export function AmountInputUnified({
         </button>
       </div>
 
-      {/* USD value */}
-      {/* {usdValue && (
-        <p className="text-sm font-normal text-gray-400">~ ${usdValue}</p>
-      )} */}
-
       {/* Balance display — below amount + MAX row */}
       {(totalBalance || maxAvailableAmount) && (
-        <p
-          style={{
-            color: "var(--widget-card-foreground-muted, #848483)",
-            fontFamily:
-              "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
-            fontWeight: 400,
-            fontSize: "13px",
-            lineHeight: "100%",
-            textAlign: "center",
-          }}
-        >
-          Balance: {totalBalance ? `$${totalBalance}` : `$0`}
-        </p>
+        <div className="absolute bottom-5 left-0 w-full flex justify-center">
+          <p
+            style={{
+              color: "var(--widget-card-foreground-muted, #848483)",
+              fontFamily:
+                "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
+              fontWeight: 400,
+              fontSize: "13px",
+              lineHeight: "100%",
+              textAlign: "center",
+            }}
+          >
+            Balance: {totalBalance ? `$${totalBalance}` : `$0`}
+          </p>
+        </div>
       )}
       </div>
     </div>

@@ -35,6 +35,10 @@ import { useTransactionSteps } from "../common/tx/useTransactionSteps";
 import { SWAP_EXPECTED_STEPS } from "../common/tx/steps";
 import TransactionProgress from "../swaps/components/transaction-progress";
 import { NEXUS_EVENTS, type SwapStepType } from "@avail-project/nexus-core";
+import { useWalletClient, usePublicClient } from "wagmi";
+import { erc20Abi, isAddress, createPublicClient, http } from "viem";
+import { normalize } from "viem/ens";
+import { mainnet } from "viem/chains";
 
 // ---------------------------------------------------------------------------
 // Types for swap step machine
@@ -71,6 +75,9 @@ export function NexusOne({
   // Mode tab
   const initialMode = Array.isArray(config.mode) ? config.mode[0] : config.mode;
   const [activeMode, setActiveMode] = useState<NexusOneMode>(initialMode);
+  
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
   // Global form state
   const [amount, setAmount] = useState("");
@@ -97,14 +104,13 @@ export function NexusOne({
     destinationExplorerUrl: string | null;
   }>({ sourceExplorerUrl: null, destinationExplorerUrl: null });
   const swapRunIdRef = useRef(0);
-  const [intentToAmount, setIntentToAmount] = useState<string | undefined>(
-    undefined,
-  );
-  const [intentFeeUsd, setIntentFeeUsd] = useState<string | undefined>(
-    undefined,
-  );
+  const [intentToAmount, setIntentToAmount] = useState<string | undefined>(undefined);
+  const [intentFeeUsd, setIntentFeeUsd] = useState<string | undefined>(undefined);
   const [intentLoading, setIntentLoading] = useState(false);
   const [intentData, setIntentData] = useState<SwapIntentData | null>(null);
+  const [transferCompleted, setTransferCompleted] = useState<boolean>(false);
+  const [transferFailed, setTransferFailed] = useState<boolean>(false);
+  const [transferExplorerUrl, setTransferExplorerUrl] = useState<string | null>(null);
 
   // Ref to store swap intent hook allow/deny callbacks
   const swapIntentRef = useRef<{
@@ -181,6 +187,7 @@ export function NexusOne({
   const handleModeChange = (mode: NexusOneMode) => {
     setActiveMode(mode);
     setAmount("");
+    setRecipientAddress("");
     setTxError(null);
     setSwapStep("idle");
     setFromTokens([]);
@@ -258,17 +265,64 @@ export function NexusOne({
       console.log("[DEBUG] Aborted: missing toToken or amount");
       return;
     }
-    if (swapType === "exactIn" && fromTokens.length === 0) {
+    const isExactOutFlow = activeMode === "transfer" || swapType === "exactOut";
+
+    if (!isExactOutFlow && fromTokens.length === 0) {
       console.log("[DEBUG] Aborted: exactIn but no fromTokens");
       return;
     }
 
-    console.log("[DEBUG] Proceeding to set preview-intent state...");
-    setSwapStep("preview-intent");
-    setIntentLoading(true);
+    setTxError(null);
+
+    let resolvedRecipientAddress = recipientAddress;
+    if (activeMode === "transfer") {
+      if (!recipientAddress) {
+        setTxError("Recipient address is required");
+        return;
+      }
+      
+      setSwapStep("preview-intent");
+      setIntentLoading(true);
+
+      if (recipientAddress.endsWith(".eth")) {
+        try {
+          const mainnetClient = publicClient?.chain?.id === 1 ? publicClient : createPublicClient({
+            chain: mainnet,
+            transport: http()
+          });
+          const ensAddr = await mainnetClient.getEnsAddress({ name: normalize(recipientAddress) });
+          if (!ensAddr) {
+            setTxError("Could not resolve ENS name to an address.");
+            setSwapStep("idle");
+            setIntentLoading(false);
+            return;
+          }
+          resolvedRecipientAddress = ensAddr;
+        } catch (e: any) {
+          setTxError(e.message || "Failed to resolve ENS name.");
+          setSwapStep("idle");
+          setIntentLoading(false);
+          return;
+        }
+      } else {
+        if (!isAddress(recipientAddress)) {
+          setTxError("Invalid recipient address.");
+          setSwapStep("idle");
+          setIntentLoading(false);
+          return;
+        }
+      }
+    } else {
+      console.log("[DEBUG] Proceeding to set preview-intent state...");
+      setSwapStep("preview-intent");
+      setIntentLoading(true);
+    }
     setIntentToAmount(undefined);
     setIntentFeeUsd(undefined);
     setIntentData(null);
+    setTransferCompleted(false);
+    setTransferFailed(false);
+    setTransferExplorerUrl(null);
     swapIntentRef.current = null;
 
     if (!nexusSDK) {
@@ -279,6 +333,7 @@ export function NexusOne({
     }
 
     console.log("Entering preview...", {
+      activeMode,
       swapType,
       toToken,
       amount,
@@ -302,7 +357,7 @@ export function NexusOne({
     };
 
     try {
-      if (swapType === "exactIn") {
+      if (!isExactOutFlow) {
         let remainingDesiredUsd = Number(amount);
         const fromPayload: {
           chainId: number;
@@ -438,6 +493,86 @@ export function NexusOne({
             handleSwapEvent(event);
           }
         });
+
+        if (activeMode === "transfer" && walletClient && publicClient) {
+          try {
+            const isNative = !toToken.contractAddress || toToken.contractAddress.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" || toToken.contractAddress === "0x0000000000000000000000000000000000000000";
+            let txHash: `0x${string}` | undefined;
+            if (isNative) {
+              txHash = await walletClient.sendTransaction({
+                to: resolvedRecipientAddress as `0x${string}`,
+                value: amountBigInt,
+                chain: walletClient.chain
+              });
+            } else {
+              txHash = await walletClient.writeContract({
+                address: toToken.contractAddress as `0x${string}`,
+                abi: erc20Abi,
+                functionName: "transfer",
+                args: [resolvedRecipientAddress as `0x${string}`, amountBigInt],
+                chain: walletClient.chain
+              });
+            }
+
+            if (txHash) {
+              const explorerBase = publicClient.chain?.blockExplorers?.default?.url;
+              if (explorerBase) {
+                setTransferExplorerUrl(`${explorerBase}/tx/${txHash}`);
+              }
+
+              let receipt;
+              try {
+                // Determine if we have a custom Avail RPC for this chain
+                const AVAIL_RPCS: Record<number, string> = {
+                  1: "https://rpcs.avail.so/eth",
+                  8453: "https://rpcs.avail.so/base",
+                  42161: "https://rpcs.avail.so/arbitrum",
+                  10: "https://rpcs.avail.so/optimism",
+                  137: "https://rpcs.avail.so/polygon",
+                  43114: "https://rpcs.avail.so/avalanche",
+                  534352: "https://rpcs.avail.so/scroll",
+                  8217: "https://rpcs.avail.so/kaia",
+                  4114: "https://rpcs.avail.so/citrea",
+                  56: "https://rpcs.avail.so/bsc",
+                  999: "https://rpcs.avail.so/hyperevm",
+                  4326: "https://rpcs.avail.so/megaeth",
+                  143: "https://rpcs.avail.so/monad",
+                  11155111: "https://rpcs.avail.so/sepolia",
+                  84532: "https://rpcs.avail.so/basesepolia",
+                  421614: "https://rpcs.avail.so/arbitrumsepolia",
+                  5115: "https://rpcs.avail.so/citrea-testnet",
+                  11155420: "https://rpcs.avail.so/optimismsepolia",
+                  80002: "https://rpcs.avail.so/polygonamoy",
+                  10143: "https://rpcs.avail.so/monadtestnet",
+                };
+                
+                const customRpc = walletClient.chain?.id ? AVAIL_RPCS[walletClient.chain.id] : undefined;
+
+                // EIP-1193 providers (MetaMask) can hang on waitForTransactionReceipt.
+                // Creating a direct http poll bypasses the extension's buggy subscription model.
+                const independentClient = createPublicClient({
+                  chain: walletClient.chain,
+                  transport: http(customRpc)
+                });
+                receipt = await independentClient.waitForTransactionReceipt({ hash: txHash });
+              } catch (fallbackErr) {
+                // If direct HTTP fails, fallback to the original publicClient
+                receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+              }
+
+              if (receipt && receipt.status === 'success') {
+                setTransferCompleted(true);
+              } else {
+                setTransferFailed(true);
+              }
+            }
+          } catch (e: any) {
+            console.error("Transfer part failed", e);
+            setTransferFailed(true);
+            // Do not throw an error, so the UI can stay on the progress pane and show the "Failed" indicator
+          }
+        }
+
         onComplete?.();
         setSwapStep("success");
       }
@@ -718,9 +853,9 @@ export function NexusOne({
         {/* ------------------------------------------------------------------ */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 pt-3 space-y-3">
           {/* =============================================================== */}
-          {/* SWAP MODE                                                        */}
+          {/* SHARED SUB-SCREENS (Swap & Transfer)                             */}
           {/* =============================================================== */}
-          {activeMode === "swap" && (
+          {(activeMode === "swap" || activeMode === "transfer") && swapStep !== "idle" && (
             <>
               {/* Panel: choose-swap-asset */}
               {swapStep === "choose-swap-asset" && (
@@ -798,6 +933,7 @@ export function NexusOne({
                     intentData={intentData}
                     swapBalances={swapBalance}
                     supportedTokenAssets={supportedChainsAndTokens}
+                    activeMode={activeMode}
                     onAccept={handleSwapAccept}
                     onReject={() => {
                       swapIntentRef.current?.deny();
@@ -839,6 +975,10 @@ export function NexusOne({
                          chainLogo: t.chainLogo ?? "",
                          symbol: t.symbol
                       })) : undefined}
+                      isTransferMode={activeMode === "transfer"}
+                      transferCompleted={transferCompleted}
+                      transferFailed={transferFailed}
+                      transferExplorerUrl={transferExplorerUrl}
                     />
                   </div>
                   {swapStep === "success" && (
@@ -857,9 +997,13 @@ export function NexusOne({
                   )}
                  </div>
               )}
+            </>
+          )}
 
-              {/* Main swap idle screen */}
-              {swapStep === "idle" && (
+          {/* =============================================================== */}
+          {/* SWAP IDLE SCREEN                                                 */}
+          {/* =============================================================== */}
+          {activeMode === "swap" && swapStep === "idle" && (
                 <div className="animate-in fade-in slide-in-from-left-4 duration-500 space-y-3 w-full">
                   {/* Amount input */}
                   <AmountInputUnified
@@ -1139,8 +1283,6 @@ export function NexusOne({
                     Proceed to Swap
                   </Button>
                 </div>
-              )}
-            </>
           )}
 
           {/* =============================================================== */}
@@ -1249,25 +1391,15 @@ export function NexusOne({
           {/* =============================================================== */}
           {/* TRANSFER MODE — recipient first, then amount, then asset         */}
           {/* =============================================================== */}
-          {activeMode === "transfer" && (
-            <>
+          {activeMode === "transfer" && swapStep === "idle" && (
+            <div className="animate-in fade-in slide-in-from-left-4 duration-500 space-y-3 w-full">
               {/* 1. Recipient input */}
-              <div className="flex flex-col gap-y-1">
-                <label
-                  style={{
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    color: "var(--foreground-muted, #848483)",
-                  }}
-                >
-                  To
-                </label>
+              <div className="flex flex-col w-full mb-3">
                 <RecipientInput
                   value={recipientAddress}
                   onChange={setRecipientAddress}
-                  placeholder="ENS name or 0x address"
-                  label=""
+                  placeholder="ENS or Address"
+                  label="To"
                 />
               </div>
 
@@ -1282,25 +1414,110 @@ export function NexusOne({
                 }
               />
 
-              {/* 3. Send (Choose Asset) */}
-              <PayUsingSelector
-                label="Send (Choose Asset)"
-                sublabel={
-                  currentAsset?.symbol
-                    ? `Sending ${currentAsset.symbol}`
-                    : "Auto-selected based on amount"
-                }
-                onClick={() => console.log("Open Asset Selector")}
-              />
+              {/* 3. Send (Choose Asset) -> styled like exact out relative */}
+              <button
+                onClick={() => setSwapStep("choose-receive-asset")}
+                className="w-full flex items-center p-5 bg-white gap-y-3 min-h-[72px]"
+                style={{
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-default, #E8E8E7)",
+                  boxShadow: "0px 1px 12px 0px #5B5B5B0D",
+                  background: "#FFFFFF",
+                }}
+              >
+                <div className="flex items-center gap-x-3 w-full justify-between">
+                  {toToken ? (
+                    <div className="flex items-center gap-x-3">
+                      <div className="relative shrink-0">
+                        {toToken.logo ? (
+                          <img
+                            src={toToken.logo}
+                            alt={toToken.symbol}
+                            className="w-9 h-9 rounded-full border border-gray-100 object-cover"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
+                            {toToken.symbol.slice(0, 2)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-start justify-center">
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "var(--foreground-primary, #161615)",
+                          }}
+                        >
+                          {toToken.symbol}
+                        </span>
+                        {toToken.chainName && (
+                          <span
+                            style={{
+                              fontFamily: "var(--font-geist-sans), sans-serif",
+                              fontSize: "12px",
+                              color: "var(--foreground-muted, #848483)",
+                            }}
+                          >
+                            {toToken.chainName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-4 items-center">
+                      <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#006BF4]">
+                        <PlusIcon className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "14px",
+                            color: "var(--foreground-primary, #161615)",
+                          }}
+                        >
+                          Send
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-geist-sans), sans-serif",
+                            fontSize: "13px",
+                            color: "var(--widget-card-foreground-muted, #848483)",
+                          }}
+                        >
+                          Choose asset
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-x-1">
+                    {toToken && (
+                      <span
+                        style={{
+                          fontFamily: "var(--font-geist-sans), sans-serif",
+                          fontSize: "11px",
+                          color: "var(--interactive-button-primary-background, #006BF4)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Edit
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
 
               {txError && <StatusAlert type="error" message={txError} />}
 
               <Button
-                onClick={handleContinue}
+                onClick={handleEnterPreview}
+                disabled={!amount || Number(amount) <= 0 || !toToken || !recipientAddress}
                 className="w-full font-medium text-white transition-opacity hover:opacity-90 active:opacity-100 text-[14px]"
                 style={{
-                  background:
-                    "var(--interactive-button-primary-background, #006BF4)",
+                  background: "var(--interactive-button-primary-background, #006BF4)",
                   boxShadow: "0px 1px 4px 0px #5555550D",
                   height: "48px",
                   borderRadius: "12px",
@@ -1308,7 +1525,7 @@ export function NexusOne({
               >
                 Proceed to Transfer
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -5,7 +5,7 @@ import {
 } from "@avail-project/nexus-core";
 import { StepFlow } from "./step-flow";
 
-export type DisplayStep = { id: string; label: string; completed: boolean };
+export type DisplayStep = { id: string; label: string; completed: boolean; failed?: boolean; explorerUrl?: string | null };
 type ProgressStep = BridgeStepType | SwapStepType;
 
 interface TokenSource {
@@ -32,6 +32,10 @@ interface TransactionProgressProps {
   };
   hasMultipleSources?: boolean;
   sources?: TokenSource[];
+  isTransferMode?: boolean;
+  transferCompleted?: boolean;
+  transferFailed?: boolean;
+  transferExplorerUrl?: string | null;
 }
 
 const STEP_TYPES = {
@@ -60,6 +64,10 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   destinationLogos,
   hasMultipleSources,
   sources,
+  isTransferMode,
+  transferCompleted,
+  transferFailed,
+  transferExplorerUrl,
 }) => {
   const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
     const completedTypes = new Set<string | undefined>(
@@ -102,23 +110,44 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
         id: "collected",
         label: "Collected on sources",
         completed: collectedOnSources,
+        explorerUrl: explorerUrls.sourceExplorerUrl,
       },
       {
         id: "filled",
         label: "Filled on destination",
         completed: filledOnDestination,
+        explorerUrl: explorerUrls.destinationExplorerUrl,
       },
     ];
 
+    if (isTransferMode) {
+      displaySteps.push({
+        id: "transfer",
+        label: "Token transfer",
+        completed: Boolean(transferCompleted),
+        failed: Boolean(transferFailed),
+        explorerUrl: transferExplorerUrl,
+      });
+    }
+
     // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
-    const done = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
-    const current = displaySteps.findIndex((st) => !st.completed);
+    const baseDone = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
+    const done = isTransferMode ? (baseDone && (Boolean(transferCompleted) || Boolean(transferFailed))) : baseDone;
+    const current = displaySteps.findIndex((st) => !st.completed && !st.failed);
     return {
       effectiveSteps: displaySteps,
       currentIndex: current,
       allCompleted: done,
     };
-  }, [steps]);
+  }, [
+    steps,
+    isTransferMode,
+    transferCompleted,
+    transferFailed,
+    transferExplorerUrl,
+    explorerUrls.sourceExplorerUrl,
+    explorerUrls.destinationExplorerUrl,
+  ]);
 
   return (
     <div className="w-full flex flex-col items-start">
