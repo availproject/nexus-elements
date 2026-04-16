@@ -54,7 +54,7 @@ export function OpportunityList({ opportunities, onSelect }: OpportunityListProp
             {opp.logo ? (
               <img
                 src={opp.logo}
-                alt={opp.protocol}
+                alt={opp.title || opp.protocol}
                 className="w-10 h-10 rounded-full border border-gray-100 object-cover shadow-sm"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
@@ -73,73 +73,31 @@ export function OpportunityList({ opportunities, onSelect }: OpportunityListProp
           </div>
 
           {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-x-2">
-              <span
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <span
+              className="truncate"
+              style={{
+                fontFamily: "var(--font-geist-sans), sans-serif",
+                fontWeight: 400,
+                fontSize: "15px",
+                color: "var(--foreground-primary, #161615)",
+                lineHeight: "20px"
+              }}
+            >
+              {opp.title || opp.protocol}
+            </span>
+            {(opp.subtitle || opp.description) && (
+              <p
                 className="truncate"
                 style={{
                   fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontWeight: 500,
-                  fontSize: "14px",
-                  color: "var(--foreground-primary, #161615)",
-                }}
-              >
-                {opp.label}
-              </span>
-              {opp.apy && (
-                <span
-                  className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
-                  style={{
-                    background: "#ECFDF5",
-                    color: "#16A34A",
-                    fontFamily: "var(--font-geist-sans), sans-serif",
-                  }}
-                >
-                  {opp.apy} APY
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-x-1.5 mt-0.5">
-              <span
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "12px",
+                  fontSize: "13px",
                   color: "var(--foreground-muted, #848483)",
+                  lineHeight: "18px",
+                  marginTop: "1px"
                 }}
               >
-                {opp.protocol}
-              </span>
-              <span style={{ color: "var(--foreground-muted, #848483)", fontSize: "12px" }}>·</span>
-              <span
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "12px",
-                  color: "var(--foreground-muted, #848483)",
-                }}
-              >
-                {CHAIN_NAMES[opp.chainId as number] ?? `Chain ${opp.chainId}`}
-              </span>
-              <span style={{ color: "var(--foreground-muted, #848483)", fontSize: "12px" }}>·</span>
-              <span
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "12px",
-                  color: "var(--foreground-muted, #848483)",
-                }}
-              >
-                {opp.tokenSymbol}
-              </span>
-            </div>
-            {opp.description && (
-              <p
-                className="mt-1 truncate"
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "11px",
-                  color: "var(--foreground-muted, #848483)",
-                }}
-              >
-                {opp.description}
+                {opp.subtitle || opp.description}
               </p>
             )}
           </div>

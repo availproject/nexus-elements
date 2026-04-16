@@ -36,6 +36,7 @@ interface TransactionProgressProps {
   transferCompleted?: boolean;
   transferFailed?: boolean;
   transferExplorerUrl?: string | null;
+  depositOpportunityName?: string;
 }
 
 const STEP_TYPES = {
@@ -68,6 +69,7 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   transferCompleted,
   transferFailed,
   transferExplorerUrl,
+  depositOpportunityName,
 }) => {
   const { effectiveSteps, currentIndex, allCompleted } = useMemo(() => {
     const completedTypes = new Set<string | undefined>(
@@ -132,6 +134,17 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
 
     // Mark overall completion ONLY when the SDK reports SWAP_COMPLETE
     const baseDone = hasAny(STEP_TYPES.TRANSACTION_COMPLETE);
+
+    if (depositOpportunityName) {
+      displaySteps.push({
+        id: "deposit",
+        label: `Deposit on ${depositOpportunityName}`,
+        completed: baseDone, // swapAndExecute handles execution automatically
+        failed: false, // You could parse failed state from SDK here if needed, but keeping simple for now
+        explorerUrl: explorerUrls.destinationExplorerUrl, // Use destination Tx hash for deposit trace
+      });
+    }
+
     const done = isTransferMode ? (baseDone && (Boolean(transferCompleted) || Boolean(transferFailed))) : baseDone;
     const current = displaySteps.findIndex((st) => !st.completed && !st.failed);
     return {
@@ -142,6 +155,7 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   }, [
     steps,
     isTransferMode,
+    depositOpportunityName,
     transferCompleted,
     transferFailed,
     transferExplorerUrl,

@@ -13,18 +13,50 @@ export type SwapType = "exactIn" | "exactOut";
 export interface DepositOpportunity {
   id: string;
   /** Display label, e.g. "Aave USDC on Polygon" */
-  label: string;
+  label?: string;
   /** Protocol name, e.g. "Aave" */
   protocol: string;
   /** Optional URL to a protocol/token logo */
   logo?: string;
+  /** New title for UI (e.g. "Aave") */
+  title?: string;
+  /** New subtitle for UI (e.g. "Deposit USDC on Arbitrum") */
+  subtitle?: string;
   chainId: SUPPORTED_CHAINS_IDS;
   tokenSymbol: string;
+  /** Optional custom token logo provided by developer */
+  tokenLogo?: string;
   tokenAddress: `0x${string}`;
   /** Optional APY string shown in the card, e.g. "4.2%" */
   apy?: string;
   /** Short description shown in the card */
   description?: string;
+  /** Parameters for sdk.swapAndExecute */
+  execute?: 
+    | {
+        to: `0x${string}`;
+        data?: `0x${string}`;
+        value?: bigint;
+        gas: bigint;
+        gasPrice?: 'low' | 'medium' | 'high';
+        tokenApproval?: {
+          token: `0x${string}`;
+          amount: bigint;
+          spender: `0x${string}`;
+        };
+      }
+    | ((amount: bigint, connectedAddress: `0x${string}`) => {
+        to: `0x${string}`;
+        data?: `0x${string}`;
+        value?: bigint;
+        gas: bigint;
+        gasPrice?: 'low' | 'medium' | 'high';
+        tokenApproval?: {
+          token: `0x${string}`;
+          amount: bigint;
+          spender: `0x${string}`;
+        };
+      });
 }
 
 export interface NexusOnePrefill {

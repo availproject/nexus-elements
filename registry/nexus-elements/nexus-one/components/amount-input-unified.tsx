@@ -71,7 +71,13 @@ export function AmountInputUnified({
             gap: "2px",
           }}
         >
-          $
+          {tokenIcon ? (
+            <div className="flex items-center justify-center mr-4">
+              {tokenIcon}
+            </div>
+          ) : (
+            <span className="leading-none text-gray-800 mr-2">$</span>
+          )}
           <input
             type="text"
             inputMode="decimal"

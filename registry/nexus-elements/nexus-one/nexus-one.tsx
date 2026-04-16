@@ -34,7 +34,7 @@ import CardBG from "./card-bg.png";
 import { useTransactionSteps } from "../common/tx/useTransactionSteps";
 import { SWAP_EXPECTED_STEPS } from "../common/tx/steps";
 import TransactionProgress from "../swaps/components/transaction-progress";
-import { NEXUS_EVENTS, type SwapStepType } from "@avail-project/nexus-core";
+import { NEXUS_EVENTS, type SwapStepType, TOKEN_CONTRACT_ADDRESSES, TOKEN_METADATA } from "@avail-project/nexus-core";
 import { useWalletClient, usePublicClient } from "wagmi";
 import { erc20Abi, isAddress, createPublicClient, http } from "viem";
 import { normalize } from "viem/ens";
@@ -49,7 +49,8 @@ type SwapStep =
   | "choose-swap-asset" // pick source token (exactIn) or dest token (exactOut)
   | "choose-receive-asset" // pick receive token (exactIn only)
   | "preview-intent" // intent preview card
-  | "progress"; // transaction in flight
+  | "progress" // transaction in flight
+  | "success"; // completed seamlessly
 
 // ---------------------------------------------------------------------------
 // NexusOne
@@ -179,6 +180,10 @@ export function NexusOne({
     Number(amount) || 0,
     currentAsset?.symbol || "USDC",
   );
+  const depositUsdValue = getFiatValue(
+    Number(amount) || 0,
+    selectedOpportunity?.tokenSymbol || "USDC",
+  );
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -193,64 +198,6 @@ export function NexusOne({
     setFromTokens([]);
     setToToken(undefined);
     setSelectedOpportunity(undefined);
-  };
-
-  /** Called when user hits the main CTA button */
-  const handleContinue = async () => {
-    onStart?.();
-    if (!nexusSDK || !currentAsset || !amount || Number(amount) <= 0) return;
-
-    try {
-      const amountBigInt = nexusSDK.utils.parseUnits(
-        amount,
-        currentAsset.decimals || 18,
-      );
-      const assetDetail = currentAsset.breakdown?.[0];
-      if (!assetDetail?.chain?.id || !assetDetail?.contractAddress) {
-        throw new Error("No chain/token address found for selected asset.");
-      }
-
-      if (activeMode === "deposit") {
-        await nexusSDK.swapAndExecute({
-          toChainId: assetDetail.chain.id,
-          toTokenAddress: assetDetail.contractAddress,
-          toAmount: amountBigInt,
-          fromSources: [
-            {
-              chainId: assetDetail.chain.id,
-              tokenAddress: assetDetail.contractAddress,
-            },
-          ],
-          execute: {
-            to: "0x0000000000000000000000000000000000000000",
-            data: "0x",
-            gas: BigInt(200000),
-          },
-        });
-      } else if (activeMode === "transfer") {
-        if (!recipientAddress) throw new Error("Recipient address is required");
-        await nexusSDK.swapAndExecute({
-          toChainId: assetDetail.chain.id,
-          toTokenAddress: assetDetail.contractAddress,
-          toAmount: amountBigInt,
-          fromSources: [
-            {
-              chainId: assetDetail.chain.id,
-              tokenAddress: assetDetail.contractAddress,
-            },
-          ],
-          execute: {
-            to: recipientAddress as `0x${string}`,
-            value: amountBigInt,
-            gas: BigInt(21000),
-          },
-        });
-      }
-      onComplete?.();
-    } catch (err: any) {
-      setTxError(err?.message || "Transaction failed");
-      onError?.(err?.message || "Transaction failed");
-    }
   };
 
   /** Start swap flow — SDK will trigger setOnSwapIntentHook for preview */
@@ -448,8 +395,8 @@ export function NexusOne({
         );
         const usdRate = await resolveTokenUsdRate(toToken.symbol);
         console.log("[DEBUG] USD Rate resolved:", usdRate);
-        const exactTokenAmount =
-          usdRate && usdRate > 0 ? Number(amount) / usdRate : Number(amount);
+        // The user inputs a USD fiat amount. Convert USD to exact Token Amount
+        const exactTokenAmount = usdRate && usdRate > 0 ? Number(amount) / usdRate : Number(amount);
         console.log("[DEBUG] exactTokenAmount computed:", exactTokenAmount);
 
         console.log("[DEBUG] Parsing units using decimals:", toToken.decimals);
@@ -459,40 +406,53 @@ export function NexusOne({
         );
         console.log("[DEBUG] amountBigInt generated:", amountBigInt);
 
-        console.log("SWAPPING WITH EXACTOUT", {
+        console.log(`SWAPPING WITH EXACTOUT (${activeMode})`, {
           toChainId: toToken.chainId!,
           toTokenAddress: toToken.contractAddress as `0x${string}`,
           toAmount: amountBigInt,
-          ...(fromTokens.length > 0
-            ? {
-                fromSources: fromTokens.map((token) => ({
-                  chainId: token.chainId!,
-                  tokenAddress: token.contractAddress as `0x${string}`,
-                })),
-              }
-            : {}),
         });
+
         swapRunIdRef.current += 1;
         const runId = swapRunIdRef.current;
         setExplorerUrls({ sourceExplorerUrl: null, destinationExplorerUrl: null });
-        await nexusSDK.swapWithExactOut({
-          toChainId: toToken.chainId!,
-          toTokenAddress: toToken.contractAddress as `0x${string}`,
-          toAmount: amountBigInt,
-          ...(fromTokens.length > 0
+
+        const fromSourcesPayload = fromTokens.length > 0
             ? {
                 fromSources: fromTokens.map((token) => ({
                   chainId: token.chainId!,
                   tokenAddress: token.contractAddress as `0x${string}`,
                 })),
               }
-            : {}),
-        }, {
-          onEvent: (event: any) => {
-            if (swapRunIdRef.current !== runId) return;
-            handleSwapEvent(event);
-          }
-        });
+            : {};
+
+        if (activeMode === "deposit" && selectedOpportunity?.execute) {
+          await nexusSDK.swapAndExecute({
+            toChainId: toToken.chainId!,
+            toTokenAddress: toToken.contractAddress as `0x${string}`,
+            toAmount: amountBigInt,
+            execute: typeof selectedOpportunity.execute === "function" 
+              ? selectedOpportunity.execute(amountBigInt, connectedAddress as `0x${string}`)
+              : selectedOpportunity.execute,
+            ...fromSourcesPayload,
+          }, {
+            onEvent: (event: any) => {
+              if (swapRunIdRef.current !== runId) return;
+              handleSwapEvent(event);
+            }
+          });
+        } else {
+          await nexusSDK.swapWithExactOut({
+            toChainId: toToken.chainId!,
+            toTokenAddress: toToken.contractAddress as `0x${string}`,
+            toAmount: amountBigInt,
+            ...fromSourcesPayload,
+          }, {
+            onEvent: (event: any) => {
+              if (swapRunIdRef.current !== runId) return;
+              handleSwapEvent(event);
+            }
+          });
+        }
 
         if (activeMode === "transfer" && walletClient && publicClient) {
           try {
@@ -618,15 +578,22 @@ export function NexusOne({
       return activeMode === "transfer" ? "Choose Asset to Send" : "Choose Asset to Receive";
     }
 
+    if (swapStep === "preview-intent") {
+      return activeMode === "deposit"
+        ? "Confirm Deposit"
+        : activeMode === "transfer"
+        ? "Confirm Transfer"
+        : "Confirm Swap";
+    }
+
     if (activeMode === "swap") {
-      if (swapStep === "preview-intent") return "Confirm Swap";
       if (swapStep === "progress") return "Swapping…";
       return "Swap";
     }
-    if (activeMode === "deposit")
-      return selectedOpportunity
-        ? `Deposit into ${selectedOpportunity.protocol}`
-        : "Deposit to";
+    if (activeMode === "deposit") {
+      if (swapStep === "progress") return "Depositing…";
+      return "Deposit to"; // Chip handles the selected protocol logic inside header
+    }
     if (activeMode === "transfer") return "Send assets";
     return "Nexus One";
   };
@@ -642,13 +609,8 @@ export function NexusOne({
     return true; // idle, preview-intent, progress, etc.
   };
 
-  const canGoBack =
-    swapStep !== "idle" || (activeMode === "deposit" && selectedOpportunity);
+  const canGoBack = swapStep !== "idle";
   const handleBack = () => {
-    if (activeMode === "deposit" && selectedOpportunity) {
-      setSelectedOpportunity(undefined);
-      return;
-    }
     if (swapStep === "choose-receive-asset") {
       setSwapStep("idle");
       return;
@@ -807,6 +769,25 @@ export function NexusOne({
                   )}
                 </div>
               )}
+              {/* Protocol chip appended next to Title when Deposit Protocol selected */}
+              {activeMode === "deposit" && swapStep === "idle" && selectedOpportunity && (
+                <div className="relative pointer-events-auto flex items-center">
+                  <button
+                    onClick={() => setSelectedOpportunity(undefined)}
+                    className="flex items-center gap-1 pl-2 pr-1.5 py-1 rounded-[4px] hover:bg-black/5 transition-colors"
+                    style={{
+                      fontFamily: "var(--font-geist-mono), sans-serif",
+                      fontSize: "10px",
+                      fontWeight: 500,
+                      color: "var(--foreground-muted, #848483)",
+                      background: "var(--background-tertiary, #F0F0EF)",
+                    }}
+                  >
+                    {selectedOpportunity.title || selectedOpportunity.protocol}
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -856,19 +837,21 @@ export function NexusOne({
           {/* =============================================================== */}
           {/* SHARED SUB-SCREENS (Swap & Transfer)                             */}
           {/* =============================================================== */}
-          {(activeMode === "swap" || activeMode === "transfer") && swapStep !== "idle" && (
+          {(activeMode === "swap" || activeMode === "transfer" || activeMode === "deposit") && swapStep !== "idle" && (
             <>
               {/* Panel: choose-swap-asset */}
               {swapStep === "choose-swap-asset" && (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full">
                   <SwapAssetSelector
                     title={
-                      swapType === "exactIn"
+                      activeMode === "deposit" 
+                        ? "Choose payment sources"
+                        : swapType === "exactIn"
                         ? "Choose assets to Swap"
                         : "Choose asset to Receive"
                     }
                     swapBalance={swapBalance}
-                    isMulti={swapType === "exactIn"}
+                    isMulti={activeMode === "deposit" || swapType === "exactIn"}
                     selectedTokens={fromTokens}
                     onToggle={(token) => {
                       setFromTokens((prev) => {
@@ -935,6 +918,8 @@ export function NexusOne({
                     swapBalances={swapBalance}
                     supportedTokenAssets={supportedChainsAndTokens}
                     activeMode={activeMode}
+                    mode={activeMode}
+                    opportunity={selectedOpportunity}
                     onAccept={handleSwapAccept}
                     onReject={() => {
                       swapIntentRef.current?.deny();
@@ -980,6 +965,7 @@ export function NexusOne({
                       transferCompleted={transferCompleted}
                       transferFailed={transferFailed}
                       transferExplorerUrl={transferExplorerUrl}
+                      depositOpportunityName={activeMode === "deposit" ? (selectedOpportunity?.title || selectedOpportunity?.protocol) : undefined}
                     />
                   </div>
                   {swapStep === "success" && (
@@ -1287,9 +1273,9 @@ export function NexusOne({
           )}
 
           {/* =============================================================== */}
-          {/* DEPOSIT MODE                                                     */}
+          {/* DEPOSIT MODE LAYOUT                                              */}
           {/* =============================================================== */}
-          {activeMode === "deposit" && (
+          {activeMode === "deposit" && swapStep === "idle" && (
             <>
               {/* Opportunity list */}
               {config.opportunities &&
@@ -1308,7 +1294,22 @@ export function NexusOne({
                     </p>
                     <OpportunityList
                       opportunities={config.opportunities}
-                      onSelect={(opp) => setSelectedOpportunity(opp)}
+                      onSelect={(opp) => {
+                        setSelectedOpportunity(opp);
+                        setSwapType("exactOut");
+                        const coreChainAddrs = TOKEN_CONTRACT_ADDRESSES[opp.tokenSymbol as keyof typeof TOKEN_CONTRACT_ADDRESSES];
+                        const fullTokenAddress = coreChainAddrs?.[opp.chainId as keyof typeof coreChainAddrs];
+                        setToToken({
+                          chainId: opp.chainId,
+                          contractAddress: opp.tokenAddress,
+                          symbol: opp.tokenSymbol,
+                          name: opp.tokenSymbol,
+                          balance: "0",
+                          balanceInFiat: "$0.00",
+                          decimals: 18, // generic fallback
+                          logo: opp.tokenLogo || TOKEN_METADATA[opp.tokenSymbol as keyof typeof TOKEN_METADATA]?.icon,
+                        });
+                      }}
                     />
                   </>
                 )}
@@ -1318,61 +1319,50 @@ export function NexusOne({
                 config.opportunities.length === 0 ||
                 selectedOpportunity) && (
                 <>
-                  {selectedOpportunity && (
-                    <div
-                      className="flex items-center gap-x-2 px-3 py-2 rounded-xl mb-1"
-                      style={{
-                        background: "var(--background-secondary, #F5F5F4)",
-                      }}
-                    >
-                      {selectedOpportunity.logo && (
-                        <img
-                          src={selectedOpportunity.logo}
-                          alt={selectedOpportunity.protocol}
-                          className="w-6 h-6 rounded-full border border-gray-100 object-cover"
-                        />
-                      )}
-                      <span
-                        style={{
-                          fontFamily: "var(--font-geist-sans), sans-serif",
-                          fontSize: "13px",
-                          fontWeight: 500,
-                          color: "var(--foreground-primary, #161615)",
-                        }}
-                      >
-                        {selectedOpportunity.label}
-                      </span>
-                      {selectedOpportunity.apy && (
-                        <span
-                          className="ml-auto px-2 py-0.5 rounded-full text-xs font-semibold"
-                          style={{ background: "#ECFDF5", color: "#16A34A" }}
-                        >
-                          {selectedOpportunity.apy} APY
-                        </span>
-                      )}
-                    </div>
-                  )}
 
                   <AmountInputUnified
                     amount={amount}
                     onChange={setAmount}
                     maxAvailableAmount={maxBalance}
                     unifiedBalances={swapBalance!}
-                    usdValue={
-                      amount && usdValue > 0 ? usdValue.toFixed(2) : undefined
+                    usdValue={undefined}
+                    tokenIcon={
+                      <div className="relative shrink-0 flex items-center justify-center -mr-2 mb-1">
+                        <img
+                          src={toToken?.logo || selectedOpportunity?.tokenLogo || (selectedOpportunity?.tokenSymbol && TOKEN_METADATA[selectedOpportunity.tokenSymbol as keyof typeof TOKEN_METADATA]?.icon)}
+                          alt={selectedOpportunity?.tokenSymbol || "Token Logo"}
+                          className="w-10 h-10 rounded-full border border-gray-100 object-cover bg-white"
+                          onError={(e) => {
+                             (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                        {selectedOpportunity?.logo && (
+                          <img
+                            src={selectedOpportunity.logo}
+                            alt="Protocol Overlay"
+                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white object-cover bg-white"
+                          />
+                        )}
+                      </div>
                     }
                   />
 
                   <PayUsingSelector
                     label="Paying with"
-                    sublabel="Auto-selected based on amount"
-                    onClick={() => console.log("Open Pay Using Settings")}
+                    sublabel={fromTokens.length > 0 ? `${fromTokens.length} source(s)` : "Auto-selected based on amount"}
+                    disabled={!amount || Number(amount) <= 0}
+                    hasSources={fromTokens.length > 0}
+                    onClick={() => {
+                        setSwapType("exactOut");
+                        setSwapStep("choose-swap-asset");
+                    }}
                   />
 
                   {txError && <StatusAlert type="error" message={txError} />}
 
                   <Button
-                    onClick={handleContinue}
+                    onClick={handleEnterPreview}
+                    disabled={!amount || Number(amount) <= 0 || !toToken}
                     className="w-full font-medium text-white transition-opacity hover:opacity-90 active:opacity-100 text-[14px]"
                     style={{
                       background:
