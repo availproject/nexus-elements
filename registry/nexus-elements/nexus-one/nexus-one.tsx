@@ -609,12 +609,16 @@ export function NexusOne({
   // Header title
   // ---------------------------------------------------------------------------
   const getTitle = () => {
+    // Asset selection screens share the exact same titles regardless of the active mode
+    if (swapStep === "choose-swap-asset")
+      return swapType === "exactIn"
+        ? "Choose assets to Swap"
+        : "Choose Asset to Receive";
+    if (swapStep === "choose-receive-asset") {
+      return activeMode === "transfer" ? "Choose Asset to Send" : "Choose Asset to Receive";
+    }
+
     if (activeMode === "swap") {
-      if (swapStep === "choose-swap-asset")
-        return swapType === "exactIn"
-          ? "Choose assets to Swap"
-          : "Choose asset to Receive";
-      if (swapStep === "choose-receive-asset") return "Choose asset to Receive";
       if (swapStep === "preview-intent") return "Confirm Swap";
       if (swapStep === "progress") return "Swapping…";
       return "Swap";
@@ -630,15 +634,12 @@ export function NexusOne({
   // Titles that should be center-aligned (main screens / confirm screens)
   // Left-aligned: choose-swap-asset, choose-receive-asset (sub-screens with subtitles)
   const isTitleCentered = () => {
-    if (activeMode === "swap") {
-      if (
-        swapStep === "choose-swap-asset" ||
-        swapStep === "choose-receive-asset"
-      )
-        return false;
-      return true; // idle, preview-intent, progress
-    }
-    return true; // deposit, transfer, etc.
+    if (
+      swapStep === "choose-swap-asset" ||
+      swapStep === "choose-receive-asset"
+    )
+      return false;
+    return true; // idle, preview-intent, progress, etc.
   };
 
   const canGoBack =
@@ -1523,7 +1524,7 @@ export function NexusOne({
                   borderRadius: "12px",
                 }}
               >
-                Proceed to Transfer
+                Proceed to Send
               </Button>
             </div>
           )}
