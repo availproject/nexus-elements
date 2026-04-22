@@ -101,6 +101,7 @@ const useTransfer = ({
     setInputs: flow.setInputs as (
       next: FastTransferState | Partial<FastTransferState>,
     ) => void,
+    invalidatePendingExecution: flow.invalidatePendingExecution,
   };
 };
 

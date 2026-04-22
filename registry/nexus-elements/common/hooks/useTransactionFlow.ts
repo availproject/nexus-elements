@@ -573,5 +573,6 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     requiredSafetyTotal: sourceSelection.requiredSafetyTotal,
     maxAvailableAmount: selectedSourcesMaxAmount ?? undefined,
     isInputsValid: areInputsValid,
+    invalidatePendingExecution,
   };
 }
