@@ -218,7 +218,7 @@ export function useDepositWidget(
       seed(SWAP_EXPECTED_STEPS);
 
       if (nexusSDK) {
-        nexusSDK.setOnIntentHook((data) => {
+        nexusSDK.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
           if (isRunStale(runId)) {
             try { data.deny(); } catch {}
             return;

@@ -583,7 +583,7 @@ const useSwaps = ({
     };
 
     if (nexusSDK) {
-      nexusSDK.setOnIntentHook((data) => {
+      nexusSDK.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
         if (swapRunIdRef.current !== runId) {
           try { data.deny(); } catch {}
           return;
@@ -646,7 +646,7 @@ const useSwaps = ({
     };
 
     if (nexusSDK) {
-      nexusSDK.setOnIntentHook((data) => {
+      nexusSDK.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
         if (swapRunIdRef.current !== runId) {
           try { data.deny(); } catch {}
           return;
