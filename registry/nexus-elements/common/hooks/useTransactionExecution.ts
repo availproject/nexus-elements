@@ -149,6 +149,9 @@ export function useTransactionExecution({
     notifyHistoryRefresh?.();
   };
 
+  const isRunStale = (currentRunId: number) =>
+    currentRunId !== runIdRef.current;
+
   const handleTransaction = async () => {
     if (commitLockRef.current) return;
     commitLockRef.current = true;
@@ -221,7 +224,7 @@ export function useTransactionExecution({
       }
 
       const maxForCurrentSelection = await getMaxForCurrentSelection();
-      if (currentRunId !== runIdRef.current) return;
+      if (isRunStale(currentRunId)) return;
       if (!maxForCurrentSelection) {
         const message = `Unable to determine max ${operationName} amount for selected sources. Please try again.`;
         setTxError(message);
@@ -250,7 +253,7 @@ export function useTransactionExecution({
       setAppliedSourceSelectionKey(sourceSelectionKey);
 
       const onEvent = (event: TransactionFlowEvent) => {
-        if (currentRunId !== runIdRef.current) return;
+        if (isRunStale(currentRunId)) return;
         if (event.name === NEXUS_EVENTS.STEPS_LIST) {
           const list = Array.isArray(event.args) ? event.args : [];
           onStepsList(list as BridgeStepType[]);
@@ -268,6 +271,29 @@ export function useTransactionExecution({
           }
         }
       };
+
+      if (nexusSDK) {
+        nexusSDK.setOnIntentHook((data) => {
+          if (isRunStale(currentRunId)) {
+            try { data.deny(); } catch {}
+            return;
+          }
+          
+          if (!inputs.amount) {
+            try { data.deny(); } catch {}
+            return;
+          }
+
+          intent.current = data;
+        });
+
+        nexusSDK.setOnAllowanceHook((data) => {
+          if (isRunStale(currentRunId)) {
+            return;
+          }
+          allowance.current = data;
+        });
+      }
 
       const transactionResult = await executeTransaction({
         token: inputs.token,
@@ -362,15 +388,35 @@ export function useTransactionExecution({
     await handleTransaction();
   };
 
-  const invalidatePendingExecution = useCallback(() => {
-    runIdRef.current += 1;
-    if (intent.current) {
-      intent.current.deny();
-      intent.current = null;
-    }
-    setRefreshing(false);
-    setAppliedSourceSelectionKey("ALL");
-  }, [intent, setAppliedSourceSelectionKey, setRefreshing]);
+  const invalidatePendingExecution = useCallback(
+    (options?: { forceResetUI?: boolean }) => {
+      runIdRef.current += 1;
+      commitLockRef.current = false;
+      if (intent.current) {
+        intent.current.deny();
+        intent.current = null;
+      }
+      allowance.current = null;
+      setAppliedSourceSelectionKey("ALL");
+
+      // Actively clear UI flags if inputs become cleanly invalid (zero, empty, etc.)
+      if (options?.forceResetUI) {
+        setStatus("idle");
+        setRefreshing(false);
+        resetSteps();
+        setLastExplorerUrl("");
+      }
+    },
+    [
+      allowance,
+      intent,
+      setAppliedSourceSelectionKey,
+      setLastExplorerUrl,
+      setRefreshing,
+      setStatus,
+      resetSteps,
+    ],
+  );
 
   return {
     refreshIntent,

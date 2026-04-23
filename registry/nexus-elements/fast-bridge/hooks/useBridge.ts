@@ -104,6 +104,7 @@ const useBridge = ({
     setInputs: flow.setInputs as (
       next: FastBridgeState | Partial<FastBridgeState>,
     ) => void,
+    invalidatePendingExecution: flow.invalidatePendingExecution,
   };
 };
 

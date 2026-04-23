@@ -115,6 +115,11 @@ export function useDepositWidget(
   const determiningSwapComplete = useRef(false);
   const lastSimulationTime = useRef(0);
   const suppressNextWidgetPreviewCancelError = useRef(false);
+  const depositRunIdRef = useRef(0);
+
+  const isRunStale = useCallback((runId: number) => {
+    return runId !== depositRunIdRef.current;
+  }, []);
 
   const denyActiveSwapIntent = useCallback(
     (options?: { suppressUiError?: boolean }) => {
@@ -187,9 +192,13 @@ export function useDepositWidget(
   // Action callbacks
   const setInputs = useCallback(
     (next: Partial<DepositInputs>) => {
+      if (next.amount === "") {
+        dispatch({ type: "setStatus", payload: "idle" });
+        denyActiveSwapIntent({ suppressUiError: true });
+      }
       dispatch({ type: "setInputs", payload: next });
     },
-    [dispatch],
+    [dispatch, denyActiveSwapIntent],
   );
 
   const setTxError = useCallback(
@@ -203,10 +212,33 @@ export function useDepositWidget(
    * Start the swap and execute flow with the SDK
    */
   const start = useCallback(
-    (inputs: SwapAndExecuteParams, targetAmountUsd?: number) => {
+    (inputs: SwapAndExecuteParams, runId: number, targetAmountUsd?: number) => {
       if (!nexusSDK || !inputs || isProcessing) return;
 
       seed(SWAP_EXPECTED_STEPS);
+
+      if (nexusSDK) {
+        nexusSDK.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
+          if (isRunStale(runId)) {
+            try { data.deny(); } catch {}
+            return;
+          }
+          
+          if (!state.inputs.amount) {
+            try { data.deny(); } catch {}
+            return;
+          }
+
+          swapIntent.current = data;
+        });
+
+        nexusSDK.setOnAllowanceHook((data) => {
+          if (isRunStale(runId)) {
+            return;
+          }
+        });
+      }
+
       const requiredAmountUsd =
         targetAmountUsd ?? parseUsdAmount(state.inputs.amount);
       const { sourcePoolIds, selectedSourceIds, fromSources } =
@@ -236,6 +268,7 @@ export function useDepositWidget(
       nexusSDK
         .swapAndExecute(inputsWithSources, {
           onEvent: (event) => {
+            if (isRunStale(runId)) return;
             if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
               const step = event.args as SwapStepType & {
                 completed?: boolean;
@@ -267,6 +300,7 @@ export function useDepositWidget(
           },
         })
         .then((data: SwapAndExecuteResult) => {
+          if (isRunStale(runId)) return;
           suppressNextWidgetPreviewCancelError.current = false;
 
           // Extract source swaps from the result
@@ -359,6 +393,7 @@ export function useDepositWidget(
           });
         })
         .catch((error) => {
+          if (isRunStale(runId)) return;
           const { code, message } = handleNexusError(error);
           const isUserRejectedError =
             code === ERROR_CODES.USER_DENIED_INTENT ||
@@ -497,7 +532,8 @@ export function useDepositWidget(
       });
       dispatch({ type: "setStatus", payload: "simulation-loading" });
       dispatch({ type: "setSimulationLoading", payload: true });
-      start(newInputs, totalAmountUsd);
+      const runId = ++depositRunIdRef.current;
+      start(newInputs, runId, totalAmountUsd);
       return true;
     },
     [

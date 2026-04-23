@@ -1,5 +1,5 @@
 "use client";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import ChainSelect from "./components/chain-select";
 import TokenSelect from "./components/token-select";
@@ -96,6 +96,7 @@ const FastBridge: FC<FastBridgeProps> = ({
     requiredSafetyTotal,
     maxAvailableAmount,
     isInputsValid,
+    invalidatePendingExecution,
   } = useBridge({
     prefill,
     network: network ?? "mainnet",
@@ -117,6 +118,67 @@ const FastBridge: FC<FastBridgeProps> = ({
       setIsSourceMenuOpen(false);
     }
   }, [intent.current?.intent]);
+
+  const autoIntentTriggered = useRef(false);
+  const lastAutoIntentKeyRef = useRef("");
+  const autoIntentKey = useMemo(
+    () =>
+      [
+        inputs?.amount ?? "",
+        inputs?.chain ?? "",
+        inputs?.token ?? "",
+        inputs?.recipient ?? "",
+      ].join("|"),
+    [inputs?.amount, inputs?.chain, inputs?.token, inputs?.recipient],
+  );
+
+  useEffect(() => {
+    if (lastAutoIntentKeyRef.current === autoIntentKey) {
+      return;
+    }
+    lastAutoIntentKeyRef.current = autoIntentKey;
+    autoIntentTriggered.current = false;
+  }, [autoIntentKey]);
+
+  useEffect(() => {
+    if (
+      !(inputs?.amount && inputs?.chain && inputs?.token && inputs?.recipient)
+    ) {
+      return;
+    }
+    if (!isInputsValid) {
+      return;
+    }
+    if (!bridgableBalance) {
+      return;
+    }
+    if (availableSources.length === 0) {
+      return;
+    }
+    if (intent.current) {
+      return;
+    }
+    if (autoIntentTriggered.current) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      autoIntentTriggered.current = true;
+      handleTransaction();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    availableSources.length,
+    bridgableBalance,
+    inputs?.amount,
+    inputs?.chain,
+    inputs?.recipient,
+    inputs?.token,
+    isInputsValid,
+    intent,
+    handleTransaction,
+  ]);
 
   return (
     <Card className="w-full max-w-xl">
@@ -141,7 +203,12 @@ const FastBridge: FC<FastBridgeProps> = ({
         />
         <AmountInput
           amount={inputs?.amount}
-          onChange={(amount) => setInputs({ ...inputs, amount })}
+          onChange={(amount) => {
+            setInputs({ ...inputs, amount });
+            if (!amount) {
+              invalidatePendingExecution({ forceResetUI: true });
+            }
+          } }
           bridgableBalance={filteredBridgableBalance}
           onCommit={() => void commitAmount()}
           disabled={refreshing || !!prefill?.amount}
@@ -156,7 +223,7 @@ const FastBridge: FC<FastBridgeProps> = ({
           }
           disabled={!!prefill?.recipient}
         />
-        {intent?.current?.intent && (
+        {Boolean(inputs?.amount) && intent?.current?.intent && (
           <>
             <SourceBreakdown
               intent={intent?.current?.intent}

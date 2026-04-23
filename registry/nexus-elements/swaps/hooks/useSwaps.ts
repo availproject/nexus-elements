@@ -582,6 +582,27 @@ const useSwaps = ({
       toTokenAddress: toToken.tokenAddress,
     };
 
+    if (nexusSDK) {
+      nexusSDK.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
+        if (swapRunIdRef.current !== runId) {
+          try { data.deny(); } catch {}
+          return;
+        }
+        
+        const amount = state.swapMode === "exactIn" ? state.inputs.fromAmount : state.inputs.toAmount;
+        if (!amount) {
+          try { data.deny(); } catch {}
+          return;
+        }
+
+        swapIntent.current = data;
+      });
+
+      nexusSDK.setOnAllowanceHook((data) => {
+        if (swapRunIdRef.current !== runId) return;
+      });
+    }
+
     const result = await nexusSDK.swapWithExactIn(swapInput, {
       onEvent: (event) => {
         if (swapRunIdRef.current !== runId) return;
@@ -623,6 +644,28 @@ const useSwaps = ({
       toTokenAddress: toToken.tokenAddress,
       ...(exactOutFromSources ? { fromSources: exactOutFromSources } : {}),
     };
+
+    if (nexusSDK) {
+      nexusSDK.setOnSwapIntentHook((data: OnSwapIntentHookData) => {
+        if (swapRunIdRef.current !== runId) {
+          try { data.deny(); } catch {}
+          return;
+        }
+        
+        const amount = state.swapMode === "exactIn" ? state.inputs.fromAmount : state.inputs.toAmount;
+        if (!amount) {
+          try { data.deny(); } catch {}
+          return;
+        }
+
+        swapIntent.current = data;
+      });
+
+      nexusSDK.setOnAllowanceHook((data) => {
+        if (swapRunIdRef.current !== runId) return;
+        // Allowance handling if needed, but useSwaps might handle it differently
+      });
+    }
 
     const result = await nexusSDK.swapWithExactOut(swapInput, {
       onEvent: (event) => {
@@ -684,7 +727,7 @@ const useSwaps = ({
     return runId;
   };
 
-  const debouncedSwapStart = useDebouncedCallback(startSwap, 1200);
+  const debouncedSwapStart = useDebouncedCallback(startSwap, 500);
 
   const reset = () => {
     // invalidate any in-flight swap run
@@ -930,6 +973,18 @@ const useSwaps = ({
         dispatch({ type: "setError", payload: null });
         dispatch({ type: "setStatus", payload: "idle" });
       }
+      
+      const nextFromAmount = inputs.fromAmount !== undefined ? inputs.fromAmount : state.inputs.fromAmount;
+      const nextToAmount = inputs.toAmount !== undefined ? inputs.toAmount : state.inputs.toAmount;
+      const mode = state.swapMode;
+      const isAmountCleared = mode === "exactIn" ? !nextFromAmount : !nextToAmount;
+      
+      if (isAmountCleared) {
+        dispatch({ type: "setStatus", payload: "idle" });
+        swapIntent.current?.deny();
+        swapIntent.current = null;
+      }
+
       dispatch({ type: "setInputs", payload: inputs });
     },
     txError: state.error,
