@@ -25,55 +25,40 @@ const DepositShowcase = () => {
     chainId: number,
     user: Address,
   ) => {
-    const contractAddress = AAVE_POOL_BY_CHAIN[chainId];
-    if (!contractAddress) {
-      throw new Error(`Unsupported Aave destination chain: ${chainId}`);
-    }
-
+    const contractAddress =
+      "0x72f8C254548839Fa1Db4156aE01d8C6ae5885EE4" as const;
     const abi: Abi = [
       {
         inputs: [
           {
-            internalType: "address",
-            name: "asset",
-            type: "address",
-          },
-          {
             internalType: "uint256",
-            name: "amount",
+            name: "assets",
             type: "uint256",
           },
           {
             internalType: "address",
-            name: "onBehalfOf",
+            name: "onBehalf",
             type: "address",
           },
+        ],
+        name: "deposit",
+        outputs: [
           {
-            internalType: "uint16",
-            name: "referralCode",
-            type: "uint16",
+            internalType: "uint256",
+            name: "",
+            type: "uint256",
           },
         ],
-        name: "supply",
-        outputs: [],
         stateMutability: "nonpayable",
         type: "function",
       },
     ];
 
-    if (tokenSymbol === "ETH") {
-      throw new Error(
-        "ETH is native and not supported for this execute builder",
-      );
-    }
     const encoded = encodeFunctionData({
       abi: abi,
-      functionName: "supply",
-      args: [tokenAddress, amount, user, 0],
+      functionName: "deposit",
+      args: [amount, user],
     });
-    if (!encoded) {
-      throw new Error("Failed to encode contract call");
-    }
     return {
       to: contractAddress,
       data: encoded,
@@ -97,20 +82,21 @@ const DepositShowcase = () => {
     >
       <NexusDeposit
         embed={embed}
-        heading={"Deposit USDC on Aave's Base Market"}
+        heading={"Deposit ctUSD on Mystic on Citrea"}
         destination={{
-          chainId: SUPPORTED_CHAINS.BASE,
-          tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
-          tokenSymbol: "USDC",
+          chainId: SUPPORTED_CHAINS.CITREA,
+          tokenAddress: "0x8D82c4E3c936C7B5724A382a9c5a4E6Eb7aB6d5D",
+          tokenSymbol: "ctUSD",
           tokenDecimals: 6,
-          tokenLogo: TOKEN_METADATA["USDC"]?.icon,
-          label: "Deposit USDC on Aave's Base Market",
+          tokenLogo: "https://files.availproject.org/nexus-elements/ctUSD.svg",
+          label: "Deposit ctUSD on Mystic on Citrea",
           gasTokenSymbol:
-            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
+            CHAIN_METADATA[SUPPORTED_CHAINS.CITREA].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
           explorerUrl:
-            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
-          depositTargetLogo: "/aave.svg",
+            CHAIN_METADATA[SUPPORTED_CHAINS.CITREA].blockExplorerUrls[0],
+          depositTargetLogo:
+            "https://files.availproject.org/nexus-elements/mystic.png",
         }}
         executeDeposit={executeDeposit}
       />
