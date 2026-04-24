@@ -6,14 +6,14 @@ import { Abi, Address, encodeFunctionData } from "viem";
 import {
   CHAIN_METADATA,
   SUPPORTED_CHAINS,
-  TOKEN_CONTRACT_ADDRESSES,
-  TOKEN_METADATA,
+  // TOKEN_CONTRACT_ADDRESSES,
+  // TOKEN_METADATA,
 } from "@avail-project/nexus-core";
 
-const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
-  [SUPPORTED_CHAINS.BASE]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
-  [SUPPORTED_CHAINS.MEGAETH]: "0x7e324abc5de01d112afc03a584966ff199741c28",
-};
+// const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
+//   [SUPPORTED_CHAINS.BASE]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+//   [SUPPORTED_CHAINS.MEGAETH]: "0x7e324abc5de01d112afc03a584966ff199741c28",
+// };
 
 const DepositShowcase = () => {
   const [embed, setEmbed] = React.useState(false);
