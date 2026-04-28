@@ -320,8 +320,8 @@ export function useDepositWidget(
           // Destination explorer URL (v2: intentExplorerUrl replaces swapResult.explorerURL)
           const destinationExplorerUrl =
             data.swapResult?.intentExplorerUrl ??
-            (data.executeResponse?.txHash
-              ? `https://explorer.avail.so/tx/${data.executeResponse.txHash}`
+            (data.execute.txHash
+              ? `https://explorer.avail.so/tx/${data.execute.txHash}`
               : null);
 
           if (destinationExplorerUrl) {
@@ -338,11 +338,11 @@ export function useDepositWidget(
           });
           dispatch({
             type: "setDepositTxHash",
-            payload: data.executeResponse?.txHash ?? null,
+            payload: data.execute?.txHash ?? null,
           });
 
           // Calculate actual gas fee from receipt
-          const receipt = data.executeResponse?.receipt;
+          const receipt = data.execute?.receipt;
           if (receipt?.gasUsed && receipt?.effectiveGasPrice) {
             const gasUsed = BigInt(receipt.gasUsed);
             const effectiveGasPrice = BigInt(receipt.effectiveGasPrice);

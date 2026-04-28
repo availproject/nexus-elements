@@ -107,6 +107,7 @@ const useBridge = ({
     maxAmount,
     isSourceMenuOpen,
     notifyHistoryRefresh: notifyIntentHistoryRefresh,
+    // @ts-expect-error
     executeTransaction,
   });
 

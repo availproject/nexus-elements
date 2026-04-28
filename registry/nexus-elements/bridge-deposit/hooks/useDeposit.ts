@@ -401,8 +401,8 @@ const useDeposit = ({
       dispatch({
         type: "setExplorerUrls",
         payload: {
-          intentUrl: result.bridgeExplorerUrl ?? null,
-          executeUrl: result.executeExplorerUrl ?? null,
+          intentUrl: result.bridgeResult?.intentExplorerUrl ?? null,
+          executeUrl: result.execute.txExplorerUrl ?? null,
         },
       });
       await onSuccess();

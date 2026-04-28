@@ -103,6 +103,7 @@ const useTransfer = ({
     maxAmount,
     isSourceMenuOpen,
     notifyHistoryRefresh: notifyIntentHistoryRefresh,
+    // @ts-expect-error
     executeTransaction,
   });
 
