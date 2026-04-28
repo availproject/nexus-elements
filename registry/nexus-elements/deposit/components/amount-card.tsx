@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
-import type { MaxSwapInput } from "@avail-project/nexus-core";
+import type { SwapMaxParams as MaxSwapInput } from "@avail-project/nexus-sdk-v2";
 import { TokenIcon } from "./token-icon";
 import { ErrorBanner } from "./error-banner";
 import { PercentageSelector } from "./percentage-selector";

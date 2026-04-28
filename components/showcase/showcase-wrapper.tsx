@@ -55,7 +55,7 @@ const ShowcaseWrapper = ({
   useEffect(() => {
     // Read from localStorage on client side only
     const storedNetwork = getItem(NETWORK_KEY);
-    setCurrentNetwork(storedNetwork ?? "mainnet");
+    setCurrentNetwork(storedNetwork ?? "testnet");
   }, []);
 
   const resolvedToggle =

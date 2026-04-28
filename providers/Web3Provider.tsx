@@ -21,7 +21,7 @@ import {
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Chain, defineChain } from "viem";
 import NexusProvider from "@/registry/nexus-elements/nexus/NexusProvider";
-import { type NexusNetwork } from "@avail-project/nexus-core";
+import { type NexusNetwork } from "@avail-project/nexus-sdk-v2";
 import { Suspense, useMemo, useState, useEffect } from "react";
 import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
 import { getItem, setItem } from "@/lib/local-storage";
@@ -130,7 +130,7 @@ const wagmiConfig = createConfig(defaultConfig);
 export const NETWORK_KEY = "nexus-elements-network-key";
 
 function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [network, setNetwork] = useState<NexusNetwork>("mainnet");
+  const [network, setNetwork] = useState<NexusNetwork>("testnet");
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -144,8 +144,8 @@ function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
       setNetwork(storedNetwork);
     } else {
       // Set default to mainnet if not found or invalid
-      setNetwork("mainnet");
-      setItem(NETWORK_KEY, "mainnet");
+      setNetwork("testnet");
+      setItem(NETWORK_KEY, "testnet");
     }
 
     setIsInitialized(true);
@@ -153,7 +153,7 @@ function NexusContainer({ children }: Readonly<{ children: React.ReactNode }>) {
 
   const nexusConfig = useMemo(
     () => ({ network: network, debug: true }),
-    [network]
+    [network],
   );
 
   // Don't render until we've initialized from localStorage

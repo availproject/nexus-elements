@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { MaxSwapInput } from "@avail-project/nexus-core";
+import type { SwapMaxParams as MaxSwapInput } from "@avail-project/nexus-sdk-v2";
 import WidgetHeader from "./widget-header";
 import type { DepositWidgetContextValue } from "../types";
 import AmountCard from "./amount-card";
@@ -30,7 +30,7 @@ const AmountContainer = ({
   const hasPositiveSwapBalance = useMemo(
     () =>
       (widget.swapBalance ?? []).some((asset) =>
-        (asset.breakdown ?? []).some((chain) => {
+        (asset.chainBalances ?? []).some((chain) => {
           const amount = Number.parseFloat(chain.balance ?? "0");
           return Number.isFinite(amount) && amount > 0;
         }),

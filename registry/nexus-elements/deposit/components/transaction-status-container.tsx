@@ -66,11 +66,12 @@ const TransactionStatusContainer = ({
   const receiveTokenSymbol = confirmationDetails?.receiveTokenSymbol ?? "USDC";
   const destinationChainName =
     confirmationDetails?.destinationChainName ??
-    activeIntent?.intent?.destination?.chain?.name ??
+    // v2: SwapAndExecuteIntent stores readable info under .swap when swapRequired
+    (activeIntent?.intent as any)?.swap?.destination?.chain?.name ??
     "destination";
   const sourceCount = widget.skipSwap
     ? 0 // No source assets when using existing balance
-    : (activeIntent?.intent?.sources?.length ?? 0);
+    : ((activeIntent?.intent as any)?.swap?.sources?.length ?? 0);
   const spendAmountUsd = widget?.confirmationDetails?.amountSpent ?? 0;
 
   // Derive simplified steps from actual SDK events

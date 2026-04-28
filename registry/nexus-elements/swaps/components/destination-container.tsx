@@ -2,11 +2,11 @@ import React, { type RefObject, useMemo } from "react";
 import { Label } from "../../ui/label";
 import { cn } from "@/lib/utils";
 import {
-  CHAIN_METADATA,
   type OnSwapIntentHookData,
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+  type TokenBalance,
+  type ChainBalance,
+} from "@avail-project/nexus-sdk-v2";
+import { useNexus } from "../../nexus/NexusProvider";
 import {
   type SwapInputs,
   type SwapMode,
@@ -31,9 +31,9 @@ interface DestinationContainerProps {
   destinationHovered: boolean;
   inputs: SwapInputs;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  destinationBalance?: UserAsset["breakdown"][0];
-  swapBalance: UserAsset[] | null;
-  availableStables: UserAsset[];
+  destinationBalance?: ChainBalance;  // v2: was UserAsset["breakdown"][0]
+  swapBalance: TokenBalance[] | null;
+  availableStables: TokenBalance[];
   swapMode: SwapMode;
   status: TransactionStatus;
   setInputs: (inputs: Partial<SwapInputs>) => void;
@@ -46,7 +46,8 @@ interface DestinationContainerProps {
   ) => string | undefined;
 }
 
-type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
+// v2: ChainBalance replaces UserAsset["breakdown"][number]
+type AssetBreakdownWithOptionalIcon = ChainBalance & {
   icon?: string;
 };
 
@@ -74,26 +75,27 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
           swapIntent?.current?.intent?.destination?.token?.decimals
         ) ?? "";
 
+  const { swapSupportedChainsAndTokens } = useNexus();
+  const getChainMeta = (id?: number) =>
+    swapSupportedChainsAndTokens?.find((c) => c.id === id) ?? { id: id ?? 0, name: "", logo: "" };
+
+  // v2: quick-pick tokens from chainBalances (replaces breakdown)
   const quickPickTokens = useMemo(
     () =>
-      availableStables
+      (availableStables ?? [])
         .map((token) => {
           const breakdown =
-            token.breakdown?.find(
-              (entry) => Number.parseFloat(entry.balance ?? "0") > 0,
-            ) ?? token.breakdown?.[0];
+            token.chainBalances?.find(
+              (b) => b.chain.id === inputs?.toChainID,
+            ) ?? token.chainBalances?.[0];
           if (!breakdown) return null;
           return { token, breakdown };
         })
-        .filter(
-          (
-            item,
-          ): item is {
-            token: UserAsset;
-            breakdown: UserAsset["breakdown"][number];
-          } => item !== null,
-        ),
-    [availableStables],
+        .filter(Boolean) as {
+        token: TokenBalance;
+        breakdown: ChainBalance;
+      }[],
+    [availableStables, inputs?.toChainID],
   );
 
   return (
@@ -116,6 +118,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 variant={"secondary"}
                 onClick={() => {
                   const normalizedSymbol = breakdown.symbol.toUpperCase();
+                  // v2: ChainBalanceWithIcon uses icon, not logo directly
                   const breakdownIcon = (
                     breakdown as AssetBreakdownWithOptionalIcon
                   ).icon;
@@ -123,7 +126,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                     breakdownIcon ||
                     TOKEN_IMAGES[breakdown.symbol] ||
                     TOKEN_IMAGES[normalizedSymbol] ||
-                    token.icon ||
+                    token.logo ||
                     "";
                   setInputs({
                     ...inputs,
@@ -134,7 +137,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                       name: breakdown.symbol,
                       symbol: breakdown.symbol,
                     },
-                    toChainID: breakdown.chain.id as SUPPORTED_CHAINS_IDS,
+                    toChainID: breakdown.chain.id,
                   });
                 }}
                 className="bg-transparent rounded-full hover:-translate-y-1 hover:object-scale-down"
@@ -145,7 +148,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                     (breakdown as AssetBreakdownWithOptionalIcon).icon ||
                     TOKEN_IMAGES[breakdown.symbol] ||
                     TOKEN_IMAGES[breakdown.symbol.toUpperCase()] ||
-                    token.icon ||
+                    token.logo ||
                     ""
                   }
                   chainLogo={breakdown.chain.logo}
@@ -173,7 +176,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                 tokenLogo={inputs?.toToken?.logo}
                 chainLogo={
                   inputs?.toChainID
-                    ? CHAIN_METADATA[inputs?.toChainID]?.logo
+                    ? getChainMeta(inputs?.toChainID).logo || undefined
                     : undefined
                 }
                 size="lg"

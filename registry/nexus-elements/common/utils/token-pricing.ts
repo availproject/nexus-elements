@@ -1,4 +1,8 @@
-import type { SupportedChainsAndTokensResult } from "@avail-project/nexus-core";
+// v2: getSupportedChains() return type is inferred directly; define a structural type
+type SupportedChainsAndTokensResult = readonly {
+  tokens?: { symbol?: string; equivalentCurrency?: string }[];
+  [key: string]: unknown;
+}[];
 
 const COINBASE_SPOT_API_BASE = "https://api.coinbase.com/v2/prices";
 const COINBASE_EXCHANGE_RATES_API_BASE =

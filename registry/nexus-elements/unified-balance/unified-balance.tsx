@@ -11,7 +11,8 @@ import {
 } from "../ui/accordion";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
-import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
+import { type TokenBalance, type ChainBalance } from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 const BalanceBreakdown = ({
@@ -20,7 +21,7 @@ const BalanceBreakdown = ({
   tokens,
 }: {
   totalFiat: string;
-  tokens: UserAsset[];
+  tokens: TokenBalance[];
   className?: string;
 }) => {
   return (
@@ -37,8 +38,8 @@ const BalanceBreakdown = ({
       </div>
       <Accordion type="single" collapsible className="w-full space-y-4">
         {tokens.map((token) => {
-          const positiveBreakdown = token.breakdown.filter(
-            (chain) => Number.parseFloat(chain.balance) > 0,
+        // v2: chainBalances replaces breakdown
+          const positiveBreakdown = token.chainBalances.filter((chain: ChainBalance) => Number.parseFloat(chain.balance) > 0,
           );
           const chainsCount = positiveBreakdown.length;
           const chainsLabel =
@@ -56,9 +57,10 @@ const BalanceBreakdown = ({
                 <div className="flex items-center justify-between w-full">
                   <div className="flex sm:flex-row flex-col items-center gap-3">
                     <div className="relative size-6 sm:size-8">
-                      {token.icon && (
+                      {/* v2: logo replaces icon */}
+                    {token.logo && (
                         <img
-                          src={token.icon}
+                          src={token.logo || undefined}
                           alt={token.symbol}
                           className="rounded-full size-full"
                           loading="lazy"
@@ -84,7 +86,8 @@ const BalanceBreakdown = ({
                         })}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        ${token.balanceInFiat.toFixed(2)}
+                        {/* v2: value is a string USD amount */}
+                        ${Number.parseFloat(token.value ?? "0").toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -92,7 +95,7 @@ const BalanceBreakdown = ({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-3 py-2">
-                  {positiveBreakdown.map((chain, index) => (
+                  {positiveBreakdown.map((chain: ChainBalance, index: number) => (
                     <React.Fragment key={chain.chain.id}>
                       <div className="flex items-center justify-between px-2 py-1 rounded-md">
                         <div className="flex items-center gap-2">
@@ -118,7 +121,7 @@ const BalanceBreakdown = ({
                             })}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            ${chain.balanceInFiat.toFixed(2)}
+                            ${Number.parseFloat(chain.value ?? "0").toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -144,28 +147,27 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
     if (!bridgableBalance) return "0.00";
 
     return bridgableBalance
-      .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
+      .reduce((acc: number, fiat: TokenBalance) => acc + Number.parseFloat(fiat.value ?? "0"), 0)
       .toFixed(2);
   }, [bridgableBalance]);
 
   const swapTotalFiat = useMemo(() => {
     if (!swapBalance) return "0.00";
     return swapBalance
-      .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
+      .reduce((acc: number, fiat: TokenBalance) => acc + Number.parseFloat(fiat.value ?? "0"), 0)
       .toFixed(2);
   }, [swapBalance]);
 
   const tokens = useMemo(
     () =>
-      bridgableBalance?.filter(
-        (token) => Number.parseFloat(token.balance) > 0,
+      bridgableBalance?.filter((token: TokenBalance) => Number.parseFloat(token.balance) > 0,
       ) ?? [],
     [bridgableBalance],
   );
 
   const swapTokens = useMemo(
     () =>
-      swapBalance?.filter((token) => Number.parseFloat(token.balance) > 0) ??
+      swapBalance?.filter((token: TokenBalance) => Number.parseFloat(token.balance) > 0) ??
       [],
     [swapBalance],
   );

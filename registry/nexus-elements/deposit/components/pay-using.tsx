@@ -7,7 +7,7 @@ import {
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
 import type { DestinationConfig, AssetFilterType } from "../types";
-import type { UserAsset } from "@avail-project/nexus-core";
+import type { TokenBalance as UserAsset } from "@avail-project/nexus-sdk-v2";
 import { resolveDepositSourceSelection } from "../utils";
 
 function parseUsdAmount(value?: string): number {
@@ -64,7 +64,7 @@ function PayUsing({
     const symbolBySourceId = new Map<string, string>();
 
     swapBalance.forEach((asset) => {
-      asset.breakdown?.forEach((breakdown) => {
+      asset.chainBalances?.forEach((breakdown) => {
         const chainId = breakdown.chain?.id;
         const tokenAddress = breakdown.contractAddress;
         if (!chainId || !tokenAddress) return;

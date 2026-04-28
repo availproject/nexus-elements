@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { type SUPPORTED_CHAINS_IDS } from "@avail-project/nexus-core";
+// v2: SUPPORTED_CHAINS_IDS removed — use plain number
 import { cn } from "@/lib/utils";
 import { useNexus } from "../../nexus/NexusProvider";
 
@@ -18,7 +18,7 @@ interface ChainSelectProps {
   hidden?: boolean;
   className?: string;
   label?: string;
-  handleSelect: (chainId: SUPPORTED_CHAINS_IDS) => void;
+  handleSelect: (chainId: number) => void;
 }
 
 const ChainSelect: FC<ChainSelectProps> = ({
@@ -41,7 +41,7 @@ const ChainSelect: FC<ChainSelectProps> = ({
       value={selectedChain?.toString() ?? ""}
       onValueChange={(value) => {
         if (!disabled) {
-          handleSelect(Number.parseInt(value) as SUPPORTED_CHAINS_IDS);
+          handleSelect(Number.parseInt(value));
         }
       }}
     >

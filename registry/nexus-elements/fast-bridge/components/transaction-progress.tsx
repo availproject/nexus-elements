@@ -1,12 +1,8 @@
 import { Check, Circle, LoaderPinwheel, SquareArrowOutUpRight } from "lucide-react";
 import { type FC, memo, useMemo } from "react";
-import {
-  type BridgeStepType,
-  type SwapStepType,
-} from "@avail-project/nexus-core";
 import { Button } from "../../ui/button";
 
-type ProgressStep = BridgeStepType | SwapStepType;
+type ProgressStep = { type?: string; typeID?: string; [key: string]: unknown };
 
 interface TransactionProgressProps {
   timer: number;
@@ -75,13 +71,42 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   operationType = "bridge",
   completed = false,
 }) => {
-  const totalSteps = Array.isArray(steps) ? steps.length : 0;
-  const completedSteps = Array.isArray(steps)
-    ? steps.reduce((acc, s) => acc + (s?.completed ? 1 : 0), 0)
-    : 0;
-  const rawPercent = totalSteps > 0 ? completedSteps / totalSteps : 0;
-  const percent = completed ? 1 : rawPercent;
-  const allCompleted = completed || percent >= 1;
+  // Map step types to their completion status for explicit milestone detection
+  const stepMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    if (Array.isArray(steps)) {
+      for (const s of steps) {
+        const type = s?.step?.type;
+        if (type) m.set(type, !!s.completed);
+      }
+    }
+    return m;
+  }, [steps]);
+
+  // Milestone logic — uses VALUE check (get() === true), NOT key presence (has())
+  // plan_preview seeds all step types with completed=false, so has() would fire immediately.
+
+  // Intent verified = signing has started or intent submitted
+  const intentVerified =
+    completed ||
+    stepMap.get("request_signing") === true ||
+    stepMap.get("request_submission") === true ||
+    stepMap.get("allowance_approval") === true;
+
+  // Collected on sources = relayer picked up the intent (bridge_fill seen in any state)
+  // bridge_fill gets marked completed=true when EITHER bridge_fill:waiting OR bridge_fill:completed fires
+  const collectedOnSources =
+    completed ||
+    stepMap.get("vault_deposit") === true ||
+    stepMap.get("bridge_fill") === true;
+
+  // Filled on destination = ONLY when SDK status is "success"
+  // (fires from bridge_fill:completed terminal event → onSuccess → status="success")
+  const filledOnDestination = completed;
+
+  // Overall done: ONLY from the completed prop (event-driven), never from step percent
+  const allCompleted = completed;
+
   const opText = getOperationText(operationType);
   const headerText = allCompleted
     ? `${opText} Completed`
@@ -89,22 +114,15 @@ const TransactionProgress: FC<TransactionProgressProps> = ({
   const ctaText = allCompleted ? `View Explorer` : "View Intent";
 
   const { effectiveSteps, currentIndex } = useMemo(() => {
-    const milestones = [
-      "Intent verified",
-      "Collected on sources",
-      "Filled on destination",
+    const displaySteps: DisplayStep[] = [
+      { id: "M0", label: "Intent verified",      completed: intentVerified },
+      { id: "M1", label: "Collected on sources", completed: collectedOnSources },
+      { id: "M2", label: "Filled on destination", completed: filledOnDestination },
     ];
-    const thresholds = milestones.map(
-      (_, idx) => (idx + 1) / milestones.length
-    );
-    const displaySteps: DisplayStep[] = milestones.map((label, idx) => ({
-      id: `M${idx}`,
-      label,
-      completed: idx === 0 ? timer > 0 : percent >= thresholds[idx],
-    }));
-    const current = displaySteps.findIndex((st) => !st.completed);
+    const current = allCompleted ? -1 : displaySteps.findIndex((st) => !st.completed);
     return { effectiveSteps: displaySteps, currentIndex: current };
-  }, [percent, timer, completed]);
+  }, [intentVerified, collectedOnSources, filledOnDestination, allCompleted]);
+
 
   return (
     <div className="w-full flex flex-col items-center">

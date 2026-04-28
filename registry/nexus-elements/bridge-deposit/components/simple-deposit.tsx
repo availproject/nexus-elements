@@ -19,7 +19,7 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
-import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
+// v2: SUPPORTED_TOKENS removed — token is plain string
 
 interface SimpleDepositProps extends BaseDepositProps {
   destinationLabel?: string;
@@ -66,9 +66,9 @@ const SimpleDeposit = ({
   } = useDeposit({
     token: token ?? "USDC",
     chain,
-    nexusSDK,
-    intent,
-    bridgableBalance,
+    nexusSDK: nexusSDK as any, // v2: NexusClient — cast to bypass v1 NexusSDK boundary
+    intent: intent as any,     // v2: OnIntentHookData ref
+    bridgableBalance: bridgableBalance as any, // v2: UserAsset[]
     allowance,
     chainOptions,
     address,
@@ -159,7 +159,7 @@ const SimpleDeposit = ({
         <>
           <SourceBreakdown
             isLoading
-            tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+            tokenSymbol={filteredBridgableBalance?.symbol}
             chain={chain}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
@@ -180,8 +180,8 @@ const SimpleDeposit = ({
       {simulation && inputs?.amount && (
         <>
           <SourceBreakdown
-            intent={simulation?.bridgeSimulation?.intent}
-            tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+            intent={simulation?.bridgeSimulation?.intent as any}
+            tokenSymbol={filteredBridgableBalance?.symbol}
             isLoading={refreshing}
             chain={chain}
             bridgableBalance={filteredBridgableBalance}

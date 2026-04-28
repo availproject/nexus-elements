@@ -1,10 +1,5 @@
-import {
-  type BridgeStepType,
-  NEXUS_EVENTS,
-  type NexusSDK,
-  type OnAllowanceHookData,
-  type OnIntentHookData,
-} from "@avail-project/nexus-core";
+import type { createNexusClient } from "@avail-project/nexus-sdk-v2";
+import type { OnAllowanceHookData, OnIntentHookData } from "@avail-project/nexus-sdk-v2";
 import {
   type Dispatch,
   type RefObject,
@@ -20,6 +15,8 @@ import {
   type TransactionFlowInputs,
 } from "../types/transaction-flow";
 
+type NexusClient = ReturnType<typeof createNexusClient>;
+
 interface NexusErrorInfo {
   code: string;
   message: string;
@@ -29,9 +26,12 @@ interface NexusErrorInfo {
 
 type NexusErrorHandler = (error: unknown) => NexusErrorInfo;
 
+// v2 plan_progress step types for bridge
+const BRIDGE_STEP_INTENT_SIGNED = "request_signing";
+
 interface UseTransactionExecutionProps {
   operationName: "bridge" | "transfer";
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   inputs: TransactionFlowInputs;
@@ -45,8 +45,8 @@ interface UseTransactionExecutionProps {
   areInputsValid: boolean;
   executeTransaction: TransactionFlowExecutor;
   getMaxForCurrentSelection: () => Promise<string | undefined>;
-  onStepsList: (steps: BridgeStepType[]) => void;
-  onStepComplete: (step: BridgeStepType) => void;
+  onStepsList: (steps: { typeID?: string; type?: string; [key: string]: unknown }[]) => void;
+  onStepComplete: (step: { typeID?: string; type?: string; [key: string]: unknown }) => void;
   resetSteps: () => void;
   setStatus: (status: TransactionStatus) => void;
   resetInputs: () => void;
@@ -154,8 +154,15 @@ export function useTransactionExecution({
     commitLockRef.current = true;
     const currentRunId = ++runIdRef.current;
     let didEnterExecutingState = false;
+    // Declared here (outside try/catch) so both the event handler and the catch block
+    // can read/write it — prevents the catch from clobbering event-driven completions
+    let completedFromEvent = false;
     const cleanupSupersededExecution = () => {
       if (!didEnterExecutingState) return;
+      // Don't tear down the dialog if an event already handled success/failure —
+      // resetInputs() inside onSuccess triggers invalidatePendingExecution which
+      // increments runIdRef, making this branch fire spuriously.
+      if (completedFromEvent) return;
       setRefreshing(false);
       setIsDialogOpen(false);
       setLastExplorerUrl("");
@@ -164,6 +171,7 @@ export function useTransactionExecution({
       resetSteps();
       setStatus("idle");
     };
+
 
     try {
       if (
@@ -199,6 +207,7 @@ export function useTransactionExecution({
         return;
       }
 
+      // v2: convertTokenReadableAmountToBigInt(amount, tokenSymbol, chainId)
       const amountBigInt = nexusSDK.convertTokenReadableAmountToBigInt(
         inputs.amount,
         inputs.token,
@@ -249,22 +258,69 @@ export function useTransactionExecution({
       setLastExplorerUrl("");
       setAppliedSourceSelectionKey(sourceSelectionKey);
 
+      // Terminal step types — when state:"completed" fires on these, the operation is done
+      const TERMINAL_STEP_TYPES = new Set([
+        "bridge_fill",       // bridge & transfer final fill
+        "destination_swap",  // swap final step
+      ]);
+
+      // v2 onEvent uses typed discriminated union: { type, ... }
       const onEvent = (event: TransactionFlowEvent) => {
         if (currentRunId !== runIdRef.current) return;
-        if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-          const list = Array.isArray(event.args) ? event.args : [];
-          onStepsList(list as BridgeStepType[]);
+
+        if (event.type === "plan_preview") {
+          // Seed UI with the step list from the plan
+          type StepShape = { typeID?: string; type?: string; [key: string]: unknown };
+          const steps = ((event as { type: string; plan: { steps: StepShape[] } }).plan?.steps ?? []) as StepShape[];
+          onStepsList(steps);
         }
-        if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
-          if (
-            !Array.isArray(event.args) &&
-            "type" in event.args &&
-            event.args.type === "INTENT_HASH_SIGNED"
-          ) {
-            stopwatch.start();
+
+        if (event.type === "plan_progress") {
+          const progressEvent = event as {
+            type: string;
+            stepType: string;
+            state: string;
+            step: { typeID?: string; type?: string; [key: string]: unknown };
+            error?: string;
+          };
+
+          // Always mark step as complete/updated in UI
+          onStepComplete(progressEvent.step);
+
+          const isTerminal = TERMINAL_STEP_TYPES.has(progressEvent.stepType);
+
+          if (progressEvent.state === "failed") {
+            // Any step failure → abort
+            if (!completedFromEvent) {
+              completedFromEvent = true;
+              const errorMessage = progressEvent.error ?? "Transaction failed";
+              stopwatch.stop();
+              setTxError(errorMessage);
+              onError?.(errorMessage);
+              setStatus("error");
+            }
+            return;
           }
-          if (!Array.isArray(event.args)) {
-            onStepComplete(event.args as BridgeStepType);
+
+          if (isTerminal && progressEvent.state === "completed") {
+            // Terminal step completed → success
+            if (!completedFromEvent) {
+              completedFromEvent = true;
+              stopwatch.stop();
+              // explorerUrl is on the event itself, not the step object
+              const explorerUrl = (event as { explorerUrl?: string }).explorerUrl;
+              if (explorerUrl) setLastExplorerUrl(explorerUrl);
+              void onSuccess(explorerUrl);
+            }
+          }
+        }
+
+        if (event.type === "status") {
+          const statusEvent = event as { type: string; status: string };
+          if (statusEvent.status === "completed" && !completedFromEvent) {
+            completedFromEvent = true;
+            stopwatch.stop();
+            void onSuccess(undefined);
           }
         }
       };
@@ -274,24 +330,43 @@ export function useTransactionExecution({
         amount: amountBigInt,
         toChainId: inputs.chain,
         recipient: inputs.recipient,
-        sourceChains: sourceChainsForSdk,
+        sources: sourceChainsForSdk,
         onEvent,
       });
 
       if (currentRunId !== runIdRef.current) {
-        cleanupSupersededExecution();
-        return;
+        cleanupSupersededExecution(); // no-op when completedFromEvent=true
+        if (!completedFromEvent) return; // only bail if not already completed
+        // else fall through — still want to capture explorerUrl from the result
       }
       if (!transactionResult) {
-        throw new Error("Transaction rejected by user");
+        if (!completedFromEvent) {
+          throw new Error("Transaction rejected by user");
+        }
+        // Already handled via events
+        return;
       }
-      setLastExplorerUrl(transactionResult.explorerUrl);
-      await onSuccess(transactionResult.explorerUrl);
+
+      // SDK promise resolved — use result for explorerUrl if event-driven success didn't set it
+      if (!completedFromEvent) {
+        // Fallback: SDK resolved but we never got a terminal event (e.g. single-step flows)
+        setLastExplorerUrl(transactionResult.explorerUrl ?? "");
+        await onSuccess(transactionResult.explorerUrl);
+      } else {
+        // Event-driven success already ran — capture the explorerUrl from the resolved result
+        if (transactionResult.explorerUrl) {
+          setLastExplorerUrl(transactionResult.explorerUrl);
+        }
+      }
+
     } catch (error) {
       if (currentRunId !== runIdRef.current) {
         cleanupSupersededExecution();
         return;
       }
+      // If event-driven success/failure already handled this transaction, ignore SDK-level errors
+      // (the SDK may throw or return oddly after a successful fill event)
+      if (completedFromEvent) return;
       const { message, code, context, details } = handleNexusError(error);
       console.error(`Fast ${operationName} transaction failed:`, {
         code,
@@ -353,6 +428,10 @@ export function useTransactionExecution({
       if (!refreshed || !intent.current) return;
       intent.current.allow();
       setIsDialogOpen(true);
+      // Start the stopwatch AFTER the dialog opens so the isDialogOpen effect
+      // does not immediately reset it (the effect only resets when dialog is closed)
+      stopwatch.reset();
+      stopwatch.start();
       setTxError(null);
     })();
   };

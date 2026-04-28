@@ -9,10 +9,11 @@ import {
 } from "../hooks/useSwaps";
 import { computeAmountFromFraction, usdFormatter } from "../../common";
 import {
-  CHAIN_METADATA,
-  type UserAsset,
+  type TokenBalance,
+  type ChainBalance,
   type OnSwapIntentHookData,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
+import { useNexus } from "../../nexus/NexusProvider";
 import AmountInput from "./amount-input";
 import {
   Dialog,
@@ -50,8 +51,8 @@ interface SourceContainerProps {
   status: TransactionStatus;
   sourceHovered: boolean;
   inputs: SwapInputs;
-  availableBalance?: UserAsset["breakdown"][0];
-  swapBalance: UserAsset[] | null;
+  availableBalance?: ChainBalance;  // v2: was UserAsset["breakdown"][0]
+  swapBalance: TokenBalance[] | null;
   swapMode: SwapMode;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
   setInputs: (inputs: Partial<SwapInputs>) => void;
@@ -79,6 +80,11 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
   getFiatValue,
   formatBalance,
 }) => {
+  const { swapSupportedChainsAndTokens } = useNexus();
+  const fromChainLogo = swapSupportedChainsAndTokens?.find(
+    (c) => c.id === inputs?.fromChainID
+  )?.logo || undefined;
+
   const isExactOut = swapMode === "exactOut";
 
   // In exactIn mode, show user's input; in exactOut mode, show calculated source from intent
@@ -181,7 +187,7 @@ const SourceContainer: React.FC<SourceContainerProps> = ({
                 tokenLogo={inputs?.fromToken?.logo}
                 chainLogo={
                   inputs?.fromChainID
-                    ? CHAIN_METADATA[inputs?.fromChainID]?.logo
+                    ? fromChainLogo
                     : undefined
                 }
                 size="lg"
