@@ -13,7 +13,10 @@ export type WidgetStep =
   | "transaction-status"
   | "transaction-complete"
   | "transaction-failed"
-  | "asset-selection";
+  | "asset-selection"
+  | "buy-crypto"
+  | "buy-crypto-confirm"
+  | "buy-crypto-status";
 
 export type TransactionStatus =
   | "idle"

@@ -348,7 +348,7 @@ function AmountCard({
       {/* Error Banner */}
       {exceedsBalance && (
         <div className="mt-4 mx-4">
-          <ErrorBanner message="You don't have enough wallet balance." />
+          <ErrorBanner message="Balance too low. Buy crypto or reduce amount." />
         </div>
       )}
       {exceedsSelectedTokens && (

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "./utils";
 import { useDepositWidget } from "./hooks/use-deposit-widget";
+import { useMeld } from "./hooks/use-meld";
 import {
   AmountContainer,
   ConfirmationContainer,
@@ -10,6 +11,9 @@ import {
   TransactionCompleteContainer,
   TransactionFailedContainer,
   AssetSelectionContainer,
+  BuyCryptoContainer,
+  BuyCryptoConfirmContainer,
+  BuyCryptoStatusContainer,
 } from "./components";
 import type {
   WidgetStep,
@@ -20,6 +24,7 @@ import { Card } from "../ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { WidgetErrorBoundary } from "../common";
+import type { UseMeldReturn } from "./hooks/use-meld";
 
 const ANIMATION_CLASSES: Record<NonNullable<NavigationDirection>, string> = {
   forward: "animate-slide-in-from-right",
@@ -33,6 +38,7 @@ type ScreenRenderer = (
   widget: ReturnType<typeof useDepositWidget>,
   heading?: string,
   onClose?: () => void,
+  meld?: UseMeldReturn,
 ) => React.ReactNode;
 
 const SCREENS: Record<WidgetStep, ScreenRenderer> = {
@@ -74,6 +80,30 @@ const SCREENS: Record<WidgetStep, ScreenRenderer> = {
       onClose={onClose}
     />
   ),
+  "buy-crypto": (widget, heading, onClose, meld) => (
+    <BuyCryptoContainer
+      widget={widget}
+      meld={meld!}
+      heading={heading}
+      onClose={onClose}
+    />
+  ),
+  "buy-crypto-confirm": (widget, heading, onClose, meld) => (
+    <BuyCryptoConfirmContainer
+      widget={widget}
+      meld={meld!}
+      heading={heading}
+      onClose={onClose}
+    />
+  ),
+  "buy-crypto-status": (widget, heading, onClose, meld) => (
+    <BuyCryptoStatusContainer
+      widget={widget}
+      meld={meld!}
+      heading={heading}
+      onClose={onClose}
+    />
+  ),
 };
 
 const NexusDeposit = ({
@@ -95,6 +125,7 @@ const NexusDeposit = ({
     onSuccess,
     onError,
   });
+  const meld = useMeld();
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
 
   // Use controlled or uncontrolled open state
@@ -137,7 +168,7 @@ const NexusDeposit = ({
       >
         <WidgetErrorBoundary widgetName="Deposit" onReset={widget.reset}>
           <div key={widget.step} className={animationClass}>
-            {SCREENS[widget.step](widget, heading)}
+            {SCREENS[widget.step](widget, heading, undefined, meld)}
           </div>
         </WidgetErrorBoundary>
       </Card>
@@ -161,7 +192,7 @@ const NexusDeposit = ({
             key={widget.step}
             className={cn("flex flex-col gap-4", animationClass)}
           >
-            {SCREENS[widget.step](widget, heading, handleClose)}
+            {SCREENS[widget.step](widget, heading, handleClose, meld)}
           </div>
         </WidgetErrorBoundary>
       </DialogContent>

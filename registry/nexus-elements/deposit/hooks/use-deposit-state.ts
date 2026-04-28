@@ -117,6 +117,9 @@ export const STEP_HISTORY: Record<WidgetStep, WidgetStep | null> = {
   "transaction-complete": null,
   "transaction-failed": null,
   "asset-selection": "amount",
+  "buy-crypto": "amount",
+  "buy-crypto-confirm": "buy-crypto",
+  "buy-crypto-status": null,
 } as const;
 
 /**

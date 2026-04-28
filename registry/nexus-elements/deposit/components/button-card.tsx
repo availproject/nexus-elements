@@ -9,6 +9,7 @@ interface ButtonCardProps {
   onClick?: () => void;
   disabled?: boolean;
   roundedBottom?: boolean;
+  roundedTop?: boolean;
 }
 
 function ButtonCard({
@@ -20,12 +21,21 @@ function ButtonCard({
   onClick,
   disabled = false,
   roundedBottom = true,
+  roundedTop = true,
 }: ButtonCardProps) {
+  const roundingClass =
+    roundedTop && roundedBottom
+      ? "rounded-lg"
+      : roundedTop
+        ? "rounded-t-lg"
+        : roundedBottom
+          ? "rounded-b-lg"
+          : "";
   return (
     <div
       className={cn(
         "p-5 border flex justify-between group/button-card transition-all duration-200",
-        roundedBottom ? "rounded-lg" : "rounded-t-lg",
+        roundingClass,
         disabled
           ? "cursor-default opacity-70"
           : "bg-base shadow-[0_1px_12px_0_rgba(91,91,91,0.05)] hover:shadow-[0_1px_12px_0_rgba(91,91,91,0.08)] cursor-pointer"

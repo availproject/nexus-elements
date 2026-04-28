@@ -6,6 +6,7 @@ import WidgetHeader from "./widget-header";
 import type { DepositWidgetContextValue } from "../types";
 import AmountCard from "./amount-card";
 import PayUsing from "./pay-using";
+import BuyCryptoRow from "./buy-crypto-row";
 import { ErrorBanner } from "./error-banner";
 import { EmptyBalanceState } from "./empty-balance-state";
 import { Button } from "../../ui/button";
@@ -123,18 +124,24 @@ const AmountContainer = ({
             <ErrorBanner message={widget.txError} />
           )}
           {!shouldShowEmptyState && (
-            <div className="flex flex-col">
-              <PayUsing
-                onClick={() => widget.goToStep("asset-selection")}
-                selectedChainIds={widget.assetSelection.selectedChainIds}
-                filter={widget.assetSelection.filter}
-                isManualSelection={widget.isManualSelection}
-                amount={widget.inputs.amount}
-                swapBalance={widget.swapBalance}
-                destination={widget.destination}
-              />
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col">
+                <PayUsing
+                  onClick={() => widget.goToStep("asset-selection")}
+                  selectedChainIds={widget.assetSelection.selectedChainIds}
+                  filter={widget.assetSelection.filter}
+                  isManualSelection={widget.isManualSelection}
+                  amount={widget.inputs.amount}
+                  swapBalance={widget.swapBalance}
+                  destination={widget.destination}
+                />
+                <BuyCryptoRow
+                  onClick={() => widget.goToStep("buy-crypto")}
+                  amount={widget.inputs.amount}
+                  minAmount={20}
+                />
+              </div>
               <Button
-                className="rounded-t-none"
                 onClick={() => widget.goToStep("confirmation")}
                 disabled={
                   widget.isProcessing ||
