@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: github:availproject/nexus-sdk#4c4efbfdbf6572068629ce59c29ace34bf5f6458
-        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/4c4efbfdbf6572068629ce59c29ace34bf5f6458(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        specifier: github:availproject/nexus-sdk#1366a69af7480bbcfc7fb561b92c5791858cbe6f
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/1366a69af7480bbcfc7fb561b92c5791858cbe6f(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.2(react@19.2.2))(react@19.2.2)
@@ -197,8 +197,8 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/4c4efbfdbf6572068629ce59c29ace34bf5f6458':
-    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/4c4efbfdbf6572068629ce59c29ace34bf5f6458}
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/1366a69af7480bbcfc7fb561b92c5791858cbe6f':
+    resolution: {tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/1366a69af7480bbcfc7fb561b92c5791858cbe6f}
     version: 1.3.0
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
@@ -6882,7 +6882,7 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/4c4efbfdbf6572068629ce59c29ace34bf5f6458(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/1366a69af7480bbcfc7fb561b92c5791858cbe6f(@opentelemetry/api@1.9.0)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@avail-project/ca-common': 2.1.0(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.15.0)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.8)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.1
