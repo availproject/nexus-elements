@@ -20,6 +20,7 @@ export const DEFAULT_USD_PEGGED_TOKEN_SYMBOLS = [
   "LUSD",
   "USDE",
   "USDP",
+  "CTUSD"
 ] as const;
 
 type CoinbaseSpotPriceResponse = {
