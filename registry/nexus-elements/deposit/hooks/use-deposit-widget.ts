@@ -440,19 +440,7 @@ export function useDepositWidget(
       }
       const destinationRate = await resolveTokenUsdRate(
         destination.tokenSymbol,
-      );
-      if (
-        !destinationRate ||
-        !Number.isFinite(destinationRate) ||
-        destinationRate <= 0
-      ) {
-        dispatch({
-          type: "setError",
-          payload: `Unable to fetch pricing for ${destination.tokenSymbol}. Please try again.`,
-        });
-        dispatch({ type: "setStatus", payload: "error" });
-        return false;
-      }
+      ) || 0;
 
       // Reset state and refs for a fresh simulation
       dispatch({ type: "setError", payload: null });
@@ -461,7 +449,7 @@ export function useDepositWidget(
       determiningSwapComplete.current = false;
       denyActiveSwapIntent();
 
-      const tokenAmount = totalAmountUsd / destinationRate;
+      const tokenAmount = destinationRate > 0 ? totalAmountUsd / destinationRate : totalAmountUsd;
       const tokenAmountStr = tokenAmount.toFixed(destination.tokenDecimals);
       const parsed = parseUnits(tokenAmountStr, destination.tokenDecimals);
 
