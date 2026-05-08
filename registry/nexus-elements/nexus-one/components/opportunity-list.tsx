@@ -66,17 +66,31 @@ export function OpportunityList({ opportunities, selectedId, onSelect }: Opportu
             {/* Radio button */}
             <div
               style={{
+                alignItems: "center",
                 backgroundColor: "#FFFFFE",
-                borderColor: isSelected ? "#006BF4" : "#E8E8E7",
+                borderColor: isSelected ? "#006BF4" : "#D0D0CF",
                 borderRadius: "999px",
                 borderStyle: "solid",
-                borderWidth: isSelected ? "5px" : "1.5px",
+                borderWidth: "2px",
                 boxSizing: "border-box",
+                display: "flex",
                 flexShrink: 0,
-                height: "18px",
-                width: "18px",
+                height: "20px",
+                justifyContent: "center",
+                width: "20px",
               }}
-            />
+            >
+              {isSelected && (
+                <div
+                  style={{
+                    backgroundColor: "#006BF4",
+                    borderRadius: "999px",
+                    height: "10px",
+                    width: "10px",
+                  }}
+                />
+              )}
+            </div>
 
             {/* Logo */}
             <div

@@ -14,6 +14,7 @@ interface SwapIdleFormProps {
   onOpenRecipientPicker?: () => void;
   recipientAddress?: string;
   swapType: "exactIn" | "exactOut";
+  onUpdateTokens?: (tokens: SwapTokenOption[]) => void;
 }
 
 /** Chevron down icon used in asset selector pills */
@@ -175,6 +176,7 @@ function AddAssetButton({
         maxHeight: show ? "50px" : "0px",
         opacity: show ? 1 : 0,
         transition: "max-height 0.2s ease-out, opacity 0.2s ease-out",
+        width: "100%",
       }}
     >
       <button
@@ -226,8 +228,10 @@ export function SwapIdleForm({
   onOpenRecipientPicker,
   recipientAddress,
   swapType,
+  onUpdateTokens,
 }: SwapIdleFormProps) {
   const [hoveredPanel, setHoveredPanel] = useState<"send" | "receive" | null>(null);
+  const [focusedPanel, setFocusedPanel] = useState<"send" | "receive" | null>(null);
 
   const sanitizeInput = (raw: string): string => {
     let next = raw.replaceAll(/[^0-9.]/g, "");
@@ -245,14 +249,41 @@ export function SwapIdleForm({
     onAmountChange(sanitizeInput(e.target.value), "receive");
   };
 
+  const handleTokenAmountChange = (index: number, val: string) => {
+    if (!onUpdateTokens) return;
+    const next = [...fromTokens];
+    next[index] = { ...next[index], userAmount: sanitizeInput(val) };
+    onUpdateTokens(next);
+    
+    // Also update total amount for backwards compatibility if needed
+    const total = next.reduce((sum, t) => sum + Number(t.userAmount || 0), 0);
+    onAmountChange(total > 0 ? String(total) : "", "send");
+  };
+
   const isExactIn = swapType === "exactIn";
+
+  const handleSendPercentForToken = (index: number, pct: number, balanceStr: string | undefined) => {
+    if (!balanceStr || !onUpdateTokens) return;
+    const bal = parseFloat(balanceStr.replace(/[^0-9.]/g, ""));
+    if (isNaN(bal)) return;
+    const val = bal * (pct / 100);
+    const next = [...fromTokens];
+    next[index] = { ...next[index], userAmount: val.toFixed(6).replace(/\.?0+$/, "") };
+    onUpdateTokens(next);
+  };
 
   const handleSendPercent = (pct: number) => {
     if (!totalBalance) return;
     const bal = parseFloat(totalBalance.replace(/[^0-9.]/g, ""));
     if (isNaN(bal)) return;
     const val = bal * (pct / 100);
-    onAmountChange(val.toFixed(6).replace(/\.?0+$/, ""), "send");
+    // If there's only one token, or no tokens, update the main amount
+    if (fromTokens.length <= 1) {
+      if (fromTokens.length === 1 && onUpdateTokens) {
+        handleSendPercentForToken(0, pct, fromTokens[0].balance);
+      }
+      onAmountChange(val.toFixed(6).replace(/\.?0+$/, ""), "send");
+    }
   };
 
   const handleReceivePercent = (pct: number) => {
@@ -270,6 +301,8 @@ export function SwapIdleForm({
       <div
         onMouseEnter={() => setHoveredPanel("send")}
         onMouseLeave={() => setHoveredPanel(null)}
+        onFocusCapture={() => setFocusedPanel("send")}
+        onBlurCapture={() => setFocusedPanel(null)}
         style={{
           alignItems: "center",
           backgroundColor: "#FFFFFE",
@@ -304,103 +337,106 @@ export function SwapIdleForm({
           </div>
         </div>
 
-        {/* Amount + Asset pill row */}
-        <div style={{ alignSelf: "stretch", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
-          <div style={{ alignItems: "center", alignSelf: "stretch", boxSizing: "border-box", display: "flex", gap: "10px", justifyContent: "space-between", width: "100%" }}>
-            <input
-              type="text"
-              placeholder="0"
-              value={isExactIn ? amount : ""}
-              onChange={handleSendInput}
-              style={{
-                boxSizing: "border-box",
-                color: (isExactIn && amount) ? "#161615" : "#9E9E9C",
-                fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
-                fontSize: "36px",
-                fontWeight: 500,
-                lineHeight: "44px",
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                padding: 0,
-                width: "100%",
-                minWidth: 0,
-              }}
-            />
+        {/* Render each selected source asset, or an empty one if none */}
+        <div style={{ alignSelf: "stretch", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+          {(fromTokens.length > 0 ? fromTokens : [null]).map((token, index) => {
+            return (
+              <div key={token ? `${token.contractAddress}-${token.chainId}` : "empty"} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ alignItems: "center", alignSelf: "stretch", boxSizing: "border-box", display: "flex", gap: "10px", justifyContent: "space-between", width: "100%" }}>
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={isExactIn ? (token ? (token.userAmount || "") : amount) : ""}
+                    onChange={(e) => {
+                      if (token) handleTokenAmountChange(index, e.target.value);
+                      else handleSendInput(e);
+                    }}
+                    style={{
+                      boxSizing: "border-box",
+                      color: (isExactIn && (token ? token.userAmount : amount)) ? "#161615" : "#9E9E9C",
+                      fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
+                      fontSize: "36px",
+                      fontWeight: 500,
+                      lineHeight: "44px",
+                      background: "transparent",
+                      border: "none",
+                      outline: "none",
+                      padding: 0,
+                      width: "100%",
+                      minWidth: 0,
+                    }}
+                  />
 
-            {/* Asset selector pill */}
-            <button
-              onClick={onOpenSourcePicker}
-              style={{
-                alignItems: "center",
-                backgroundColor: "#FFFFFE",
-                borderColor: fromTokens.length > 0 ? "#E8E8E7" : "#C8C8C7",
-                borderRadius: "999px",
-                borderStyle: fromTokens.length > 0 ? "solid" : "dashed",
-                borderWidth: "1px",
-                boxShadow: fromTokens.length > 0 ? "#1616150A 0px 1px 2px" : "none",
-                boxSizing: "border-box",
-                display: "flex",
-                gap: "8px",
-                paddingBottom: "5px",
-                paddingLeft: fromTokens.length > 0 ? "4px" : "8px",
-                paddingRight: "10px",
-                paddingTop: "5px",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              {fromTokens.length > 0 ? (
-                fromTokens.length === 1 ? (
-                  <div style={{ boxSizing: "border-box", flexShrink: 0, height: "26px", position: "relative" as const, width: "26px" }}>
-                    <img src={fromTokens[0].logo} alt={fromTokens[0].symbol} style={{ borderRadius: "999px", height: "26px", width: "26px", objectFit: "cover" as const }} />
-                    {fromTokens[0].chainLogo && (
-                      <img src={fromTokens[0].chainLogo} alt={fromTokens[0].chainName} style={{ borderRadius: "999px", bottom: -2, height: "12px", outline: "1px solid #FFFFFE", position: "absolute" as const, right: -2, width: "12px", objectFit: "cover" as const }} />
+                  {/* Asset selector pill */}
+                  <button
+                    onClick={onOpenSourcePicker}
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: "#FFFFFE",
+                      borderColor: token ? "#E8E8E7" : "#C8C8C7",
+                      borderRadius: "999px",
+                      borderStyle: token ? "solid" : "dashed",
+                      borderWidth: "1px",
+                      boxShadow: token ? "#1616150A 0px 1px 2px" : "none",
+                      boxSizing: "border-box",
+                      display: "flex",
+                      gap: "8px",
+                      paddingBottom: "5px",
+                      paddingLeft: token ? "4px" : "8px",
+                      paddingRight: "10px",
+                      paddingTop: "5px",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {token ? (
+                      <div style={{ boxSizing: "border-box", flexShrink: 0, height: "26px", position: "relative" as const, width: "26px" }}>
+                        <img src={token.logo} alt={token.symbol} style={{ borderRadius: "999px", height: "26px", width: "26px", objectFit: "cover" as const }} />
+                        {token.chainLogo && (
+                          <img src={token.chainLogo} alt={token.chainName} style={{ borderRadius: "999px", bottom: -2, height: "12px", outline: "1px solid #FFFFFE", position: "absolute" as const, right: -2, width: "12px", objectFit: "cover" as const }} />
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ borderColor: "#C8C8C7", borderRadius: "999px", borderStyle: "dashed", borderWidth: "1.5px", boxSizing: "border-box", flexShrink: 0, height: "22px", width: "22px" }} />
                     )}
-                  </div>
-                ) : (
-                  <div style={{ width: "26px", height: "26px", borderRadius: "999px", backgroundColor: "#E8F0FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, color: "#006BF4", flexShrink: 0 }}>
-                    +{fromTokens.length}
-                  </div>
-                )
-              ) : (
-                <div style={{ borderColor: "#C8C8C7", borderRadius: "999px", borderStyle: "dashed", borderWidth: "1.5px", boxSizing: "border-box", flexShrink: 0, height: "22px", width: "22px" }} />
-              )}
-              <div style={{ boxSizing: "border-box", color: "#161615", fontFamily: '"Geist", system-ui, sans-serif', fontSize: fromTokens.length > 0 ? "14px" : "16px", fontWeight: 500, lineHeight: fromTokens.length > 0 ? "18px" : "24px" }}>
-                {fromTokens.length > 0 ? (fromTokens.length === 1 ? fromTokens[0].symbol : "Sources") : "Assets"}
-              </div>
-              <ChevronDownIcon />
-            </button>
-          </div>
-
-          {/* USD value + balance row */}
-          <div style={{ alignItems: "center", alignSelf: "stretch", boxSizing: "border-box", display: "flex", justifyContent: "space-between", width: "100%" }}>
-            <div style={{ boxSizing: "border-box", color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: "14px", lineHeight: "20px" }}>
-              ≈ ${usdValue || "0.00"}
-            </div>
-            {fromTokens.length > 0 && fromTokens.length === 1 && (
-              <div style={{ alignItems: "center", boxSizing: "border-box", display: "flex", gap: "5px" }}>
-                <div style={{ boxSizing: "border-box", color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: "14px", fontVariantNumeric: "tabular-nums", lineHeight: "20px" }}>
-                  Balance:
+                    <div style={{ boxSizing: "border-box", color: "#161615", fontFamily: '"Geist", system-ui, sans-serif', fontSize: token ? "14px" : "16px", fontWeight: 500, lineHeight: token ? "18px" : "24px" }}>
+                      {token ? token.symbol : "Assets"}
+                    </div>
+                    <ChevronDownIcon />
+                  </button>
                 </div>
-                <div style={{ boxSizing: "border-box", color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: "14px", fontVariantNumeric: "tabular-nums", lineHeight: "20px" }}>
-                  {fromTokens[0].balance}
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* 25% 50% 75% MAX — hover transition */}
-          <PercentButtons
-            visible={hoveredPanel === "send"}
-            onSelect={handleSendPercent}
-          />
+                {/* USD value + balance row */}
+                <div style={{ alignItems: "center", alignSelf: "stretch", boxSizing: "border-box", display: "flex", justifyContent: "space-between", width: "100%" }}>
+                  <div style={{ boxSizing: "border-box", color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: "14px", lineHeight: "20px" }}>
+                    ≈ ${token ? (Number(token.userAmount || 0) * (Number(token.balanceInFiat?.replace(/[^0-9.]/g, "")) / Number(token.balance?.replace(/[^0-9.]/g, ""))) || 0).toFixed(2) : (usdValue || "0.00")}
+                  </div>
+                  {token && (
+                    <div style={{ alignItems: "center", boxSizing: "border-box", display: "flex", gap: "5px" }}>
+                      <div style={{ boxSizing: "border-box", color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: "14px", fontVariantNumeric: "tabular-nums", lineHeight: "20px" }}>
+                        Balance:
+                      </div>
+                      <div style={{ boxSizing: "border-box", color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: "14px", fontVariantNumeric: "tabular-nums", lineHeight: "20px" }}>
+                        {token.balance}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 25% 50% 75% MAX — hover transition */}
+                <PercentButtons
+                  visible={hoveredPanel === "send" || focusedPanel === "send"}
+                  onSelect={(pct) => token ? handleSendPercentForToken(index, pct, token.balance) : handleSendPercent(pct)}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Add asset button — only after first source selected */}
         <AddAssetButton
           visible={fromTokens.length > 0}
-          label={fromTokens.length > 1 ? `${fromTokens.length} sources selected` : "Add asset"}
+          label="Add asset"
           onClick={onOpenSourcePicker}
         />
       </div>
@@ -409,6 +445,8 @@ export function SwapIdleForm({
       <div
         onMouseEnter={() => setHoveredPanel("receive")}
         onMouseLeave={() => setHoveredPanel(null)}
+        onFocusCapture={() => setFocusedPanel("receive")}
+        onBlurCapture={() => setFocusedPanel(null)}
         style={{
           backgroundColor: "#FFFFFE",
           borderColor: "#E8E8E7",
@@ -511,7 +549,7 @@ export function SwapIdleForm({
 
           {/* 25% 50% 75% MAX — hover transition (receive side) */}
           <PercentButtons
-            visible={hoveredPanel === "receive"}
+            visible={hoveredPanel === "receive" || focusedPanel === "receive"}
             onSelect={handleReceivePercent}
           />
         </div>

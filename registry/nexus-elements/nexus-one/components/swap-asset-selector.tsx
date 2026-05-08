@@ -1,13 +1,11 @@
 "use client";
-import { nexusOneTheme } from "../theme";
 import React, { useMemo, useState } from "react";
-import { Search, X, ChevronLeft, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, X, Loader2, ChevronDown, ChevronUp, Info } from "lucide-react";
 import {
   type UserAsset,
   CHAIN_METADATA,
   formatTokenBalance,
 } from "@avail-project/nexus-core";
-
 
 export interface SwapTokenOption {
   contractAddress: string;
@@ -20,14 +18,12 @@ export interface SwapTokenOption {
   chainId?: number;
   chainName?: string;
   chainLogo?: string;
+  userAmount?: string;
 }
 
 interface SwapAssetSelectorProps {
-  /** Title shown in the panel header */
   title: string;
-  /** swapBalance from useNexus for source tokens. Pass null to show loader. */
   swapBalance: UserAsset[] | null;
-  /** For dest-mode we accept a static list instead */
   staticOptions?: SwapTokenOption[];
   onSelect: (token: SwapTokenOption) => void;
   onBack: () => void;
@@ -37,7 +33,6 @@ interface SwapAssetSelectorProps {
   onDone?: () => void;
 }
 
-/** Derive flat list of SwapTokenOption from UserAsset[] */
 function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] {
   const tokens: SwapTokenOption[] = [];
   for (const asset of swapBalance) {
@@ -65,7 +60,6 @@ function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] {
       });
     }
   }
-  // Dedupe by contractAddress + chainId
   const seen = new Map<string, SwapTokenOption>();
   for (const t of tokens) {
     seen.set(`${t.contractAddress.toLowerCase()}-${t.chainId}`, t);
@@ -73,44 +67,73 @@ function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] {
   return Array.from(seen.values());
 }
 
-const CheckboxBox = ({ selected }: { selected: boolean }) => {
-  if (selected) {
-    return (
-      <div
-        className="flex items-center justify-center shrink-0"
-        style={{
-          width: "20px",
-          height: "20px",
-          borderRadius: "4px",
-          background: "var(--foreground-brand, #006BF4)",
-        }}
-      >
-        <div
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "2px",
-            background: "var(--white-0, var(--background-secondary, #FFFFFE))",
-          }}
-        />
-      </div>
-    );
-  }
+/* ── Radio dot (circular) ── */
+const RadioDot = ({ selected }: { selected: boolean }) => (
+  <div
+    style={{
+      width: 22, height: 22, borderRadius: "999px", boxSizing: "border-box",
+      border: selected ? "2px solid #006BF4" : "2px solid #D0D0CF",
+      backgroundColor: "#FFFFFE", display: "flex", alignItems: "center",
+      justifyContent: "center", flexShrink: 0,
+    }}
+  >
+    {selected && (
+      <div style={{ width: 12, height: 12, borderRadius: "999px", backgroundColor: "#006BF4" }} />
+    )}
+  </div>
+);
+
+/* ── Chain logo cluster ── */
+const ChainLogos = ({ tokens }: { tokens: SwapTokenOption[] }) => {
+  const uniqueChains = useMemo(() => {
+    const seen = new Set<number>();
+    const out: { id: number; logo?: string }[] = [];
+    for (const t of tokens) {
+      if (t.chainId && !seen.has(t.chainId)) {
+        seen.add(t.chainId);
+        out.push({ id: t.chainId, logo: t.chainLogo });
+      }
+    }
+    return out;
+  }, [tokens]);
+
+  const maxShow = 3;
+  const shown = uniqueChains.slice(0, maxShow);
+  const extra = uniqueChains.length - maxShow;
+
   return (
-    <div
-      className="shrink-0"
-      style={{
-        width: "20px",
-        height: "20px",
-        borderRadius: "4px",
-        borderWidth: "2px",
-        background: "var(--widget-card-background-primary, var(--background-secondary, #FFFFFE))",
-        borderColor: "var(--widget-card-border, var(--border-default, #E8E8E7))",
-        borderStyle: "solid",
-      }}
-    />
+    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+      {shown.map((c, i) =>
+        c.logo ? (
+          <img
+            key={c.id}
+            src={c.logo}
+            alt=""
+            style={{ width: 16, height: 16, borderRadius: "999px", objectFit: "cover", border: "1px solid #fff" }}
+          />
+        ) : (
+          <div key={c.id} style={{ width: 16, height: 16, borderRadius: "999px", backgroundColor: "#E8E8E7" }} />
+        )
+      )}
+      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483", marginLeft: 2 }}>
+        {uniqueChains.length} chain{uniqueChains.length !== 1 ? "s" : ""}
+      </span>
+    </div>
   );
 };
+
+/* ── Filter tabs ── */
+type FilterTab = "all" | "native" | "stables" | "custom";
+const FILTER_TABS: { key: FilterTab; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "native", label: "Native" },
+  { key: "stables", label: "Stables" },
+  { key: "custom", label: "Custom" },
+];
+const STABLE_SYMBOLS = new Set(["USDC", "USDT", "DAI", "BUSD", "TUSD", "FRAX", "LUSD", "USDP", "GUSD", "sUSD", "cUSD", "USDbC"]);
+const NATIVE_SYMBOLS = new Set(["ETH", "MATIC", "POL", "BNB", "AVAX", "FTM", "CELO", "MOVR", "GLMR"]);
+
+const MIN_FIAT_THRESHOLD = 1;
 
 export function SwapAssetSelector({
   title,
@@ -124,6 +147,11 @@ export function SwapAssetSelector({
   onDone,
 }: SwapAssetSelectorProps) {
   const [query, setQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [showBelowMin, setShowBelowMin] = useState(false);
+  const [showChainSelector, setShowChainSelector] = useState(false);
+  const [chainQuery, setChainQuery] = useState("");
+  const [selectedChainFilter, setSelectedChainFilter] = useState<number | null>(null);
 
   const allTokens = useMemo<SwapTokenOption[]>(() => {
     if (staticOptions) return staticOptions;
@@ -131,46 +159,66 @@ export function SwapAssetSelector({
     return deriveTokenOptions(swapBalance);
   }, [swapBalance, staticOptions]);
 
+  /* Search + tab + chain filter */
   const filtered = useMemo(() => {
-    if (!query.trim()) return allTokens;
-    const q = query.toLowerCase();
-    return allTokens.filter(
-      (t) =>
-        t.symbol.toLowerCase().includes(q) ||
-        t.name.toLowerCase().includes(q) ||
-        (t.chainName ?? "").toLowerCase().includes(q),
-    );
-  }, [allTokens, query]);
+    let result = allTokens;
+    if (selectedChainFilter !== null) {
+      result = result.filter(t => t.chainId === selectedChainFilter);
+    }
+    if (query.trim()) {
+      const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+      result = result.filter((t) => {
+        return terms.every((term) =>
+          t.symbol.toLowerCase().includes(term) ||
+          t.name.toLowerCase().includes(term) ||
+          (t.chainName ?? "").toLowerCase().includes(term) ||
+          t.contractAddress.toLowerCase().includes(term)
+        );
+      });
+    }
+    if (activeTab === "native") result = result.filter((t) => NATIVE_SYMBOLS.has(t.symbol));
+    else if (activeTab === "stables") result = result.filter((t) => STABLE_SYMBOLS.has(t.symbol));
+    return result;
+  }, [allTokens, query, activeTab]);
 
+  /* Split into above/below minimum */
+  const { aboveMin, belowMin } = useMemo(() => {
+    const above: SwapTokenOption[] = [];
+    const below: SwapTokenOption[] = [];
+    for (const t of filtered) {
+      const fiat = Number(t.balanceInFiat.replace(/[^0-9.]/g, "") || 0);
+      if (fiat >= MIN_FIAT_THRESHOLD) above.push(t);
+      else below.push(t);
+    }
+    return { aboveMin: above, belowMin: below };
+  }, [filtered]);
+
+  /* Group by symbol */
   const groupedFiltered = useMemo(() => {
     const groups: Record<string, SwapTokenOption[]> = {};
-    for (const token of filtered) {
+    for (const token of aboveMin) {
       if (!groups[token.symbol]) groups[token.symbol] = [];
       groups[token.symbol].push(token);
     }
-    
-    return Object.values(groups).map((group) => {
-      let totalFiatVal = 0;
-      let totalBalVal = 0;
-      
-      for (const t of group) {
-        totalFiatVal += Number(t.balanceInFiat.replace(/[^0-9.]/g, "") || 0);
-        totalBalVal += Number(t.balance.replace(/[^0-9.]/g, "") || 0);
-      }
-      
-      return {
-        symbol: group[0].symbol,
-        logo: group[0].logo,
-        totalFiat: `$${totalFiatVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
-        totalBal: `${totalBalVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })} ${group[0].symbol}`,
-        tokens: group,
-      };
-    }).sort((a, b) => {
-      const aFiat = Number(a.totalFiat.replace(/[^0-9.]/g, "") || 0);
-      const bFiat = Number(b.totalFiat.replace(/[^0-9.]/g, "") || 0);
-      return bFiat - aFiat;
-    });
-  }, [filtered]);
+    return Object.values(groups)
+      .map((group) => {
+        let totalFiatVal = 0;
+        let totalBalVal = 0;
+        for (const t of group) {
+          totalFiatVal += Number(t.balanceInFiat.replace(/[^0-9.]/g, "") || 0);
+          totalBalVal += Number(t.balance.replace(/[^0-9.]/g, "") || 0);
+        }
+        return {
+          symbol: group[0].symbol,
+          logo: group[0].logo,
+          totalFiat: totalFiatVal,
+          totalFiatStr: `$${totalFiatVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+          totalBalStr: `${totalBalVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${group[0].symbol}`,
+          tokens: group,
+        };
+      })
+      .sort((a, b) => b.totalFiat - a.totalFiat);
+  }, [aboveMin]);
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -186,327 +234,500 @@ export function SwapAssetSelector({
 
   const toggleGroupSelection = (groupTokens: SwapTokenOption[], isFullySelected: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isMulti || !onToggle) return;
-    
-    if (isFullySelected) {
-      // Deselect all
-      groupTokens.forEach(t => {
-        if (selectedTokens.some(st => st.contractAddress === t.contractAddress && st.chainId === t.chainId)) {
-          onToggle(t);
-        }
-      });
-    } else {
-      // Select all
-      groupTokens.forEach(t => {
-        if (!selectedTokens.some(st => st.contractAddress === t.contractAddress && st.chainId === t.chainId)) {
-          onToggle(t);
-        }
-      });
-    }
+    // Unified selection: in single-select mode, we select the whole group as a single logical asset (unified).
+    // But since onSelect only takes one token, how do we pass a unified token?
+    // For now, if we click Unified, we can just pass the first token and maybe mark it?
+    // Wait, the user said "only 1 asset can be selected at a time, there is no multi select".
+    // If they select "Unified", it means they want to use all balances of that token across chains.
+    // We can emit a special "unified" token option, or trigger onSelect multiple times?
+    // Actually, let's just pass groupTokens array if onSelect supports it, or use onSelect with a special unified flag.
+    // For now, let's adapt `SwapAssetSelector` to be strictly single select as requested.
   };
 
-  const renderTokenRow = (token: SwapTokenOption) => {
-    const isSelected = selectedTokens.some(
-      (st) =>
-        st.contractAddress === token.contractAddress &&
-        st.chainId === token.chainId
-    );
+  const isTokenSelected = (token: SwapTokenOption) =>
+    selectedTokens.some((st) => st.contractAddress === token.contractAddress && st.chainId === token.chainId);
+
+  const isGroupUnifiedSelected = (group: typeof groupedFiltered[0]) => {
+    // Group is selected as unified if ALL its tokens are in selectedTokens? Or if a specific unified flag is set.
+    // If the parent manages unified, we might check if all tokens are selected.
+    const selectedCount = group.tokens.filter(isTokenSelected).length;
+    return selectedCount > 0 && selectedCount === group.tokens.length;
+  };
+  
+  const isAnyTokenInGroupSelected = (group: typeof groupedFiltered[0]) => {
+    return group.tokens.some(isTokenSelected);
+  };
+
+  /* ── Render a single-chain token row ── */
+  const renderTokenRow = (token: SwapTokenOption, indent = false, isDisabledByUnified = false) => {
+    const selected = isTokenSelected(token);
+    const disabled = isDisabledByUnified || selected;
+    // Also disable if it's already selected and we are adding a NEW asset, but we can rely on `selectedTokens` state from parent.
+    // "once a token is selected, on next Add Asset that token should be disabled from selection"
     return (
       <button
         key={`${token.contractAddress}-${token.chainId}`}
+        disabled={disabled}
         onClick={() => {
-          if (isMulti && onToggle) {
-            onToggle(token);
-          } else if (!isMulti) {
-            onSelect(token);
-          }
+          if (!disabled) onSelect(token);
         }}
-        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", paddingLeft: indent ? "40px" : "16px",
+          backgroundColor: "transparent", border: "none", cursor: disabled ? "not-allowed" : "pointer",
+          borderBottom: "1px solid #F0F0EF", boxSizing: "border-box",
+          opacity: disabled ? 0.5 : 1,
+        }}
       >
-        <div className="flex items-center gap-x-3">
-          {isMulti && <CheckboxBox selected={isSelected} />}
-           <div className="relative shrink-0">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <RadioDot selected={selected} />
+          {/* Token logo with chain badge */}
+          <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
             {token.logo ? (
               <img
-                src={token.logo}
-                alt={token.symbol}
-                className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
+                src={token.logo} alt={token.symbol}
+                style={{ width: 40, height: 40, borderRadius: "999px", objectFit: "cover" }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             ) : (
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                style={{
-                  background:
-                    "var(--interactive-button-primary-background, var(--foreground-brand, #006BF4))",
-                }}
-              >
+              <div style={{
+                width: 40, height: 40, borderRadius: "999px", backgroundColor: "#006BF4",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+              }}>
                 {token.symbol.slice(0, 2)}
               </div>
             )}
+            {token.chainLogo && (
+              <img
+                src={token.chainLogo} alt={token.chainName}
+                style={{
+                  position: "absolute", bottom: -2, right: -2,
+                  width: 16, height: 16, borderRadius: "999px",
+                  border: "2px solid #FFFFFE", objectFit: "cover",
+                }}
+              />
+            )}
           </div>
-          <div className="flex flex-col items-start">
-            <span
-              style={{
-                fontFamily: "var(--font-geist-sans), sans-serif",
-                fontWeight: 500,
-                fontSize: "14px",
-                color: "var(--foreground-primary, #161615)",
-              }}
-            >
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: "#161615" }}>
               {token.symbol}
             </span>
             {token.chainName && (
-              <span
-                style={{
-                  fontFamily: "var(--font-geist-sans), sans-serif",
-                  fontSize: "12px",
-                  color: "var(--foreground-muted, var(--foreground-muted, #848483))",
-                }}
-              >
-                {token.chainName}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {token.chainLogo && (
+                  <img src={token.chainLogo} alt="" style={{ width: 14, height: 14, borderRadius: "999px", objectFit: "cover" }} />
+                )}
+                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+                  {token.chainName}
+                </span>
+              </div>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-x-3">
-          <div className="flex flex-col items-end">
-            <span
-              style={{
-                fontFamily: "var(--font-geist-sans), sans-serif",
-                fontWeight: 500,
-                fontSize: "13px",
-                color: "var(--foreground-primary, #161615)",
-              }}
-            >
-              {token.balanceInFiat}
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-geist-sans), sans-serif",
-                fontSize: "12px",
-                color: "var(--foreground-muted, var(--foreground-muted, #848483))",
-              }}
-            >
-              {token.balance}
-            </span>
-          </div>
-          <div className="w-5 h-5 shrink-0" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+          <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>
+            {token.balance} {token.symbol}
+          </span>
+          <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+            ≈ {token.balanceInFiat}
+          </span>
         </div>
       </button>
+    );
+  };
+
+  /* ── Render a unified (multi-chain) group row ── */
+  const renderGroupRow = (group: typeof groupedFiltered[0]) => {
+    const isExpanded = expandedGroups.has(group.symbol);
+    const unifiedSelected = isGroupUnifiedSelected(group);
+    const anyIndividualSelected = isAnyTokenInGroupSelected(group) && !unifiedSelected;
+    // If individual is selected, unified is disabled
+    const isUnifiedDisabled = anyIndividualSelected;
+
+    return (
+      <div key={group.symbol} style={{ display: "flex", flexDirection: "column" }}>
+        <button
+          onClick={(e) => {
+             // If clicking the row itself, expand/collapse
+             toggleGroup(group.symbol, e);
+          }}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px", backgroundColor: "transparent", border: "none",
+            cursor: "pointer", borderBottom: "1px solid #F0F0EF", boxSizing: "border-box",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div onClick={(e) => {
+               e.stopPropagation();
+               if (!isUnifiedDisabled) {
+                 // Trigger unified selection: pass a special token option or an array.
+                 // For now, let's pass a synthetic token representing Unified.
+                 onSelect({
+                   ...group.tokens[0],
+                   chainId: undefined,
+                   chainName: "All Chains",
+                   balance: group.totalBalStr.split(" ")[0],
+                   balanceInFiat: group.totalFiatStr,
+                   contractAddress: group.tokens[0].symbol + "-UNIFIED"
+                 });
+               }
+            }} style={{ opacity: isUnifiedDisabled ? 0.5 : 1, cursor: isUnifiedDisabled ? "not-allowed" : "pointer" }}>
+              <RadioDot selected={unifiedSelected} />
+            </div>
+            <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
+              {group.logo ? (
+                <img
+                  src={group.logo} alt={group.symbol}
+                  style={{ width: 40, height: 40, borderRadius: "999px", objectFit: "cover" }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <div style={{
+                  width: 40, height: 40, borderRadius: "999px", backgroundColor: "#006BF4",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", fontSize: 14, fontWeight: 700,
+                }}>
+                  {group.symbol.slice(0, 2)}
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: "#161615" }}>
+                  {group.symbol}
+                </span>
+                <span style={{
+                  fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, fontWeight: 600,
+                  color: "#006BF4", backgroundColor: "#E8F0FF", borderRadius: 4,
+                  padding: "2px 8px", letterSpacing: "0.04em", lineHeight: "16px",
+                }}>
+                  UNIFIED
+                </span>
+              </div>
+              <ChainLogos tokens={group.tokens} />
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>
+                {group.totalBalStr}
+              </span>
+              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+                ≈ {group.totalFiatStr}
+              </span>
+            </div>
+          </div>
+        </button>
+        {/* Expanded individual chain rows */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateRows: isExpanded ? "1fr" : "0fr",
+            opacity: isExpanded ? 1 : 0,
+            transition: "grid-template-rows 0.3s ease, opacity 0.3s ease",
+          }}
+        >
+          <div style={{ overflow: "hidden" }}>
+            {group.tokens.map((token) => renderTokenRow(token, true, unifiedSelected))}
+          </div>
+        </div>
+      </div>
     );
   };
 
   const isLoading = !staticOptions && swapBalance === null;
 
   return (
-    <div className="flex flex-col h-full w-full antialiased">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
+      {/* Subtitle */}
+      <div style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483", marginBottom: 12 }}>
+        Select token and chain
+      </div>
+
       {/* Search */}
-      <div className="pb-3">
+      <div style={{ paddingBottom: 8 }}>
         <div
-          className="flex items-center"
           style={{
-            height: "44px",
-            gap: "8px",
-            borderRadius: "12px",
-            borderWidth: "1px",
-            borderStyle: "solid",
-            borderColor: "var(--border-default, var(--border-default, #E8E8E7))",
-            paddingTop: "12px",
-            paddingRight: "16px",
-            paddingBottom: "12px",
-            paddingLeft: "16px",
-            background: "var(--background-tertiary, var(--background-tertiary, #F0F0EF))",
+            display: "flex", alignItems: "center", height: 44, gap: 8, borderRadius: 12,
+            border: "1px solid #E8E8E7", padding: "0 8px 0 16px", backgroundColor: "#F0F0EF",
           }}
         >
-          <Search
-            style={{
-              width: "20px",
-              height: "20px",
-              color: "var(--foreground-muted, var(--foreground-muted, #848483))",
-            }}
-            className="shrink-0"
-          />
+          <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search..."
-            className="flex-1 bg-transparent border-none outline-none placeholder:text-[var(--foreground-muted, #848483)]"
+            placeholder="Search token, chain or address"
             style={{
-              fontFamily: "Geist, var(--font-geist-sans), sans-serif",
-              fontWeight: 400,
-              fontSize: "14px",
-              lineHeight: "18px",
-              color: "var(--widget-card-foreground-primary, var(--foreground-primary, #161615))",
+              flex: 1, backgroundColor: "transparent", border: "none", outline: "none",
+              fontFamily: '"Geist", system-ui, sans-serif', fontSize: 14, color: "#161615",
+              minWidth: 0
             }}
           />
           {query && (
-            <button onClick={() => setQuery("")} className="shrink-0">
-              <X className="w-4 h-4 text-[var(--foreground-muted, #848483)]" />
+            <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              <X style={{ width: 16, height: 16, color: "#848483" }} />
             </button>
           )}
+          {/* Chain Selector Badge */}
+          <button 
+            onClick={() => setShowChainSelector(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 999,
+              backgroundColor: "#FFFFFE", border: "1px solid #E8E8E7", cursor: "pointer",
+              height: 32, flexShrink: 0, boxShadow: "0px 1px 2px rgba(0,0,0,0.05)"
+            }}
+          >
+            {selectedChainFilter === null ? (
+               <div style={{ display: "flex", alignItems: "center", position: "relative", width: 32, height: 18 }}>
+                 {/* Dummy multi-chain icon */}
+                 <div style={{ position: "absolute", left: 0, top: 1, width: 16, height: 16, borderRadius: "999px", backgroundColor: "#161615" }} />
+                 <div style={{ position: "absolute", left: 8, top: 1, width: 16, height: 16, borderRadius: "999px", backgroundColor: "#006BF4", border: "1px solid #fff" }} />
+                 <div style={{ position: "absolute", left: 16, top: 1, width: 16, height: 16, borderRadius: "999px", backgroundColor: "#8A2BE2", border: "1px solid #fff" }} />
+               </div>
+            ) : (
+               <img 
+                 src={allTokens.find(t => t.chainId === selectedChainFilter)?.chainLogo} 
+                 style={{ width: 16, height: 16, borderRadius: "999px" }} 
+               />
+            )}
+            <ChevronDown style={{ width: 14, height: 14, color: "#848483" }} />
+          </button>
         </div>
       </div>
 
+      {/* Filter tabs */}
+      <div style={{ display: "flex", gap: 0, marginBottom: 8, borderBottom: "1px solid #E8E8E7" }}>
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              flex: 1, padding: "10px 0", backgroundColor: "transparent", border: "none",
+              borderBottom: activeTab === tab.key ? "2px solid #161615" : "2px solid transparent",
+              cursor: "pointer",
+              fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, fontWeight: 500,
+              color: activeTab === tab.key ? "#161615" : "#848483",
+              transition: "color 0.15s, border-color 0.15s",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Token list */}
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-y-3">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-            <p className="text-sm text-gray-400">Loading assets…</p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: 12 }}>
+            <Loader2 style={{ width: 20, height: 20, color: "#848483", animation: "spin 1s linear infinite" }} />
+            <p style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 14, color: "#848483" }}>Loading assets…</p>
           </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-center text-gray-400 py-8">
+        ) : aboveMin.length === 0 && belowMin.length === 0 ? (
+          <p style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 14, color: "#848483", textAlign: "center", padding: "32px 0" }}>
             No tokens found
           </p>
         ) : (
           <div
             style={{
-              border: "1px solid var(--widget-card-border, var(--border-default, #E8E8E7))",
-              maxHeight: "288px",
-              borderRadius: "8px",
-              borderWidth: "1px",
-              overflowY: "auto",
-              background: "var(--widget-card-background-primary, var(--background-secondary, #FFFFFE))",
+              border: "1px solid #E8E8E7", borderRadius: 14, overflow: "hidden",
+              backgroundColor: "#FFFFFE",
             }}
-            className="flex flex-col p-1 space-y-1"
           >
-            {groupedFiltered.map((group) => {
-              if (group.tokens.length === 1) {
-                return renderTokenRow(group.tokens[0]);
-              }
+            {groupedFiltered.map((group) =>
+              group.tokens.length === 1
+                ? renderTokenRow(group.tokens[0])
+                : renderGroupRow(group)
+            )}
 
-              const isExpanded = expandedGroups.has(group.symbol);
-              const selectedCount = group.tokens.filter(t => 
-                selectedTokens.some(st => st.contractAddress === t.contractAddress && st.chainId === t.chainId)
-              ).length;
-              const isFullySelected = selectedCount === group.tokens.length;
-              const hasSelection = selectedCount > 0;
-
-              return (
-                <div key={group.symbol} className="flex flex-col w-full">
-                  <button
-                    onClick={(e) => toggleGroup(group.symbol, e)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/5 transition-colors group"
-                  >
-                    <div className="flex items-center gap-x-3">
-                      {isMulti && (
-                        <div onClick={(e) => toggleGroupSelection(group.tokens, isFullySelected, e)}>
-                          <CheckboxBox selected={hasSelection} />
-                        </div>
-                      )}
-                      <div className="relative shrink-0">
-                        {group.logo ? (
+            {/* Tokens below minimum */}
+            {belowMin.length > 0 && (
+              <div style={{ borderTop: "1px solid #E8E8E7" }}>
+                <button
+                  onClick={() => setShowBelowMin((v) => !v)}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 16px", backgroundColor: "transparent", border: "none", cursor: "pointer",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <Info style={{ width: 18, height: 18, color: "#848483", flexShrink: 0 }} />
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 14, color: "#161615" }}>
+                        Tokens below minimum
+                      </span>
+                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>
+                        Hidden to prevent failed swaps
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {/* Small token logo cluster */}
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      {belowMin.slice(0, 3).map((t, i) =>
+                        t.logo ? (
                           <img
-                            src={group.logo}
-                            alt={group.symbol}
-                            className="w-9 h-9 rounded-full border border-white shadow-sm object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
-                            }}
+                            key={`bm-${t.contractAddress}-${t.chainId}`}
+                            src={t.logo} alt=""
+                            style={{ width: 18, height: 18, borderRadius: "999px", objectFit: "cover", marginLeft: i > 0 ? -6 : 0, border: "1.5px solid #fff" }}
                           />
                         ) : (
                           <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                            style={{
-                              background:
-                                "var(--interactive-button-primary-background, var(--foreground-brand, #006BF4))",
-                            }}
-                          >
-                            {group.symbol.slice(0, 2)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-start">
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), sans-serif",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            color: "var(--foreground-primary, #161615)",
-                          }}
-                        >
-                          {group.symbol}
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), sans-serif",
-                            fontSize: "12px",
-                            color: "var(--foreground-muted, var(--foreground-muted, #848483))",
-                          }}
-                        >
-                          {group.tokens.length} Chains
-                        </span>
-                      </div>
+                            key={`bm-${t.contractAddress}-${t.chainId}`}
+                            style={{ width: 18, height: 18, borderRadius: "999px", backgroundColor: "#E8E8E7", marginLeft: i > 0 ? -6 : 0, border: "1.5px solid #fff" }}
+                          />
+                        )
+                      )}
+                      {belowMin.length > 3 && (
+                        <div style={{
+                          width: 18, height: 18, borderRadius: "999px", backgroundColor: "#161615",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 9, fontWeight: 700, color: "#fff", marginLeft: -6, border: "1.5px solid #fff",
+                        }}>
+                          +{belowMin.length - 3}
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="flex items-center gap-x-3">
-                      <div className="flex flex-col items-end">
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), sans-serif",
-                            fontWeight: 500,
-                            fontSize: "13px",
-                            color: "var(--foreground-primary, #161615)",
-                          }}
-                        >
-                          {group.totalFiat}
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), sans-serif",
-                            fontSize: "12px",
-                            color: "var(--foreground-muted, var(--foreground-muted, #848483))",
-                          }}
-                        >
-                          {group.totalBal}
-                        </span>
-                      </div>
-                      <div className="text-gray-400 shrink-0">
-                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                      </div>
-                    </div>
-                  </button>
-                  
-                  <div
-                    className={`grid transition-all duration-300 ease-in-out ${
-                      isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="flex flex-col pl-6 mt-1 space-y-1 py-1">
-                        {group.tokens.map((token) => renderTokenRow(token))}
-                      </div>
+                    {showBelowMin ? (
+                      <ChevronUp style={{ width: 18, height: 18, color: "#848483" }} />
+                    ) : (
+                      <ChevronDown style={{ width: 18, height: 18, color: "#848483" }} />
+                    )}
+                  </div>
+                </button>
+                {showBelowMin && (
+                  <div style={{ borderTop: "1px solid #F0F0EF" }}>
+                    <div style={{
+                      display: "flex", alignItems: "flex-start", gap: 8, padding: "12px 16px",
+                      backgroundColor: "#FFF8F0",
+                    }}>
+                      <span style={{ color: "#E5953E", fontSize: 14, lineHeight: "18px", flexShrink: 0 }}>⚠</span>
+                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#6B6B6A", lineHeight: "18px" }}>
+                        Tokens under $1 are unavailable for swaps — gas + protocol fees would exceed the value.
+                      </span>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* Done button */}
       {isMulti && (
-        <div className="pb-4 mt-auto">
+        <div style={{ paddingBottom: 8, marginTop: "auto" }}>
           <button
             onClick={onDone}
             disabled={selectedTokens.length === 0}
-            className="w-full font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 active:opacity-100 flex items-center justify-center cursor-pointer"
             style={{
-              background: "var(--foreground-brand, #006BF4)",
-              boxShadow: "0px 1px 4px 0px #5555550D",
-              height: "48px",
-              borderRadius: "12px",
-              fontSize: "14px",
+              width: "100%", height: 52, display: "flex", alignItems: "center", justifyContent: "center",
+              backgroundColor: selectedTokens.length === 0 ? "#F0F0EF" : "#006BF4",
+              color: selectedTokens.length === 0 ? "#9E9E9C" : "#FFFFFE",
+              border: "none", borderRadius: 14, cursor: selectedTokens.length === 0 ? "default" : "pointer",
+              fontFamily: '"Geist", system-ui, sans-serif', fontSize: 16, fontWeight: 600,
+              boxShadow: selectedTokens.length > 0 ? "0px 1px 4px 0px #5555550D" : "none",
             }}
           >
             Done
           </button>
         </div>
       )}
+
+      {/* Chain Selector Modal */}
+      {showChainSelector && (
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "#FFFFFE", zIndex: 50, display: "flex", flexDirection: "column",
+          padding: "16px"
+        }}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+            <button 
+              onClick={() => setShowChainSelector(false)}
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: "1px solid #E8E8E7",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                backgroundColor: "#FFFFFE", cursor: "pointer"
+              }}
+            >
+              <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
+            </button>
+            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 16, fontWeight: 600, marginLeft: 12 }}>
+              Select chain
+            </span>
+          </div>
+          
+          {/* Search */}
+          <div style={{ paddingBottom: 16 }}>
+            <div style={{
+              display: "flex", alignItems: "center", height: 44, gap: 8, borderRadius: 12,
+              border: "1px solid #006BF4", padding: "0 16px", backgroundColor: "#FFFFFE",
+              boxShadow: "0 0 0 1px #006BF4"
+            }}>
+              <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
+              <input
+                value={chainQuery}
+                onChange={(e) => setChainQuery(e.target.value)}
+                placeholder="Search chains"
+                style={{
+                  flex: 1, backgroundColor: "transparent", border: "none", outline: "none",
+                  fontFamily: '"Geist", system-ui, sans-serif', fontSize: 14, color: "#161615",
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* Chain list */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            <div style={{
+              border: "1px solid #E8E8E7", borderRadius: 14, overflow: "hidden",
+              backgroundColor: "#FFFFFE",
+            }}>
+              <button
+                onClick={() => { setSelectedChainFilter(null); setShowChainSelector(false); }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", padding: "12px 16px",
+                  backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF",
+                  cursor: "pointer", boxSizing: "border-box"
+                }}
+              >
+                <RadioDot selected={selectedChainFilter === null} />
+                <div style={{ marginLeft: 12, width: 32, height: 32, borderRadius: "999px", backgroundColor: "#161615", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#fff", fontSize: 12 }}>All</span>
+                </div>
+                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 15, fontWeight: 500, marginLeft: 12, color: "#161615" }}>
+                  All Chains
+                </span>
+              </button>
+              
+              {/* Unique chains */}
+              {Array.from(new Map(allTokens.filter(t => t.chainId).map(t => [t.chainId, t])).values())
+                .filter(t => (t.chainName || "").toLowerCase().includes(chainQuery.toLowerCase()))
+                .map(t => (
+                  <button
+                    key={`chain-${t.chainId}`}
+                    onClick={() => { setSelectedChainFilter(t.chainId!); setShowChainSelector(false); }}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", padding: "12px 16px",
+                      backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF",
+                      cursor: "pointer", boxSizing: "border-box"
+                    }}
+                  >
+                    <RadioDot selected={selectedChainFilter === t.chainId} />
+                    <img src={t.chainLogo} alt={t.chainName} style={{ marginLeft: 12, width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
+                    <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 15, fontWeight: 500, marginLeft: 12, color: "#161615" }}>
+                      {t.chainName}
+                    </span>
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

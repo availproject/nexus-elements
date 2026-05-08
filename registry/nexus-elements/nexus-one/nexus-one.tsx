@@ -402,61 +402,24 @@ export function NexusOne({
 
     try {
       if (!isExactOutFlow) {
-        let remainingDesiredUsd = Number(amount);
         const fromPayload: {
           chainId: number;
           tokenAddress: `0x${string}`;
           amount: bigint;
         }[] = [];
 
-        const totalUsdStr = fromTokens
-          .reduce((acc, curr) => {
-            const cleanVal =
-              Number(
-                String(curr.balanceInFiat || "").replace(/[^0-9.]/g, ""),
-              ) || 0;
-            return acc + cleanVal;
-          }, 0)
-          .toFixed(2);
-        const isMax = Number(amount).toFixed(2) === totalUsdStr;
-
-        const sortedFromTokens = [...fromTokens].sort((a, b) => {
-          const cleanA =
-            Number(String(a.balanceInFiat || "").replace(/[^0-9.]/g, "")) || 0;
-          const cleanB =
-            Number(String(b.balanceInFiat || "").replace(/[^0-9.]/g, "")) || 0;
-          return cleanB - cleanA;
-        });
-
-        for (const token of sortedFromTokens) {
-          if (isMax) {
-            fromPayload.push({
-              chainId: token.chainId!,
-              tokenAddress: token.contractAddress as `0x${string}`,
-              amount: nexusSDK.utils.parseUnits(
-                String(token.balance),
-                token.decimals || 18,
-              ),
-            });
-            continue;
+        for (const token of fromTokens) {
+          // Determine the amount to use for this specific token
+          let rawAmountStr = token.userAmount;
+          if (!rawAmountStr && fromTokens.length === 1) {
+            rawAmountStr = amount; // fallback for single-token case
           }
+          
+          const cleanAmount = Number(rawAmountStr || "0");
+          if (cleanAmount <= 0) continue;
 
-          if (remainingDesiredUsd <= 0.0001) break;
-
-          const safeBalanceUsdNum =
-            Number(String(token.balanceInFiat || "").replace(/[^0-9.]/g, "")) ||
-            0;
-          const balanceUsd = safeBalanceUsdNum;
-          if (balanceUsd <= 0) continue;
-
-          const takeUsd = Math.min(remainingDesiredUsd, balanceUsd);
-          const ratioToTake = takeUsd / balanceUsd;
-
-          const cleanTokenBalance =
-            Number(String(token.balance || "").replace(/[^0-9.]/g, "")) || 0;
-          const exactTokenAmountToTake = cleanTokenBalance * ratioToTake;
-
-          const safeTokenAmountStr = exactTokenAmountToTake.toFixed(
+          // Note: Here user entered token amount, not USD.
+          const safeTokenAmountStr = cleanAmount.toFixed(
             Math.min(token.decimals || 18, 18),
           );
 
@@ -468,7 +431,6 @@ export function NexusOne({
               token.decimals || 18,
             ),
           });
-          remainingDesiredUsd -= takeUsd;
         }
 
         console.log("SWAPPING WITH EXACTIN", {
@@ -950,7 +912,7 @@ export function NexusOne({
               <>
                 {/* Panel: choose-swap-asset */}
                 {swapStep === "choose-swap-asset" && (
-                  <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full h-full">
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: "#FFFFFE", display: "flex", flexDirection: "column" }} className="animate-in slide-in-from-bottom-full duration-300">
                     <SwapAssetSelector
                       title={
                         activeMode === "deposit"
@@ -979,14 +941,14 @@ export function NexusOne({
                                   t.chainId === token.chainId
                                 ),
                             );
-                          return [...prev, token];
+                          return [...prev, { ...token, userAmount: prev.length === 0 ? amount : "" }];
                         });
                       }}
                       onDone={() => setSwapStep("idle")}
                       onSelect={(token) => {
                         if (swapType === "exactIn") {
-                          setFromTokens([token]);
-                          setSwapStep("choose-receive-asset");
+                          setFromTokens((prev) => [...prev, { ...token, userAmount: prev.length === 0 ? amount : "" }]);
+                          setSwapStep("idle"); // "modal draws upwards from bottom" so we just go idle after selecting a single asset (since it's radio single-select)
                         } else {
                           setToToken(token);
                           setSwapStep("idle");
@@ -998,7 +960,7 @@ export function NexusOne({
                 )}
                 {/* Panel: choose-receive-asset */}
                 {swapStep === "choose-receive-asset" && (
-                  <div className="animate-in fade-in slide-in-from-right-4 duration-500 h-full -mx-4 -mb-4 -mt-3 flex flex-col bg-[var(--widget-background,#F9F9F8)]">
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: "#FFFFFE", display: "flex", flexDirection: "column" }} className="animate-in slide-in-from-bottom-full duration-300">
                     <ReceiveAssetSelector
                       onSelect={(token) => {
                         setToToken(token);
@@ -1010,7 +972,7 @@ export function NexusOne({
                 )}
                 {/* Panel: enter-recipient */}
                 {swapStep === "enter-recipient" && (
-                  <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full flex flex-col gap-4">
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: "#FFFFFE", display: "flex", flexDirection: "column" }} className="animate-in slide-in-from-bottom-full duration-300">
                     <div
                       style={{
                         backgroundColor: "#FFFFFE",
@@ -1284,7 +1246,7 @@ export function NexusOne({
           {/* =============================================================== */}
           {/* SWAP IDLE SCREEN                                                 */}
           {/* =============================================================== */}
-          {activeMode === "swap" && swapStep === "idle" && (
+          {activeMode === "swap" && ["idle", "choose-swap-asset", "choose-receive-asset", "enter-recipient"].includes(swapStep) && (
             <>
               <SwapIdleForm
                 amount={amount}
@@ -1311,6 +1273,7 @@ export function NexusOne({
                 onOpenDestPicker={() => setSwapStep("choose-receive-asset")}
                 onOpenRecipientPicker={undefined}
                 recipientAddress={recipientAddress}
+                onUpdateTokens={setFromTokens}
               />
 
               {txError && <StatusAlert type="error" message={txError} />}
@@ -1348,7 +1311,7 @@ export function NexusOne({
           {/* =============================================================== */}
           {/* DEPOSIT MODE LAYOUT                                              */}
           {/* =============================================================== */}
-          {activeMode === "deposit" && swapStep === "idle" && (
+          {activeMode === "deposit" && ["idle", "choose-swap-asset", "choose-receive-asset", "enter-recipient"].includes(swapStep) && (
             <>
               {/* Opportunity list */}
               {config.opportunities &&
@@ -1453,7 +1416,7 @@ export function NexusOne({
           {/* =============================================================== */}
           {/* SEND MODE — recipient first, then amount, then asset         */}
           {/* =============================================================== */}
-          {activeMode === "send" && swapStep === "idle" && (
+          {activeMode === "send" && ["idle", "choose-swap-asset", "choose-receive-asset", "enter-recipient"].includes(swapStep) && (
             <>
               <SendIdleForm
                 amount={amount}
