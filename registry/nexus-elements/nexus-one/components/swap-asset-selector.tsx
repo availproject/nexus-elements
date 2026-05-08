@@ -488,10 +488,29 @@ export function SwapAssetSelector({
   const isLoading = !staticOptions && swapBalance === null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
-      {/* Subtitle */}
-      <div style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483", marginBottom: 12 }}>
-        Select token and chain
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", padding: "16px", boxSizing: "border-box" }}>
+      {/* Drawer Handle */}
+      <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 16 }}>
+        <div style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: "#E8E8E7" }} />
+      </div>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+        <button onClick={onBack} style={{
+          width: 32, height: 32, borderRadius: 8, border: "1px solid #E8E8E7",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backgroundColor: "#FFFFFE", cursor: "pointer", flexShrink: 0
+        }}>
+          <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
+        </button>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 18, fontWeight: 600, color: "#161615" }}>
+            {title}
+          </span>
+          <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+            Select token and chain
+          </span>
+        </div>
       </div>
 
       {/* Search */}

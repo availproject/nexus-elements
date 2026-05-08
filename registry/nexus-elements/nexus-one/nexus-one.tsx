@@ -913,7 +913,9 @@ export function NexusOne({
               <>
                 {/* Panel: choose-swap-asset */}
                 {swapStep === "choose-swap-asset" && (
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: "#FFFFFE", display: "flex", flexDirection: "column" }} className="animate-in slide-in-from-bottom-full duration-300">
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, pointerEvents: "none", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)", pointerEvents: "auto", transition: "opacity 0.3s" }} onClick={() => setSwapStep("idle")} />
+                    <div style={{ position: "relative", width: "100%", maxHeight: "90%", backgroundColor: "#FFFFFE", borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column", pointerEvents: "auto", boxShadow: "0 -4px 12px rgba(0,0,0,0.05)" }} className="animate-in slide-in-from-bottom-full duration-300">
                     <SwapAssetSelector
                       title={
                         activeMode === "deposit"
@@ -973,11 +975,36 @@ export function NexusOne({
                       }}
                       onBack={() => setSwapStep("idle")}
                     />
+                    </div>
                   </div>
                 )}
                 {/* Panel: choose-receive-asset */}
                 {swapStep === "choose-receive-asset" && (
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: "#FFFFFE", display: "flex", flexDirection: "column" }} className="animate-in slide-in-from-bottom-full duration-300">
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, pointerEvents: "none", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)", pointerEvents: "auto", transition: "opacity 0.3s" }} onClick={() => setSwapStep("idle")} />
+                    <div style={{ position: "relative", width: "100%", maxHeight: "90%", backgroundColor: "#FFFFFE", borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column", pointerEvents: "auto", boxShadow: "0 -4px 12px rgba(0,0,0,0.05)", boxSizing: "border-box" }} className="animate-in slide-in-from-bottom-full duration-300">
+                      <div style={{ padding: "16px 16px 0 16px" }}>
+                        <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 16 }}>
+                          <div style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: "#E8E8E7" }} />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+                          <button onClick={() => setSwapStep("idle")} style={{
+                            width: 32, height: 32, borderRadius: 8, border: "1px solid #E8E8E7",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            backgroundColor: "#FFFFFE", cursor: "pointer", flexShrink: 0
+                          }}>
+                            <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
+                          </button>
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 18, fontWeight: 600, color: "#161615" }}>
+                              Choose asset to Receive
+                            </span>
+                            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+                              Select token and chain
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     <ReceiveAssetSelector
                       onSelect={(token) => {
                         setToToken(token);
@@ -985,6 +1012,7 @@ export function NexusOne({
                       }}
                       onBack={() => setSwapStep("idle")}
                     />
+                    </div>
                   </div>
                 )}
                 {/* Panel: enter-recipient */}
