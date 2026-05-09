@@ -483,24 +483,20 @@ export function ReceiveAssetSelector({
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 14, color: "#161615" }}>{tooltipState.t.name}</span>
-                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>on {tooltipState.t.chainName}</span>
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, position: "relative", zIndex: 2 }}>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Symbol:</span>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>{tooltipState.t.symbol}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, position: "relative", zIndex: 2 }}>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Chain:</span>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>{tooltipState.t.chainName}</span>
-            </div>
+
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, position: "relative", zIndex: 2 }}>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Decimals:</span>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>{tooltipState.t.decimals}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, position: "relative", zIndex: 2 }}>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Market cap:</span>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>Unavailable</span>
+              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>N/A</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, position: "relative", zIndex: 2 }}>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Contract address:</span>

@@ -642,16 +642,8 @@ export function NexusOne({
   // ---------------------------------------------------------------------------
   const getTitle = () => {
     if (swapStep === "history") return "Transaction History";
-    // Asset selection screens share the exact same titles regardless of the active mode
-    if (swapStep === "choose-swap-asset")
-      return swapType === "exactIn"
-        ? "Choose assets to Swap"
-        : "Choose Asset to Receive";
-    if (swapStep === "choose-receive-asset") {
-      return activeMode === "send"
-        ? "Choose Asset to Send"
-        : "Choose Asset to Receive";
-    }
+    // Drawer panels (choose-swap-asset, choose-receive-asset) overlay the main page,
+    // so the header should still show the main page title.
 
     if (swapStep === "preview-intent") {
       return activeMode === "deposit"
@@ -676,16 +668,14 @@ export function NexusOne({
   // Titles that should be center-aligned (main screens / confirm screens)
   // Left-aligned: choose-swap-asset, choose-receive-asset (sub-screens with subtitles)
   const isTitleCentered = () => {
-    if (
-      swapStep === "choose-swap-asset" ||
-      swapStep === "choose-receive-asset" ||
-      swapStep === "history"
-    )
-      return false;
-    return true; // idle, preview-intent, progress, etc.
+    if (swapStep === "history") return false;
+    return true; // idle, drawer panels, preview-intent, progress, etc.
   };
 
-  const canGoBack = swapStep !== "idle";
+  const canGoBack =
+    swapStep !== "idle" &&
+    swapStep !== "choose-swap-asset" &&
+    swapStep !== "choose-receive-asset";
   const handleBack = () => {
     if (swapStep === "history") {
       setSwapStep("idle");
@@ -751,7 +741,7 @@ export function NexusOne({
         fontSize: "12px",
         fontSynthesis: "none",
         gap: "16px",
-        height: "fit-content",
+        minHeight: "480px",
         lineHeight: "16px",
         overflow: "clip",
         position: "relative",
@@ -952,264 +942,15 @@ export function NexusOne({
         }}
       >
         {/* =============================================================== */}
-        {/* SHARED SUB-SCREENS (Swap & Send)                             */}
+        {/* SHARED SUB-SCREENS (non-drawer panels)                        */}
         {/* =============================================================== */}
         {(activeMode === "swap" ||
           activeMode === "send" ||
           activeMode === "deposit") &&
-          swapStep !== "idle" && (
+          swapStep !== "idle" &&
+          swapStep !== "choose-swap-asset" &&
+          swapStep !== "choose-receive-asset" && (
             <>
-              {/* Panel: choose-swap-asset */}
-              {swapStep === "choose-swap-asset" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 40,
-                    pointerEvents: "none",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: "rgba(0,0,0,0.4)",
-                      pointerEvents: "auto",
-                      transition: "opacity 0.3s",
-                    }}
-                    onClick={() => setSwapStep("idle")}
-                  />
-                  <div
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      maxHeight: "90%",
-                      backgroundColor: "#FFFFFE",
-                      borderRadius: "24px 24px 0 0",
-                      display: "flex",
-                      flexDirection: "column",
-                      pointerEvents: "auto",
-                      boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
-                    }}
-                    className="animate-in slide-in-from-bottom-full duration-300"
-                  >
-                    <SwapAssetSelector
-                      title={
-                        activeMode === "deposit"
-                          ? "Choose payment sources"
-                          : swapType === "exactIn"
-                            ? "Choose assets to Swap"
-                            : "Choose asset to Receive"
-                      }
-                      swapBalance={swapBalance}
-                      isMulti={
-                        activeMode === "deposit" || swapType === "exactIn"
-                      }
-                      selectedTokens={fromTokens}
-                      editingAssetIndex={editingAssetIndex}
-                      onToggle={(token) => {
-                        setFromTokens((prev) => {
-                          const exists = prev.find(
-                            (t) =>
-                              t.contractAddress === token.contractAddress &&
-                              t.chainId === token.chainId,
-                          );
-                          if (exists)
-                            return prev.filter(
-                              (t) =>
-                                !(
-                                  t.contractAddress === token.contractAddress &&
-                                  t.chainId === token.chainId
-                                ),
-                            );
-                          return [
-                            ...prev,
-                            {
-                              ...token,
-                              userAmount: prev.length === 0 ? amount : "",
-                            },
-                          ];
-                        });
-                      }}
-                      onDone={() => setSwapStep("idle")}
-                      onSelect={(token) => {
-                        if (activeMode === "swap" && swapType === "exactIn") {
-                          setFromTokens((prev) => {
-                            const next = [...prev];
-                            const defaultAmount =
-                              next.length === 0 ? amount : "";
-                            const newToken = {
-                              ...token,
-                              userAmount: defaultAmount,
-                            };
-                            if (
-                              editingAssetIndex !== null &&
-                              editingAssetIndex < next.length
-                            ) {
-                              // Preserve existing userAmount if replacing
-                              newToken.userAmount =
-                                next[editingAssetIndex].userAmount ||
-                                defaultAmount;
-                              next[editingAssetIndex] = newToken;
-                            } else {
-                              next.push(newToken);
-                            }
-                            return next;
-                          });
-                          setSwapStep("idle");
-                        } else if (
-                          activeMode === "deposit" ||
-                          activeMode === "send"
-                        ) {
-                          setFromTokens([{ ...token, userAmount: amount }]);
-                          setSwapStep("idle");
-                        } else {
-                          setToToken(token);
-                          setSwapStep("idle");
-                        }
-                      }}
-                      onBack={() => setSwapStep("idle")}
-                    />
-                  </div>
-                </div>
-              )}
-              {/* Panel: choose-receive-asset */}
-              {swapStep === "choose-receive-asset" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 40,
-                    pointerEvents: "none",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: "rgba(0,0,0,0.4)",
-                      pointerEvents: "auto",
-                      transition: "opacity 0.3s",
-                    }}
-                    onClick={() => setSwapStep("idle")}
-                  />
-                  <div
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      maxHeight: "90%",
-                      backgroundColor: "#FFFFFE",
-                      borderRadius: "24px 24px 0 0",
-                      display: "flex",
-                      flexDirection: "column",
-                      pointerEvents: "auto",
-                      boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
-                      boxSizing: "border-box",
-                    }}
-                    className="animate-in slide-in-from-bottom-full duration-300"
-                  >
-                    <div style={{ padding: "16px 16px 0 16px" }}>
-                      <div
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          justifyContent: "center",
-                          marginBottom: 16,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 32,
-                            height: 4,
-                            borderRadius: 2,
-                            backgroundColor: "#E8E8E7",
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 16,
-                          marginBottom: 16,
-                        }}
-                      >
-                        <button
-                          onClick={() => setSwapStep("idle")}
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 8,
-                            border: "1px solid #E8E8E7",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: "#FFFFFE",
-                            cursor: "pointer",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <ChevronDown
-                            style={{
-                              width: 16,
-                              height: 16,
-                              transform: "rotate(90deg)",
-                            }}
-                          />
-                        </button>
-                        <div
-                          style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: '"Geist", system-ui, sans-serif',
-                              fontSize: 18,
-                              fontWeight: 600,
-                              color: "#161615",
-                            }}
-                          >
-                            Choose asset to Receive
-                          </span>
-                          <span
-                            style={{
-                              fontFamily: '"Geist", system-ui, sans-serif',
-                              fontSize: 13,
-                              color: "#848483",
-                            }}
-                          >
-                            Select token and chain
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <ReceiveAssetSelector
-                      onSelect={(token) => {
-                        setToToken(token);
-                        setSwapStep("idle");
-                      }}
-                      onBack={() => setSwapStep("idle")}
-                    />
-                  </div>
-                </div>
-              )}
               {/* Panel: enter-recipient */}
               {swapStep === "enter-recipient" && (
                 <div
@@ -1825,6 +1566,270 @@ export function NexusOne({
             </>
           )}
       </div>
+
+      {/* ================================================================== */}
+      {/* DRAWER PANELS — rendered as direct children of root widget          */}
+      {/* so they overlay the main page as bottom drawers                     */}
+      {/* ================================================================== */}
+
+      {/* Drawer: choose-swap-asset */}
+      {(activeMode === "swap" ||
+        activeMode === "send" ||
+        activeMode === "deposit") &&
+        swapStep === "choose-swap-asset" && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 40,
+              pointerEvents: "none",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.4)",
+                pointerEvents: "auto",
+                transition: "opacity 0.3s",
+              }}
+              onClick={() => setSwapStep("idle")}
+            />
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                maxHeight: "90%",
+                backgroundColor: "#FFFFFE",
+                borderRadius: "24px 24px 0 0",
+                display: "flex",
+                flexDirection: "column",
+                pointerEvents: "auto",
+                boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
+              }}
+              className="animate-in slide-in-from-bottom-full duration-300"
+            >
+              <SwapAssetSelector
+                title={
+                  activeMode === "deposit"
+                    ? "Choose payment sources"
+                    : swapType === "exactIn"
+                      ? "Choose assets to Swap"
+                      : "Choose asset to Receive"
+                }
+                swapBalance={swapBalance}
+                isMulti={
+                  activeMode === "deposit" || swapType === "exactIn"
+                }
+                selectedTokens={fromTokens}
+                editingAssetIndex={editingAssetIndex}
+                onToggle={(token) => {
+                  setFromTokens((prev) => {
+                    const exists = prev.find(
+                      (t) =>
+                        t.contractAddress === token.contractAddress &&
+                        t.chainId === token.chainId,
+                    );
+                    if (exists)
+                      return prev.filter(
+                        (t) =>
+                          !(
+                            t.contractAddress === token.contractAddress &&
+                            t.chainId === token.chainId
+                          ),
+                      );
+                    return [
+                      ...prev,
+                      {
+                        ...token,
+                        userAmount: prev.length === 0 ? amount : "",
+                      },
+                    ];
+                  });
+                }}
+                onDone={() => setSwapStep("idle")}
+                onSelect={(token) => {
+                  if (activeMode === "swap" && swapType === "exactIn") {
+                    setFromTokens((prev) => {
+                      const next = [...prev];
+                      const defaultAmount =
+                        next.length === 0 ? amount : "";
+                      const newToken = {
+                        ...token,
+                        userAmount: defaultAmount,
+                      };
+                      if (
+                        editingAssetIndex !== null &&
+                        editingAssetIndex < next.length
+                      ) {
+                        newToken.userAmount =
+                          next[editingAssetIndex].userAmount ||
+                          defaultAmount;
+                        next[editingAssetIndex] = newToken;
+                      } else {
+                        next.push(newToken);
+                      }
+                      return next;
+                    });
+                    setSwapStep("idle");
+                  } else if (
+                    activeMode === "deposit" ||
+                    activeMode === "send"
+                  ) {
+                    setFromTokens([{ ...token, userAmount: amount }]);
+                    setSwapStep("idle");
+                  } else {
+                    setToToken(token);
+                    setSwapStep("idle");
+                  }
+                }}
+                onBack={() => setSwapStep("idle")}
+              />
+            </div>
+          </div>
+        )}
+
+      {/* Drawer: choose-receive-asset */}
+      {(activeMode === "swap" ||
+        activeMode === "send" ||
+        activeMode === "deposit") &&
+        swapStep === "choose-receive-asset" && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 40,
+              pointerEvents: "none",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.4)",
+                pointerEvents: "auto",
+                transition: "opacity 0.3s",
+              }}
+              onClick={() => setSwapStep("idle")}
+            />
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                maxHeight: "90%",
+                backgroundColor: "#FFFFFE",
+                borderRadius: "24px 24px 0 0",
+                display: "flex",
+                flexDirection: "column",
+                pointerEvents: "auto",
+                boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
+                boxSizing: "border-box",
+              }}
+              className="animate-in slide-in-from-bottom-full duration-300"
+            >
+              <div style={{ padding: "16px 16px 0 16px" }}>
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: "#E8E8E7",
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 16,
+                    marginBottom: 16,
+                  }}
+                >
+                  <button
+                    onClick={() => setSwapStep("idle")}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      border: "1px solid #E8E8E7",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#FFFFFE",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <ChevronDown
+                      style={{
+                        width: 16,
+                        height: 16,
+                        transform: "rotate(90deg)",
+                      }}
+                    />
+                  </button>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: '"Geist", system-ui, sans-serif',
+                        fontSize: 18,
+                        fontWeight: 600,
+                        color: "#161615",
+                      }}
+                    >
+                      Choose asset to Receive
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: '"Geist", system-ui, sans-serif',
+                        fontSize: 13,
+                        color: "#848483",
+                      }}
+                    >
+                      Select token and chain
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <ReceiveAssetSelector
+                onSelect={(token) => {
+                  setToToken(token);
+                  setSwapStep("idle");
+                }}
+                onBack={() => setSwapStep("idle")}
+              />
+            </div>
+          </div>
+        )}
+
     </div>
   );
 }
