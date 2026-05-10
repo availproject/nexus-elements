@@ -3,6 +3,7 @@ import { type SwapTokenOption } from "./swap-asset-selector";
 
 interface SwapIdleFormProps {
   amount: string;
+  receiveQuoteAmount?: string;
   onAmountChange: (val: string, panel: "send" | "receive") => void;
   fromTokens: SwapTokenOption[];
   toToken?: SwapTokenOption;
@@ -283,6 +284,7 @@ function AddAssetButton({
 
 export function SwapIdleForm({
   amount,
+  receiveQuoteAmount,
   onAmountChange,
   fromTokens,
   toToken,
@@ -430,6 +432,8 @@ export function SwapIdleForm({
       ? "#006BF4"
       : "#B7791F"
     : "#848483";
+  const getTokenAmountTotal = (tokens: SwapTokenOption[]) =>
+    tokens.reduce((sum, item) => sum + Number(item.userAmount || 0), 0);
 
   const handleSendPercentForToken = (
     index: number,
@@ -469,6 +473,8 @@ export function SwapIdleForm({
       userAmountMode: isUsdMode ? "usd" : "token",
     };
     onUpdateTokens(next);
+    const total = getTokenAmountTotal(next);
+    onAmountChange(total > 0 ? String(total) : "", "send");
   };
 
   const handleSendPercent = (pct: number) => {
@@ -480,6 +486,7 @@ export function SwapIdleForm({
     if (fromTokens.length <= 1) {
       if (fromTokens.length === 1 && onUpdateTokens) {
         handleSendPercentForToken(0, pct, fromTokens[0]);
+        return;
       }
       onAmountChange(val.toFixed(6).replace(/\.?0+$/, ""), "send");
     }
@@ -662,7 +669,9 @@ export function SwapIdleForm({
                       <span
                         style={{
                           color:
-                            isExactIn && (token ? token.userAmount : amount)
+                            (token
+                              ? Boolean(token.userAmount)
+                              : Boolean(isExactIn && amount))
                               ? "#161615"
                               : "#9E9E9C",
                           fontFamily:
@@ -680,11 +689,11 @@ export function SwapIdleForm({
                       type="text"
                       placeholder="0"
                       value={
-                        isExactIn
-                          ? token
-                            ? token.userAmount || ""
-                            : amount
-                          : ""
+                        token
+                          ? token.userAmount || ""
+                          : isExactIn
+                            ? amount
+                            : ""
                       }
                       onChange={(e) => {
                         if (token)
@@ -697,7 +706,9 @@ export function SwapIdleForm({
                       style={{
                         boxSizing: "border-box",
                         color:
-                          isExactIn && (token ? token.userAmount : amount)
+                          (token
+                            ? Boolean(token.userAmount)
+                            : Boolean(isExactIn && amount))
                             ? "#161615"
                             : "#9E9E9C",
                         fontFamily:
@@ -816,7 +827,11 @@ export function SwapIdleForm({
                           const next = [...fromTokens];
                           next.splice(index, 1);
                           onUpdateTokens(next);
-                          if (next.length === 0) onAmountChange("", "send");
+                          const total = getTokenAmountTotal(next);
+                          onAmountChange(
+                            total > 0 ? String(total) : "",
+                            "send",
+                          );
                         }}
                         style={{
                           width: "24px",
@@ -1111,11 +1126,14 @@ export function SwapIdleForm({
             <input
               type="text"
               placeholder="0"
-              value={!isExactIn ? amount : ""}
+              value={!isExactIn ? amount : receiveQuoteAmount ?? ""}
               onChange={handleReceiveInput}
               style={{
                 boxSizing: "border-box",
-                color: !isExactIn && amount ? "#161615" : "#9E9E9C",
+                color:
+                  (!isExactIn && amount) || (isExactIn && receiveQuoteAmount)
+                    ? "#161615"
+                    : "#9E9E9C",
                 fontFamily:
                   '"Delight-Medium", "Delight", system-ui, sans-serif',
                 fontSize: "36px",
