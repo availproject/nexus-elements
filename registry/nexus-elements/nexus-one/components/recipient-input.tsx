@@ -1,45 +1,51 @@
-import { nexusOneTheme } from "../theme";
 import React from "react";
-import { Search } from "lucide-react";
+import { X } from "lucide-react";
 
 export interface RecipientInputProps {
   value: string;
   onChange: (val: string) => void;
+  onClear?: () => void;
   placeholder?: string;
-  label?: string;
+  label?: string | null;
+  hasError?: boolean;
 }
 
 export function RecipientInput({
   value,
   onChange,
+  onClear,
   placeholder = "Search...",
   label = "To",
+  hasError = false,
 }: RecipientInputProps) {
   return (
     <div
       className="flex items-center w-full px-4 overflow-hidden outline-none transition-all placeholder:text-[var(--foreground-muted, #848483)] text-[var(--foreground-primary, #161615)]"
       style={{
-        background: "var(--background-tertiary, var(--background-tertiary, #F0F0EF))",
-        height: "44px",
-        borderRadius: "12px",
+        background: "#FFFFFE",
+        height: "52px",
+        borderRadius: "8px",
         borderWidth: "1px",
-        borderColor: "transparent",
+        borderStyle: "solid",
+        borderColor: hasError ? "#E35454" : "#006BF4",
         gap: "12px",
         paddingTop: "12px",
         paddingBottom: "12px",
       }}
     >
-      <div
-        className="shrink-0 font-geist select-none flex items-center"
-        style={{
-          color: "var(--foreground-primary, var(--foreground-primary, #161615))",
-          fontSize: "14px",
-          fontWeight: 400,
-          lineHeight: "18px",
-        }}
-      >
-        {label}
-      </div>
+      {label && (
+        <div
+          className="shrink-0 font-geist select-none flex items-center"
+          style={{
+            color: "var(--foreground-primary, var(--foreground-primary, #161615))",
+            fontSize: "14px",
+            fontWeight: 400,
+            lineHeight: "18px",
+          }}
+        >
+          {label}
+        </div>
+      )}
 
       <input
         value={value}
@@ -48,10 +54,29 @@ export function RecipientInput({
         className="flex-1 bg-transparent border-none outline-none focus:ring-0 font-geist"
         style={{
           fontSize: "14px",
-          fontWeight: 400,
+          fontWeight: 500,
           lineHeight: "18px",
         }}
       />
+      {value && onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear recipient"
+          style={{
+            alignItems: "center",
+            backgroundColor: "transparent",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            flexShrink: 0,
+            justifyContent: "center",
+            padding: 0,
+          }}
+        >
+          <X style={{ color: "#9E9E9C", height: "16px", width: "16px" }} />
+        </button>
+      )}
     </div>
   );
 }

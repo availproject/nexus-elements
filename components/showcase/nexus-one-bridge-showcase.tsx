@@ -2,8 +2,11 @@
 import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
+import { useAccount } from "wagmi";
 
 const NexusOneBridgeShowcase = () => {
+  const { address } = useAccount();
+
   return (
     <ShowcaseWrapper
       type="nexus-one"
@@ -11,7 +14,7 @@ const NexusOneBridgeShowcase = () => {
     >
       <NexusOne
         config={{ mode: "swap" }}
-        connectedAddress={"0x0000000000000000000000000000000000000000"}
+        connectedAddress={address}
       />
     </ShowcaseWrapper>
   );

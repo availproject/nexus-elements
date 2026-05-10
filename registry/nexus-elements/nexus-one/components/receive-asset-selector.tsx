@@ -6,7 +6,7 @@ import { Search, X, ChevronDown, Check, Info, Copy } from "lucide-react";
 import { type SwapTokenOption } from "./swap-asset-selector";
 import { useNexus } from "../../nexus/NexusProvider";
 import { RadioDot } from "./swap-asset-selector";
-import { CHAIN_METADATA } from "@avail-project/nexus-core";
+import { CHAIN_METADATA, formatTokenBalance } from "@avail-project/nexus-core";
 
 interface ReceiveAssetSelectorProps {
   onSelect: (token: SwapTokenOption) => void;
@@ -58,6 +58,23 @@ const FILTER_TABS = [
   { label: "Native", key: "native" },
   { label: "Stables", key: "stables" },
 ];
+
+const getTokenBalanceKey = (chainId?: number, address?: string) => {
+  if (!chainId || !address) return null;
+  return `${chainId}-${address.toLowerCase()}`;
+};
+
+const getNativeAddressAlias = (address?: string) => {
+  if (!address) return null;
+  const lower = address.toLowerCase();
+  if (lower === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+    return "0x0000000000000000000000000000000000000000";
+  }
+  if (lower === "0x0000000000000000000000000000000000000000") {
+    return "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+  }
+  return null;
+};
 
 let rawTokensCache: any = null;
 let rawTokensPromise: Promise<any> | null = null;
@@ -135,7 +152,7 @@ export function ReceiveAssetSelector({
   onSelect,
   onBack,
 }: ReceiveAssetSelectorProps) {
-  const { supportedChainsAndTokens } = useNexus();
+  const { supportedChainsAndTokens, swapBalance } = useNexus();
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedChainFilter, setSelectedChainFilter] = useState<number | null>(null);
@@ -151,6 +168,45 @@ export function ReceiveAssetSelector({
   const [apiTokens, setApiTokens] = useState<SwapTokenOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dynamicStableSymbols, setDynamicStableSymbols] = useState<Set<string>>(STABLE_SYMBOLS);
+
+  const balanceMap = useMemo(() => {
+    const map = new Map<string, Pick<SwapTokenOption, "balance" | "balanceInFiat">>();
+    for (const asset of swapBalance ?? []) {
+      for (const bd of asset.breakdown ?? []) {
+        const key = getTokenBalanceKey(bd.chain?.id, bd.contractAddress);
+        if (!key) continue;
+
+        const symbol = bd.symbol ?? asset.symbol;
+        const decimals = bd.decimals ?? asset.decimals ?? 18;
+        map.set(key, {
+          balance:
+            formatTokenBalance(bd.balance ?? "0", {
+              symbol,
+              decimals,
+            }) ?? `0 ${symbol}`,
+          balanceInFiat:
+            bd.balanceInFiat != null
+              ? `$${Number(bd.balanceInFiat).toFixed(2)}`
+              : "$0.00",
+        });
+        const nativeAlias = getNativeAddressAlias(bd.contractAddress);
+        const aliasKey = getTokenBalanceKey(bd.chain?.id, nativeAlias ?? undefined);
+        if (aliasKey) {
+          map.set(aliasKey, map.get(key)!);
+        }
+      }
+    }
+    return map;
+  }, [swapBalance]);
+
+  const tokensWithBalances = useMemo(() => {
+    return apiTokens.map((token) => {
+      const balance = balanceMap.get(
+        getTokenBalanceKey(token.chainId, token.contractAddress) ?? "",
+      );
+      return balance ? { ...token, ...balance } : token;
+    });
+  }, [apiTokens, balanceMap]);
 
   useEffect(() => {
     const handleGlobalClick = () => setTooltipState(null);
@@ -231,7 +287,7 @@ export function ReceiveAssetSelector({
     t.contractAddress === "0x0000000000000000000000000000000000000000";
 
   const filtered = useMemo(() => {
-    let result = apiTokens;
+    let result = tokensWithBalances;
     if (selectedChainFilter) result = result.filter(t => t.chainId === selectedChainFilter);
     if (query.trim()) {
       const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -244,7 +300,7 @@ export function ReceiveAssetSelector({
     else if (activeTab === "stables") result = result.filter(t => dynamicStableSymbols.has(t.symbol));
     
     return result;
-  }, [apiTokens, selectedChainFilter, query, activeTab, dynamicStableSymbols]);
+  }, [tokensWithBalances, selectedChainFilter, query, activeTab, dynamicStableSymbols]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%", position: "relative" }}>
@@ -310,6 +366,11 @@ export function ReceiveAssetSelector({
               const hash = `${t.chainId}-${t.contractAddress}`;
               const isSelected = selectedTokenHash === hash;
               const isHovered = hoveredHash === hash;
+              const numericBalance = Number.parseFloat(
+                String(t.balance ?? "0").replace(/[^0-9.]/g, ""),
+              );
+              const hasBalance =
+                Number.isFinite(numericBalance) && numericBalance > 0;
               return (
                 <button
                   key={hash}
@@ -379,9 +440,9 @@ export function ReceiveAssetSelector({
                       </div>
                     </div>
                   </div>
-                  {t.balance !== "0" && (
+                  {hasBalance && (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>{Number(t.balance).toFixed(4)} {t.symbol}</span>
+                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>{t.balance}</span>
                       <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>{t.balanceInFiat}</span>
                     </div>
                   )}

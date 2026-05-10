@@ -3,11 +3,13 @@ import React, { useState } from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { type NexusOneMode } from "@/registry/nexus-elements/nexus-one/types";
+import { useAccount } from "wagmi";
 
 const ALL_MODES: NexusOneMode[] = ["swap", "deposit", "send"];
 
 const NexusOneShowcase = () => {
   const [selectedMode, setSelectedMode] = useState<NexusOneMode>("swap");
+  const { address } = useAccount();
 
   return (
     <div className="flex flex-col gap-y-4 w-full">
@@ -83,7 +85,7 @@ const NexusOneShowcase = () => {
               },
             ],
           }}
-          connectedAddress={"0x0000000000000000000000000000000000000000"}
+          connectedAddress={address}
         />
       </ShowcaseWrapper>
     </div>

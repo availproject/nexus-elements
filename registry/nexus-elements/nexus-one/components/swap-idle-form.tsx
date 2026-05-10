@@ -13,6 +13,7 @@ interface SwapIdleFormProps {
   onOpenDestPicker: () => void;
   onOpenRecipientPicker?: () => void;
   recipientAddress?: string;
+  defaultRecipientAddress?: string;
   swapType: "exactIn" | "exactOut";
   onUpdateTokens?: (tokens: SwapTokenOption[]) => void;
 }
@@ -187,6 +188,25 @@ function PercentHoverButton({
   );
 }
 
+const sameAddress = (a?: string, b?: string) =>
+  Boolean(a && b && a.toLowerCase() === b.toLowerCase());
+
+const formatShortAddress = (address?: string) => {
+  if (!address) return "";
+  return address.length > 12
+    ? `${address.slice(0, 6)}…${address.slice(-4)}`
+    : address;
+};
+
+const formatTokenBalanceLabel = (token?: SwapTokenOption) => {
+  if (!token) return "";
+  const balance = String(token.balance || "0").trim() || "0";
+  if (!token.symbol) return balance;
+  return balance.toLowerCase().includes(token.symbol.toLowerCase())
+    ? balance
+    : `${balance} ${token.symbol}`;
+};
+
 /** Add asset button with smooth transition */
 function AddAssetButton({
   visible,
@@ -273,6 +293,7 @@ export function SwapIdleForm({
   onOpenDestPicker,
   onOpenRecipientPicker,
   recipientAddress,
+  defaultRecipientAddress,
   swapType,
   onUpdateTokens,
 }: SwapIdleFormProps) {
@@ -399,6 +420,16 @@ export function SwapIdleForm({
   }, [fromTokens]);
 
   const isExactIn = swapType === "exactIn";
+  const receiveBalanceLabel = formatTokenBalanceLabel(toToken);
+  const isDefaultRecipient = sameAddress(
+    recipientAddress,
+    defaultRecipientAddress,
+  );
+  const recipientColor = recipientAddress
+    ? isDefaultRecipient
+      ? "#006BF4"
+      : "#B7791F"
+    : "#848483";
 
   const handleSendPercentForToken = (
     index: number,
@@ -1210,7 +1241,7 @@ export function SwapIdleForm({
             >
               ≈ $0.00
             </div>
-            {toToken && toToken.balance && (
+            {toToken && (
               <div
                 onMouseEnter={() => setTooltip("asset-receive")}
                 onMouseLeave={() => setTooltip(null)}
@@ -1245,7 +1276,7 @@ export function SwapIdleForm({
                     lineHeight: "20px",
                   }}
                 >
-                  {toToken.balance}
+                  {receiveBalanceLabel}
                 </div>
                 
                 {/* Tooltip */}
@@ -1338,7 +1369,7 @@ export function SwapIdleForm({
                 <div
                   style={{
                     boxSizing: "border-box",
-                    color: "#006BF4",
+                    color: recipientColor,
                     fontFamily: '"Geist", system-ui, sans-serif',
                     fontSize: "16px",
                     fontVariantNumeric: "tabular-nums",
@@ -1347,7 +1378,7 @@ export function SwapIdleForm({
                   }}
                 >
                   {recipientAddress
-                    ? `${recipientAddress.slice(0, 6)}…${recipientAddress.slice(-4)}`
+                    ? formatShortAddress(recipientAddress)
                     : "Select recipient"}
                 </div>
                 <button

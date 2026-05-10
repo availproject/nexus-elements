@@ -21,7 +21,7 @@ import {
 } from "./components/swap-intent-preview";
 import { ReceiveAssetSelector, preloadReceiveTokens } from "./components/receive-asset-selector";
 import { OpportunityList } from "./components/opportunity-list";
-import { ChevronDown, ArrowLeft, Check } from "lucide-react";
+import { ChevronDown, ArrowLeft } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
 import { useTransactionSteps } from "../common/tx/useTransactionSteps";
 import { SWAP_EXPECTED_STEPS } from "../common/tx/steps";
@@ -35,6 +35,7 @@ import { useWalletClient, usePublicClient } from "wagmi";
 import {
   erc20Abi,
   isAddress,
+  zeroAddress,
   createPublicClient,
   http,
   encodeFunctionData,
@@ -90,6 +91,17 @@ export function NexusOne({
 
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
+  const walletClientAddress = walletClient?.account?.address;
+  const ownerAddress =
+    connectedAddress &&
+    isAddress(connectedAddress) &&
+    connectedAddress.toLowerCase() !== zeroAddress
+      ? connectedAddress
+      : walletClientAddress &&
+          isAddress(walletClientAddress) &&
+          walletClientAddress.toLowerCase() !== zeroAddress
+        ? walletClientAddress
+        : undefined;
 
   // Global form state
   const [amount, setAmount] = useState("");
@@ -98,6 +110,12 @@ export function NexusOne({
     null,
   );
   const [txError, setTxError] = useState<string | null>(null);
+  const defaultRecipientAddress = ownerAddress ?? "";
+  const effectiveRecipientAddress =
+    activeMode === "swap"
+      ? recipientAddress || defaultRecipientAddress
+      : recipientAddress;
+  const previousDefaultRecipientRef = useRef(defaultRecipientAddress);
 
   // Swap-specific
   const [swapType, setSwapType] = useState<SwapType>("exactIn");
@@ -106,6 +124,24 @@ export function NexusOne({
   const [toToken, setToToken] = useState<SwapTokenOption | undefined>(
     undefined,
   );
+
+  useEffect(() => {
+    const previousDefault = previousDefaultRecipientRef.current;
+    previousDefaultRecipientRef.current = defaultRecipientAddress;
+
+    if (activeMode !== "swap" || !defaultRecipientAddress) return;
+
+    setRecipientAddress((current) => {
+      if (
+        !current ||
+        (previousDefault &&
+          current.toLowerCase() === previousDefault.toLowerCase())
+      ) {
+        return defaultRecipientAddress;
+      }
+      return current;
+    });
+  }, [activeMode, defaultRecipientAddress]);
 
   const {
     steps,
@@ -287,6 +323,43 @@ export function NexusOne({
     setSelectedOpportunity(undefined);
   };
 
+  const handleOpenRecipientEditor = () => {
+    if (activeMode === "swap" && !recipientAddress && defaultRecipientAddress) {
+      setRecipientAddress(defaultRecipientAddress);
+    }
+    setTxError(null);
+    setSwapStep("enter-recipient");
+  };
+
+  const handleResetRecipientToDefault = () => {
+    setRecipientAddress(defaultRecipientAddress);
+    setTxError(null);
+  };
+
+  const handleSaveRecipient = () => {
+    const next = recipientAddress.trim();
+    if (!next) {
+      setTxError("Recipient address is required");
+      return;
+    }
+    if (!next.endsWith(".eth") && !isAddress(next)) {
+      setTxError("Incorrect address");
+      return;
+    }
+    if (
+      activeMode === "send" &&
+      ownerAddress &&
+      isAddress(next) &&
+      next.toLowerCase() === ownerAddress.toLowerCase()
+    ) {
+      setTxError("Recipient cannot be the connected wallet.");
+      return;
+    }
+    setRecipientAddress(next);
+    setTxError(null);
+    setSwapStep("idle");
+  };
+
   /** Start swap flow — SDK will trigger setOnSwapIntentHook for preview */
   const handleEnterPreview = async () => {
     console.log("[DEBUG] handleEnterPreview called!", {
@@ -308,26 +381,37 @@ export function NexusOne({
 
     setTxError(null);
 
-    let resolvedRecipientAddress = recipientAddress;
-    if (activeMode === "send") {
-      if (!recipientAddress) {
+    const hasCustomSwapRecipient =
+      activeMode === "swap" &&
+      Boolean(recipientAddress) &&
+      (!defaultRecipientAddress ||
+        recipientAddress.toLowerCase() !== defaultRecipientAddress.toLowerCase());
+
+    let resolvedRecipientAddress =
+      activeMode === "swap" ? effectiveRecipientAddress : recipientAddress;
+
+    if (hasCustomSwapRecipient && !isExactOutFlow) {
+      setTxError("Custom recipient requires entering a receive amount.");
+      return;
+    }
+
+    if (activeMode === "send" || hasCustomSwapRecipient) {
+      if (!resolvedRecipientAddress) {
         setTxError("Recipient address is required");
         return;
       }
 
       if (
-        connectedAddress &&
-        isAddress(recipientAddress) &&
-        recipientAddress.toLowerCase() === connectedAddress.toLowerCase()
+        activeMode === "send" &&
+        ownerAddress &&
+        isAddress(resolvedRecipientAddress) &&
+        resolvedRecipientAddress.toLowerCase() === ownerAddress.toLowerCase()
       ) {
         setTxError("Recipient cannot be the connected wallet.");
         return;
       }
 
-      setSwapStep("preview-intent");
-      setIntentLoading(true);
-
-      if (recipientAddress.endsWith(".eth")) {
+      if (resolvedRecipientAddress.endsWith(".eth")) {
         try {
           const mainnetClient =
             publicClient?.chain?.id === 1
@@ -337,46 +421,39 @@ export function NexusOne({
                   transport: http(),
                 });
           const ensAddr = await mainnetClient.getEnsAddress({
-            name: normalize(recipientAddress),
+            name: normalize(resolvedRecipientAddress),
           });
           if (!ensAddr) {
             setTxError("Could not resolve ENS name to an address.");
-            setSwapStep("idle");
-            setIntentLoading(false);
             return;
           }
           resolvedRecipientAddress = ensAddr;
         } catch (e: any) {
           setTxError(e.message || "Failed to resolve ENS name.");
-          setSwapStep("idle");
-          setIntentLoading(false);
           return;
         }
       } else {
-        if (!isAddress(recipientAddress)) {
+        if (!isAddress(resolvedRecipientAddress)) {
           setTxError("Invalid recipient address.");
-          setSwapStep("idle");
-          setIntentLoading(false);
           return;
         }
       }
 
       if (
-        connectedAddress &&
+        activeMode === "send" &&
+        ownerAddress &&
         isAddress(resolvedRecipientAddress) &&
         resolvedRecipientAddress.toLowerCase() ===
-          connectedAddress.toLowerCase()
+          ownerAddress.toLowerCase()
       ) {
         setTxError("Recipient cannot be the connected wallet.");
-        setSwapStep("idle");
-        setIntentLoading(false);
         return;
       }
-    } else {
-      console.log("[DEBUG] Proceeding to set preview-intent state...");
-      setSwapStep("preview-intent");
-      setIntentLoading(true);
     }
+
+    console.log("[DEBUG] Proceeding to set preview-intent state...");
+    setSwapStep("preview-intent");
+    setIntentLoading(true);
     setIntentToAmount(undefined);
     setIntentFeeUsd(undefined);
     setIntentData(null);
@@ -542,6 +619,12 @@ export function NexusOne({
             "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
           toToken.contractAddress ===
             "0x0000000000000000000000000000000000000000";
+        const shouldTransferSwapOutput =
+          activeMode === "swap" &&
+          Boolean(resolvedRecipientAddress) &&
+          (!defaultRecipientAddress ||
+            resolvedRecipientAddress.toLowerCase() !==
+              defaultRecipientAddress.toLowerCase());
 
         let executeConfig: any;
         if (activeMode === "deposit" && selectedOpportunity?.execute) {
@@ -549,10 +632,10 @@ export function NexusOne({
             typeof selectedOpportunity.execute === "function"
               ? selectedOpportunity.execute(
                   amountBigInt,
-                  connectedAddress as `0x${string}`,
+                  (ownerAddress ?? connectedAddress) as `0x${string}`,
                 )
               : selectedOpportunity.execute;
-        } else if (activeMode === "send") {
+        } else if (activeMode === "send" || shouldTransferSwapOutput) {
           if (isNative) {
             executeConfig = {
               to: resolvedRecipientAddress as `0x${string}`,
@@ -642,7 +725,7 @@ export function NexusOne({
   // ---------------------------------------------------------------------------
   const getTitle = () => {
     if (swapStep === "history") return "Transaction History";
-    // Drawer panels (choose-swap-asset, choose-receive-asset) overlay the main page,
+    // Drawer panels overlay the main page,
     // so the header should still show the main page title.
 
     if (swapStep === "preview-intent") {
@@ -675,7 +758,8 @@ export function NexusOne({
   const canGoBack =
     swapStep !== "idle" &&
     swapStep !== "choose-swap-asset" &&
-    swapStep !== "choose-receive-asset";
+    swapStep !== "choose-receive-asset" &&
+    swapStep !== "enter-recipient";
   const handleBack = () => {
     if (swapStep === "history") {
       setSwapStep("idle");
@@ -949,114 +1033,9 @@ export function NexusOne({
           activeMode === "deposit") &&
           swapStep !== "idle" &&
           swapStep !== "choose-swap-asset" &&
-          swapStep !== "choose-receive-asset" && (
+          swapStep !== "choose-receive-asset" &&
+          swapStep !== "enter-recipient" && (
             <>
-              {/* Panel: enter-recipient */}
-              {swapStep === "enter-recipient" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 40,
-                    backgroundColor: "#FFFFFE",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                  className="animate-in slide-in-from-bottom-full duration-300"
-                >
-                  <div
-                    style={{
-                      backgroundColor: "#FFFFFE",
-                      border: "1px solid #E8E8E7",
-                      borderRadius: "12px",
-                      boxShadow: "#1616150A 0px 1px 2px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                      padding: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: "#848483",
-                        fontFamily: '"Geist", system-ui, sans-serif',
-                        fontSize: "12px",
-                        fontWeight: 500,
-                        letterSpacing: "0.08em",
-                        lineHeight: "20px",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Recipient
-                    </div>
-                    <RecipientInput
-                      value={recipientAddress}
-                      onChange={(next) => {
-                        setRecipientAddress(next);
-                        if (txError) setTxError(null);
-                      }}
-                      label="To"
-                      placeholder="ENS or address"
-                    />
-                    <div
-                      style={{
-                        color: "#848483",
-                        fontFamily: '"Geist", system-ui, sans-serif',
-                        fontSize: "13px",
-                        lineHeight: "18px",
-                      }}
-                    >
-                      Recipient must be different from the connected wallet.
-                    </div>
-                  </div>
-
-                  {txError && <StatusAlert type="error" message={txError} />}
-
-                  <button
-                    onClick={() => {
-                      const next = recipientAddress.trim();
-                      if (!next) {
-                        setTxError("Recipient address is required");
-                        return;
-                      }
-                      if (
-                        connectedAddress &&
-                        isAddress(next) &&
-                        next.toLowerCase() === connectedAddress.toLowerCase()
-                      ) {
-                        setTxError("Recipient cannot be the connected wallet.");
-                        return;
-                      }
-                      setRecipientAddress(next);
-                      setTxError(null);
-                      setSwapStep("idle");
-                    }}
-                    style={{
-                      alignItems: "center",
-                      backgroundColor: "#006BF4",
-                      border: "none",
-                      borderRadius: "8px",
-                      boxShadow: "#5555550D 0px 1px 4px",
-                      color: "#FFFFFE",
-                      cursor: "pointer",
-                      display: "flex",
-                      fontFamily: '"Geist", system-ui, sans-serif',
-                      fontSize: "16px",
-                      fontWeight: 500,
-                      gap: "8px",
-                      height: "48px",
-                      justifyContent: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Check style={{ height: "16px", width: "16px" }} />
-                    Done
-                  </button>
-                </div>
-              )}
               {/* Panel: preview-intent */}
               {swapStep === "preview-intent" && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full h-full">
@@ -1301,8 +1280,9 @@ export function NexusOne({
                   setSwapStep("choose-swap-asset");
                 }}
                 onOpenDestPicker={() => setSwapStep("choose-receive-asset")}
-                onOpenRecipientPicker={undefined}
-                recipientAddress={recipientAddress}
+                onOpenRecipientPicker={handleOpenRecipientEditor}
+                recipientAddress={effectiveRecipientAddress}
+                defaultRecipientAddress={defaultRecipientAddress}
                 onUpdateTokens={setFromTokens}
               />
 
@@ -1514,7 +1494,7 @@ export function NexusOne({
                 }
                 usdValue={amount && usdValue > 0 ? usdValue.toFixed(2) : ""}
                 onOpenAssetPicker={() => setSwapStep("choose-receive-asset")}
-                onOpenRecipientPicker={() => setSwapStep("enter-recipient")}
+                onOpenRecipientPicker={handleOpenRecipientEditor}
                 recipientAddress={recipientAddress || ""}
                 onMax={() => {
                   if (!maxBalance) return;
@@ -1571,6 +1551,230 @@ export function NexusOne({
       {/* DRAWER PANELS — rendered as direct children of root widget          */}
       {/* so they overlay the main page as bottom drawers                     */}
       {/* ================================================================== */}
+
+      {/* Drawer: enter-recipient */}
+      {(activeMode === "swap" ||
+        activeMode === "send" ||
+        activeMode === "deposit") &&
+        swapStep === "enter-recipient" && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 40,
+              pointerEvents: "none",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.35)",
+                pointerEvents: "auto",
+                transition: "opacity 0.3s",
+              }}
+              onClick={() => {
+                setTxError(null);
+                setSwapStep("idle");
+              }}
+            />
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                maxHeight: "calc(100% - 48px)",
+                backgroundColor: "#FFFFFE",
+                borderRadius: "16px 16px 0 0",
+                display: "flex",
+                flexDirection: "column",
+                pointerEvents: "auto",
+                boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
+                boxSizing: "border-box",
+                overflowY: "auto",
+                padding: "12px 20px 20px",
+              }}
+              className="animate-in slide-in-from-bottom-full duration-300"
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                  width: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#D8D8D6",
+                    borderRadius: "999px",
+                    height: "4px",
+                    width: "32px",
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  gap: "14px",
+                  paddingBottom: "18px",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTxError(null);
+                    setSwapStep("idle");
+                  }}
+                  aria-label="Back"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFFFFE",
+                    border: "1px solid #E8E8E7",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexShrink: 0,
+                    height: "32px",
+                    justifyContent: "center",
+                    padding: 0,
+                    width: "32px",
+                  }}
+                >
+                  <ArrowLeft style={{ color: "#161615", height: "16px", width: "16px" }} />
+                </button>
+                <div
+                  style={{
+                    color: "#161615",
+                    fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
+                    fontSize: "18px",
+                    fontWeight: 500,
+                    lineHeight: "24px",
+                  }}
+                >
+                  Recipient
+                </div>
+              </div>
+              <div
+                style={{
+                  backgroundColor: "#E8E8E7",
+                  height: "1px",
+                  marginBottom: "20px",
+                  width: "100%",
+                }}
+              />
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#9E9E9C",
+                    fontFamily: '"Geist", system-ui, sans-serif',
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    lineHeight: "18px",
+                  }}
+                >
+                  Wallet Address
+                </div>
+                {activeMode === "swap" && defaultRecipientAddress && (
+                  <button
+                    type="button"
+                    onClick={handleResetRecipientToDefault}
+                    style={{
+                      backgroundColor: "#F4F7FE",
+                      border: "none",
+                      borderRadius: "4px",
+                      color: "#006BF4",
+                      cursor: "pointer",
+                      fontFamily: '"Geist", system-ui, sans-serif',
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      lineHeight: "16px",
+                      padding: "8px 12px",
+                    }}
+                  >
+                    Reset to default
+                  </button>
+                )}
+              </div>
+              <RecipientInput
+                value={recipientAddress}
+                onChange={(next) => {
+                  setRecipientAddress(next);
+                  if (txError) setTxError(null);
+                }}
+                onClear={() => setRecipientAddress("")}
+                label={null}
+                placeholder="Wallet address"
+                hasError={Boolean(txError)}
+              />
+              {txError && (
+                <div
+                  style={{
+                    color: "#E35454",
+                    fontFamily: '"Geist", system-ui, sans-serif',
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    lineHeight: "18px",
+                    marginTop: "10px",
+                  }}
+                >
+                  {txError}
+                </div>
+              )}
+              {activeMode === "send" && (
+                <div
+                  style={{
+                    color: "#848483",
+                    fontFamily: '"Geist", system-ui, sans-serif',
+                    fontSize: "13px",
+                    lineHeight: "18px",
+                    marginTop: "10px",
+                  }}
+                >
+                  Recipient must be different from the connected wallet.
+                </div>
+              )}
+              <button
+                onClick={handleSaveRecipient}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#006BF4",
+                  border: "none",
+                  borderRadius: "8px",
+                  boxShadow: "#5555550D 0px 1px 4px",
+                  color: "#FFFFFE",
+                  cursor: "pointer",
+                  display: "flex",
+                  fontFamily: '"Geist", system-ui, sans-serif',
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  height: "48px",
+                  justifyContent: "center",
+                  marginTop: "30px",
+                  width: "100%",
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Drawer: choose-swap-asset */}
       {(activeMode === "swap" ||

@@ -4,6 +4,7 @@ import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
 import { encodeFunctionData } from "viem";
+import { useAccount } from "wagmi";
 
 const AAVE_ABI = [
   {
@@ -47,6 +48,8 @@ const FLUID_ABI = [
 ] as const;
 
 const NexusOneDepositShowcase = () => {
+  const { address } = useAccount();
+
   return (
     <ShowcaseWrapper
       type="nexus-one"
@@ -172,7 +175,7 @@ const NexusOneDepositShowcase = () => {
             },
           ],
         }}
-        connectedAddress={"0x0000000000000000000000000000000000000000"}
+        connectedAddress={address}
       />
     </ShowcaseWrapper>
   );
