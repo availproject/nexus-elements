@@ -21,12 +21,13 @@ import {
 } from "./components/swap-intent-preview";
 import { ReceiveAssetSelector, preloadReceiveTokens } from "./components/receive-asset-selector";
 import { OpportunityList } from "./components/opportunity-list";
-import { ChevronDown, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, ChevronDown, Loader2 } from "lucide-react";
 import { useNexus } from "../nexus/NexusProvider";
 import { useTransactionSteps } from "../common/tx/useTransactionSteps";
 import { SWAP_EXPECTED_STEPS } from "../common/tx/steps";
 import {
   CHAIN_METADATA,
+  ERROR_CODES,
   NEXUS_EVENTS,
   type SwapStepType,
   TOKEN_METADATA,
@@ -81,6 +82,12 @@ interface SwapHistoryEntry {
   finalExplorerUrl?: string | null;
   error?: string;
 }
+
+type SwapQuoteIssue = {
+  type: "insufficientSources";
+  message: string;
+  missingUsd?: string;
+};
 
 const QUOTE_REFRESH_INTERVAL_MS = 30000;
 const REFUND_FALLBACK_DELAY_MS = 30 * 60 * 1000;
@@ -1000,10 +1007,12 @@ function SwapHistoryPanel({
 
 export function NexusOne({
   config,
+  embed = true,
   connectedAddress,
   onComplete,
   onStart,
   onError,
+  onClose,
 }: NexusOneProps) {
   const {
     nexusSDK,
@@ -1016,6 +1025,7 @@ export function NexusOne({
 
   // Mode is a single value, not an array
   const activeMode = config.mode;
+  const showCloseButton = !embed && Boolean(onClose);
 
   // Preload receive tokens once SDK is available
   useEffect(() => {
@@ -1103,6 +1113,9 @@ export function NexusOne({
   const [quoteRefreshSecondsRemaining, setQuoteRefreshSecondsRemaining] =
     useState(0);
   const [intentData, setIntentData] = useState<SwapIntentData | null>(null);
+  const [swapQuoteIssue, setSwapQuoteIssue] = useState<SwapQuoteIssue | null>(
+    null,
+  );
   const [transferExplorerUrl, setTransferExplorerUrl] = useState<string | null>(
     null,
   );
@@ -1216,6 +1229,7 @@ export function NexusOne({
     setQuoteRefreshing(false);
     setReceiveMaxCalculating(false);
     setPreviewQuoteRefreshing(false);
+    setSwapQuoteIssue(null);
     if (clearQuote) {
       setIntentToAmount(undefined);
       setIntentFeeUsd(undefined);
@@ -1270,6 +1284,132 @@ export function NexusOne({
 
     const rate = getTokenUsdRate(token);
     return rate.gt(0) ? amountNumber.mul(rate) : new Decimal(0);
+  };
+
+  const getErrorText = (error: unknown) => {
+    const err = error as any;
+    const parts = [
+      err?.message,
+      typeof error === "string" ? error : undefined,
+      err?.code,
+    ];
+
+    try {
+      if (err?.data) parts.push(JSON.stringify(err.data));
+    } catch {
+      // Ignore non-serializable SDK error metadata.
+    }
+
+    return parts.filter(Boolean).join(" ");
+  };
+
+  const isInsufficientSourcesError = (error: unknown) => {
+    const err = error as any;
+    const message = getErrorText(error).toLowerCase();
+
+    return (
+      err?.code === ERROR_CODES.INSUFFICIENT_BALANCE ||
+      message.includes("insufficient balance") ||
+      message.includes("sources are not enough") ||
+      (message.includes("source") && message.includes("not enough"))
+    );
+  };
+
+  const parseLabeledErrorDecimal = (text: string, label: string) => {
+    const match = text.match(
+      new RegExp(`${label}\\s*:\\s*\\$?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)`, "i"),
+    );
+    return match ? parseFiatNumber(match[1]) : undefined;
+  };
+
+  const getExactOutRequestedUsd = () => {
+    const amountNumber = parseFiatNumber(amount);
+    if (!amountNumber || amountNumber.lte(0) || !toToken?.symbol) {
+      return undefined;
+    }
+
+    const fiatValue = getFiatValue(amountNumber.toNumber(), toToken.symbol);
+    return Number.isFinite(fiatValue) && fiatValue > 0
+      ? new Decimal(fiatValue)
+      : undefined;
+  };
+
+  const getExactOutAvailableSourceUsd = () => {
+    const selectedSourceTotal =
+      fromTokens.length > 0
+        ? fromTokens.reduce(
+            (sum, token) =>
+              sum.plus(parseFiatNumber(token.balanceInFiat) ?? new Decimal(0)),
+            new Decimal(0),
+          )
+        : undefined;
+
+    if (selectedSourceTotal && selectedSourceTotal.gt(0)) {
+      return selectedSourceTotal;
+    }
+
+    return (
+      swapBalance?.reduce(
+        (sum, asset) =>
+          sum.plus(parseFiatNumber(asset.balanceInFiat) ?? new Decimal(0)),
+        new Decimal(0),
+      ) ?? new Decimal(0)
+    );
+  };
+
+  const buildInsufficientSourcesIssue = (error: unknown): SwapQuoteIssue => {
+    const errorText = getErrorText(error);
+    const details = (error as any)?.data?.details ?? (error as any)?.details ?? {};
+    const requiredFromError =
+      parseFiatNumber(
+        details.requiredUsd ??
+          details.requiredUSD ??
+          details.requiredAmountUsd ??
+          details.requiredAmount ??
+          details.required,
+      ) ?? parseLabeledErrorDecimal(errorText, "required");
+    const availableFromError =
+      parseFiatNumber(
+        details.availableUsd ??
+          details.availableUSD ??
+          details.availableAmountUsd ??
+          details.availableAmount ??
+          details.available,
+      ) ?? parseLabeledErrorDecimal(errorText, "available");
+    const requestedUsd = getExactOutRequestedUsd();
+    const availableUsd = getExactOutAvailableSourceUsd();
+
+    let missingUsd =
+      requiredFromError && availableFromError
+        ? requiredFromError.minus(availableFromError)
+        : undefined;
+
+    if (
+      requestedUsd &&
+      (!missingUsd ||
+        missingUsd.lte(0) ||
+        missingUsd.gt(requestedUsd.mul(5)))
+    ) {
+      missingUsd = requestedUsd.minus(availableUsd);
+    }
+
+    if (missingUsd && missingUsd.gt(0)) {
+      const formattedMissing =
+        missingUsd.gt(0) && missingUsd.lt(0.01)
+          ? "<$0.01"
+          : formatUsdDisplay(missingUsd);
+
+      return {
+        type: "insufficientSources",
+        missingUsd: missingUsd.toDecimalPlaces(2).toFixed(),
+        message: `Need ${formattedMissing} more across your assets`,
+      };
+    }
+
+    return {
+      type: "insufficientSources",
+      message: "Add more source balance across your assets",
+    };
   };
 
   const isNativeTokenAddress = (address?: string) =>
@@ -1395,6 +1535,7 @@ export function NexusOne({
       lastSwapIntentRefreshAtRef.current = Date.now();
       setIntentData(intent);
       setIntentToAmount(intent.destination?.amount || undefined);
+      setSwapQuoteIssue(null);
 
       if (activeMode === "swap" && swapType === "exactOut") {
         const intentSources = intent.sources ?? [];
@@ -1646,6 +1787,11 @@ export function NexusOne({
     setSelectedOpportunity(undefined);
   };
 
+  const handleClose = () => {
+    clearPendingSwapIntent();
+    onClose?.();
+  };
+
   const handleOpenRecipientEditor = () => {
     if (activeMode === "swap" && !recipientAddress && defaultRecipientAddress) {
       setRecipientAddress(defaultRecipientAddress);
@@ -1707,6 +1853,7 @@ export function NexusOne({
     }
 
     setTxError(null);
+    setSwapQuoteIssue(null);
 
     if (
       !background &&
@@ -2092,6 +2239,21 @@ export function NexusOne({
         }
         return;
       }
+      if (
+        isExactOutFlow &&
+        isInsufficientSourcesError(err) &&
+        !currentSwapIdRef.current &&
+        swapStepRef.current !== "progress"
+      ) {
+        const issue = buildInsufficientSourcesIssue(err);
+        if (!background || swapStepRef.current === "preview-intent") {
+          setSwapStep("idle");
+        }
+        setTxError(null);
+        setSwapQuoteIssue(issue);
+        onError?.(issue.message);
+        return;
+      }
       const errorMessage =
         err?.message ||
         (typeof err === "string"
@@ -2384,6 +2546,7 @@ export function NexusOne({
     }
 
     setTxError(null);
+    setSwapQuoteIssue(null);
     setQuoteRefreshing(false);
     setReceiveMaxCalculating(true);
 
@@ -2435,6 +2598,12 @@ export function NexusOne({
       console.error("Unable to calculate max swap amount", error);
       setReceiveMaxCalculating(false);
       setQuoteRefreshing(false);
+      if (isInsufficientSourcesError(error)) {
+        const issue = buildInsufficientSourcesIssue(error);
+        setTxError(null);
+        setSwapQuoteIssue(issue);
+        return;
+      }
       setTxError(
         error?.message || "Unable to calculate the max swappable amount.",
       );
@@ -2452,13 +2621,27 @@ export function NexusOne({
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+  const exactOutInsufficientSourceIssue =
+    activeMode === "swap" &&
+    swapType === "exactOut" &&
+    swapQuoteIssue?.type === "insufficientSources"
+      ? swapQuoteIssue
+      : null;
+  const isExactOutRouteLoading =
+    activeMode === "swap" &&
+    swapStep === "idle" &&
+    swapType === "exactOut" &&
+    Boolean(amount && Number(amount) > 0 && toToken) &&
+    !exactOutInsufficientSourceIssue &&
+    (quoteRefreshing || intentLoading || receiveMaxCalculating);
   const isSwapCtaDisabled =
     !amount ||
     Number(amount) <= 0 ||
     (swapType === "exactIn" && (fromTokens.length === 0 || !toToken)) ||
     (swapType === "exactOut" && !toToken) ||
     receiveMaxCalculating ||
-    quoteRefreshing;
+    quoteRefreshing ||
+    Boolean(exactOutInsufficientSourceIssue);
   const isDepositCtaDisabled =
     !amount || Number(amount) <= 0 || !toToken || quoteRefreshing;
   const isSendCtaDisabled =
@@ -2468,7 +2651,9 @@ export function NexusOne({
     !recipientAddress ||
     quoteRefreshing;
   const quoteCtaLabel = (fallback: string) =>
-    receiveMaxCalculating
+    exactOutInsufficientSourceIssue
+      ? "Insufficient balance"
+      : receiveMaxCalculating
       ? "Calculating..."
       : quoteRefreshing
         ? "Fetching quotes..."
@@ -2511,7 +2696,7 @@ export function NexusOne({
     (isIdleSwapQuoteLoading && swapType === "exactIn" && !intentToAmount);
   const isReceiveUsdLoading =
     receiveMaxCalculating ||
-    (isIdleSwapQuoteLoading && !previewToAmountUsd);
+    (isIdleSwapQuoteLoading && swapType === "exactIn" && !previewToAmountUsd);
   const hasQuoteRefreshCountdown =
     activeMode === "swap" &&
     Boolean(intentData && swapIntentRef.current) &&
@@ -2695,37 +2880,43 @@ export function NexusOne({
               />
             </svg>
           </button>
-          <div
-            style={{
-              alignItems: "center",
-              backgroundColor: "#FFFFFE",
-              borderRadius: "8px",
-              boxSizing: "border-box",
-              display: "flex",
-              flexShrink: "0",
-              height: "32px",
-              justifyContent: "center",
-              outline: "1px solid #E8E8E7",
-              width: "32px",
-              cursor: "pointer",
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ width: "16px", height: "16px", flexShrink: "0" }}
+          {showCloseButton && (
+            <button
+              aria-label="Close"
+              onClick={handleClose}
+              style={{
+                alignItems: "center",
+                backgroundColor: "#FFFFFE",
+                border: "none",
+                borderRadius: "8px",
+                boxSizing: "border-box",
+                cursor: "pointer",
+                display: "flex",
+                flexShrink: 0,
+                height: "32px",
+                justifyContent: "center",
+                outline: "1px solid #E8E8E7",
+                padding: 0,
+                width: "32px",
+              }}
             >
-              <path
-                d="M4 4L12 12M12 4L4 12"
-                stroke="#161615"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ width: "16px", height: "16px", flexShrink: 0 }}
+              >
+                <path
+                  d="M4 4L12 12M12 4L4 12"
+                  stroke="#161615"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -2867,6 +3058,14 @@ export function NexusOne({
                 fromTokens={fromTokens}
                 toToken={toTokenWithFetchedBalance}
                 receiveQuoteUsd={previewToAmountUsd}
+                sourceRouteStatus={
+                  exactOutInsufficientSourceIssue
+                    ? "insufficient"
+                    : isExactOutRouteLoading
+                      ? "loading"
+                      : undefined
+                }
+                sourceRouteMessage={exactOutInsufficientSourceIssue?.message}
                 totalBalance={new Decimal(
                   swapBalance?.reduce(
                     (a, b) => a.add(b.balanceInFiat || 0),
@@ -2888,7 +3087,9 @@ export function NexusOne({
                 onUpdateTokens={setFromTokens}
               />
 
-              {txError && <StatusAlert type="error" message={txError} />}
+              {txError && !exactOutInsufficientSourceIssue && (
+                <StatusAlert type="error" message={txError} />
+              )}
 
               {/* CTA Button */}
               <div
@@ -2898,33 +3099,60 @@ export function NexusOne({
                   flexDirection: "column",
                 }}
               >
-                <button
-                  onClick={() => void handleEnterPreview()}
-                  disabled={isSwapCtaDisabled}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: isSwapCtaDisabled ? "#F0F0EF" : "#006BF4",
-                    borderRadius: "8px",
-                    boxSizing: "border-box",
-                    display: "flex",
-                    flexShrink: 0,
-                    height: "48px",
-                    justifyContent: "center",
-                    paddingInline: "16px",
-                    border: "none",
-                    cursor: isSwapCtaDisabled ? "default" : "pointer",
-                    width: "100%",
-                  }}
-                >
-                  <div
+                  <button
+                    onClick={() => void handleEnterPreview()}
+                    disabled={isSwapCtaDisabled}
                     style={{
+                      alignItems: "center",
+                      backgroundColor: exactOutInsufficientSourceIssue
+                        ? "#FCEEED"
+                        : isSwapCtaDisabled
+                          ? "#F0F0EF"
+                          : "#006BF4",
+                      borderRadius: "8px",
                       boxSizing: "border-box",
-                      color: isSwapCtaDisabled ? "#9E9E9C" : "#FFFFFE",
-                      fontFamily: '"Geist", system-ui, sans-serif',
-                      fontSize: "16px",
-                      fontWeight: 500,
-                      lineHeight: "24px",
+                      display: "flex",
+                      flexShrink: 0,
+                      gap: "8px",
+                      height: "48px",
+                      justifyContent: "center",
+                      paddingInline: "16px",
+                      border: "none",
+                      cursor: isSwapCtaDisabled ? "default" : "pointer",
+                      width: "100%",
                     }}
+                  >
+                    {exactOutInsufficientSourceIssue ? (
+                      <AlertCircle
+                        style={{
+                          color: "#D32F2F",
+                          height: "16px",
+                          width: "16px",
+                        }}
+                      />
+                    ) : (quoteRefreshing || receiveMaxCalculating) ? (
+                      <Loader2
+                        className="animate-spin"
+                        style={{
+                          color: isSwapCtaDisabled ? "#9E9E9C" : "#FFFFFE",
+                          height: "16px",
+                          width: "16px",
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      style={{
+                        boxSizing: "border-box",
+                        color: exactOutInsufficientSourceIssue
+                          ? "#D32F2F"
+                          : isSwapCtaDisabled
+                            ? "#9E9E9C"
+                            : "#FFFFFE",
+                        fontFamily: '"Geist", system-ui, sans-serif',
+                        fontSize: "16px",
+                        fontWeight: 500,
+                        lineHeight: "24px",
+                      }}
                   >
                     {quoteCtaLabel("Review swap")}
                   </div>

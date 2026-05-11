@@ -8,6 +8,8 @@ interface SwapIdleFormProps {
   receiveQuoteUsd?: string;
   isReceiveAmountLoading?: boolean;
   isReceiveUsdLoading?: boolean;
+  sourceRouteStatus?: "loading" | "insufficient";
+  sourceRouteMessage?: string;
   onAmountChange: (val: string, panel: "send" | "receive") => void;
   onReceivePercentSelect?: (pct: number) => void;
   fromTokens: SwapTokenOption[];
@@ -493,6 +495,8 @@ export function SwapIdleForm({
   receiveQuoteUsd,
   isReceiveAmountLoading = false,
   isReceiveUsdLoading = false,
+  sourceRouteStatus,
+  sourceRouteMessage,
   onAmountChange,
   onReceivePercentSelect,
   fromTokens,
@@ -669,6 +673,14 @@ export function SwapIdleForm({
       : [{ token: null, index: 0, position: 0 }];
 
   const isExactIn = swapType === "exactIn";
+  const showSourceRouteSkeleton =
+    !isExactIn && Boolean(sourceRouteStatus) && fromTokens.length === 0;
+  const sourceRouteHelper =
+    !isExactIn && sourceRouteStatus === "loading"
+      ? "Calculating best route..."
+      : !isExactIn && sourceRouteStatus === "insufficient"
+        ? sourceRouteMessage
+        : undefined;
   const receiveBalanceLabel = formatTokenBalanceLabel(toToken);
   const getReceiveUsdRate = () => {
     const quoteTokenAmount = parseDecimal(receiveQuoteAmount);
@@ -775,7 +787,7 @@ export function SwapIdleForm({
         width: "100%",
       }}
     >
-      {(isReceiveAmountLoading || isReceiveUsdLoading) && (
+      {(isReceiveAmountLoading || isReceiveUsdLoading || sourceRouteStatus) && (
         <style>
           {`@keyframes nexusSwapSkeletonShimmer {
             0% { background-position: 100% 0; opacity: 0.72; }
@@ -925,8 +937,8 @@ export function SwapIdleForm({
               "max-height 0.28s ease, padding-right 0.2s ease, opacity 0.2s ease",
             width: "100%",
           }}
-        >
-          {sourceRowsToRender.map(({ token, index, position }) => {
+          >
+            {sourceRowsToRender.map(({ token, index, position }) => {
             const isSourceRowClipped =
               hasSourceOverflow && !showAllSourceAssets && position >= 2;
             const showTooltipBelow = position === 0;
@@ -979,161 +991,185 @@ export function SwapIdleForm({
                       alignItems: "center",
                       flex: 1,
                       minWidth: 0,
-                    }}
-                  >
-                    {token?.userAmountMode === "usd" && (
-                      <span
-                        style={{
-                          color:
-                            (token
-                              ? Boolean(token.userAmount)
-                              : Boolean(isExactIn && amount))
-                              ? "#161615"
-                              : "#9E9E9C",
-                          fontFamily:
-                            '"Delight-Medium", "Delight", system-ui, sans-serif',
-                          fontSize: "36px",
-                          fontWeight: 500,
-                          lineHeight: "44px",
-                          marginRight: "4px",
-                        }}
-                      >
-                        $
-                      </span>
-                    )}
-                    <input
-                      type="text"
-                      placeholder="0"
-                      tabIndex={isSourceRowClipped ? -1 : undefined}
-                      value={
-                        token
-                          ? token.userAmount || ""
-                          : isExactIn
-                            ? amount
-                            : ""
-                      }
-                      onChange={(e) => {
-                        if (token)
-                          handleTokenAmountChange(index, e.target.value);
-                        else handleSendInput(e);
                       }}
-                      onBlur={(e) => {
-                        if (token) handleBlurAmount(index);
-                      }}
-                      style={{
-                        boxSizing: "border-box",
-                        color:
-                          (token
-                            ? Boolean(token.userAmount)
-                            : Boolean(isExactIn && amount))
-                            ? "#161615"
-                            : "#9E9E9C",
-                        fontFamily:
-                          '"Delight-Medium", "Delight", system-ui, sans-serif',
-                        fontSize: "36px",
-                        fontWeight: 500,
-                        lineHeight: "44px",
-                        background: "transparent",
-                        border: "none",
-                        outline: "none",
-                        padding: 0,
-                        width: "100%",
-                        minWidth: 0,
-                      }}
-                    />
-                  </div>
+                    >
+                      {showSourceRouteSkeleton ? (
+                        <SkeletonBar width="46%" height="28px" />
+                      ) : (
+                        <>
+                          {token?.userAmountMode === "usd" && (
+                            <span
+                              style={{
+                                color:
+                                  (token
+                                    ? Boolean(token.userAmount)
+                                    : Boolean(isExactIn && amount))
+                                    ? "#161615"
+                                    : "#9E9E9C",
+                                fontFamily:
+                                  '"Delight-Medium", "Delight", system-ui, sans-serif',
+                                fontSize: "36px",
+                                fontWeight: 500,
+                                lineHeight: "44px",
+                                marginRight: "4px",
+                              }}
+                            >
+                              $
+                            </span>
+                          )}
+                          <input
+                            type="text"
+                            placeholder="0"
+                            tabIndex={isSourceRowClipped ? -1 : undefined}
+                            value={
+                              token
+                                ? token.userAmount || ""
+                                : isExactIn
+                                  ? amount
+                                  : ""
+                            }
+                            onChange={(e) => {
+                              if (token)
+                                handleTokenAmountChange(index, e.target.value);
+                              else handleSendInput(e);
+                            }}
+                            onBlur={(e) => {
+                              if (token) handleBlurAmount(index);
+                            }}
+                            style={{
+                              boxSizing: "border-box",
+                              color:
+                                (token
+                                  ? Boolean(token.userAmount)
+                                  : Boolean(isExactIn && amount))
+                                  ? "#161615"
+                                  : "#9E9E9C",
+                              fontFamily:
+                                '"Delight-Medium", "Delight", system-ui, sans-serif',
+                              fontSize: "36px",
+                              fontWeight: 500,
+                              lineHeight: "44px",
+                              background: "transparent",
+                              border: "none",
+                              outline: "none",
+                              padding: 0,
+                              width: "100%",
+                              minWidth: 0,
+                            }}
+                          />
+                        </>
+                      )}
+                    </div>
 
                   {/* Asset selector pill + cross button */}
                   <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <button
-                      onClick={() => onOpenSourcePicker(index)}
-                      tabIndex={isSourceRowClipped ? -1 : undefined}
                       style={{
-                        alignItems: "center",
-                        backgroundColor: "#FFFFFE",
-                        borderColor: token ? "#E8E8E7" : "#C8C8C7",
-                        borderRadius: "999px",
-                        borderStyle: token ? "solid" : "dashed",
-                        borderWidth: "1px",
-                        boxShadow: token ? "#1616150A 0px 1px 2px" : "none",
-                        boxSizing: "border-box",
                         display: "flex",
                         gap: "8px",
-                        paddingBottom: "5px",
-                        paddingLeft: token ? "4px" : "8px",
-                        paddingRight: "10px",
-                        paddingTop: "5px",
-                        cursor: "pointer",
-                        flexShrink: 0,
+                        alignItems: "center",
                       }}
                     >
-                      {token ? (
+                      {showSourceRouteSkeleton ? (
                         <div
                           style={{
-                            boxSizing: "border-box",
+                            alignItems: "center",
+                            display: "flex",
                             flexShrink: 0,
-                            height: "26px",
-                            position: "relative" as const,
-                            width: "26px",
+                            height: "32px",
+                            width: "110px",
                           }}
                         >
-                          <LogoCircle
-                            src={token.logo}
-                            alt={token.symbol}
-                            label={token.symbol}
-                            size={26}
-                            fontSize={13}
+                          <SkeletonBar
+                            width="100%"
+                            height="30px"
+                            borderRadius="999px"
                           />
-                          {token.chainLogo && (
-                            <LogoCircle
-                              src={token.chainLogo}
-                              alt={token.chainName}
-                              label={token.chainName}
-                              size={12}
-                              fontSize={6}
-                              outline="1px solid #FFFFFE"
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => onOpenSourcePicker(index)}
+                          tabIndex={isSourceRowClipped ? -1 : undefined}
+                          style={{
+                            alignItems: "center",
+                            backgroundColor: "#FFFFFE",
+                            borderColor: token ? "#E8E8E7" : "#C8C8C7",
+                            borderRadius: "999px",
+                            borderStyle: token ? "solid" : "dashed",
+                            borderWidth: "1px",
+                            boxShadow: token ? "#1616150A 0px 1px 2px" : "none",
+                            boxSizing: "border-box",
+                            display: "flex",
+                            gap: "8px",
+                            paddingBottom: "5px",
+                            paddingLeft: token ? "4px" : "8px",
+                            paddingRight: "10px",
+                            paddingTop: "5px",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {token ? (
+                            <div
                               style={{
-                                bottom: -2,
-                                position: "absolute",
-                                right: -2,
+                                boxSizing: "border-box",
+                                flexShrink: 0,
+                                height: "26px",
+                                position: "relative" as const,
+                                width: "26px",
+                              }}
+                            >
+                              <LogoCircle
+                                src={token.logo}
+                                alt={token.symbol}
+                                label={token.symbol}
+                                size={26}
+                                fontSize={13}
+                              />
+                              {token.chainLogo && (
+                                <LogoCircle
+                                  src={token.chainLogo}
+                                  alt={token.chainName}
+                                  label={token.chainName}
+                                  size={12}
+                                  fontSize={6}
+                                  outline="1px solid #FFFFFE"
+                                  style={{
+                                    bottom: -2,
+                                    position: "absolute",
+                                    right: -2,
+                                  }}
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            <div
+                              style={{
+                                borderColor: "#C8C8C7",
+                                borderRadius: "999px",
+                                borderStyle: "dashed",
+                                borderWidth: "1.5px",
+                                boxSizing: "border-box",
+                                flexShrink: 0,
+                                height: "22px",
+                                width: "22px",
                               }}
                             />
                           )}
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            borderColor: "#C8C8C7",
-                            borderRadius: "999px",
-                            borderStyle: "dashed",
-                            borderWidth: "1.5px",
-                            boxSizing: "border-box",
-                            flexShrink: 0,
-                            height: "22px",
-                            width: "22px",
-                          }}
-                        />
+                          <div
+                            style={{
+                              boxSizing: "border-box",
+                              color: "#161615",
+                              fontFamily: '"Geist", system-ui, sans-serif',
+                              fontSize: token ? "14px" : "16px",
+                              fontWeight: 500,
+                              lineHeight: token ? "18px" : "24px",
+                            }}
+                          >
+                            {token ? token.symbol : "Assets"}
+                          </div>
+                          <ChevronDownIcon />
+                        </button>
                       )}
-                      <div
-                        style={{
-                          boxSizing: "border-box",
-                          color: "#161615",
-                          fontFamily: '"Geist", system-ui, sans-serif',
-                          fontSize: token ? "14px" : "16px",
-                          fontWeight: 500,
-                          lineHeight: token ? "18px" : "24px",
-                        }}
-                      >
-                        {token ? token.symbol : "Assets"}
-                      </div>
-                      <ChevronDownIcon />
-                    </button>
                     {token && (
                       <button
                         onClick={() => {
@@ -1334,11 +1370,28 @@ export function SwapIdleForm({
                   }
                 />
               </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
 
-        {hasSourceOverflow && (
+          {sourceRouteHelper && (
+            <div
+              style={{
+                alignSelf: "stretch",
+                color:
+                  sourceRouteStatus === "insufficient" ? "#D32F2F" : "#006BF4",
+                fontFamily: '"Geist", system-ui, sans-serif',
+                fontSize: "13px",
+                fontWeight: 500,
+                lineHeight: "18px",
+                marginTop: "-6px",
+              }}
+            >
+              {sourceRouteHelper}
+            </div>
+          )}
+
+          {hasSourceOverflow && (
           <button
             type="button"
             onClick={() => setShowAllSourceAssets((current) => !current)}

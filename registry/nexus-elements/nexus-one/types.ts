@@ -83,9 +83,10 @@ export interface NexusOneConfig {
 
 export interface NexusOneProps {
   config: NexusOneConfig;
+  embed?: boolean;
   connectedAddress?: Address;
   onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
   onError?: (message: string) => void;
+  onClose?: () => void;
 }
-
