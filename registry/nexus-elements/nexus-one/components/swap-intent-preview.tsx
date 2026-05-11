@@ -435,10 +435,12 @@ export function SwapIntentPreview({
 }: SwapIntentPreviewProps) {
   const [showSourceDetails, setShowSourceDetails] = useState(false);
   const [showFeeDetails, setShowFeeDetails] = useState(false);
-  const [showImpactDetails, setShowImpactDetails] = useState(true);
+  const [showDepositGasDetails, setShowDepositGasDetails] = useState(false);
+  const [showImpactDetails, setShowImpactDetails] = useState(false);
   const sourceDetailsScrollRef = useRef<HTMLDivElement | null>(null);
 
   const flowMode = mode ?? activeMode ?? "swap";
+  const isDepositMode = flowMode === "deposit";
   const intentSources = intentData?.sources ?? [];
   const intentDest = intentData?.destination;
   const normalizedIntentSources = intentSources.map((source) => ({
@@ -524,6 +526,10 @@ export function SwapIntentPreview({
   const solverFeeNumber = parseDecimal(bridgeFeeData?.solver);
   const gasSuppliedNumber = parseDecimal(bridgeFeeData?.gasSupplied);
   const slippageBufferNumber = parseDecimal(intentData?.feesAndBuffer?.buffer);
+  const depositGasValueNumber = parseDecimal(normalizedIntentDest?.gas?.value);
+  const depositGasAmount = normalizedIntentDest?.gas?.amount;
+  const depositGasTokenSymbol = normalizedIntentDest?.gas?.token?.symbol || "";
+  const hasDepositGasDetails = isDepositMode && Boolean(normalizedIntentDest?.gas);
   const explicitFeeNumber =
     bridgeTotalNumber ??
     parseDecimal(totalFeeUsd) ??
@@ -611,6 +617,14 @@ export function SwapIntentPreview({
   const minReceivedDisplay = hasResolvedQuote
     ? `${formatTokenAmount(minReceived)} ${destTokenSymbol}`
     : pendingValue;
+  const depositGasUsdDisplay =
+    depositGasValueNumber !== undefined
+      ? formatUsdValue(depositGasValueNumber)
+      : pendingValue;
+  const depositGasNativeDisplay =
+    hasResolvedQuote && depositGasAmount !== undefined
+      ? `${formatTokenAmount(depositGasAmount)} ${depositGasTokenSymbol}`.trim()
+      : pendingValue;
   const sourceDetailRows =
     normalizedIntentSources.length > 0
       ? normalizedIntentSources.map((source, index) => {
@@ -803,7 +817,11 @@ export function SwapIntentPreview({
           </div>
         </div>
 
-        <Row title="You Swap" subtitle={sourceLabel} value={sourceUsd}>
+        <Row
+          title={isDepositMode ? "Paying With" : "You Swap"}
+          subtitle={sourceLabel}
+          value={sourceUsd}
+        >
           <DetailToggle
             expanded={showSourceDetails}
             onClick={() => setShowSourceDetails((value) => !value)}
@@ -985,7 +1003,7 @@ export function SwapIntentPreview({
         </AnimatedDetails>
 
         <Row
-          title="You Receive"
+          title={isDepositMode ? "You Deposit" : "You Receive"}
           subtitle={
             destChainName ? `${destTokenSymbol} on ${destChainName}` : destTokenSymbol
           }
@@ -1036,6 +1054,38 @@ export function SwapIntentPreview({
             </div>
           )}
         </AnimatedDetails>
+
+        {hasDepositGasDetails && (
+          <>
+            <Row
+              title="Deposit Gas Fees"
+              subtitle="Destination execution"
+              value={depositGasUsdDisplay}
+            >
+              <DetailToggle
+                expanded={showDepositGasDetails}
+                onClick={() => setShowDepositGasDetails((value) => !value)}
+              />
+            </Row>
+
+            <AnimatedDetails open={showDepositGasDetails}>
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span style={{ color: muted, fontFamily, fontSize: "12px" }}>
+                  Native gas
+                </span>
+                <span style={{ color: primary, fontFamily, fontSize: "12px" }}>
+                  {depositGasNativeDisplay}
+                </span>
+              </div>
+            </AnimatedDetails>
+          </>
+        )}
 
         <Row
           title="Price Impact"
@@ -1142,7 +1192,7 @@ export function SwapIntentPreview({
         }}
       >
         {isExecuting ? (
-          "Swapping..."
+          isDepositMode ? "Depositing..." : "Swapping..."
         ) : isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : isRefreshing ? (

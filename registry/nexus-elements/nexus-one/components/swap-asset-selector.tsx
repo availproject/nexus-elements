@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { Search, X, Loader2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Search, X, Loader2, ChevronDown, ChevronUp, Info, Check } from "lucide-react";
 import {
   type UserAsset,
   CHAIN_METADATA,
@@ -20,6 +20,9 @@ export interface SwapTokenOption {
   chainLogo?: string;
   userAmount?: string;
   userAmountMode?: "token" | "usd";
+  isUnified?: boolean;
+  unifiedSymbol?: "USDC" | "USDT" | "ETH";
+  sourceTokens?: SwapTokenOption[];
 }
 
 interface SwapAssetSelectorProps {
@@ -33,6 +36,7 @@ interface SwapAssetSelectorProps {
   editingAssetIndex?: number | null;
   onToggle?: (token: SwapTokenOption) => void;
   onDone?: () => void;
+  allowUnified?: boolean;
 }
 
 function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] {
@@ -85,15 +89,51 @@ export const RadioDot = ({ selected }: { selected: boolean }) => (
   </div>
 );
 
+const SelectionControl = ({
+  selected,
+  multi,
+}: {
+  selected: boolean;
+  multi: boolean;
+}) => {
+  if (!multi) return <RadioDot selected={selected} />;
+
+  return (
+    <div
+      style={{
+        alignItems: "center",
+        backgroundColor: selected ? "#006BF4" : "#FFFFFE",
+        border: selected ? "none" : "1.5px solid #E0E0DE",
+        borderRadius: "5px",
+        boxSizing: "border-box",
+        display: "flex",
+        flexShrink: 0,
+        height: 20,
+        justifyContent: "center",
+        width: 20,
+      }}
+    >
+      {selected && <Check style={{ color: "#FFFFFE", height: 14, width: 14 }} />}
+    </div>
+  );
+};
+
 /* ── Chain logo cluster ── */
 const ChainLogos = ({ tokens }: { tokens: SwapTokenOption[] }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
   const uniqueChains = useMemo(() => {
     const seen = new Set<number>();
-    const out: { id: number; logo?: string }[] = [];
+    const out: { id: number; logo?: string; name?: string; balance?: string; balanceInFiat?: string }[] = [];
     for (const t of tokens) {
       if (t.chainId && !seen.has(t.chainId)) {
         seen.add(t.chainId);
-        out.push({ id: t.chainId, logo: t.chainLogo });
+        out.push({
+          id: t.chainId,
+          logo: t.chainLogo,
+          name: t.chainName,
+          balance: t.balance,
+          balanceInFiat: t.balanceInFiat,
+        });
       }
     }
     return out;
@@ -104,7 +144,48 @@ const ChainLogos = ({ tokens }: { tokens: SwapTokenOption[] }) => {
   const extra = uniqueChains.length - maxShow;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+    <div
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      style={{ display: "flex", alignItems: "center", gap: 2, position: "relative" }}
+    >
+      {showTooltip && uniqueChains.length > 1 && (
+        <div
+          style={{
+            backgroundColor: "#FFFFFE",
+            border: "1px solid #E8E8E7",
+            borderRadius: 10,
+            boxShadow: "0 8px 24px rgba(22,22,21,0.12)",
+            left: 0,
+            minWidth: 220,
+            padding: "10px 12px",
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            zIndex: 20,
+          }}
+        >
+          <div style={{ color: "#848483", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", marginBottom: 8 }}>
+            UNIFIED · {uniqueChains.length} CHAINS
+          </div>
+          {uniqueChains.slice(0, 6).map((chain) => (
+            <div key={chain.id} style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 12, padding: "3px 0" }}>
+              <div style={{ alignItems: "center", display: "flex", gap: 7, minWidth: 0 }}>
+                {chain.logo ? (
+                  <img src={chain.logo} alt="" style={{ borderRadius: "999px", height: 14, objectFit: "cover", width: 14 }} />
+                ) : (
+                  <div style={{ backgroundColor: "#E8E8E7", borderRadius: "999px", height: 14, width: 14 }} />
+                )}
+                <span style={{ color: "#363635", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {chain.name || "Unknown chain"}
+                </span>
+              </div>
+              <span style={{ color: "#161615", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+                {String(chain.balance || "").replace(/\s+[^\s]+$/, "") || chain.balanceInFiat || "0"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {shown.map((c, i) =>
         c.logo ? (
           <img
@@ -153,6 +234,32 @@ function isNativeToken(t: SwapTokenOption) {
 }
 
 const MIN_FIAT_THRESHOLD = 1;
+const UNIFIED_MAINNET_CHAIN_IDS = new Set([
+  1, 10, 56, 137, 143, 999, 4114, 8217, 8453, 42161, 43114, 534352, 4326,
+]);
+
+function getUnifiedSymbol(token: Pick<SwapTokenOption, "symbol" | "chainId">) {
+  if (token.chainId && !UNIFIED_MAINNET_CHAIN_IDS.has(token.chainId)) {
+    return null;
+  }
+
+  const symbol = token.symbol.toUpperCase();
+  if (symbol.includes("USDC") || symbol === "USDM") return "USDC" as const;
+  if (symbol.includes("USDT")) return "USDT" as const;
+  if (symbol === "ETH") return "ETH" as const;
+  return null;
+}
+
+function sameTokenOption(a?: SwapTokenOption, b?: SwapTokenOption) {
+  if (!a || !b) return false;
+  if (a.isUnified || b.isUnified) {
+    return Boolean(a.isUnified && b.isUnified && a.unifiedSymbol === b.unifiedSymbol);
+  }
+  return (
+    a.contractAddress.toLowerCase() === b.contractAddress.toLowerCase() &&
+    a.chainId === b.chainId
+  );
+}
 
 export function SwapAssetSelector({
   title,
@@ -165,6 +272,7 @@ export function SwapAssetSelector({
   editingAssetIndex = null,
   onToggle,
   onDone,
+  allowUnified = false,
 }: SwapAssetSelectorProps) {
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
@@ -201,7 +309,7 @@ export function SwapAssetSelector({
     else if (activeTab === "stables") result = result.filter((t) => STABLE_SYMBOLS.has(t.symbol));
     else if (activeTab === "custom") result = result.filter((t) => !isNativeToken(t) && !STABLE_SYMBOLS.has(t.symbol));
     return result;
-  }, [allTokens, query, activeTab]);
+  }, [allTokens, query, activeTab, selectedChainFilter]);
 
   /* Split into above/below minimum */
   const { aboveMin, belowMin } = useMemo(() => {
@@ -217,20 +325,12 @@ export function SwapAssetSelector({
 
   /* Group by symbol */
   const groupedFiltered = useMemo(() => {
-    const getUnifiedSymbol = (symbol: string) => {
-      const s = symbol.toUpperCase();
-      if (s.includes("USDC") || s === "USDM") return "USDC";
-      if (s.includes("USDT")) return "USDT";
-      if (s.includes("ETH")) return "ETH";
-      if (s.includes("BTC")) return "BTC";
-      return symbol;
-    };
-
     const groups: Record<string, SwapTokenOption[]> = {};
     for (const token of aboveMin) {
-      const unifiedSym = getUnifiedSymbol(token.symbol);
-      if (!groups[unifiedSym]) groups[unifiedSym] = [];
-      groups[unifiedSym].push(token);
+      const unifiedSym = allowUnified ? getUnifiedSymbol(token) : null;
+      const key = unifiedSym ?? `${token.contractAddress}-${token.chainId}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(token);
     }
     return Object.values(groups)
       .map((group) => {
@@ -240,18 +340,19 @@ export function SwapAssetSelector({
           totalFiatVal += Number(t.balanceInFiat.replace(/[^0-9.]/g, "") || 0);
           totalBalVal += Number(t.balance.replace(/[^0-9.]/g, "") || 0);
         }
-        const unifiedSym = getUnifiedSymbol(group[0].symbol);
+        const unifiedSym = allowUnified ? getUnifiedSymbol(group[0]) : null;
         return {
-          symbol: unifiedSym,
+          symbol: unifiedSym ?? group[0].symbol,
           logo: group[0].logo,
           totalFiat: totalFiatVal,
           totalFiatStr: `$${totalFiatVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
-          totalBalStr: `${totalBalVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${unifiedSym}`,
+          totalBalStr: `${totalBalVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${unifiedSym ?? group[0].symbol}`,
           tokens: group,
+          isUnifiedCandidate: Boolean(unifiedSym && group.length > 1),
         };
       })
       .sort((a, b) => b.totalFiat - a.totalFiat);
-  }, [aboveMin]);
+  }, [aboveMin, allowUnified]);
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -265,63 +366,57 @@ export function SwapAssetSelector({
     });
   };
 
-  const toggleGroupSelection = (groupTokens: SwapTokenOption[], isFullySelected: boolean, e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Unified selection: in single-select mode, we select the whole group as a single logical asset (unified).
-    // But since onSelect only takes one token, how do we pass a unified token?
-    // For now, if we click Unified, we can just pass the first token and maybe mark it?
-    // Wait, the user said "only 1 asset can be selected at a time, there is no multi select".
-    // If they select "Unified", it means they want to use all balances of that token across chains.
-    // We can emit a special "unified" token option, or trigger onSelect multiple times?
-    // Actually, let's just pass groupTokens array if onSelect supports it, or use onSelect with a special unified flag.
-    // For now, let's adapt `SwapAssetSelector` to be strictly single select as requested.
-  };
-
   const isTokenSelectedInOtherSlot = (token: SwapTokenOption) =>
-    selectedTokens.some((st, idx) => idx !== editingAssetIndex && st.contractAddress === token.contractAddress && st.chainId === token.chainId);
+    selectedTokens.some((st, idx) => idx !== editingAssetIndex && sameTokenOption(st, token));
 
   const isTokenSelectedInCurrentSlot = (token: SwapTokenOption) => {
+    if (isMulti) return selectedTokens.some((st) => sameTokenOption(st, token));
     if (editingAssetIndex === null) return false;
     const st = selectedTokens[editingAssetIndex];
-    if (!st) return false;
-    return st.contractAddress === token.contractAddress && st.chainId === token.chainId;
+    return sameTokenOption(st, token);
   };
 
   const isGroupUnifiedSelectedInOtherSlot = (group: typeof groupedFiltered[0]) => {
-    const relevantTokens = selectedTokens.filter((_, idx) => idx !== editingAssetIndex);
-    return relevantTokens.some((st) => st.contractAddress === group.symbol + "-UNIFIED");
+    const relevantTokens = isMulti
+      ? selectedTokens
+      : selectedTokens.filter((_, idx) => idx !== editingAssetIndex);
+    return relevantTokens.some((st) => st.isUnified && st.unifiedSymbol === group.symbol);
   };
 
   const isGroupUnifiedSelectedInCurrentSlot = (group: typeof groupedFiltered[0]) => {
+    if (isMulti) {
+      return selectedTokens.some((st) => st.isUnified && st.unifiedSymbol === group.symbol);
+    }
     if (editingAssetIndex === null) return false;
     const st = selectedTokens[editingAssetIndex];
-    if (!st) return false;
-    return st.contractAddress === group.symbol + "-UNIFIED";
+    return Boolean(st?.isUnified && st.unifiedSymbol === group.symbol);
   };
   
   const isAnyTokenInGroupSelectedInOtherSlot = (group: typeof groupedFiltered[0]) => {
-    const relevantTokens = selectedTokens.filter((_, idx) => idx !== editingAssetIndex);
+    const relevantTokens = isMulti
+      ? selectedTokens
+      : selectedTokens.filter((_, idx) => idx !== editingAssetIndex);
     return relevantTokens.some((st) =>
-      group.tokens.some((gt) => gt.contractAddress === st.contractAddress && gt.chainId === st.chainId) ||
-      st.contractAddress === group.symbol + "-UNIFIED"
+      group.tokens.some((gt) => sameTokenOption(gt, st)) ||
+      (st.isUnified && st.unifiedSymbol === group.symbol)
     );
   };
 
   /* ── Render a single-chain token row ── */
   const renderTokenRow = (token: SwapTokenOption, indent = false, isDisabledByUnified = false) => {
-    const selectedInOther = isTokenSelectedInOtherSlot(token);
+    const selectedInOther = !isMulti && isTokenSelectedInOtherSlot(token);
     if (selectedInOther) return null;
 
     const selectedInCurrent = isTokenSelectedInCurrentSlot(token);
     const disabled = isDisabledByUnified;
-    // Also disable if it's already selected and we are adding a NEW asset, but we can rely on `selectedTokens` state from parent.
-    // "once a token is selected, on next Add Asset that token should be disabled from selection"
     return (
       <button
         key={`${token.contractAddress}-${token.chainId}`}
         disabled={disabled}
         onClick={() => {
-          if (!disabled) onSelect(token);
+          if (disabled) return;
+          if (isMulti && onToggle) onToggle(token);
+          else onSelect(token);
         }}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -332,7 +427,7 @@ export function SwapAssetSelector({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <RadioDot selected={selectedInCurrent} />
+          <SelectionControl selected={selectedInCurrent} multi={Boolean(isMulti)} />
           {/* Token logo with chain badge */}
           <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
             {token.logo ? (
@@ -391,7 +486,11 @@ export function SwapAssetSelector({
 
   /* ── Render a unified (multi-chain) group row ── */
   const renderGroupRow = (group: typeof groupedFiltered[0]) => {
-    const unifiedSelectedInOther = isGroupUnifiedSelectedInOtherSlot(group);
+    if (!group.isUnifiedCandidate) {
+      return group.tokens.map((token) => renderTokenRow(token));
+    }
+
+    const unifiedSelectedInOther = !isMulti && isGroupUnifiedSelectedInOtherSlot(group);
     if (unifiedSelectedInOther) return null;
 
     const visibleTokensCount = group.tokens.filter(t => !isTokenSelectedInOtherSlot(t)).length;
@@ -401,12 +500,22 @@ export function SwapAssetSelector({
     const unifiedSelectedInCurrent = isGroupUnifiedSelectedInCurrentSlot(group);
     const anyIndividualSelectedInOther = isAnyTokenInGroupSelectedInOtherSlot(group);
     const anyIndividualSelectedInCurrent = group.tokens.some(isTokenSelectedInCurrentSlot);
-    
-    // If an individual token is selected in another slot, the unified option is completely unavailable.
-    // We will just hide the radio dot to prevent selection.
-    // Also, if the total fiat value of all unified tokens is less than $1, hide it.
-    const isUnifiedHidden = anyIndividualSelectedInOther || group.totalFiat < 1;
-    // If an individual token is selected in the current slot, unified isn't hidden but we don't show it as selected.
+    const isUnifiedHidden =
+      anyIndividualSelectedInOther || anyIndividualSelectedInCurrent || group.totalFiat < 1;
+    const unifiedToken: SwapTokenOption = {
+      ...group.tokens[0],
+      balance: group.totalBalStr.split(" ")[0] ?? group.tokens[0].balance,
+      balanceInFiat: group.totalFiatStr,
+      chainId: undefined,
+      chainName: "All Chains",
+      chainLogo: "/nexus-one/all-chains.png",
+      contractAddress: `${group.symbol}-UNIFIED`,
+      isUnified: true,
+      name: group.symbol,
+      sourceTokens: group.tokens,
+      symbol: group.symbol,
+      unifiedSymbol: group.symbol as "USDC" | "USDT" | "ETH",
+    };
     
     return (
       <div key={group.symbol} style={{ display: "flex", flexDirection: "column" }}>
@@ -425,17 +534,10 @@ export function SwapAssetSelector({
             {isUnifiedHidden ? <div style={{ width: 20, height: 20 }} /> : (
               <div onClick={(e) => {
                  e.stopPropagation();
-                 onSelect({
-                   ...group.tokens[0],
-                   chainId: undefined,
-                   chainName: "All Chains",
-                   chainLogo: "/nexus-one/all-chains.png",
-                   balance: group.totalBalStr.split(" ")[0],
-                   balanceInFiat: group.totalFiatStr,
-                   contractAddress: group.tokens[0].symbol + "-UNIFIED"
-                 });
+                 if (isMulti && onToggle) onToggle(unifiedToken);
+                 else onSelect(unifiedToken);
               }} style={{ cursor: "pointer" }}>
-                <RadioDot selected={unifiedSelectedInCurrent} />
+                <SelectionControl selected={unifiedSelectedInCurrent} multi={Boolean(isMulti)} />
               </div>
             )}
             <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
@@ -492,7 +594,9 @@ export function SwapAssetSelector({
           }}
         >
           <div style={{ overflow: "hidden" }}>
-            {group.tokens.map((token) => renderTokenRow(token, true, false))}
+            {unifiedSelectedInCurrent
+              ? null
+              : group.tokens.map((token) => renderTokenRow(token, true, false))}
           </div>
         </div>
       </div>
@@ -675,18 +779,29 @@ export function SwapAssetSelector({
                     )}
                   </div>
                 </button>
-                {showBelowMin && (
-                  <div style={{ borderTop: "1px solid #F0F0EF" }}>
+                <div
+                  aria-hidden={!showBelowMin}
+                  style={{
+                    borderTop: showBelowMin ? "1px solid #F0F0EF" : "0px solid transparent",
+                    display: "grid",
+                    gridTemplateRows: showBelowMin ? "1fr" : "0fr",
+                    opacity: showBelowMin ? 1 : 0,
+                    overflow: "hidden",
+                    transition:
+                      "grid-template-rows 240ms ease, opacity 180ms ease, border-top-width 240ms ease",
+                  }}
+                >
+                  <div style={{ minHeight: 0, overflow: "hidden" }}>
                     <div style={{
-                      display: "flex", alignItems: "flex-start", gap: 8, padding: "12px 16px",
-                      backgroundColor: "#FFF8F0",
+                      display: "flex", alignItems: "flex-start", gap: 8, padding: showBelowMin ? "12px 16px" : "0 16px",
+                      backgroundColor: "#FFF8F0", transition: "padding 240ms ease",
                     }}>
                       <span style={{ color: "#E5953E", fontSize: 14, lineHeight: "18px", flexShrink: 0 }}>⚠</span>
                       <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#6B6B6A", lineHeight: "18px" }}>
                         Tokens under $1 are unavailable for swaps — gas + protocol fees would exceed the value.
                       </span>
                     </div>
-                    <div style={{ paddingBottom: "12px" }}>
+                    <div style={{ paddingBottom: showBelowMin ? "12px" : 0, transition: "padding-bottom 240ms ease" }}>
                       {belowMin.slice(0, showAllBelowMin ? belowMin.length : 3).map((token) => (
                         <div key={`${token.contractAddress}-${token.chainId}`} style={{
                           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -729,7 +844,7 @@ export function SwapAssetSelector({
                       )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -741,14 +856,13 @@ export function SwapAssetSelector({
         <div style={{ paddingBottom: 8, marginTop: "auto" }}>
           <button
             onClick={onDone}
-            disabled={selectedTokens.length === 0}
             style={{
               width: "100%", height: 52, display: "flex", alignItems: "center", justifyContent: "center",
-              backgroundColor: selectedTokens.length === 0 ? "#F0F0EF" : "#006BF4",
-              color: selectedTokens.length === 0 ? "#9E9E9C" : "#FFFFFE",
-              border: "none", borderRadius: 14, cursor: selectedTokens.length === 0 ? "default" : "pointer",
+              backgroundColor: "#006BF4",
+              color: "#FFFFFE",
+              border: "none", borderRadius: 14, cursor: "pointer",
               fontFamily: '"Geist", system-ui, sans-serif', fontSize: 16, fontWeight: 600,
-              boxShadow: selectedTokens.length > 0 ? "0px 1px 4px 0px #5555550D" : "none",
+              boxShadow: "0px 1px 4px 0px #5555550D",
             }}
           >
             Done
