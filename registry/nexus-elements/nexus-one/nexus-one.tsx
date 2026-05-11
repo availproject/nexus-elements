@@ -374,13 +374,15 @@ function SourceRowsList({
   entry,
   maxHeight = 236,
   borderTopFirst = true,
+  scrollAfterRows = 4,
 }: {
   entry: SwapHistoryEntry;
   maxHeight?: number;
   borderTopFirst?: boolean;
+  scrollAfterRows?: number;
 }) {
   const rows = getSourceRows(entry);
-  const shouldScroll = rows.length > 4;
+  const shouldScroll = rows.length > scrollAfterRows;
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   return (
@@ -690,7 +692,12 @@ function SwapReceiptPanel({
           }}
         >
           <div style={{ minHeight: 0, overflow: "hidden" }}>
-            <SourceRowsList entry={entry} borderTopFirst={false} />
+            <SourceRowsList
+              entry={entry}
+              borderTopFirst={false}
+              maxHeight={isDeposit ? 204 : 236}
+              scrollAfterRows={isDeposit ? 3 : 4}
+            />
           </div>
         </div>
         {entry.intentExplorerUrl && (

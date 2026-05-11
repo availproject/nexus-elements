@@ -83,6 +83,50 @@ const NexusOneShowcase = () => {
                   },
                 }),
               },
+              {
+                id: "compound-pol",
+                title: "Compound",
+                protocol: "Compound",
+                subtitle: "USDT on Compound on Polygon",
+                logo: "https://files.availproject.org/uploads/2026-04-16/compound.svg",
+                chainId: 137,
+                tokenSymbol: "USDT",
+                tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+                tokenLogo:
+                  "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdt/logo.png",
+                execute: (amount) => ({
+                  to: "0xaeB318360f27748Acb200CE616E389A6C9409a07",
+                  data: "0x",
+                  gas: BigInt(300000),
+                  tokenApproval: {
+                    token: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+                    amount: amount,
+                    spender: "0xaeB318360f27748Acb200CE616E389A6C9409a07",
+                  },
+                }),
+              },
+              {
+                id: "fluid-base",
+                title: "Fluid",
+                protocol: "Fluid",
+                subtitle: "USDC on Fluid on Base",
+                logo: "https://fluid.instad.app/images/logo.png",
+                chainId: 8453,
+                tokenSymbol: "USDC",
+                tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                tokenLogo:
+                  "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdc/logo.png",
+                execute: (amount, connectedAddress) => ({
+                  to: "0xf42f5795D9ac7e9D757dB633D693cD548Cfd9169",
+                  data: "0x",
+                  gas: BigInt(300000),
+                  tokenApproval: {
+                    token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                    amount: amount,
+                    spender: "0xf42f5795D9ac7e9D757dB633D693cD548Cfd9169",
+                  },
+                }),
+              },
             ],
           }}
           connectedAddress={address}

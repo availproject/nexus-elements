@@ -19,6 +19,8 @@ export function OpportunityList({ opportunities, selectedId, onSelect }: Opportu
     );
   }
 
+  const shouldScroll = opportunities.length > 6;
+
   return (
     <div
       style={{
@@ -31,9 +33,13 @@ export function OpportunityList({ opportunities, selectedId, onSelect }: Opportu
         boxShadow: "#5B5B5B0D 0px 1px 12px",
         boxSizing: "border-box",
         display: "flex",
-        flex: 1,
+        flexShrink: 0,
         flexDirection: "column",
-        overflow: "clip",
+        maxHeight: shouldScroll ? "438px" : undefined,
+        overflowX: "hidden",
+        overflowY: shouldScroll ? "auto" : "hidden",
+        scrollbarColor: shouldScroll ? "#C8C8C7 transparent" : undefined,
+        scrollbarWidth: shouldScroll ? "thin" : undefined,
       }}
     >
       {opportunities.map((opp, idx) => {
