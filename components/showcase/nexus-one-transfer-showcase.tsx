@@ -10,7 +10,7 @@ const NexusOneTransferShowcase = () => {
   return (
     <ShowcaseWrapper
       type="nexus-one"
-      connectLabel="Connect wallet to use Nexus One Transfer"
+      connectLabel="Connect wallet to use Nexus One Send"
     >
       <NexusOne
         config={{ mode: "send" }}

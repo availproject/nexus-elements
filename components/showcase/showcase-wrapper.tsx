@@ -20,6 +20,7 @@ type ElementType =
 const disabledTestnet = new Set<ElementType>([
   "deposit",
   "swaps",
+  "nexus-one",
   "swap-deposit",
 ]);
 
@@ -67,6 +68,10 @@ const ShowcaseWrapper = ({
         onPressedChange !== undefined;
   const isPressed = pressed ?? defaultPressed ?? false;
   const label = toggleLabel ?? "Swap with Exact In";
+  const isTestnetUnsupported =
+    disabledTestnet.has(type) && currentNetwork === "testnet";
+  const isNexusOneTestnetUnsupported =
+    type === "nexus-one" && isTestnetUnsupported;
 
   return (
     <div className="w-full flex flex-col gap-y-4">
@@ -90,17 +95,30 @@ const ShowcaseWrapper = ({
           </Toggle>
         )}
       </div>
+      {isNexusOneTestnetUnsupported && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+          Testnet is not supported at the moment.
+        </div>
+      )}
       <p className="text-sm font-medium">{banner}</p>
-      {disabledTestnet.has(type) && currentNetwork === "testnet" ? (
+      {isTestnetUnsupported ? (
         <div className="w-full h-64 flex flex-col gap-y-2 items-center justify-center">
-          <p className="text-lg font-medium">
-            This feature is not available on testnet
-          </p>
-          <p className="text-lg font-medium">Please switch to mainnet</p>
-          <p className="text-center text-base">
-            You can still view the source code or <br /> download the element
-            with the command below.
-          </p>
+          {isNexusOneTestnetUnsupported ? (
+            <p className="text-lg font-medium">
+              Testnet is not supported at the moment.
+            </p>
+          ) : (
+            <>
+              <p className="text-lg font-medium">
+                This feature is not available on testnet
+              </p>
+              <p className="text-lg font-medium">Please switch to mainnet</p>
+              <p className="text-center text-base">
+                You can still view the source code or <br /> download the
+                element with the command below.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <PreviewPanel connectLabel={connectLabel}>{children}</PreviewPanel>

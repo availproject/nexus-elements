@@ -3,7 +3,7 @@
   "name": "deposit",
   "type": "registry:component",
   "title": "Deposit",
-  "description": "A simple component built with Nexus to enable deposits",
+  "description": "Deprecated: use Nexus One instead. A legacy component built with Nexus to enable deposits.",
   "dependencies": [
     "@avail-project/nexus-core@1.2.0",
     "clsx",
@@ -331,5 +331,11 @@
       "type": "registry:component",
       "target": "components/common/utils/transaction-flow.ts"
     }
-  ]
+  ],
+  "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"deposit\" and opportunities for new integrations.",
+  "meta": {
+    "deprecated": true,
+    "deprecationMessage": "Deposit is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"deposit\" and opportunities for new integrations.",
+    "replacement": "@nexus-elements/nexus-one"
+  }
 }

@@ -345,7 +345,7 @@
       "name": "deposit",
       "type": "registry:component",
       "title": "Deposit",
-      "description": "A simple component built with Nexus to enable deposits",
+      "description": "Deprecated: use Nexus One instead. A legacy component built with Nexus to enable deposits.",
       "files": [
         {
           "path": "registry/nexus-elements/deposit/components/amount-card.tsx",
@@ -622,7 +622,13 @@
         "https://elements.nexus.availproject.org/r/tabs.json",
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/utils.json"
-      ]
+      ],
+      "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"deposit\" and opportunities for new integrations.",
+      "meta": {
+        "deprecated": true,
+        "deprecationMessage": "Deposit is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"deposit\" and opportunities for new integrations.",
+        "replacement": "@nexus-elements/nexus-one"
+      }
     },
     {
       "name": "dialog",
@@ -648,7 +654,7 @@
       "name": "fast-bridge",
       "type": "registry:component",
       "title": "Fast Bridge",
-      "description": "A simple component built with Nexus to enable cross chain bridging",
+      "description": "Deprecated: use Nexus One instead. A legacy component built with Nexus to enable cross chain bridging.",
       "files": [
         {
           "path": "registry/nexus-elements/fast-bridge/components/allowance-modal.tsx",
@@ -815,7 +821,13 @@
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/utils.json",
         "https://elements.nexus.availproject.org/r/view-history.json"
-      ]
+      ],
+      "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one for new integrations.",
+      "meta": {
+        "deprecated": true,
+        "deprecationMessage": "Fast Bridge is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one for new integrations.",
+        "replacement": "@nexus-elements/nexus-one"
+      }
     },
     {
       "name": "input",
@@ -1033,8 +1045,7 @@
       ],
       "registryDependencies": [
         "https://elements.nexus.availproject.org/r/button.json",
-        "https://elements.nexus.availproject.org/r/nexus-provider.json",
-        "https://elements.nexus.availproject.org/r/swaps.json"
+        "https://elements.nexus.availproject.org/r/nexus-provider.json"
       ]
     },
     {
@@ -1129,7 +1140,7 @@
       "name": "swaps",
       "type": "registry:component",
       "title": "Swaps",
-      "description": "Swap tokens across chains (Exact In)",
+      "description": "Deprecated: use Nexus One instead. Legacy swap tokens across chains component.",
       "files": [
         {
           "path": "registry/nexus-elements/swaps/components/amount-input.tsx",
@@ -1318,7 +1329,13 @@
         "https://elements.nexus.availproject.org/r/separator.json",
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/utils.json"
-      ]
+      ],
+      "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"swap\" for new integrations.",
+      "meta": {
+        "deprecated": true,
+        "deprecationMessage": "Swaps is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"swap\" for new integrations.",
+        "replacement": "@nexus-elements/nexus-one"
+      }
     },
     {
       "name": "tabs",
@@ -1362,7 +1379,7 @@
       "name": "transfer",
       "type": "registry:component",
       "title": "Fast Transfer",
-      "description": "A simple component built with Nexus to enable cross chain transfer",
+      "description": "Deprecated: use Nexus One instead. A legacy component built with Nexus to enable cross chain transfer.",
       "files": [
         {
           "path": "registry/nexus-elements/transfer/components/allowance-modal.tsx",
@@ -1529,7 +1546,13 @@
         "https://elements.nexus.availproject.org/r/tooltip.json",
         "https://elements.nexus.availproject.org/r/utils.json",
         "https://elements.nexus.availproject.org/r/view-history.json"
-      ]
+      ],
+      "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"send\" for new integrations.",
+      "meta": {
+        "deprecated": true,
+        "deprecationMessage": "Fast Transfer is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"send\" for new integrations.",
+        "replacement": "@nexus-elements/nexus-one"
+      }
     },
     {
       "name": "unified-balance",
