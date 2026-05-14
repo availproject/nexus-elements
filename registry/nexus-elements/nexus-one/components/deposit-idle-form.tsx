@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import Decimal from "decimal.js";
-import { AlertCircle, ChevronDown, Edit2, Loader2 } from "lucide-react";
+import { AlertCircle, ChevronDown, Loader2 } from "lucide-react";
 import { type SwapTokenOption } from "./swap-asset-selector";
 
 interface DepositIdleFormProps {
@@ -176,6 +176,23 @@ function PayWithSources({
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const shouldScroll = fromTokens.length > 3;
+  const autoBadge = (
+    <span
+      style={{
+        border: `1px solid ${brand}`,
+        borderRadius: "999px",
+        color: brand,
+        fontFamily: uiFont,
+        fontSize: "9px",
+        fontWeight: 600,
+        letterSpacing: "0.04em",
+        lineHeight: "12px",
+        padding: "1px 5px",
+      }}
+    >
+      AUTO
+    </span>
+  );
 
   return (
     <div
@@ -194,16 +211,22 @@ function PayWithSources({
       <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}>
         <div
           style={{
+            alignItems: "center",
             color: muted,
+            display: "flex",
             fontFamily: uiFont,
             fontSize: "12px",
             fontWeight: 500,
+            gap: "6px",
             letterSpacing: "0.08em",
             lineHeight: "18px",
             textTransform: "uppercase",
           }}
         >
-          Pay With{fromTokens.length > 0 ? ` · ${fromTokens.length} assets` : ""}
+          <span>
+            Pay With{fromTokens.length > 0 ? ` · ${fromTokens.length} assets` : ""}
+          </span>
+          {autoBadge}
         </div>
         {fromTokens.length > 0 && (
           <button
@@ -317,28 +340,16 @@ function PayWithSources({
           )}
         </div>
       ) : (
-        <button
-          onClick={onOpenSourcePicker}
+        <div
           style={{
-            alignItems: "center",
-            alignSelf: "stretch",
-            backgroundColor: "#F4F7FE",
-            border: "none",
-            borderRadius: "8px",
-            color: brand,
-            cursor: "pointer",
-            display: "flex",
+            color: primary,
             fontFamily: uiFont,
             fontSize: "13px",
-            fontWeight: 500,
-            gap: "6px",
-            justifyContent: "center",
-            padding: "8px",
+            lineHeight: "18px",
           }}
         >
-          <Edit2 style={{ height: 14, width: 14 }} />
-          Choose payment sources
-        </button>
+          Sources will be auto selected
+        </div>
       )}
 
       {routeStatus === "insufficient" && routeMessage && (

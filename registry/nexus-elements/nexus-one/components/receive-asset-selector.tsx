@@ -1,6 +1,6 @@
 "use client";
 import { nexusOneTheme } from "../theme";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, X, ChevronDown, Check, Info, Copy } from "lucide-react";
 import { type SwapTokenOption } from "./swap-asset-selector";
@@ -14,6 +14,7 @@ interface ReceiveAssetSelectorProps {
 }
 
 const SUPPORTED_RECEIVE_CHAIN_IDS = new Set([1, 10, 56, 137, 143, 999, 8217, 8453, 42161, 43114, 534352, 4114]);
+const CHAIN_SELECTOR_CLOSE_MS = 220;
 
 const AVATAR_COLORS = [
   "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#D4A5A5", 
@@ -157,12 +158,16 @@ export function ReceiveAssetSelector({
   onSelect,
   onBack,
 }: ReceiveAssetSelectorProps) {
+  const selectorRef = useRef<HTMLDivElement | null>(null);
+  const chainCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const { supportedChainsAndTokens, swapBalance } = useNexus();
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedChainFilter, setSelectedChainFilter] = useState<number | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showChainSelector, setShowChainSelector] = useState(false);
+  const [isChainSelectorClosing, setIsChainSelectorClosing] = useState(false);
   const [chainQuery, setChainQuery] = useState("");
   const [draftChainFilter, setDraftChainFilter] = useState<number | null>(null);
   const [isChainSearchFocused, setIsChainSearchFocused] = useState(false);
@@ -177,6 +182,43 @@ export function ReceiveAssetSelector({
   const [apiTokens, setApiTokens] = useState<SwapTokenOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dynamicStableSymbols, setDynamicStableSymbols] = useState<Set<string>>(STABLE_SYMBOLS);
+
+  useEffect(() => {
+    setPortalRoot(
+      selectorRef.current?.closest("[data-nexus-one-root]") as HTMLElement | null,
+    );
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (chainCloseTimerRef.current) {
+        clearTimeout(chainCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const openChainSelector = () => {
+    if (chainCloseTimerRef.current) {
+      clearTimeout(chainCloseTimerRef.current);
+      chainCloseTimerRef.current = null;
+    }
+    setDraftChainFilter(selectedChainFilter);
+    setChainQuery("");
+    setIsChainSelectorClosing(false);
+    setShowChainSelector(true);
+  };
+
+  const closeChainSelector = () => {
+    if (chainCloseTimerRef.current) {
+      clearTimeout(chainCloseTimerRef.current);
+    }
+    setIsChainSelectorClosing(true);
+    chainCloseTimerRef.current = setTimeout(() => {
+      setShowChainSelector(false);
+      setIsChainSelectorClosing(false);
+      chainCloseTimerRef.current = null;
+    }, CHAIN_SELECTOR_CLOSE_MS);
+  };
 
   const balanceMap = useMemo(() => {
     const map = new Map<string, Pick<SwapTokenOption, "balance" | "balanceInFiat">>();
@@ -321,7 +363,7 @@ export function ReceiveAssetSelector({
   }, [filtered]);
 
   return (
-    <div style={{ boxSizing: "border-box", display: "flex", flexDirection: "column", flex: "0 1 auto", height: "auto", maxHeight: "100%", minHeight: 0, padding: "12px", width: "100%", position: "relative" }}>
+    <div ref={selectorRef} style={{ boxSizing: "border-box", display: "flex", flexDirection: "column", flex: "0 1 auto", height: "auto", maxHeight: "100%", minHeight: 0, overflow: "hidden", padding: "12px", width: "100%", position: "relative" }}>
       <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 10 }}>
         <div style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: "#E8E8E7" }} />
       </div>
@@ -380,11 +422,7 @@ export function ReceiveAssetSelector({
           />
           {query && <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}><X style={{ width: 16, height: 16, color: "#848483" }} /></button>}
           <button 
-            onClick={() => {
-              setDraftChainFilter(selectedChainFilter);
-              setChainQuery("");
-              setShowChainSelector(true);
-            }}
+            onClick={openChainSelector}
             style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 8px 4px 5px", borderRadius: 999, backgroundColor: "#FFFFFE", border: "1px solid #E8E8E7", cursor: "pointer", height: 38, flexShrink: 0, boxShadow: "0px 1px 2px rgba(0,0,0,0.05)" }}
           >
             {selectedChainFilter === null ? (
@@ -416,7 +454,13 @@ export function ReceiveAssetSelector({
 
       {/* Token list */}
       <div 
-        style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: hoveredHash ? 20 : 1 }}
+        style={{
+          flex: "1 1 auto",
+          minHeight: 0,
+          overflowY: "auto",
+          position: "relative",
+          zIndex: hoveredHash ? 20 : 1,
+        }}
         onScroll={(e) => {
           const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
           if (scrollHeight - scrollTop - clientHeight < 200) {
@@ -457,13 +501,15 @@ export function ReceiveAssetSelector({
                     <RadioDot selected={isSelected} />
                     <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
                       <TokenLogo token={t} size={40} fontSize={16} />
-                      {t.chainLogo && <img src={t.chainLogo} alt={t.chainName} style={{ position: "absolute", bottom: -3, right: -3, width: 22, height: 22, borderRadius: "999px", border: "2px solid #FFFFFE", zIndex: 2 }} />}
+                      {t.chainLogo && <img src={t.chainLogo} alt={t.chainName} style={{ position: "absolute", bottom: -8, right: -8, width: 22, height: 22, borderRadius: "999px", border: "2px solid #FFFFFE", zIndex: 2 }} />}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                       <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: "#161615" }}>{t.symbol}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
-                          {t.contractAddress.slice(0, 6)}...{t.contractAddress.slice(-4)}
+                          {isHovered
+                            ? `${t.contractAddress.slice(0, 6)}...${t.contractAddress.slice(-4)}`
+                            : `on ${t.chainName || "Unknown chain"}`}
                         </span>
                         {isHovered && (
                         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -539,7 +585,8 @@ export function ReceiveAssetSelector({
       </div>
 
       {/* Chain Selector Modal */}
-      {showChainSelector && (
+      {showChainSelector && (() => {
+        const chainModal = (
         <div
           style={{
             bottom: 0,
@@ -551,11 +598,11 @@ export function ReceiveAssetSelector({
             position: "absolute",
             right: 0,
             top: 0,
-            zIndex: 30,
+            zIndex: 50,
           }}
         >
           <div
-            onClick={() => setShowChainSelector(false)}
+            onClick={closeChainSelector}
             style={{
               backgroundColor: "rgba(0,0,0,0.22)",
               bottom: 0,
@@ -564,10 +611,12 @@ export function ReceiveAssetSelector({
               position: "absolute",
               right: 0,
               top: 0,
+              opacity: isChainSelectorClosing ? 0 : 1,
+              transition: `opacity ${CHAIN_SELECTOR_CLOSE_MS}ms ease`,
             }}
           />
           <div
-            className="animate-in slide-in-from-bottom-full duration-300"
+            className={isChainSelectorClosing ? undefined : "animate-in slide-in-from-bottom-full duration-300"}
             style={{
               backgroundColor: "#FFFFFE",
               borderRadius: "24px 24px 0 0",
@@ -575,21 +624,24 @@ export function ReceiveAssetSelector({
               boxSizing: "border-box",
               display: "flex",
               flexDirection: "column",
-              height: "auto",
+              height: "90%",
               maxHeight: "90%",
               overflow: "hidden",
               padding: "12px",
               pointerEvents: "auto",
               position: "relative",
+              transform: isChainSelectorClosing ? "translateY(100%)" : "translateY(0)",
+              transition: `transform ${CHAIN_SELECTOR_CLOSE_MS}ms ease, opacity ${CHAIN_SELECTOR_CLOSE_MS}ms ease`,
+              opacity: isChainSelectorClosing ? 0 : 1,
               width: "100%",
             }}
           >
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, width: "100%" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, width: "100%" }}>
             <div style={{ backgroundColor: "#D8D8D6", borderRadius: "999px", height: 4, width: 32 }} />
           </div>
-          <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 12 }}>
+          <div style={{ alignItems: "center", display: "flex", gap: 10, marginBottom: 10 }}>
             <button
-              onClick={() => setShowChainSelector(false)}
+              onClick={closeChainSelector}
               style={{
                 alignItems: "center",
                 backgroundColor: "#FFFFFE",
@@ -598,30 +650,30 @@ export function ReceiveAssetSelector({
                 cursor: "pointer",
                 display: "flex",
                 flexShrink: 0,
-                height: 32,
+                height: 30,
                 justifyContent: "center",
-                width: 32,
+                width: 30,
               }}
             >
-              <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
+              <ChevronDown style={{ width: 15, height: 15, transform: "rotate(90deg)" }} />
             </button>
-            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 18, color: "#161615" }}>Select chain</span>
+            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 17, color: "#161615" }}>Select chain</span>
           </div>
-          <div style={{ paddingBottom: 12 }}>
+          <div style={{ paddingBottom: 10 }}>
             <div
               style={{
                 alignItems: "center",
                 backgroundColor: "#FFFFFE",
                 border: `1px solid ${isChainSearchFocused ? "#A8C9FF" : "#E8E8E7"}`,
-                borderRadius: 12,
+                borderRadius: 11,
                 boxShadow: isChainSearchFocused ? "0 0 0 1px rgba(0,107,244,0.16)" : "none",
                 display: "flex",
                 gap: 8,
-                height: 42,
-                padding: "0 14px",
+                height: 38,
+                padding: "0 12px",
               }}
             >
-              <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
+              <Search style={{ width: 18, height: 18, color: "#848483", flexShrink: 0 }} />
               <input
                 value={chainQuery}
                 onChange={(e) => setChainQuery(e.target.value)}
@@ -634,23 +686,30 @@ export function ReceiveAssetSelector({
                   color: "#161615",
                   flex: 1,
                   fontFamily: '"Geist", system-ui, sans-serif',
-                  fontSize: 14,
+                  fontSize: 13,
                   minWidth: 0,
                   outline: "none",
                 }}
               />
             </div>
           </div>
-          <div style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto", marginBottom: 12 }}>
-            <div style={{ border: "1px solid #E8E8E7", borderRadius: 14, overflow: "hidden", backgroundColor: "#FFFFFE" }}>
+          <div
+            style={{
+              flex: "1 1 auto",
+              marginBottom: 10,
+              minHeight: 0,
+              overflowY: "auto",
+            }}
+          >
+            <div style={{ border: "1px solid #E8E8E7", borderRadius: 12, overflow: "hidden", backgroundColor: "#FFFFFE" }}>
             <button
               onClick={() => setDraftChainFilter(null)}
-              style={{ width: "100%", display: "flex", alignItems: "center", padding: "12px 16px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer", boxSizing: "border-box" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", padding: "8px 14px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer", boxSizing: "border-box" }}
             >
               <RadioDot selected={draftChainFilter === null} />
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 12 }}>
-                <img src="/nexus-one/all-chains.png" alt="All Chains" style={{ width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
-                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 16, color: "#161615" }}>All Chains</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 10 }}>
+                <img src="/nexus-one/all-chains.png" alt="All Chains" style={{ width: 28, height: 28, borderRadius: "999px", objectFit: "cover" }} />
+                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>All Chains</span>
               </div>
             </button>
             {Array.from(SUPPORTED_RECEIVE_CHAIN_IDS).filter(id => {
@@ -663,12 +722,12 @@ export function ReceiveAssetSelector({
                 <button
                   key={id}
                   onClick={() => setDraftChainFilter(id)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", padding: "12px 16px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer", boxSizing: "border-box" }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", padding: "8px 14px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer", boxSizing: "border-box" }}
                 >
                   <RadioDot selected={draftChainFilter === id} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 12 }}>
-                    <img src={meta.logo} style={{ width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
-                    <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 16, color: "#161615" }}>{meta.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 10 }}>
+                    <img src={meta.logo} style={{ width: 28, height: 28, borderRadius: "999px", objectFit: "cover" }} />
+                    <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>{meta.name}</span>
                   </div>
                 </button>
               );
@@ -678,21 +737,21 @@ export function ReceiveAssetSelector({
           <button
             onClick={() => {
               setSelectedChainFilter(draftChainFilter);
-              setShowChainSelector(false);
+              closeChainSelector();
             }}
             style={{
               alignItems: "center",
               backgroundColor: "#006BF4",
               border: "none",
-              borderRadius: 12,
+              borderRadius: 10,
               color: "#FFFFFE",
               cursor: "pointer",
               display: "flex",
               flexShrink: 0,
               fontFamily: '"Geist", system-ui, sans-serif',
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 600,
-              height: 48,
+              height: 44,
               justifyContent: "center",
               width: "100%",
             }}
@@ -701,7 +760,9 @@ export function ReceiveAssetSelector({
           </button>
           </div>
         </div>
-      )}
+        );
+        return portalRoot ? createPortal(chainModal, portalRoot) : chainModal;
+      })()}
 
       {/* Portal Tooltip */}
       {tooltipState && typeof window !== "undefined" && (() => {
@@ -732,7 +793,7 @@ export function ReceiveAssetSelector({
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, position: "relative", zIndex: 2 }}>
               <div style={{ position: "relative", width: 24, height: 24 }}>
                 <TokenLogo token={tooltipState.t} size={24} fontSize={10} />
-                {tooltipState.t.chainLogo && <img src={tooltipState.t.chainLogo} alt={tooltipState.t.chainName} style={{ position: "absolute", bottom: -2, right: -2, width: 10, height: 10, borderRadius: "999px", border: "1px solid #FFFFFE", zIndex: 2 }} />}
+                {tooltipState.t.chainLogo && <img src={tooltipState.t.chainLogo} alt={tooltipState.t.chainName} style={{ position: "absolute", bottom: -4, right: -4, width: 10, height: 10, borderRadius: "999px", border: "1px solid #FFFFFE", zIndex: 2 }} />}
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 14, color: "#161615" }}>{tooltipState.t.name}</span>
@@ -747,14 +808,10 @@ export function ReceiveAssetSelector({
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Decimals:</span>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>{tooltipState.t.decimals}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, position: "relative", zIndex: 2 }}>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Market cap:</span>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#161615", fontWeight: 500 }}>N/A</span>
-            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, position: "relative", zIndex: 2 }}>
               <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 12, color: "#848483" }}>Contract address:</span>
               {explorerUrl ? (
-                <a href={`${explorerUrl}/address/${tooltipState.t.contractAddress}`} target="_blank" rel="noreferrer" style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, color: "#006BF4", wordBreak: "break-all", textDecoration: "underline", outline: "none", cursor: "pointer" }}>{tooltipState.t.contractAddress}</a>
+                <a href={`${explorerUrl}/address/${tooltipState.t.contractAddress}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, color: "#006BF4", wordBreak: "break-all", textDecoration: "underline", outline: "none", cursor: "pointer" }}>{tooltipState.t.contractAddress}</a>
               ) : (
                 <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, color: "#161615", wordBreak: "break-all" }}>{tooltipState.t.contractAddress}</span>
               )}

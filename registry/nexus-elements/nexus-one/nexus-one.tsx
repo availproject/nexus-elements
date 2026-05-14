@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import {
   type NexusOneProps,
   type NexusOneMode,
@@ -20,6 +26,7 @@ import {
   SwapIntentPreview,
   type SwapIntentData,
 } from "./components/swap-intent-preview";
+import { NexusOneProgressScreen } from "./components/nexus-one-progress-screen";
 import { ReceiveAssetSelector, preloadReceiveTokens } from "./components/receive-asset-selector";
 import { OpportunityList } from "./components/opportunity-list";
 import { AlertCircle, ArrowLeft, ChevronDown, Loader2 } from "lucide-react";
@@ -96,6 +103,7 @@ type SwapQuoteIssue = {
 
 const QUOTE_REFRESH_INTERVAL_MS = 30000;
 const REFUND_FALLBACK_DELAY_MS = 30 * 60 * 1000;
+const DRAWER_CLOSE_MS = 220;
 const SWAP_HISTORY_STORAGE_KEY_PREFIX = "nexus-one-transaction-history-v1";
 const tooltipSurface = "#FFFFFE";
 const tooltipText = "var(--foreground-primary, #161615)";
@@ -276,14 +284,16 @@ function QuoteRefreshCountdown({
             fontFamily: uiFont,
             fontSize: "11px",
             fontWeight: 500,
-            left: "50%",
+            maxWidth: "190px",
             lineHeight: "15px",
             padding: "7px 9px",
             pointerEvents: "none",
             position: "absolute",
+            right: 0,
+            textAlign: "center",
             top: "calc(100% + 8px)",
-            transform: "translateX(-50%)",
-            whiteSpace: "nowrap",
+            whiteSpace: "normal",
+            width: "max-content",
             zIndex: 10000,
           }}
         >
@@ -1386,6 +1396,16 @@ export function NexusOne({
   // Swap-specific
   const [swapType, setSwapType] = useState<SwapType>("exactIn");
   const [swapStep, setSwapStep] = useState<SwapStep>("idle");
+  const drawerCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const [closingDrawerStep, setClosingDrawerStep] =
+    useState<SwapStep | null>(null);
+  const rootContentRef = useRef<HTMLDivElement | null>(null);
+  const [rootContentHeight, setRootContentHeight] = useState<number | null>(
+    null,
+  );
+  const [hasMeasuredRootContent, setHasMeasuredRootContent] = useState(false);
   const [fromTokens, setFromTokens] = useState<SwapTokenOption[]>([]);
   const [toToken, setToToken] = useState<SwapTokenOption | undefined>(
     undefined,
@@ -1473,6 +1493,85 @@ export function NexusOne({
   useEffect(() => {
     swapStepRef.current = swapStep;
   }, [swapStep]);
+
+  useEffect(() => {
+    return () => {
+      if (drawerCloseTimerRef.current) {
+        clearTimeout(drawerCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const closeDrawerToIdle = useCallback(() => {
+    const isDrawerStep =
+      swapStep === "choose-swap-asset" ||
+      swapStep === "choose-receive-asset" ||
+      swapStep === "enter-recipient";
+
+    if (!isDrawerStep) {
+      setSwapStep("idle");
+      return;
+    }
+
+    if (drawerCloseTimerRef.current) {
+      clearTimeout(drawerCloseTimerRef.current);
+    }
+
+    setClosingDrawerStep(swapStep);
+    drawerCloseTimerRef.current = setTimeout(() => {
+      setSwapStep("idle");
+      setClosingDrawerStep(null);
+      drawerCloseTimerRef.current = null;
+    }, DRAWER_CLOSE_MS);
+  }, [swapStep]);
+
+  const openDrawerStep = useCallback((nextStep: SwapStep) => {
+    if (drawerCloseTimerRef.current) {
+      clearTimeout(drawerCloseTimerRef.current);
+      drawerCloseTimerRef.current = null;
+    }
+    setClosingDrawerStep(null);
+    setSwapStep(nextStep);
+  }, []);
+
+  const syncRootContentHeight = useCallback(() => {
+    const element = rootContentRef.current;
+    if (!element) return;
+
+    const nextHeight = Math.ceil(
+      Math.max(element.getBoundingClientRect().height, element.scrollHeight),
+    );
+    if (nextHeight <= 0) return;
+
+    setRootContentHeight((previousHeight) =>
+      previousHeight === nextHeight ? previousHeight : nextHeight,
+    );
+    setHasMeasuredRootContent(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    syncRootContentHeight();
+
+    const element = rootContentRef.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+      frame = window.requestAnimationFrame(syncRootContentHeight);
+    });
+
+    observer.observe(element);
+
+    return () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+      observer.disconnect();
+    };
+  }, [activeMode, swapStep, syncRootContentHeight]);
 
   useEffect(() => {
     currentSwapIdRef.current = currentSwapId;
@@ -2304,7 +2403,7 @@ export function NexusOne({
       setRecipientAddress(defaultRecipientAddress);
     }
     setTxError(null);
-    setSwapStep("enter-recipient");
+    openDrawerStep("enter-recipient");
   };
 
   const handleResetRecipientToDefault = () => {
@@ -2333,7 +2432,7 @@ export function NexusOne({
     }
     setRecipientAddress(next);
     setTxError(null);
-    setSwapStep("idle");
+    closeDrawerToIdle();
   };
 
   /** Start swap flow — SDK will trigger setOnSwapIntentHook for preview */
@@ -2502,6 +2601,12 @@ export function NexusOne({
         ) {
           markSwapExecutionStarted();
         }
+        if (step?.data?.explorerURL) {
+          mergeExplorerUrls({
+            destinationExplorerUrl: step.data.explorerURL,
+          });
+        }
+        onStepComplete(step);
         return;
       }
       if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
@@ -3150,12 +3255,16 @@ export function NexusOne({
       setSwapStep("idle");
       return;
     }
+    if (swapStep === "choose-swap-asset") {
+      closeDrawerToIdle();
+      return;
+    }
     if (swapStep === "choose-receive-asset") {
-      setSwapStep("idle");
+      closeDrawerToIdle();
       return;
     }
     if (swapStep === "enter-recipient") {
-      setSwapStep("idle");
+      closeDrawerToIdle();
       return;
     }
     if (swapStep === "preview-intent") {
@@ -3239,6 +3348,7 @@ export function NexusOne({
     setTxError(null);
     setSwapQuoteIssue(null);
     setQuoteRefreshing(false);
+    setSwapType("exactOut");
     setReceiveMaxCalculating(true);
 
     try {
@@ -3468,7 +3578,7 @@ export function NexusOne({
     (activeMode === "swap" || activeMode === "deposit" || activeMode === "send") &&
     swapStep === "idle" &&
     swapType === "exactOut" &&
-    Boolean(amount && Number(amount) > 0 && toToken) &&
+    Boolean(toToken && (receiveMaxCalculating || (amount && Number(amount) > 0))) &&
     !exactOutInsufficientSourceIssue &&
     (quoteRefreshing || intentLoading || receiveMaxCalculating);
   const isSwapCtaDisabled =
@@ -3568,9 +3678,14 @@ export function NexusOne({
     (activeMode === "swap" || activeMode === "deposit" || activeMode === "send") &&
     Boolean(intentData && swapIntentRef.current) &&
     (swapStep === "idle" || swapStep === "preview-intent");
+  const isRecipientDrawerClosing = closingDrawerStep === "enter-recipient";
+  const isSwapAssetDrawerClosing = closingDrawerStep === "choose-swap-asset";
+  const isReceiveAssetDrawerClosing =
+    closingDrawerStep === "choose-receive-asset";
 
   return (
     <div
+      data-nexus-one-root
       style={{
         backgroundColor: "#F9F9F8",
         backgroundImage:
@@ -3587,16 +3702,33 @@ export function NexusOne({
         fontSize: "12px",
         fontSynthesis: "none",
         gap: "12px",
-        height: "fit-content",
+        height:
+          hasMeasuredRootContent && rootContentHeight
+            ? `${rootContentHeight}px`
+            : "fit-content",
         maxHeight: "80dvh",
         lineHeight: "16px",
         margin: "auto",
         overflow: "clip",
         position: "relative",
+        transition: hasMeasuredRootContent ? "height 260ms ease" : undefined,
+        willChange: "height",
         maxWidth: "450px",
         width: "90%",
       }}
     >
+      <div
+        ref={rootContentRef}
+        style={{
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          flexShrink: 0,
+          gap: "12px",
+          minHeight: 0,
+          width: "100%",
+        }}
+      >
       <div
         style={{
           alignItems: "center",
@@ -3825,8 +3957,8 @@ export function NexusOne({
           swapStep !== "choose-receive-asset" &&
           swapStep !== "enter-recipient" && (
             <>
-              {/* Panel: preview/progress. Keep one mounted component so accept starts the loader in-place. */}
-              {(swapStep === "preview-intent" || swapStep === "progress") && (
+              {/* Panel: preview. */}
+              {swapStep === "preview-intent" && (
                 <div className="w-full h-full">
                   <SwapIntentPreview
                     fromTokens={fromTokens}
@@ -3841,9 +3973,8 @@ export function NexusOne({
                     }
                     totalFeeUsd={intentFeeUsd}
                     estimatedTime="10s"
-                    isLoading={swapStep === "preview-intent" && intentLoading}
+                    isLoading={intentLoading}
                     isRefreshing={previewQuoteRefreshing}
-                    isExecuting={swapStep === "progress"}
                     swapType={swapType}
                     intentData={intentData}
                     swapBalances={swapBalance}
@@ -3856,16 +3987,27 @@ export function NexusOne({
                     recipientAddress={
                       activeMode === "send" ? recipientAddress : undefined
                     }
-                    onAccept={
-                      swapStep === "progress" ? () => undefined : handleSwapAccept
-                    }
+                    onAccept={handleSwapAccept}
                     onReject={() => {
-                      if (swapStep === "progress") return;
                       clearPendingSwapIntent();
                       setSwapStep("idle");
                     }}
                   />
                 </div>
+              )}
+
+              {swapStep === "progress" && (
+                <NexusOneProgressScreen
+                  fromTokens={fromTokens}
+                  toToken={toTokenWithFetchedBalance}
+                  fromAmountUsd={previewFromAmountUsd}
+                  toAmount={intentToAmount}
+                  toAmountUsd={previewToAmountUsd}
+                  intentData={intentData}
+                  mode={activeMode}
+                  opportunity={selectedOpportunity}
+                  steps={steps}
+                />
               )}
 
               {(swapStep === "success" || swapStep === "failed") &&
@@ -3940,9 +4082,9 @@ export function NexusOne({
                 swapType={swapType}
                 onOpenSourcePicker={(index) => {
                   setEditingAssetIndex(index ?? null);
-                  setSwapStep("choose-swap-asset");
+                  openDrawerStep("choose-swap-asset");
                 }}
-                onOpenDestPicker={() => setSwapStep("choose-receive-asset")}
+                onOpenDestPicker={() => openDrawerStep("choose-receive-asset")}
                 onOpenRecipientPicker={handleOpenRecipientEditor}
                 recipientAddress={effectiveRecipientAddress}
                 defaultRecipientAddress={defaultRecipientAddress}
@@ -4120,7 +4262,7 @@ export function NexusOne({
                     usdValue={depositUsdDisplay}
                     tokenValue={depositTokenDisplay}
                     fromTokens={fromTokens}
-                    onOpenSourcePicker={() => setSwapStep("choose-swap-asset")}
+                    onOpenSourcePicker={() => openDrawerStep("choose-swap-asset")}
                     onSetPercent={handleDepositPercentSelect}
                     routeStatus={
                       exactOutInsufficientSourceIssue
@@ -4229,10 +4371,10 @@ export function NexusOne({
                 usdValue={
                   amount && sendAmountUsd > 0 ? sendAmountUsd.toFixed(2) : ""
                 }
-                onOpenAssetPicker={() => setSwapStep("choose-receive-asset")}
+                onOpenAssetPicker={() => openDrawerStep("choose-receive-asset")}
                 onOpenSourcePicker={() => {
                   setEditingAssetIndex(null);
-                  setSwapStep("choose-swap-asset");
+                  openDrawerStep("choose-swap-asset");
                 }}
                 onOpenRecipientPicker={handleOpenRecipientEditor}
                 recipientAddress={recipientAddress || ""}
@@ -4320,6 +4462,7 @@ export function NexusOne({
             </>
           )}
       </div>
+      </div>
 
       {/* ================================================================== */}
       {/* DRAWER PANELS — rendered as direct children of root widget          */}
@@ -4355,11 +4498,12 @@ export function NexusOne({
                 bottom: 0,
                 backgroundColor: "rgba(0,0,0,0.35)",
                 pointerEvents: "auto",
-                transition: "opacity 0.3s",
+                opacity: isRecipientDrawerClosing ? 0 : 1,
+                transition: `opacity ${DRAWER_CLOSE_MS}ms ease`,
               }}
               onClick={() => {
                 setTxError(null);
-                setSwapStep("idle");
+                closeDrawerToIdle();
               }}
             />
             <div
@@ -4380,8 +4524,17 @@ export function NexusOne({
                 boxSizing: "border-box",
                 overflowY: "auto",
                 padding: "12px 16px 16px",
+                opacity: isRecipientDrawerClosing ? 0 : 1,
+                transform: isRecipientDrawerClosing
+                  ? "translateY(100%)"
+                  : "translateY(0)",
+                transition: `transform ${DRAWER_CLOSE_MS}ms ease, opacity ${DRAWER_CLOSE_MS}ms ease`,
               }}
-              className="animate-in slide-in-from-bottom-full duration-300"
+              className={
+                isRecipientDrawerClosing
+                  ? undefined
+                  : "animate-in slide-in-from-bottom-full duration-300"
+              }
             >
               <div
                 style={{
@@ -4412,7 +4565,7 @@ export function NexusOne({
                   type="button"
                   onClick={() => {
                     setTxError(null);
-                    setSwapStep("idle");
+                    closeDrawerToIdle();
                   }}
                   aria-label="Back"
                   style={{
@@ -4584,9 +4737,10 @@ export function NexusOne({
                 bottom: 0,
                 backgroundColor: "rgba(0,0,0,0.4)",
                 pointerEvents: "auto",
-                transition: "opacity 0.3s",
+                opacity: isSwapAssetDrawerClosing ? 0 : 1,
+                transition: `opacity ${DRAWER_CLOSE_MS}ms ease`,
               }}
-              onClick={() => setSwapStep("idle")}
+              onClick={closeDrawerToIdle}
             />
             <div
               style={{
@@ -4605,8 +4759,17 @@ export function NexusOne({
                 pointerEvents: "auto",
                 boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
                 boxSizing: "border-box",
+                opacity: isSwapAssetDrawerClosing ? 0 : 1,
+                transform: isSwapAssetDrawerClosing
+                  ? "translateY(100%)"
+                  : "translateY(0)",
+                transition: `transform ${DRAWER_CLOSE_MS}ms ease, opacity ${DRAWER_CLOSE_MS}ms ease`,
               }}
-              className="animate-in slide-in-from-bottom-full duration-300"
+              className={
+                isSwapAssetDrawerClosing
+                  ? undefined
+                  : "animate-in slide-in-from-bottom-full duration-300"
+              }
             >
               <SwapAssetSelector
                 title={
@@ -4750,7 +4913,7 @@ export function NexusOne({
                     ];
                   });
                 }}
-                onDone={() => setSwapStep("idle")}
+                onDone={closeDrawerToIdle}
                 onSelect={(token) => {
                   clearPendingSwapIntent();
                   if (activeMode === "swap" && swapType === "exactIn") {
@@ -4775,13 +4938,13 @@ export function NexusOne({
                       }
                       return next;
                     });
-                    setSwapStep("idle");
+                    closeDrawerToIdle();
                   } else if (
                     activeMode === "deposit" ||
                     activeMode === "send"
                   ) {
                     setFromTokens([{ ...token, userAmount: amount }]);
-                    setSwapStep("idle");
+                    closeDrawerToIdle();
                   } else {
                     const next = [...fromTokens];
                     const newToken = { ...token, userAmount: "" };
@@ -4808,10 +4971,10 @@ export function NexusOne({
                       setAmount(sourceAmount);
                       setSwapType("exactIn");
                     }
-                    setSwapStep("idle");
+                    closeDrawerToIdle();
                   }
                 }}
-                onBack={() => setSwapStep("idle")}
+                onBack={closeDrawerToIdle}
               />
             </div>
           </div>
@@ -4846,9 +5009,10 @@ export function NexusOne({
                 bottom: 0,
                 backgroundColor: "rgba(0,0,0,0.4)",
                 pointerEvents: "auto",
-                transition: "opacity 0.3s",
+                opacity: isReceiveAssetDrawerClosing ? 0 : 1,
+                transition: `opacity ${DRAWER_CLOSE_MS}ms ease`,
               }}
-              onClick={() => setSwapStep("idle")}
+              onClick={closeDrawerToIdle}
             />
             <div
               style={{
@@ -4867,8 +5031,17 @@ export function NexusOne({
                 pointerEvents: "auto",
                 boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
                 boxSizing: "border-box",
+                opacity: isReceiveAssetDrawerClosing ? 0 : 1,
+                transform: isReceiveAssetDrawerClosing
+                  ? "translateY(100%)"
+                  : "translateY(0)",
+                transition: `transform ${DRAWER_CLOSE_MS}ms ease, opacity ${DRAWER_CLOSE_MS}ms ease`,
               }}
-              className="animate-in slide-in-from-bottom-full duration-300"
+              className={
+                isReceiveAssetDrawerClosing
+                  ? undefined
+                  : "animate-in slide-in-from-bottom-full duration-300"
+              }
             >
               <ReceiveAssetSelector
                 onSelect={(token) => {
@@ -4876,7 +5049,7 @@ export function NexusOne({
                     clearPendingSwapIntent();
                     setSwapType("exactOut");
                     setToToken(token);
-                    setSwapStep("idle");
+                    closeDrawerToIdle();
                     return;
                   }
                   const receiveAmount =
@@ -4887,9 +5060,9 @@ export function NexusOne({
                     setSwapType("exactOut");
                   }
                   setToToken(token);
-                  setSwapStep("idle");
+                  closeDrawerToIdle();
                 }}
-                onBack={() => setSwapStep("idle")}
+                onBack={closeDrawerToIdle}
               />
             </div>
           </div>

@@ -879,6 +879,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/nexus-one/components/nexus-one-progress-screen.tsx",
+          "target": "components/nexus-one/components/nexus-one-progress-screen.tsx",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/nexus-one/components/opportunity-list.tsx",
           "target": "components/nexus-one/components/opportunity-list.tsx",
           "type": "registry:component"
