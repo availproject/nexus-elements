@@ -200,10 +200,9 @@
       "target": "components/common/utils/transaction-flow.ts"
     }
   ],
-  "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one for new integrations.",
   "meta": {
     "deprecated": true,
-    "deprecationMessage": "Fast Bridge is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one for new integrations.",
-    "replacement": "@nexus-elements/nexus-one"
-  }
+    "deprecationMessage": "Fast Bridge is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one for new integrations."
+  },
+  "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one for new integrations."
 }

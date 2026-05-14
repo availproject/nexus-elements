@@ -12,10 +12,15 @@ const NexusOneBridgeShowcase = () => {
       type="nexus-one"
       connectLabel="Connect wallet to use Nexus One Bridge"
     >
-      <NexusOne
-        config={{ mode: "swap" }}
-        connectedAddress={address}
-      />
+      <div
+        className="flex w-full justify-center"
+        style={{ minHeight: "90dvh" }}
+      >
+        <NexusOne
+          config={{ mode: "swap" }}
+          connectedAddress={address}
+        />
+      </div>
     </ShowcaseWrapper>
   );
 };

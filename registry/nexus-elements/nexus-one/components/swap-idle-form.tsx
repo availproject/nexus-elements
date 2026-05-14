@@ -91,39 +91,21 @@ function PercentButtons({
   onSelect: (pct: number) => void;
   maxLabel?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      // Trigger the animation on next frame
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setShow(true));
-      });
-    } else {
-      setShow(false);
-      const timer = setTimeout(() => setMounted(false), 200);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
-
-  if (!mounted) return null;
-
   return (
     <div
+      aria-hidden={!visible}
       style={{
         alignItems: "center",
         boxSizing: "border-box",
         display: "flex",
-        gap: "6px",
-        width: "100%",
+        gap: "5px",
+        height: "24px",
+        minHeight: "24px",
+        opacity: visible ? 1 : 0,
         overflow: "hidden",
-        maxHeight: show ? "40px" : "0px",
-        opacity: show ? 1 : 0,
-        marginTop: show ? "0px" : "-4px",
-        transition:
-          "max-height 0.2s ease-out, opacity 0.2s ease-out, margin-top 0.15s ease-out",
+        pointerEvents: visible ? "auto" : "none",
+        transition: "opacity 0.18s ease-out",
+        width: "100%",
       }}
     >
       {[25, 50, 75, 100].map((pct) => {
@@ -133,6 +115,7 @@ function PercentButtons({
             key={pct}
             label={label}
             onClick={() => onSelect(pct)}
+            tabIndex={visible ? 0 : -1}
           />
         );
       })}
@@ -143,9 +126,11 @@ function PercentButtons({
 function PercentHoverButton({
   label,
   onClick,
+  tabIndex,
 }: {
   label: string;
   onClick: () => void;
+  tabIndex?: number;
 }) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(false);
@@ -159,19 +144,23 @@ function PercentHoverButton({
         setHover(false);
         setActive(false);
       }}
-      onMouseDown={() => setActive(true)}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        setActive(true);
+      }}
       onMouseUp={() => setActive(false)}
       onClick={onClick}
+      tabIndex={tabIndex}
       style={{
         alignItems: "center",
         backgroundColor: isHighlighted ? "#E8F0FF" : "#F4F4F3",
-        borderRadius: "8px",
+        borderRadius: "7px",
         boxSizing: "border-box",
         display: "flex",
         flex: "1 1 0%",
         justifyContent: "center",
-        paddingBlock: "5px",
-        paddingInline: "10px",
+        paddingBlock: "3px",
+        paddingInline: "7px",
         border: "none",
         cursor: "pointer",
         transition: "background-color 0.2s ease-out",
@@ -182,9 +171,9 @@ function PercentHoverButton({
           boxSizing: "border-box",
           color: isHighlighted ? "#006BF4" : "#363635",
           fontFamily: '"Geist", system-ui, sans-serif',
-          fontSize: "12px",
+          fontSize: "11px",
           fontWeight: 500,
-          lineHeight: "20px",
+          lineHeight: "16px",
           transition: "color 0.2s ease-out",
           ...(label === "MAX" ? { letterSpacing: "0.02em" } : {}),
         }}
@@ -447,7 +436,7 @@ function AddAssetButton({
     <div
       style={{
         overflow: "hidden",
-        maxHeight: show ? "50px" : "0px",
+        maxHeight: show ? "44px" : "0px",
         opacity: show ? 1 : 0,
         transition: "max-height 0.2s ease-out, opacity 0.2s ease-out",
         width: "100%",
@@ -464,8 +453,8 @@ function AddAssetButton({
           display: "flex",
           gap: "6px",
           justifyContent: "center",
-          paddingBlock: "9px",
-          paddingInline: "9px",
+          paddingBlock: "8px",
+          paddingInline: "8px",
           border: "none",
           cursor: "pointer",
           width: "100%",
@@ -477,7 +466,7 @@ function AddAssetButton({
             boxSizing: "border-box",
             color: "#006BF4",
             fontFamily: '"Geist", system-ui, sans-serif',
-            fontSize: "12px",
+            fontSize: "11px",
             fontWeight: 500,
             lineHeight: "20px",
           }}
@@ -511,13 +500,9 @@ export function SwapIdleForm({
   swapType,
   onUpdateTokens,
 }: SwapIdleFormProps) {
-  const [hoveredPanel, setHoveredPanel] = useState<"send" | "receive" | null>(
-    null,
-  );
   const [focusedPanel, setFocusedPanel] = useState<"send" | "receive" | null>(
     null,
   );
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
   const [tooltip, setTooltip] = useState<string | null>(null);
   const [showAllSourceAssets, setShowAllSourceAssets] = useState(false);
@@ -782,7 +767,7 @@ export function SwapIdleForm({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
+        gap: "12px",
         width: "100%",
       }}
     >
@@ -797,10 +782,6 @@ export function SwapIdleForm({
       )}
       {/* ─── SEND PANEL ─── */}
       <div
-        onMouseEnter={() => setHoveredPanel("send")}
-        onMouseLeave={() => setHoveredPanel(null)}
-        onFocusCapture={() => setFocusedPanel("send")}
-        onBlurCapture={() => setFocusedPanel(null)}
         style={{
           alignItems: "center",
           backgroundColor: "#FFFFFE",
@@ -813,10 +794,10 @@ export function SwapIdleForm({
           display: "flex",
           flexDirection: "column",
           fontVariantNumeric: "tabular-nums",
-          gap: "12px",
+          gap: "10px",
           justifyContent: "center",
-          paddingBlock: "16px",
-          paddingInline: "16px",
+          paddingBlock: "14px",
+          paddingInline: "14px",
           width: "100%",
         }}
       >
@@ -862,8 +843,8 @@ export function SwapIdleForm({
                 boxSizing: "border-box",
                 color: "#848483",
                 fontFamily: '"Geist", system-ui, sans-serif',
-                fontSize: "14px",
-                lineHeight: "20px",
+                fontSize: "13px",
+                lineHeight: "18px",
               }}
             >
               Total Balance:
@@ -873,8 +854,8 @@ export function SwapIdleForm({
                 boxSizing: "border-box",
                 color: "#848483",
                 fontFamily: '"Geist", system-ui, sans-serif',
-                fontSize: "14px",
-                lineHeight: "20px",
+                fontSize: "13px",
+                lineHeight: "18px",
               }}
             >
               ${totalBalance}
@@ -891,7 +872,7 @@ export function SwapIdleForm({
                 border: "1px solid #E8E8E7",
                 borderRadius: "12px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                padding: "16px",
+                padding: "14px",
                 display: "flex",
                 flexDirection: "column",
                 zIndex: 10000,
@@ -916,7 +897,7 @@ export function SwapIdleForm({
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
-            gap: "16px",
+            gap: "12px",
             maxHeight: hasSourceOverflow
               ? showAllSourceAssets
                 ? "204px"
@@ -952,7 +933,7 @@ export function SwapIdleForm({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "8px",
+                  gap: "6px",
                   opacity: isSourceRowClipped ? 0 : 1,
                   pointerEvents: isSourceRowClipped ? "none" : undefined,
                   position: "relative",
@@ -968,10 +949,6 @@ export function SwapIdleForm({
                         ? 0
                         : 1,
                 }}
-                onMouseEnter={() => setHoveredRow(index)}
-                onMouseLeave={() => setHoveredRow(null)}
-                onFocusCapture={() => setFocusedRow(index)}
-                onBlurCapture={() => setFocusedRow(null)}
               >
                 <div
                   style={{
@@ -979,7 +956,7 @@ export function SwapIdleForm({
                     alignSelf: "stretch",
                     boxSizing: "border-box",
                     display: "flex",
-                    gap: "10px",
+                    gap: "8px",
                     justifyContent: "space-between",
                     width: "100%",
                   }}
@@ -993,7 +970,7 @@ export function SwapIdleForm({
                       }}
                     >
                       {showSourceRouteSkeleton ? (
-                        <SkeletonBar width="46%" height="28px" />
+                        <SkeletonBar width="46%" height="24px" />
                       ) : (
                         <>
                           {token?.userAmountMode === "usd" && (
@@ -1007,9 +984,9 @@ export function SwapIdleForm({
                                     : "#9E9E9C",
                                 fontFamily:
                                   '"Delight-Medium", "Delight", system-ui, sans-serif',
-                                fontSize: "36px",
+                                fontSize: "32px",
                                 fontWeight: 500,
-                                lineHeight: "44px",
+                                lineHeight: "38px",
                                 marginRight: "4px",
                               }}
                             >
@@ -1032,8 +1009,10 @@ export function SwapIdleForm({
                                 handleTokenAmountChange(index, e.target.value);
                               else handleSendInput(e);
                             }}
-                            onBlur={(e) => {
+                            onFocus={() => setFocusedRow(index)}
+                            onBlur={() => {
                               if (token) handleBlurAmount(index);
+                              setFocusedRow(null);
                             }}
                             style={{
                               boxSizing: "border-box",
@@ -1045,9 +1024,9 @@ export function SwapIdleForm({
                                   : "#9E9E9C",
                               fontFamily:
                                 '"Delight-Medium", "Delight", system-ui, sans-serif',
-                              fontSize: "36px",
+                              fontSize: "32px",
                               fontWeight: 500,
-                              lineHeight: "44px",
+                              lineHeight: "38px",
                               background: "transparent",
                               border: "none",
                               outline: "none",
@@ -1074,13 +1053,13 @@ export function SwapIdleForm({
                             alignItems: "center",
                             display: "flex",
                             flexShrink: 0,
-                            height: "32px",
+                            height: "30px",
                             width: "110px",
                           }}
                         >
                           <SkeletonBar
                             width="100%"
-                            height="30px"
+                            height="28px"
                             borderRadius="999px"
                           />
                         </div>
@@ -1098,11 +1077,11 @@ export function SwapIdleForm({
                             boxShadow: token ? "#1616150A 0px 1px 2px" : "none",
                             boxSizing: "border-box",
                             display: "flex",
-                            gap: "8px",
-                            paddingBottom: "5px",
+                            gap: "7px",
+                            paddingBottom: "4px",
                             paddingLeft: token ? "4px" : "8px",
-                            paddingRight: "10px",
-                            paddingTop: "5px",
+                            paddingRight: "9px",
+                            paddingTop: "4px",
                             cursor: "pointer",
                             flexShrink: 0,
                           }}
@@ -1112,19 +1091,19 @@ export function SwapIdleForm({
                               style={{
                                 boxSizing: "border-box",
                                 flexShrink: 0,
-                                height: "26px",
+                                height: "24px",
                                 position: "relative" as const,
-                                width: "26px",
+                                width: "24px",
                               }}
                             >
                               <LogoCircle
                                 src={token.logo}
                                 alt={token.symbol}
                                 label={token.symbol}
-                                size={26}
-                                fontSize={13}
+                                size={24}
+                                fontSize={12}
                               />
-                              {token.chainLogo && (
+                              {token.chainLogo && !token.isUnified && (
                                 <LogoCircle
                                   src={token.chainLogo}
                                   alt={token.chainName}
@@ -1159,9 +1138,9 @@ export function SwapIdleForm({
                               boxSizing: "border-box",
                               color: "#161615",
                               fontFamily: '"Geist", system-ui, sans-serif',
-                              fontSize: token ? "14px" : "16px",
+                              fontSize: token ? "13px" : "15px",
                               fontWeight: 500,
-                              lineHeight: token ? "18px" : "24px",
+                              lineHeight: token ? "17px" : "22px",
                             }}
                           >
                             {token ? token.symbol : "Assets"}
@@ -1184,8 +1163,8 @@ export function SwapIdleForm({
                         }}
                         tabIndex={isSourceRowClipped ? -1 : undefined}
                         style={{
-                          width: "24px",
-                          height: "24px",
+                          width: "22px",
+                          height: "22px",
                           borderRadius: "999px",
                           backgroundColor: "#F0F0EF",
                           border: "none",
@@ -1226,7 +1205,7 @@ export function SwapIdleForm({
                   }}
                 >
                   {showSourceRouteSkeleton ? (
-                    <SkeletonBar width="88px" height="20px" />
+                    <SkeletonBar width="84px" height="18px" />
                   ) : (
                     (() => {
                       if (!token)
@@ -1236,8 +1215,8 @@ export function SwapIdleForm({
                               boxSizing: "border-box",
                               color: "#848483",
                               fontFamily: '"Geist", system-ui, sans-serif',
-                              fontSize: "14px",
-                              lineHeight: "20px",
+                              fontSize: "13px",
+                              lineHeight: "18px",
                             }}
                           >
                             ≈ ${usdValue || "0.00"}
@@ -1280,8 +1259,8 @@ export function SwapIdleForm({
                               boxSizing: "border-box",
                               color: "#848483",
                               fontFamily: '"Geist", system-ui, sans-serif',
-                              fontSize: "14px",
-                              lineHeight: "20px",
+                              fontSize: "13px",
+                              lineHeight: "18px",
                             }}
                           >
                             {approxPrefix}
@@ -1294,7 +1273,7 @@ export function SwapIdleForm({
                     })()
                   )}
                   {showSourceRouteSkeleton ? (
-                    <SkeletonBar width="132px" height="20px" />
+                    <SkeletonBar width="124px" height="18px" />
                   ) : token && (
                     <div
                       onMouseEnter={() => setTooltip(`asset-send-${index}`)}
@@ -1313,9 +1292,9 @@ export function SwapIdleForm({
                           boxSizing: "border-box",
                           color: "#848483",
                           fontFamily: '"Geist", system-ui, sans-serif',
-                          fontSize: "14px",
+                          fontSize: "13px",
                           fontVariantNumeric: "tabular-nums",
-                          lineHeight: "20px",
+                          lineHeight: "18px",
                         }}
                       >
                         Balance:
@@ -1325,9 +1304,9 @@ export function SwapIdleForm({
                           boxSizing: "border-box",
                           color: "#848483",
                           fontFamily: '"Geist", system-ui, sans-serif',
-                          fontSize: "14px",
+                          fontSize: "13px",
                           fontVariantNumeric: "tabular-nums",
-                          lineHeight: "20px",
+                          lineHeight: "18px",
                         }}
                       >
                         {formatTokenBalanceLabel(token)}
@@ -1346,7 +1325,7 @@ export function SwapIdleForm({
                           border: "1px solid #E8E8E7",
                           borderRadius: "12px",
                           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                          padding: "16px",
+                          padding: "14px",
                           display: "flex",
                           flexDirection: "column",
                           zIndex: 10000,
@@ -1365,12 +1344,9 @@ export function SwapIdleForm({
                   )}
                 </div>
 
-                {/* 25% 50% 75% MAX — hover transition */}
+                {/* 25% 50% 75% MAX — space is reserved, buttons fade in on amount focus */}
                 <PercentButtons
-                  visible={
-                    Boolean(token) &&
-                    (hoveredRow === index || focusedRow === index)
-                  }
+                  visible={Boolean(token) && focusedRow === index}
                   onSelect={(pct) =>
                     token
                       ? handleSendPercentForToken(index, pct, token)
@@ -1412,7 +1388,7 @@ export function SwapIdleForm({
               boxSizing: "border-box",
               cursor: "pointer",
               display: "flex",
-              gap: "8px",
+              gap: "6px",
               justifyContent: "space-between",
               minHeight: "30px",
               paddingBlock: "5px",
@@ -1476,14 +1452,14 @@ export function SwapIdleForm({
               display: "flex",
               gap: "8px",
               alignItems: "center",
-              paddingTop: "8px",
+              paddingTop: "6px",
               alignSelf: "flex-start",
               justifyContent: "flex-start",
             }}
           >
             <span
               style={{
-                fontSize: "18px",
+                fontSize: "17px",
                 fontWeight: 600,
                 color: "#161615",
                 fontFamily: '"Geist", system-ui, sans-serif',
@@ -1508,10 +1484,6 @@ export function SwapIdleForm({
 
       {/* ─── RECEIVE PANEL ─── */}
       <div
-        onMouseEnter={() => setHoveredPanel("receive")}
-        onMouseLeave={() => setHoveredPanel(null)}
-        onFocusCapture={() => setFocusedPanel("receive")}
-        onBlurCapture={() => setFocusedPanel(null)}
         style={{
           backgroundColor: "#FFFFFE",
           borderColor: "#E8E8E7",
@@ -1523,9 +1495,9 @@ export function SwapIdleForm({
           display: "flex",
           flexDirection: "column",
           fontVariantNumeric: "tabular-nums",
-          gap: "12px",
-          paddingBlock: "20px",
-          paddingInline: "16px",
+          gap: "10px",
+          paddingBlock: "16px",
+          paddingInline: "14px",
           width: "100%",
         }}
       >
@@ -1573,12 +1545,12 @@ export function SwapIdleForm({
                   alignItems: "center",
                   boxSizing: "border-box",
                   display: "flex",
-                  minHeight: "44px",
+                  minHeight: "38px",
                   minWidth: 0,
                   width: "100%",
                 }}
               >
-                <SkeletonBar width="68%" height="36px" />
+                <SkeletonBar width="68%" height="30px" />
               </div>
             ) : (
               <input
@@ -1586,6 +1558,8 @@ export function SwapIdleForm({
                 placeholder="0"
                 value={receiveInputValue}
                 onChange={handleReceiveInput}
+                onFocus={() => setFocusedPanel("receive")}
+                onBlur={() => setFocusedPanel(null)}
                 style={{
                   boxSizing: "border-box",
                   color:
@@ -1594,9 +1568,9 @@ export function SwapIdleForm({
                       : "#9E9E9C",
                   fontFamily:
                     '"Delight-Medium", "Delight", system-ui, sans-serif',
-                  fontSize: "36px",
+                  fontSize: "32px",
                   fontWeight: 500,
-                  lineHeight: "44px",
+                  lineHeight: "38px",
                   background: "transparent",
                   border: "none",
                   outline: "none",
@@ -1620,11 +1594,11 @@ export function SwapIdleForm({
                 boxShadow: toToken ? "#1616150A 0px 1px 2px" : "none",
                 boxSizing: "border-box",
                 display: "flex",
-                gap: "8px",
-                paddingBottom: "5px",
+                gap: "7px",
+                paddingBottom: "4px",
                 paddingLeft: toToken ? "5px" : "8px",
-                paddingRight: "10px",
-                paddingTop: "5px",
+                paddingRight: "9px",
+                paddingTop: "4px",
                 cursor: "pointer",
                 flexShrink: 0,
               }}
@@ -1634,17 +1608,17 @@ export function SwapIdleForm({
                   style={{
                     boxSizing: "border-box",
                     flexShrink: 0,
-                    height: "26px",
+                    height: "24px",
                     position: "relative" as const,
-                    width: "26px",
+                    width: "24px",
                   }}
                 >
                   <LogoCircle
                     src={toToken.logo}
                     alt={toToken.symbol}
                     label={toToken.symbol}
-                    size={26}
-                    fontSize={13}
+                    size={24}
+                    fontSize={12}
                   />
                   {toToken.chainLogo && (
                     <LogoCircle
@@ -1681,9 +1655,9 @@ export function SwapIdleForm({
                   boxSizing: "border-box",
                   color: "#161615",
                   fontFamily: '"Geist", system-ui, sans-serif',
-                  fontSize: "16px",
+                  fontSize: "15px",
                   fontWeight: 500,
-                  lineHeight: "24px",
+                  lineHeight: "22px",
                 }}
               >
                 {toToken ? toToken.symbol : "Assets"}
@@ -1711,8 +1685,8 @@ export function SwapIdleForm({
                   boxSizing: "border-box",
                   color: "#848483",
                   fontFamily: '"Geist", system-ui, sans-serif',
-                  fontSize: "14px",
-                  lineHeight: "20px",
+                  fontSize: "13px",
+                  lineHeight: "18px",
                 }}
               >
                 {receiveAltValue}
@@ -1736,9 +1710,9 @@ export function SwapIdleForm({
                     boxSizing: "border-box",
                     color: "#848483",
                     fontFamily: '"Geist", system-ui, sans-serif',
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontVariantNumeric: "tabular-nums",
-                    lineHeight: "20px",
+                    lineHeight: "18px",
                   }}
                 >
                   Balance:
@@ -1748,9 +1722,9 @@ export function SwapIdleForm({
                     boxSizing: "border-box",
                     color: "#848483",
                     fontFamily: '"Geist", system-ui, sans-serif',
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontVariantNumeric: "tabular-nums",
-                    lineHeight: "20px",
+                    lineHeight: "18px",
                   }}
                 >
                   {receiveBalanceLabel}
@@ -1767,7 +1741,7 @@ export function SwapIdleForm({
                     border: "1px solid #E8E8E7",
                     borderRadius: "12px",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                    padding: "16px",
+                    padding: "14px",
                     display: "flex",
                     flexDirection: "column",
                     zIndex: 10000,
@@ -1789,7 +1763,7 @@ export function SwapIdleForm({
           {/* 25% 50% 75% MAX — backed by calculateMaxForSwap when available */}
           {onReceivePercentSelect && (
             <PercentButtons
-              visible={hoveredPanel === "receive" || focusedPanel === "receive"}
+              visible={focusedPanel === "receive"}
               onSelect={onReceivePercentSelect}
             />
           )}
@@ -1815,7 +1789,7 @@ export function SwapIdleForm({
                 boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
-                gap: "6px",
+                gap: "5px",
                 paddingTop: "2px",
                 width: "100%",
               }}
@@ -1850,10 +1824,10 @@ export function SwapIdleForm({
                     boxSizing: "border-box",
                     color: recipientColor,
                     fontFamily: '"Geist", system-ui, sans-serif',
-                    fontSize: "16px",
+                    fontSize: "15px",
                     fontVariantNumeric: "tabular-nums",
                     fontWeight: 500,
-                    lineHeight: "18px",
+                    lineHeight: "17px",
                   }}
                 >
                   {recipientAddress
@@ -1869,8 +1843,8 @@ export function SwapIdleForm({
                     boxSizing: "border-box",
                     display: "flex",
                     gap: "4px",
-                    paddingBlock: "8px",
-                    paddingInline: "12px",
+                    paddingBlock: "7px",
+                    paddingInline: "10px",
                     border: "none",
                     cursor: "pointer",
                   }}

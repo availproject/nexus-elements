@@ -42,6 +42,8 @@ export function ComponentPreview({
   ...props
 }: ComponentPreviewProps) {
   const showcaseLoader = SHOWCASE_MAP[name];
+  const isNexusOnePreview =
+    name === "nexus-one" || name.startsWith("nexus-one-");
   const Showcase = dynamic(showcaseLoader, {
     loading: () => <Skeleton className="w-full h-full" />,
   });
@@ -64,6 +66,9 @@ export function ComponentPreview({
       align={align}
       hideCode={hideCode}
       component={<Showcase />}
+      previewClassName={
+        isNexusOnePreview ? "min-h-[90dvh] sm:min-h-[90dvh]" : undefined
+      }
       source={
         <ComponentSource
           name={name}

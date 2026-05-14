@@ -161,7 +161,11 @@ export function ReceiveAssetSelector({
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedChainFilter, setSelectedChainFilter] = useState<number | null>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showChainSelector, setShowChainSelector] = useState(false);
+  const [chainQuery, setChainQuery] = useState("");
+  const [draftChainFilter, setDraftChainFilter] = useState<number | null>(null);
+  const [isChainSearchFocused, setIsChainSearchFocused] = useState(false);
   const [selectedTokenHash, setSelectedTokenHash] = useState<string | null>(null);
   const [selectedTokenFull, setSelectedTokenFull] = useState<SwapTokenOption | null>(null);
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
@@ -317,20 +321,70 @@ export function ReceiveAssetSelector({
   }, [filtered]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%", position: "relative" }}>
-      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 12, position: "relative", zIndex: 10 }}>
+    <div style={{ boxSizing: "border-box", display: "flex", flexDirection: "column", flex: "0 1 auto", height: "auto", maxHeight: "100%", minHeight: 0, padding: "12px", width: "100%", position: "relative" }}>
+      <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 10 }}>
+        <div style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: "#E8E8E7" }} />
+      </div>
+
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+        <button
+          onClick={onBack}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid #E8E8E7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#FFFFFE",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
+        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 18, fontWeight: 600, color: "#161615" }}>
+            Choose asset to Receive
+          </span>
+          <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+            Select token and chain
+          </span>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 0 12px", display: "flex", flexDirection: "column", gap: 10, position: "relative", zIndex: 10 }}>
         
         {/* Search */}
-        <div style={{ display: "flex", alignItems: "center", height: 44, gap: 8, borderRadius: 12, border: "1px solid #E8E8E7", padding: "0 8px 0 16px", backgroundColor: "#F0F0EF" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            height: 42,
+            gap: 8,
+            borderRadius: 12,
+            border: `1px solid ${isSearchFocused ? "#A8C9FF" : "#E8E8E7"}`,
+            boxShadow: isSearchFocused ? "0 0 0 1px rgba(0,107,244,0.16)" : "none",
+            padding: "0 8px 0 14px",
+            backgroundColor: "#F0F0EF",
+          }}
+        >
           <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
           <input
             value={query} onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Search token, chain or address"
             style={{ flex: 1, backgroundColor: "transparent", border: "none", outline: "none", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 14, color: "#161615", minWidth: 0 }}
           />
           {query && <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}><X style={{ width: 16, height: 16, color: "#848483" }} /></button>}
           <button 
-            onClick={() => setShowChainSelector(true)}
+            onClick={() => {
+              setDraftChainFilter(selectedChainFilter);
+              setChainQuery("");
+              setShowChainSelector(true);
+            }}
             style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 8px 4px 5px", borderRadius: 999, backgroundColor: "#FFFFFE", border: "1px solid #E8E8E7", cursor: "pointer", height: 38, flexShrink: 0, boxShadow: "0px 1px 2px rgba(0,0,0,0.05)" }}
           >
             {selectedChainFilter === null ? (
@@ -393,7 +447,7 @@ export function ReceiveAssetSelector({
                   onMouseLeave={() => setHoveredHash(null)}
                   style={{
                     width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "12px 16px", backgroundColor: isSelected ? "#F4F7FE" : "transparent", border: "none",
+                    padding: "10px 14px", backgroundColor: isSelected ? "#F4F7FE" : "transparent", border: "none",
                     cursor: "pointer", borderBottom: "1px solid #F0F0EF", boxSizing: "border-box",
                     position: isHovered ? "relative" : "static",
                     zIndex: isHovered ? 50 : 1
@@ -468,7 +522,7 @@ export function ReceiveAssetSelector({
       </div>
 
       {/* Done Button Footer */}
-      <div style={{ padding: 16, backgroundColor: "#FFFFFE", borderTop: "1px solid #E8E8E7", flexShrink: 0, zIndex: 10 }}>
+      <div style={{ padding: "0 0 6px", backgroundColor: "#FFFFFE", flexShrink: 0, zIndex: 10 }}>
         <button
           onClick={() => {
             if (selectedTokenFull) onSelect(selectedTokenFull);
@@ -486,41 +540,165 @@ export function ReceiveAssetSelector({
 
       {/* Chain Selector Modal */}
       {showChainSelector && (
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#FFFFFE", zIndex: 10, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, borderBottom: "1px solid #E8E8E7" }}>
-            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 18, color: "#161615" }}>Select Chain</span>
-            <button onClick={() => setShowChainSelector(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-              <X style={{ width: 20, height: 20, color: "#848483" }} />
-            </button>
+        <div
+          style={{
+            bottom: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            left: 0,
+            pointerEvents: "none",
+            position: "absolute",
+            right: 0,
+            top: 0,
+            zIndex: 30,
+          }}
+        >
+          <div
+            onClick={() => setShowChainSelector(false)}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.22)",
+              bottom: 0,
+              left: 0,
+              pointerEvents: "auto",
+              position: "absolute",
+              right: 0,
+              top: 0,
+            }}
+          />
+          <div
+            className="animate-in slide-in-from-bottom-full duration-300"
+            style={{
+              backgroundColor: "#FFFFFE",
+              borderRadius: "24px 24px 0 0",
+              boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              height: "auto",
+              maxHeight: "90%",
+              overflow: "hidden",
+              padding: "12px",
+              pointerEvents: "auto",
+              position: "relative",
+              width: "100%",
+            }}
+          >
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, width: "100%" }}>
+            <div style={{ backgroundColor: "#D8D8D6", borderRadius: "999px", height: 4, width: 32 }} />
           </div>
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 12 }}>
             <button
-              onClick={() => { setSelectedChainFilter(null); setShowChainSelector(false); }}
-              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer" }}
+              onClick={() => setShowChainSelector(false)}
+              style={{
+                alignItems: "center",
+                backgroundColor: "#FFFFFE",
+                border: "1px solid #E8E8E7",
+                borderRadius: 8,
+                cursor: "pointer",
+                display: "flex",
+                flexShrink: 0,
+                height: 32,
+                justifyContent: "center",
+                width: 32,
+              }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <img src="/nexus-one/all-chains.png" style={{ width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
+              <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
+            </button>
+            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 600, fontSize: 18, color: "#161615" }}>Select chain</span>
+          </div>
+          <div style={{ paddingBottom: 12 }}>
+            <div
+              style={{
+                alignItems: "center",
+                backgroundColor: "#FFFFFE",
+                border: `1px solid ${isChainSearchFocused ? "#A8C9FF" : "#E8E8E7"}`,
+                borderRadius: 12,
+                boxShadow: isChainSearchFocused ? "0 0 0 1px rgba(0,107,244,0.16)" : "none",
+                display: "flex",
+                gap: 8,
+                height: 42,
+                padding: "0 14px",
+              }}
+            >
+              <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
+              <input
+                value={chainQuery}
+                onChange={(e) => setChainQuery(e.target.value)}
+                onFocus={() => setIsChainSearchFocused(true)}
+                onBlur={() => setIsChainSearchFocused(false)}
+                placeholder="Search chains"
+                style={{
+                  backgroundColor: "transparent",
+                  border: "none",
+                  color: "#161615",
+                  flex: 1,
+                  fontFamily: '"Geist", system-ui, sans-serif',
+                  fontSize: 14,
+                  minWidth: 0,
+                  outline: "none",
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto", marginBottom: 12 }}>
+            <div style={{ border: "1px solid #E8E8E7", borderRadius: 14, overflow: "hidden", backgroundColor: "#FFFFFE" }}>
+            <button
+              onClick={() => setDraftChainFilter(null)}
+              style={{ width: "100%", display: "flex", alignItems: "center", padding: "12px 16px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer", boxSizing: "border-box" }}
+            >
+              <RadioDot selected={draftChainFilter === null} />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 12 }}>
+                <img src="/nexus-one/all-chains.png" alt="All Chains" style={{ width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
                 <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 16, color: "#161615" }}>All Chains</span>
               </div>
-              {selectedChainFilter === null && <Check style={{ width: 20, height: 20, color: "#006BF4" }} />}
             </button>
-            {Array.from(SUPPORTED_RECEIVE_CHAIN_IDS).map(id => {
+            {Array.from(SUPPORTED_RECEIVE_CHAIN_IDS).filter(id => {
+              const meta = chainMetaMap.get(id);
+              return (meta?.name || "").toLowerCase().includes(chainQuery.toLowerCase());
+            }).map(id => {
               const meta = chainMetaMap.get(id);
               if (!meta) return null;
               return (
                 <button
                   key={id}
-                  onClick={() => { setSelectedChainFilter(id); setShowChainSelector(false); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer" }}
+                  onClick={() => setDraftChainFilter(id)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", padding: "12px 16px", backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF", cursor: "pointer", boxSizing: "border-box" }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <RadioDot selected={draftChainFilter === id} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: 12 }}>
                     <img src={meta.logo} style={{ width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
                     <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 16, color: "#161615" }}>{meta.name}</span>
                   </div>
-                  {selectedChainFilter === id && <Check style={{ width: 20, height: 20, color: "#006BF4" }} />}
                 </button>
               );
             })}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setSelectedChainFilter(draftChainFilter);
+              setShowChainSelector(false);
+            }}
+            style={{
+              alignItems: "center",
+              backgroundColor: "#006BF4",
+              border: "none",
+              borderRadius: 12,
+              color: "#FFFFFE",
+              cursor: "pointer",
+              display: "flex",
+              flexShrink: 0,
+              fontFamily: '"Geist", system-ui, sans-serif',
+              fontSize: 16,
+              fontWeight: 600,
+              height: 48,
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            Done
+          </button>
           </div>
         </div>
       )}

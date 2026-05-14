@@ -1152,7 +1152,7 @@ function SwapHistoryPanel({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
+        gap: "10px",
         maxHeight: shouldScroll ? "660px" : undefined,
         overflowY: shouldScroll ? "auto" : undefined,
         paddingRight: shouldScroll ? "4px" : undefined,
@@ -3574,7 +3574,7 @@ export function NexusOne({
       style={{
         backgroundColor: "#F9F9F8",
         backgroundImage:
-          "url(https://app.paper.design/file-assets/01KPQEMGNQSQFDFT18A49JZ3RW/4CP45FEA7X8S1T82E2SXG5AQKV.png)",
+          "url(/nexus-one/card-bg.png)",
         backgroundPosition: "center",
         backgroundPositionX: "center",
         backgroundPositionY: "center",
@@ -3586,12 +3586,15 @@ export function NexusOne({
         flexDirection: "column",
         fontSize: "12px",
         fontSynthesis: "none",
-        gap: "16px",
-        minHeight: "480px",
+        gap: "12px",
+        height: "fit-content",
+        maxHeight: "80dvh",
         lineHeight: "16px",
+        margin: "auto",
         overflow: "clip",
         position: "relative",
-        width: "450px",
+        maxWidth: "450px",
+        width: "90%",
       }}
     >
       <div
@@ -3599,11 +3602,12 @@ export function NexusOne({
           alignItems: "center",
           boxSizing: "border-box",
           display: "flex",
+          flexShrink: 0,
           justifyContent: "space-between",
-          paddingLeft: "16px",
-          paddingRight: "16px",
-          paddingTop: "16px",
-          width: "450px",
+          paddingLeft: "12px",
+          paddingRight: "12px",
+          paddingTop: "12px",
+          width: "100%",
           position: "relative",
           zIndex: 10,
         }}
@@ -3696,7 +3700,7 @@ export function NexusOne({
             alignItems: "center",
             boxSizing: "border-box",
             display: "flex",
-            gap: "12px",
+            gap: "10px",
           }}
         >
           {hasQuoteRefreshCountdown && (
@@ -3801,10 +3805,13 @@ export function NexusOne({
         style={{
           boxSizing: "border-box",
           display: "flex",
+          flex: 1,
           flexDirection: "column",
-          gap: "16px",
-          paddingInline: "16px",
-          paddingBottom: "16px",
+          gap: "10px",
+          minHeight: 0,
+          overflowY: "auto",
+          paddingInline: "12px",
+          paddingBottom: "12px",
         }}
       >
         {/* =============================================================== */}
@@ -4326,6 +4333,7 @@ export function NexusOne({
         swapStep === "enter-recipient" && (
           <div
             style={{
+              height: "100%",
               position: "absolute",
               top: 0,
               left: 0,
@@ -4356,9 +4364,13 @@ export function NexusOne({
             />
             <div
               style={{
-                position: "relative",
+                bottom: 0,
+                height: "auto",
+                left: 0,
+                maxHeight: "90%",
+                position: "absolute",
+                right: 0,
                 width: "100%",
-                maxHeight: "calc(100% - 48px)",
                 backgroundColor: "#FFFFFE",
                 borderRadius: "16px 16px 0 0",
                 display: "flex",
@@ -4367,7 +4379,7 @@ export function NexusOne({
                 boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
                 boxSizing: "border-box",
                 overflowY: "auto",
-                padding: "12px 20px 20px",
+                padding: "12px 16px 16px",
               }}
               className="animate-in slide-in-from-bottom-full duration-300"
             >
@@ -4375,7 +4387,7 @@ export function NexusOne({
                 style={{
                   display: "flex",
                   justifyContent: "center",
-                  marginBottom: "16px",
+                  marginBottom: "12px",
                   width: "100%",
                 }}
               >
@@ -4392,8 +4404,8 @@ export function NexusOne({
                 style={{
                   alignItems: "center",
                   display: "flex",
-                  gap: "14px",
-                  paddingBottom: "18px",
+                  gap: "12px",
+                  paddingBottom: "14px",
                 }}
               >
                 <button
@@ -4435,7 +4447,7 @@ export function NexusOne({
                 style={{
                   backgroundColor: "#E8E8E7",
                   height: "1px",
-                  marginBottom: "20px",
+                  marginBottom: "16px",
                   width: "100%",
                 }}
               />
@@ -4533,7 +4545,7 @@ export function NexusOne({
                   fontWeight: 500,
                   height: "48px",
                   justifyContent: "center",
-                  marginTop: "30px",
+                  marginTop: "24px",
                   width: "100%",
                 }}
               >
@@ -4550,6 +4562,7 @@ export function NexusOne({
         swapStep === "choose-swap-asset" && (
           <div
             style={{
+              height: "100%",
               position: "absolute",
               top: 0,
               left: 0,
@@ -4577,15 +4590,21 @@ export function NexusOne({
             />
             <div
               style={{
-                position: "relative",
-                width: "100%",
+                bottom: 0,
+                height: "auto",
+                left: 0,
                 maxHeight: "90%",
+                position: "absolute",
+                right: 0,
+                width: "100%",
                 backgroundColor: "#FFFFFE",
                 borderRadius: "24px 24px 0 0",
                 display: "flex",
                 flexDirection: "column",
+                overflow: "hidden",
                 pointerEvents: "auto",
                 boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
+                boxSizing: "border-box",
               }}
               className="animate-in slide-in-from-bottom-full duration-300"
             >
@@ -4600,7 +4619,7 @@ export function NexusOne({
                 allowUnified={
                   activeMode === "deposit" ||
                   activeMode === "send" ||
-                  (activeMode === "swap" && swapType === "exactOut")
+                  activeMode === "swap"
                 }
                 selectedTokens={fromTokens}
                 editingAssetIndex={editingAssetIndex}
@@ -4621,6 +4640,74 @@ export function NexusOne({
                         a.chainId === b.chainId
                       );
                     };
+                    const isDepositOrSendSourcePicker =
+                      activeMode === "deposit" || activeMode === "send";
+                    const sourceTokens = token.sourceTokens ?? [];
+                    const isSameUnifiedGroup = (item: SwapTokenOption) =>
+                      Boolean(
+                        item.isUnified &&
+                          token.isUnified &&
+                          item.unifiedSymbol === token.unifiedSymbol,
+                      );
+                    const withDefaultAmount = (item: SwapTokenOption) => ({
+                      ...item,
+                      userAmount:
+                        activeMode === "swap" &&
+                        swapType === "exactIn" &&
+                        prev.length === 0
+                          ? amount
+                          : "",
+                    });
+
+                    if (
+                      isDepositOrSendSourcePicker &&
+                      token.isUnified &&
+                      sourceTokens.length > 0
+                    ) {
+                      const hasUnifiedSelection = prev.some(isSameUnifiedGroup);
+                      const areAllChildrenSelected = sourceTokens.every((source) =>
+                        prev.some((item) => isSameSelection(item, source)),
+                      );
+                      const withoutGroup = prev.filter(
+                        (item) =>
+                          !isSameUnifiedGroup(item) &&
+                          !sourceTokens.some((source) =>
+                            isSameSelection(item, source),
+                          ),
+                      );
+
+                      if (hasUnifiedSelection || areAllChildrenSelected) {
+                        return withoutGroup;
+                      }
+
+                      return [
+                        ...withoutGroup,
+                        ...sourceTokens.map((source) => withDefaultAmount(source)),
+                      ];
+                    }
+
+                    if (isDepositOrSendSourcePicker && !token.isUnified) {
+                      const unifiedSelection = prev.find(
+                        (item) =>
+                          item.isUnified &&
+                          item.sourceTokens?.some((source) =>
+                            isSameSelection(source, token),
+                          ),
+                      );
+
+                      if (unifiedSelection?.sourceTokens?.length) {
+                        const withoutUnified = prev.filter(
+                          (item) => !isSameSelection(item, unifiedSelection),
+                        );
+                        return [
+                          ...withoutUnified,
+                          ...unifiedSelection.sourceTokens
+                            .filter((source) => !isSameSelection(source, token))
+                            .map((source) => withDefaultAmount(source)),
+                        ];
+                      }
+                    }
+
                     const exists = prev.find((item) =>
                       isSameSelection(item, token),
                     );
@@ -4659,15 +4746,7 @@ export function NexusOne({
                     });
                     return [
                       ...next,
-                      {
-                        ...token,
-                        userAmount:
-                          activeMode === "swap" &&
-                          swapType === "exactIn" &&
-                          prev.length === 0
-                            ? amount
-                            : "",
-                      },
+                      withDefaultAmount(token),
                     ];
                   });
                 }}
@@ -4745,6 +4824,7 @@ export function NexusOne({
         swapStep === "choose-receive-asset" && (
           <div
             style={{
+              height: "100%",
               position: "absolute",
               top: 0,
               left: 0,
@@ -4772,93 +4852,24 @@ export function NexusOne({
             />
             <div
               style={{
-                position: "relative",
-                width: "100%",
+                bottom: 0,
+                height: "auto",
+                left: 0,
                 maxHeight: "90%",
+                position: "absolute",
+                right: 0,
+                width: "100%",
                 backgroundColor: "#FFFFFE",
                 borderRadius: "24px 24px 0 0",
                 display: "flex",
                 flexDirection: "column",
+                overflow: "hidden",
                 pointerEvents: "auto",
                 boxShadow: "0 -4px 12px rgba(0,0,0,0.05)",
                 boxSizing: "border-box",
               }}
               className="animate-in slide-in-from-bottom-full duration-300"
             >
-              <div style={{ padding: "16px 16px 0 16px" }}>
-                <div
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 32,
-                      height: 4,
-                      borderRadius: 2,
-                      backgroundColor: "#E8E8E7",
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 16,
-                    marginBottom: 16,
-                  }}
-                >
-                  <button
-                    onClick={() => setSwapStep("idle")}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      border: "1px solid #E8E8E7",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#FFFFFE",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <ChevronDown
-                      style={{
-                        width: 16,
-                        height: 16,
-                        transform: "rotate(90deg)",
-                      }}
-                    />
-                  </button>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: '"Geist", system-ui, sans-serif',
-                        fontSize: 18,
-                        fontWeight: 600,
-                        color: "#161615",
-                      }}
-                    >
-                      Choose asset to Receive
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: '"Geist", system-ui, sans-serif',
-                        fontSize: 13,
-                        color: "#848483",
-                      }}
-                    >
-                      Select token and chain
-                    </span>
-                  </div>
-                </div>
-              </div>
               <ReceiveAssetSelector
                 onSelect={(token) => {
                   if (activeMode === "send") {

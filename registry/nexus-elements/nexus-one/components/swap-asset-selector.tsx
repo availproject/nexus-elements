@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { Search, X, Loader2, ChevronDown, ChevronUp, Info, Check } from "lucide-react";
+import { Search, X, Loader2, ChevronDown, ChevronUp, Info, Check, Minus } from "lucide-react";
 import {
   type UserAsset,
   CHAIN_METADATA,
@@ -92,19 +92,23 @@ export const RadioDot = ({ selected }: { selected: boolean }) => (
 
 const SelectionControl = ({
   selected,
+  indeterminate = false,
   multi,
 }: {
   selected: boolean;
+  indeterminate?: boolean;
   multi: boolean;
 }) => {
   if (!multi) return <RadioDot selected={selected} />;
+
+  const isActive = selected || indeterminate;
 
   return (
     <div
       style={{
         alignItems: "center",
-        backgroundColor: selected ? "#006BF4" : "#FFFFFE",
-        border: selected ? "none" : "1.5px solid #E0E0DE",
+        backgroundColor: isActive ? "#006BF4" : "#FFFFFE",
+        border: isActive ? "none" : "1.5px solid #E0E0DE",
         borderRadius: "5px",
         boxSizing: "border-box",
         display: "flex",
@@ -115,6 +119,9 @@ const SelectionControl = ({
       }}
     >
       {selected && <Check style={{ color: "#FFFFFE", height: 14, width: 14 }} />}
+      {!selected && indeterminate && (
+        <Minus style={{ color: "#FFFFFE", height: 14, width: 14 }} />
+      )}
     </div>
   );
 };
@@ -292,9 +299,12 @@ export function SwapAssetSelector({
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [showBelowMin, setShowBelowMin] = useState(false);
   const [showAllBelowMin, setShowAllBelowMin] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showChainSelector, setShowChainSelector] = useState(false);
   const [chainQuery, setChainQuery] = useState("");
   const [selectedChainFilter, setSelectedChainFilter] = useState<number | null>(null);
+  const [draftChainFilter, setDraftChainFilter] = useState<number | null>(null);
+  const [isChainSearchFocused, setIsChainSearchFocused] = useState(false);
 
   const allTokens = useMemo<SwapTokenOption[]>(() => {
     if (staticOptions) return staticOptions;
@@ -384,7 +394,16 @@ export function SwapAssetSelector({
     selectedTokens.some((st, idx) => idx !== editingAssetIndex && sameTokenOption(st, token));
 
   const isTokenSelectedInCurrentSlot = (token: SwapTokenOption) => {
-    if (isMulti) return selectedTokens.some((st) => sameTokenOption(st, token));
+    if (isMulti) {
+      return selectedTokens.some(
+        (st) =>
+          sameTokenOption(st, token) ||
+          Boolean(
+            st.isUnified &&
+              st.sourceTokens?.some((source) => sameTokenOption(source, token)),
+          ),
+      );
+    }
     if (editingAssetIndex === null) return false;
     const st = selectedTokens[editingAssetIndex];
     return sameTokenOption(st, token);
@@ -434,7 +453,7 @@ export function SwapAssetSelector({
         }}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 16px", paddingLeft: indent ? "40px" : "16px",
+          padding: "10px 14px", paddingLeft: indent ? "36px" : "14px",
           backgroundColor: "transparent", border: "none", cursor: disabled ? "not-allowed" : "pointer",
           borderBottom: "1px solid #F0F0EF", boxSizing: "border-box",
           opacity: disabled ? 0.5 : 1,
@@ -511,8 +530,16 @@ export function SwapAssetSelector({
     const unifiedSelectedInCurrent = isGroupUnifiedSelectedInCurrentSlot(group);
     const anyIndividualSelectedInOther = isAnyTokenInGroupSelectedInOtherSlot(group);
     const anyIndividualSelectedInCurrent = group.tokens.some(isTokenSelectedInCurrentSlot);
-    const isUnifiedHidden =
-      anyIndividualSelectedInOther || anyIndividualSelectedInCurrent || group.totalFiat < 1;
+    const selectedChildCount = group.tokens.filter(isTokenSelectedInCurrentSlot).length;
+    const areAllChildrenSelected =
+      group.tokens.length > 0 && selectedChildCount === group.tokens.length;
+    const isPartiallySelected =
+      selectedChildCount > 0 && selectedChildCount < group.tokens.length;
+    const shouldHideUnifiedRow =
+      !isMulti &&
+      (anyIndividualSelectedInOther || anyIndividualSelectedInCurrent || group.totalFiat < 1);
+    const shouldHideIndividualRows =
+      !isMulti && (unifiedSelectedInOther || unifiedSelectedInCurrent);
     const unifiedToken: SwapTokenOption = {
       ...group.tokens[0],
       balance: group.totalBalStr.split(" ")[0] ?? group.tokens[0].balance,
@@ -530,86 +557,95 @@ export function SwapAssetSelector({
     
     return (
       <div key={group.symbol} style={{ display: "flex", flexDirection: "column" }}>
-        <button
-          onClick={(e) => {
-             // If clicking the row itself, expand/collapse
-             toggleGroup(group.symbol, e);
-          }}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "12px 16px", backgroundColor: "transparent", border: "none",
-            cursor: "pointer", borderBottom: "1px solid #F0F0EF", boxSizing: "border-box",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {isUnifiedHidden ? <div style={{ width: 20, height: 20 }} /> : (
+        {!shouldHideUnifiedRow && (
+          <button
+            onClick={(e) => {
+              if (isMulti) {
+                toggleGroup(group.symbol, e);
+                return;
+              }
+              onSelect(unifiedToken);
+            }}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "10px 14px", backgroundColor: "transparent", border: "none",
+              cursor: "pointer", borderBottom: "1px solid #F0F0EF", boxSizing: "border-box",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div onClick={(e) => {
-                 e.stopPropagation();
-                 if (isMulti && onToggle) onToggle(unifiedToken);
-                 else onSelect(unifiedToken);
-              }} style={{ cursor: "pointer" }}>
-                <SelectionControl selected={unifiedSelectedInCurrent} multi={Boolean(isMulti)} />
-              </div>
-            )}
-            <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
-              {group.logo ? (
-                <img
-                  src={group.logo} alt={group.symbol}
-                  style={{ width: 40, height: 40, borderRadius: "999px", objectFit: "cover" }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              ) : (
-                <div style={{
-                  width: 40, height: 40, borderRadius: "999px", backgroundColor: "#006BF4",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", fontSize: 14, fontWeight: 700,
-                }}>
-                  {group.symbol.slice(0, 2)}
+                   e.stopPropagation();
+                   if (isMulti && onToggle) onToggle(unifiedToken);
+                   else onSelect(unifiedToken);
+                }} style={{ cursor: "pointer" }}>
+                  <SelectionControl
+                    selected={isMulti ? areAllChildrenSelected : unifiedSelectedInCurrent}
+                    indeterminate={isMulti ? isPartiallySelected : false}
+                    multi={Boolean(isMulti)}
+                  />
                 </div>
-              )}
+              <div style={{ position: "relative", flexShrink: 0, width: 40, height: 40 }}>
+                {group.logo ? (
+                  <img
+                    src={group.logo} alt={group.symbol}
+                    style={{ width: 40, height: 40, borderRadius: "999px", objectFit: "cover" }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 40, height: 40, borderRadius: "999px", backgroundColor: "#006BF4",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", fontSize: 14, fontWeight: 700,
+                  }}>
+                    {group.symbol.slice(0, 2)}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: "#161615" }}>
+                    {group.symbol}
+                  </span>
+                  <span style={{
+                    fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, fontWeight: 600,
+                    color: "#006BF4", backgroundColor: "#E8F0FF", borderRadius: 4,
+                    padding: "2px 8px", letterSpacing: "0.04em", lineHeight: "16px",
+                  }}>
+                    UNIFIED
+                  </span>
+                </div>
+                <ChainLogos tokens={group.tokens} />
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: "#161615" }}>
-                  {group.symbol}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>
+                  {group.totalBalStr}
                 </span>
-                <span style={{
-                  fontFamily: '"Geist", system-ui, sans-serif', fontSize: 11, fontWeight: 600,
-                  color: "#006BF4", backgroundColor: "#E8F0FF", borderRadius: 4,
-                  padding: "2px 8px", letterSpacing: "0.04em", lineHeight: "16px",
-                }}>
-                  UNIFIED
+                <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
+                  ≈ {group.totalFiatStr}
                 </span>
               </div>
-              <ChainLogos tokens={group.tokens} />
+            </div>
+          </button>
+        )}
+        {isMulti ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: isExpanded ? "1fr" : "0fr",
+              opacity: isExpanded ? 1 : 0,
+              transition: "grid-template-rows 0.3s ease, opacity 0.3s ease",
+            }}
+          >
+            <div style={{ overflow: "hidden" }}>
+              {group.tokens.map((token) => renderTokenRow(token, true, false))}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>
-                {group.totalBalStr}
-              </span>
-              <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>
-                ≈ {group.totalFiatStr}
-              </span>
-            </div>
-          </div>
-        </button>
-        {/* Expanded individual chain rows */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateRows: isExpanded ? "1fr" : "0fr",
-            opacity: isExpanded ? 1 : 0,
-            transition: "grid-template-rows 0.3s ease, opacity 0.3s ease",
-          }}
-        >
-          <div style={{ overflow: "hidden" }}>
-            {unifiedSelectedInCurrent
-              ? null
-              : group.tokens.map((token) => renderTokenRow(token, true, false))}
-          </div>
-        </div>
+        ) : (
+          !shouldHideIndividualRows &&
+          group.tokens.map((token) => renderTokenRow(token))
+        )}
       </div>
     );
   };
@@ -617,14 +653,14 @@ export function SwapAssetSelector({
   const isLoading = !staticOptions && swapBalance === null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, width: "100%", padding: "16px", boxSizing: "border-box" }}>
+    <div style={{ display: "flex", flexDirection: "column", flex: "0 1 auto", height: "auto", maxHeight: "100%", minHeight: 0, width: "100%", padding: "12px", boxSizing: "border-box" }}>
       {/* Drawer Handle */}
-      <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 16 }}>
+      <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 10 }}>
         <div style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: "#E8E8E7" }} />
       </div>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
         <button onClick={onBack} style={{
           width: 32, height: 32, borderRadius: 8, border: "1px solid #E8E8E7",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -632,7 +668,7 @@ export function SwapAssetSelector({
         }}>
           <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
         </button>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 18, fontWeight: 600, color: "#161615" }}>
             {title}
           </span>
@@ -643,17 +679,22 @@ export function SwapAssetSelector({
       </div>
 
       {/* Search */}
-      <div style={{ paddingBottom: 8 }}>
+      <div style={{ paddingBottom: 6 }}>
         <div
           style={{
-            display: "flex", alignItems: "center", height: 44, gap: 8, borderRadius: 12,
-            border: "1px solid #E8E8E7", padding: "0 8px 0 16px", backgroundColor: "#F0F0EF",
+            display: "flex", alignItems: "center", height: 42, gap: 8, borderRadius: 12,
+            border: `1px solid ${isSearchFocused ? "#A8C9FF" : "#E8E8E7"}`,
+            boxShadow: isSearchFocused ? "0 0 0 1px rgba(0,107,244,0.16)" : "none",
+            padding: "0 8px 0 16px",
+            backgroundColor: "#F0F0EF",
           }}
         >
           <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Search token, chain or address"
             style={{
               flex: 1, backgroundColor: "transparent", border: "none", outline: "none",
@@ -668,7 +709,11 @@ export function SwapAssetSelector({
           )}
           {/* Chain Selector Badge */}
           <button
-            onClick={() => setShowChainSelector(true)}
+            onClick={() => {
+              setDraftChainFilter(selectedChainFilter);
+              setChainQuery("");
+              setShowChainSelector(true);
+            }}
             style={{
               display: "flex", alignItems: "center", gap: 5, padding: "4px 8px 4px 5px", borderRadius: 999,
               backgroundColor: "#FFFFFE", border: "1px solid #E8E8E7", cursor: "pointer",
@@ -693,7 +738,7 @@ export function SwapAssetSelector({
       </div>
 
       {/* Filter tabs */}
-      <div style={{ display: "flex", gap: 0, backgroundColor: "#F0F0EF", borderRadius: 8, padding: 4, marginBottom: 8 }}>
+      <div style={{ display: "flex", gap: 0, backgroundColor: "#F0F0EF", borderRadius: 8, padding: 4, marginBottom: 6 }}>
         {FILTER_TABS.map((tab) => (
           <button
             key={tab.key}
@@ -711,7 +756,7 @@ export function SwapAssetSelector({
       </div>
 
       {/* Token list */}
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: 6 }}>
         {isLoading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: 12 }}>
             <Loader2 style={{ width: 20, height: 20, color: "#848483", animation: "spin 1s linear infinite" }} />
@@ -741,7 +786,7 @@ export function SwapAssetSelector({
                   onClick={() => setShowBelowMin((v) => !v)}
                   style={{
                     width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "14px 16px", backgroundColor: "transparent", border: "none", cursor: "pointer",
+                    padding: "12px 14px", backgroundColor: "transparent", border: "none", cursor: "pointer",
                     boxSizing: "border-box",
                   }}
                 >
@@ -804,7 +849,7 @@ export function SwapAssetSelector({
                 >
                   <div style={{ minHeight: 0, overflow: "hidden" }}>
                     <div style={{
-                      display: "flex", alignItems: "flex-start", gap: 8, padding: showBelowMin ? "12px 16px" : "0 16px",
+                      display: "flex", alignItems: "flex-start", gap: 8, padding: showBelowMin ? "10px 14px" : "0 14px",
                       backgroundColor: "#FFF8F0", transition: "padding 240ms ease",
                     }}>
                       <span style={{ color: "#E5953E", fontSize: 14, lineHeight: "18px", flexShrink: 0 }}>⚠</span>
@@ -816,7 +861,7 @@ export function SwapAssetSelector({
                       {belowMin.slice(0, showAllBelowMin ? belowMin.length : 3).map((token) => (
                         <div key={`${token.contractAddress}-${token.chainId}`} style={{
                           display: "flex", alignItems: "center", justifyContent: "space-between",
-                          padding: "10px 16px",
+                          padding: "9px 14px",
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ position: "relative", width: 28, height: 28 }}>
@@ -845,7 +890,7 @@ export function SwapAssetSelector({
                           onClick={() => setShowAllBelowMin(true)}
                           style={{
                             backgroundColor: "transparent", border: "none", cursor: "pointer",
-                            padding: "8px 16px", display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 14px", display: "flex", alignItems: "center", gap: 6,
                             color: "#006BF4", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, fontWeight: 500,
                           }}
                         >
@@ -864,11 +909,11 @@ export function SwapAssetSelector({
 
       {/* Done button */}
       {isMulti && (
-        <div style={{ paddingBottom: 8, marginTop: "auto" }}>
+        <div style={{ paddingBottom: 6, marginTop: "auto" }}>
           <button
             onClick={onDone}
             style={{
-              width: "100%", height: 52, display: "flex", alignItems: "center", justifyContent: "center",
+              width: "100%", height: 48, display: "flex", alignItems: "center", justifyContent: "center",
               backgroundColor: "#006BF4",
               color: "#FFFFFE",
               border: "none", borderRadius: 14, cursor: "pointer",
@@ -883,39 +928,84 @@ export function SwapAssetSelector({
 
       {/* Chain Selector Modal */}
       {showChainSelector && (
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "#FFFFFE", zIndex: 50, display: "flex", flexDirection: "column",
-          padding: "16px"
-        }}>
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
-            <button 
+        <div
+          style={{
+            bottom: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            left: 0,
+            pointerEvents: "none",
+            position: "absolute",
+            right: 0,
+            top: 0,
+            zIndex: 50,
+          }}
+        >
+          <div
+            onClick={() => setShowChainSelector(false)}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.22)",
+              bottom: 0,
+              left: 0,
+              pointerEvents: "auto",
+              position: "absolute",
+              right: 0,
+              top: 0,
+            }}
+          />
+          <div
+            className="animate-in slide-in-from-bottom-full duration-300"
+            style={{
+              backgroundColor: "#FFFFFE",
+              borderRadius: "24px 24px 0 0",
+              boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              height: "auto",
+              maxHeight: "90%",
+              overflow: "hidden",
+              padding: "12px",
+              pointerEvents: "auto",
+              position: "relative",
+              width: "100%",
+            }}
+          >
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, width: "100%" }}>
+            <div style={{ backgroundColor: "#D8D8D6", borderRadius: "999px", height: 4, width: 32 }} />
+          </div>
+          <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 12 }}>
+            <button
               onClick={() => setShowChainSelector(false)}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "1px solid #E8E8E7",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                backgroundColor: "#FFFFFE", cursor: "pointer"
+                backgroundColor: "#FFFFFE", cursor: "pointer", flexShrink: 0
               }}
             >
               <ChevronDown style={{ width: 16, height: 16, transform: "rotate(90deg)" }} />
             </button>
-            <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 16, fontWeight: 600, marginLeft: 12 }}>
+            <span style={{ color: "#161615", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 18, fontWeight: 600 }}>
               Select chain
             </span>
           </div>
           
           {/* Search */}
-          <div style={{ paddingBottom: 16 }}>
+          <div style={{ paddingBottom: 12 }}>
             <div style={{
-              display: "flex", alignItems: "center", height: 44, gap: 8, borderRadius: 12,
-              border: "1px solid #006BF4", padding: "0 16px", backgroundColor: "#FFFFFE",
-              boxShadow: "0 0 0 1px #006BF4"
+              display: "flex", alignItems: "center", height: 42, gap: 8, borderRadius: 12,
+              border: `1px solid ${isChainSearchFocused ? "#A8C9FF" : "#E8E8E7"}`,
+              padding: "0 14px",
+              backgroundColor: "#FFFFFE",
+              boxShadow: isChainSearchFocused ? "0 0 0 1px rgba(0,107,244,0.16)" : "none",
             }}>
               <Search style={{ width: 20, height: 20, color: "#848483", flexShrink: 0 }} />
               <input
                 value={chainQuery}
                 onChange={(e) => setChainQuery(e.target.value)}
+                onFocus={() => setIsChainSearchFocused(true)}
+                onBlur={() => setIsChainSearchFocused(false)}
                 placeholder="Search chains"
                 style={{
                   flex: 1, backgroundColor: "transparent", border: "none", outline: "none",
@@ -926,20 +1016,20 @@ export function SwapAssetSelector({
           </div>
           
           {/* Chain list */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto", marginBottom: 12 }}>
             <div style={{
               border: "1px solid #E8E8E7", borderRadius: 14, overflow: "hidden",
               backgroundColor: "#FFFFFE",
             }}>
               <button
-                onClick={() => { setSelectedChainFilter(null); setShowChainSelector(false); }}
+                onClick={() => setDraftChainFilter(null)}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", padding: "12px 16px",
                   backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF",
                   cursor: "pointer", boxSizing: "border-box"
                 }}
               >
-                <RadioDot selected={selectedChainFilter === null} />
+                <RadioDot selected={draftChainFilter === null} />
                 <img src="/nexus-one/all-chains.png" alt="All Chains" style={{ marginLeft: 12, width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
                 <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 15, fontWeight: 500, marginLeft: 12, color: "#161615" }}>
                   All Chains
@@ -952,14 +1042,14 @@ export function SwapAssetSelector({
                 .map(t => (
                   <button
                     key={`chain-${t.chainId}`}
-                    onClick={() => { setSelectedChainFilter(t.chainId!); setShowChainSelector(false); }}
+                    onClick={() => setDraftChainFilter(t.chainId!)}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", padding: "12px 16px",
                       backgroundColor: "transparent", border: "none", borderBottom: "1px solid #F0F0EF",
                       cursor: "pointer", boxSizing: "border-box"
                     }}
                   >
-                    <RadioDot selected={selectedChainFilter === t.chainId} />
+                    <RadioDot selected={draftChainFilter === t.chainId} />
                     <img src={t.chainLogo} alt={t.chainName} style={{ marginLeft: 12, width: 32, height: 32, borderRadius: "999px", objectFit: "cover" }} />
                     <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 15, fontWeight: 500, marginLeft: 12, color: "#161615" }}>
                       {t.chainName}
@@ -968,6 +1058,31 @@ export function SwapAssetSelector({
                 ))
               }
             </div>
+          </div>
+          <button
+            onClick={() => {
+              setSelectedChainFilter(draftChainFilter);
+              setShowChainSelector(false);
+            }}
+            style={{
+              alignItems: "center",
+              backgroundColor: "#006BF4",
+              border: "none",
+              borderRadius: 12,
+              color: "#FFFFFE",
+              cursor: "pointer",
+              display: "flex",
+              flexShrink: 0,
+              fontFamily: '"Geist", system-ui, sans-serif',
+              fontSize: 16,
+              fontWeight: 600,
+              height: 48,
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            Done
+          </button>
           </div>
         </div>
       )}

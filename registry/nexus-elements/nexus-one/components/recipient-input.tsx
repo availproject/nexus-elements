@@ -23,14 +23,14 @@ export function RecipientInput({
       className="flex items-center w-full px-4 overflow-hidden outline-none transition-all placeholder:text-[var(--foreground-muted, #848483)] text-[var(--foreground-primary, #161615)]"
       style={{
         background: "#FFFFFE",
-        height: "52px",
+        height: "46px",
         borderRadius: "8px",
         borderWidth: "1px",
         borderStyle: "solid",
         borderColor: hasError ? "#E35454" : "#006BF4",
-        gap: "12px",
-        paddingTop: "12px",
-        paddingBottom: "12px",
+        gap: "10px",
+        paddingTop: "10px",
+        paddingBottom: "10px",
       }}
     >
       {label && (

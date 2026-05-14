@@ -227,10 +227,9 @@
       "target": "components/common/utils/transaction-flow.ts"
     }
   ],
-  "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"swap\" for new integrations.",
   "meta": {
     "deprecated": true,
-    "deprecationMessage": "Swaps is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"swap\" for new integrations.",
-    "replacement": "@nexus-elements/nexus-one"
-  }
+    "deprecationMessage": "Swaps is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"swap\" for new integrations."
+  },
+  "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"swap\" for new integrations."
 }

@@ -193,8 +193,8 @@ function PayWithSources({
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
-        padding: "16px",
+        gap: "10px",
+        padding: "14px",
       }}
     >
       <div
@@ -276,8 +276,8 @@ function PayWithSources({
                   borderTop: index === 0 ? "none" : "1px solid #F0F0EF",
                   display: "flex",
                   justifyContent: "space-between",
-                  minHeight: "58px",
-                  padding: "8px 0",
+                  minHeight: "52px",
+                  padding: "6px 0",
                 }}
               >
                 <div
@@ -399,7 +399,7 @@ function PayWithSources({
             fontWeight: 500,
             gap: "6px",
             justifyContent: "center",
-            padding: "10px",
+            padding: "8px",
           }}
           type="button"
         >
@@ -446,6 +446,7 @@ export function SendIdleForm({
   isQuoteRefreshing,
 }: SendIdleFormProps) {
   const [pendingPercent, setPendingPercent] = useState<number | null>(null);
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
 
   React.useEffect(() => {
     if (!isCalculatingMax) setPendingPercent(null);
@@ -474,7 +475,7 @@ export function SendIdleForm({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "14px",
+        gap: "12px",
         width: "100%",
       }}
     >
@@ -490,10 +491,10 @@ export function SendIdleForm({
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: "8px",
           justifyContent: "center",
-          paddingBlock: "14px",
-          paddingInline: "16px",
+          paddingBlock: "12px",
+          paddingInline: "14px",
         }}
       >
         <div
@@ -536,7 +537,7 @@ export function SendIdleForm({
                 boxSizing: "border-box",
                 color: brand,
                 fontFamily: uiFont,
-                fontSize: "16px",
+                fontSize: "15px",
                 fontVariantNumeric: "tabular-nums",
                 fontWeight: 500,
                 lineHeight: "18px",
@@ -557,8 +558,8 @@ export function SendIdleForm({
                 cursor: "pointer",
                 display: "flex",
                 gap: "4px",
-                paddingBlock: "8px",
-                paddingInline: "12px",
+                paddingBlock: "7px",
+                paddingInline: "10px",
               }}
               type="button"
             >
@@ -590,8 +591,8 @@ export function SendIdleForm({
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
-          padding: "18px 16px",
+          gap: "10px",
+          padding: "15px 14px",
         }}
       >
         <div
@@ -619,8 +620,8 @@ export function SendIdleForm({
               style={{
                 color: muted,
                 fontFamily: uiFont,
-                fontSize: "14px",
-                lineHeight: "20px",
+                fontSize: "13px",
+                lineHeight: "18px",
               }}
             >
               Total Balance:
@@ -629,9 +630,9 @@ export function SendIdleForm({
               style={{
                 color: primary,
                 fontFamily: uiFont,
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: 600,
-                lineHeight: "20px",
+                lineHeight: "18px",
               }}
             >
               ${totalBalance}
@@ -639,7 +640,7 @@ export function SendIdleForm({
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <div
             style={{
               alignItems: "center",
@@ -651,6 +652,8 @@ export function SendIdleForm({
           >
             <input
               onChange={handleInput}
+              onFocus={() => setIsAmountFocused(true)}
+              onBlur={() => setIsAmountFocused(false)}
               placeholder="0"
               style={{
                 background: "transparent",
@@ -660,9 +663,9 @@ export function SendIdleForm({
                 flex: "1 1 0%",
                 fontFamily:
                   '"Delight-Medium", "Delight", system-ui, sans-serif',
-                fontSize: "36px",
+                fontSize: "32px",
                 fontWeight: 500,
-                lineHeight: "44px",
+                lineHeight: "38px",
                 minWidth: 0,
                 outline: "none",
                 padding: 0,
@@ -686,7 +689,7 @@ export function SendIdleForm({
                 display: "inline-flex",
                 flexShrink: 0,
                 gap: "8px",
-                height: "36px",
+                height: "32px",
                 paddingLeft: "4px",
                 paddingRight: "10px",
               }}
@@ -696,12 +699,12 @@ export function SendIdleForm({
                 <div
                   style={{
                     flexShrink: 0,
-                    height: "26px",
+                    height: "24px",
                     position: "relative",
-                    width: "26px",
+                    width: "24px",
                   }}
                 >
-                  <TokenLogo label={toToken.symbol} size={26} src={toToken.logo} />
+                  <TokenLogo label={toToken.symbol} size={24} src={toToken.logo} />
                   {toToken.chainLogo && (
                     <TokenLogo
                       label={toToken.chainName}
@@ -734,9 +737,9 @@ export function SendIdleForm({
                 style={{
                   color: primary,
                   fontFamily: uiFont,
-                  fontSize: "16px",
+                  fontSize: "15px",
                   fontWeight: 600,
-                  lineHeight: "24px",
+                  lineHeight: "22px",
                 }}
               >
                 {toToken ? toToken.symbol : "Assets"}
@@ -756,8 +759,8 @@ export function SendIdleForm({
               style={{
                 color: muted,
                 fontFamily: uiFont,
-                fontSize: "14px",
-                lineHeight: "20px",
+                fontSize: "13px",
+                lineHeight: "18px",
               }}
             >
               ≈ ${usdValue || "0"}
@@ -768,8 +771,8 @@ export function SendIdleForm({
                   style={{
                     color: "#7C7C7A",
                     fontFamily: uiFont,
-                    fontSize: "14px",
-                    lineHeight: "20px",
+                    fontSize: "13px",
+                    lineHeight: "18px",
                   }}
                 >
                   Balance:
@@ -778,9 +781,9 @@ export function SendIdleForm({
                   style={{
                     color: primary,
                     fontFamily: uiFont,
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: 500,
-                    lineHeight: "20px",
+                    lineHeight: "18px",
                   }}
                 >
                   {destinationBalanceLabel}
@@ -789,49 +792,58 @@ export function SendIdleForm({
             )}
           </div>
 
-          {toToken && (
-            <div
-              style={{
-                alignItems: "center",
-                display: "flex",
-                gap: "6px",
-                width: "100%",
-              }}
-            >
+          <div
+            aria-hidden={!isAmountFocused}
+            style={{
+              alignItems: "center",
+              display: "flex",
+              gap: "5px",
+              minHeight: "24px",
+              opacity: isAmountFocused ? 1 : 0,
+              pointerEvents: isAmountFocused ? "auto" : "none",
+              transition: "opacity 0.18s ease-out",
+              width: "100%",
+            }}
+          >
               {[25, 50, 75].map((pct) => (
                 (() => {
                   const isPending = Boolean(isCalculatingMax && pendingPercent === pct);
+                  const isDisabled = !toToken;
                   return (
                     <button
                       key={pct}
+                      onMouseDown={(event) => event.preventDefault()}
                       onClick={() => handlePercentSelect(pct)}
+                      disabled={isDisabled}
                       style={{
                         alignItems: "center",
                         backgroundColor: isPending ? "#E8F0FF" : "#F4F4F3",
                         border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
+                        borderRadius: "7px",
+                        cursor: isDisabled ? "not-allowed" : "pointer",
                         display: "flex",
                         flex: "1 1 0%",
-                        gap: "6px",
+                        gap: "5px",
                         justifyContent: "center",
-                        padding: "6px 10px",
+                        opacity: isDisabled ? 0.55 : 1,
+                        padding: "4px 7px",
                       }}
+                      tabIndex={isAmountFocused && toToken ? 0 : -1}
                       type="button"
                     >
                       {isPending && (
                         <Loader2
                           className="animate-spin"
-                          style={{ color: brand, height: 13, width: 13 }}
+                          style={{ color: brand, height: 12, width: 12 }}
                         />
                       )}
                       <span
                         style={{
                           color: isPending ? brand : "#363635",
                           fontFamily: uiFont,
-                          fontSize: "12px",
+                          fontSize: "11px",
                           fontWeight: isPending ? 600 : 500,
-                          lineHeight: "20px",
+                          lineHeight: "16px",
                         }}
                       >
                         {pct}%
@@ -842,37 +854,42 @@ export function SendIdleForm({
               ))}
               {(() => {
                 const isPending = Boolean(isCalculatingMax && pendingPercent === 100);
+                const isDisabled = !toToken;
                 return (
               <button
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => handlePercentSelect(100)}
+                disabled={isDisabled}
                 style={{
                   alignItems: "center",
                   backgroundColor: isPending ? "#E8F0FF" : "#F4F4F3",
                   border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
+                  borderRadius: "7px",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
                   display: "flex",
                   flex: "1 1 0%",
-                  gap: "6px",
+                  gap: "5px",
                   justifyContent: "center",
-                  padding: "6px 10px",
+                  opacity: isDisabled ? 0.55 : 1,
+                  padding: "4px 7px",
                 }}
+                tabIndex={isAmountFocused && toToken ? 0 : -1}
                 type="button"
               >
                 {isPending && (
                   <Loader2
                     className="animate-spin"
-                    style={{ color: brand, height: 13, width: 13 }}
+                    style={{ color: brand, height: 12, width: 12 }}
                   />
                 )}
                 <span
                   style={{
                     color: isPending ? brand : "#363635",
                     fontFamily: uiFont,
-                    fontSize: "12px",
+                    fontSize: "11px",
                     fontWeight: isPending ? 600 : 500,
                     letterSpacing: "0.02em",
-                    lineHeight: "20px",
+                    lineHeight: "16px",
                   }}
                 >
                   MAX
@@ -881,7 +898,6 @@ export function SendIdleForm({
                 );
               })()}
             </div>
-          )}
         </div>
       </div>
 

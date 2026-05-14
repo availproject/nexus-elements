@@ -187,8 +187,8 @@ function PayWithSources({
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
-        padding: "16px",
+        gap: "10px",
+        padding: "14px",
       }}
     >
       <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}>
@@ -254,8 +254,8 @@ function PayWithSources({
                   borderTop: index === 0 ? "none" : "1px solid #F0F0EF",
                   display: "flex",
                   justifyContent: "space-between",
-                  minHeight: "58px",
-                  padding: "8px 0",
+                  minHeight: "52px",
+                  padding: "6px 0",
                 }}
               >
                 <div style={{ alignItems: "center", display: "flex", gap: "10px", minWidth: 0 }}>
@@ -333,7 +333,7 @@ function PayWithSources({
             fontWeight: 500,
             gap: "6px",
             justifyContent: "center",
-            padding: "10px",
+            padding: "8px",
           }}
         >
           <Edit2 style={{ height: 14, width: 14 }} />
@@ -379,6 +379,7 @@ export function DepositIdleForm({
   isQuoteRefreshing,
 }: DepositIdleFormProps) {
   const [pendingPercent, setPendingPercent] = useState<number | null>(null);
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
 
   React.useEffect(() => {
     if (!isCalculatingMax) setPendingPercent(null);
@@ -403,7 +404,7 @@ export function DepositIdleForm({
       : `${toToken?.balance || "0"} ${toToken?.symbol || ""}`.trim();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
       <div
         style={{
           backgroundColor: "#FFFFFE",
@@ -415,8 +416,8 @@ export function DepositIdleForm({
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
-          padding: "18px 16px",
+          gap: "10px",
+          padding: "15px 14px",
         }}
       >
         <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}>
@@ -424,20 +425,20 @@ export function DepositIdleForm({
             Deposit
           </div>
           <div style={{ alignItems: "center", display: "flex", gap: "4px" }}>
-            <span style={{ color: muted, fontFamily: uiFont, fontSize: "14px", lineHeight: "20px" }}>
+            <span style={{ color: muted, fontFamily: uiFont, fontSize: "13px", lineHeight: "18px" }}>
               Total Balance:
             </span>
-            <span style={{ color: primary, fontFamily: uiFont, fontSize: "14px", fontWeight: 600, lineHeight: "20px" }}>
+            <span style={{ color: primary, fontFamily: uiFont, fontSize: "13px", fontWeight: 600, lineHeight: "18px" }}>
               ${totalBalance}
             </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <div style={{ alignItems: "center", display: "flex", gap: "10px", justifyContent: "space-between", width: "100%" }}>
             <div style={{ alignItems: "baseline", display: "flex", flex: "1 1 0%", minWidth: 0 }}>
               {isUsdMode && amount && (
-                <span style={{ color: primary, fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif', fontSize: "34px", fontWeight: 500, lineHeight: "42px" }}>
+                <span style={{ color: primary, fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif', fontSize: "30px", fontWeight: 500, lineHeight: "36px" }}>
                   $
                 </span>
               )}
@@ -446,15 +447,17 @@ export function DepositIdleForm({
                 placeholder="0"
                 value={amount}
                 onChange={handleInput}
+                onFocus={() => setIsAmountFocused(true)}
+                onBlur={() => setIsAmountFocused(false)}
                 style={{
                   background: "transparent",
                   border: "none",
                   boxSizing: "border-box",
                   color: amount ? primary : "#9E9E9C",
                   fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
-                  fontSize: "36px",
+                  fontSize: "32px",
                   fontWeight: 500,
-                  lineHeight: "44px",
+                  lineHeight: "38px",
                   minWidth: 0,
                   outline: "none",
                   padding: 0,
@@ -476,13 +479,13 @@ export function DepositIdleForm({
                 display: "inline-flex",
                 flexShrink: 0,
                 gap: "8px",
-                height: "36px",
+                height: "32px",
                 paddingLeft: "4px",
                 paddingRight: "10px",
               }}
             >
-              <div style={{ flexShrink: 0, height: "26px", position: "relative", width: "26px" }}>
-                <TokenLogo label={toToken?.symbol} size={26} src={toToken?.logo} />
+              <div style={{ flexShrink: 0, height: "24px", position: "relative", width: "24px" }}>
+                <TokenLogo label={toToken?.symbol} size={24} src={toToken?.logo} />
                 {toToken?.chainLogo && (
                   <TokenLogo
                     label={toToken.chainName}
@@ -497,7 +500,7 @@ export function DepositIdleForm({
                   />
                 )}
               </div>
-              <div style={{ color: primary, fontFamily: uiFont, fontSize: "16px", fontWeight: 600, lineHeight: "24px" }}>
+              <div style={{ color: primary, fontFamily: uiFont, fontSize: "15px", fontWeight: 600, lineHeight: "22px" }}>
                 {toToken?.symbol || "Token"}
               </div>
             </div>
@@ -512,8 +515,8 @@ export function DepositIdleForm({
                 color: muted,
                 cursor: "pointer",
                 fontFamily: uiFont,
-                fontSize: "14px",
-                lineHeight: "20px",
+                fontSize: "13px",
+                lineHeight: "18px",
                 padding: 0,
               }}
               type="button"
@@ -523,38 +526,52 @@ export function DepositIdleForm({
                 : `≈ $${usdValue || "0"} ↕`}
             </button>
             <div style={{ alignItems: "center", display: "flex", gap: "5px" }}>
-              <span style={{ color: "#7C7C7A", fontFamily: uiFont, fontSize: "14px", lineHeight: "20px" }}>
+              <span style={{ color: "#7C7C7A", fontFamily: uiFont, fontSize: "13px", lineHeight: "18px" }}>
                 Balance:
               </span>
-              <span style={{ color: primary, fontFamily: uiFont, fontSize: "14px", fontWeight: 500, lineHeight: "20px" }}>
+              <span style={{ color: primary, fontFamily: uiFont, fontSize: "13px", fontWeight: 500, lineHeight: "18px" }}>
                 {destinationBalanceLabel}
               </span>
             </div>
           </div>
 
-          <div style={{ alignItems: "center", display: "flex", gap: "6px", width: "100%" }}>
+          <div
+            aria-hidden={!isAmountFocused}
+            style={{
+              alignItems: "center",
+              display: "flex",
+              gap: "5px",
+              minHeight: "24px",
+              opacity: isAmountFocused ? 1 : 0,
+              pointerEvents: isAmountFocused ? "auto" : "none",
+              transition: "opacity 0.18s ease-out",
+              width: "100%",
+            }}
+          >
             {[25, 50, 75].map((pct) => {
               const isPending = Boolean(isCalculatingMax && pendingPercent === pct);
               return (
               <button
                 key={pct}
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => handlePercentSelect(pct)}
                 style={{
                   alignItems: "center",
                   backgroundColor: isPending ? "#E8F0FF" : "#F4F4F3",
                   border: "none",
-                  borderRadius: "8px",
+                  borderRadius: "7px",
                   cursor: "pointer",
                   display: "flex",
                   flex: "1 1 0%",
-                  gap: "6px",
+                  gap: "5px",
                   justifyContent: "center",
-                  padding: "6px 10px",
+                  padding: "4px 7px",
                 }}
+                tabIndex={isAmountFocused ? 0 : -1}
                 type="button"
               >
-                {isPending && <Loader2 className="animate-spin" style={{ color: brand, height: 13, width: 13 }} />}
-                <span style={{ color: isPending ? brand : "#363635", fontFamily: uiFont, fontSize: "12px", fontWeight: isPending ? 600 : 500, lineHeight: "20px" }}>
+                {isPending && <Loader2 className="animate-spin" style={{ color: brand, height: 12, width: 12 }} />}
+                <span style={{ color: isPending ? brand : "#363635", fontFamily: uiFont, fontSize: "11px", fontWeight: isPending ? 600 : 500, lineHeight: "16px" }}>
                   {pct}%
                 </span>
               </button>
@@ -564,23 +581,25 @@ export function DepositIdleForm({
               const isPending = Boolean(isCalculatingMax && pendingPercent === 100);
               return (
             <button
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => handlePercentSelect(100)}
               style={{
                 alignItems: "center",
                 backgroundColor: isPending ? "#E8F0FF" : "#F4F4F3",
                 border: "none",
-                borderRadius: "8px",
+                borderRadius: "7px",
                 cursor: "pointer",
                 display: "flex",
                 flex: "1 1 0%",
-                gap: "6px",
+                gap: "5px",
                 justifyContent: "center",
-                padding: "6px 10px",
+                padding: "4px 7px",
               }}
+              tabIndex={isAmountFocused ? 0 : -1}
               type="button"
             >
-              {isPending && <Loader2 className="animate-spin" style={{ color: brand, height: 13, width: 13 }} />}
-              <span style={{ color: isPending ? brand : "#363635", fontFamily: uiFont, fontSize: "12px", fontWeight: isPending ? 600 : 500, letterSpacing: "0.02em", lineHeight: "20px" }}>
+              {isPending && <Loader2 className="animate-spin" style={{ color: brand, height: 12, width: 12 }} />}
+              <span style={{ color: isPending ? brand : "#363635", fontFamily: uiFont, fontSize: "11px", fontWeight: isPending ? 600 : 500, letterSpacing: "0.02em", lineHeight: "16px" }}>
                 MAX
               </span>
             </button>

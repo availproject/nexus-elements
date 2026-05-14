@@ -68,15 +68,19 @@ const ShowcaseWrapper = ({
         onPressedChange !== undefined;
   const isPressed = pressed ?? defaultPressed ?? false;
   const label = toggleLabel ?? "Swap with Exact In";
+  const effectiveNetwork =
+    type === "nexus-one" && currentNetwork === "testnet"
+      ? "mainnet"
+      : currentNetwork;
   const isTestnetUnsupported =
-    disabledTestnet.has(type) && currentNetwork === "testnet";
+    disabledTestnet.has(type) && effectiveNetwork === "testnet";
   const isNexusOneTestnetUnsupported =
     type === "nexus-one" && isTestnetUnsupported;
 
   return (
     <div className="w-full flex flex-col gap-y-4">
       <div className="flex items-center justify-between w-full">
-        <NetworkToggle />
+        <NetworkToggle disableTestnet={type === "nexus-one"} />
         {resolvedToggle && (
           <Toggle
             variant={variant}

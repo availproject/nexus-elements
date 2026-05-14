@@ -256,11 +256,16 @@ const NexusOneShowcase = () => {
         type="nexus-one"
         connectLabel="Connect wallet to use Nexus One"
       >
-        <NexusOne
-          key={selectedMode}
-          config={config}
-          connectedAddress={address}
-        />
+        <div
+          className="flex w-full justify-center"
+          style={{ minHeight: "90dvh" }}
+        >
+          <NexusOne
+            key={selectedMode}
+            config={config}
+            connectedAddress={address}
+          />
+        </div>
       </ShowcaseWrapper>
     </div>
   );

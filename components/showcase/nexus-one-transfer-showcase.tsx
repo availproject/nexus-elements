@@ -12,10 +12,15 @@ const NexusOneTransferShowcase = () => {
       type="nexus-one"
       connectLabel="Connect wallet to use Nexus One Send"
     >
-      <NexusOne
-        config={{ mode: "send" }}
-        connectedAddress={address}
-      />
+      <div
+        className="flex w-full justify-center"
+        style={{ minHeight: "90dvh" }}
+      >
+        <NexusOne
+          config={{ mode: "send" }}
+          connectedAddress={address}
+        />
+      </div>
     </ShowcaseWrapper>
   );
 };

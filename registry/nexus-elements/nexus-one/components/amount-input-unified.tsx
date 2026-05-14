@@ -47,7 +47,7 @@ export function AmountInputUnified({
 
   return (
     <div
-      className="w-full flex flex-col bg-white min-h-[200px]"
+      className="w-full flex flex-col bg-white min-h-[168px]"
       style={{
         borderRadius: "12px",
         border: "1px solid var(--border-default, #E8E8E7)",
@@ -56,27 +56,27 @@ export function AmountInputUnified({
       }}
     >
       {header && (
-        <div className="w-full border-b border-[#E8E8E7] px-5 py-4">
+        <div className="w-full border-b border-[#E8E8E7] px-4 py-3">
           {header}
         </div>
       )}
-      <div className="flex-1 w-full flex flex-col items-center justify-center p-5 relative">
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-4 relative">
       {/* Central Input row: large amount + MAX button inline */}
-      <div className="flex items-center justify-center w-full gap-x-3 mb-2">
+      <div className="flex items-center justify-center w-full gap-x-2 mb-1.5">
         <div
           className="flex items-center justify-center text-center"
           style={{
-            fontSize: "40px",
+            fontSize: "34px",
             fontWeight: 500,
             gap: "2px",
           }}
         >
           {tokenIcon ? (
-            <div className="flex items-center justify-center mr-4">
+            <div className="flex items-center justify-center mr-3">
               {tokenIcon}
             </div>
           ) : (
-            <span className="leading-none text-gray-800 mr-2">$</span>
+            <span className="leading-none text-gray-800 mr-1.5">$</span>
           )}
           <input
             type="text"
@@ -86,9 +86,9 @@ export function AmountInputUnified({
             style={{
               fontFamily: "'Delight', sans-serif",
               fontWeight: 500,
-              fontSize: "40px",
+              fontSize: "34px",
               lineHeight: "100%",
-              height: "40px",
+              height: "34px",
               letterSpacing: "2%",
               color: "var(--foreground-primary, #161615)",
               fieldSizing: "content",
@@ -118,15 +118,15 @@ export function AmountInputUnified({
           className="shrink-0 focus:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
           style={{
             background: "var(--background-tertiary, #F0F0EF)",
-            width: "44px",
-            height: "26px",
+            width: "40px",
+            height: "22px",
             borderRadius: "6px",
-            padding: "4px 8px",
+            padding: "3px 7px",
             color: "var(--foreground-muted, #848483)",
             fontFamily:
               "var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
             fontWeight: 400,
-            fontSize: "12px",
+            fontSize: "10px",
             lineHeight: "100%",
           }}
         >
@@ -136,14 +136,14 @@ export function AmountInputUnified({
 
       {/* Balance display — below amount + MAX row */}
       {(totalBalance || maxAvailableAmount) && (
-        <div className="absolute bottom-5 left-0 w-full flex justify-center">
+        <div className="absolute bottom-4 left-0 w-full flex justify-center">
           <p
             style={{
               color: "var(--widget-card-foreground-muted, #848483)",
               fontFamily:
                 "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
               fontWeight: 400,
-              fontSize: "13px",
+              fontSize: "12px",
               lineHeight: "100%",
               textAlign: "center",
             }}
