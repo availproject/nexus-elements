@@ -1949,10 +1949,6 @@ export function NexusOne({
   };
 
   const getExactOutSourceTokens = () => {
-    const selectedTokens = getExpandedSourceTokens(fromTokens);
-    if (selectedTokens.length > 0) {
-      return selectedTokens.filter(hasGasForSource);
-    }
     return getGasCapableBalanceSourceTokens();
   };
 
@@ -2985,7 +2981,9 @@ export function NexusOne({
 
         resetExplorerUrls();
 
-        const fromSourcesPayload = {};
+        const fromSourcesPayload = buildFromSourcesPayload(
+          getExactOutSourceTokens(),
+        );
 
         const isNative =
           !toToken.contractAddress ||

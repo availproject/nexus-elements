@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import Decimal from "decimal.js";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Info, Loader2 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { type NexusOneMode, type DepositOpportunity } from "../types";
 import { type SwapTokenOption } from "./swap-asset-selector";
@@ -383,6 +383,57 @@ function RecipientRow({ address }: { address: string }) {
   );
 }
 
+function InlineInfoTooltip({ message }: { message: string }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <span
+      onBlur={() => setShowTooltip(false)}
+      onFocus={() => setShowTooltip(true)}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      tabIndex={0}
+      style={{
+        alignItems: "center",
+        color: muted,
+        display: "inline-flex",
+        lineHeight: 0,
+        outline: "none",
+        position: "relative",
+      }}
+    >
+      <Info style={{ height: 13, width: 13 }} />
+      {showTooltip && (
+        <span
+          role="tooltip"
+          style={{
+            background: "#FFFFFE",
+            border: `1px solid ${border}`,
+            borderRadius: "8px",
+            boxShadow: "0 6px 18px rgba(22,22,21,0.10)",
+            color: primary,
+            fontFamily,
+            fontSize: "11px",
+            fontWeight: 500,
+            lineHeight: "15px",
+            padding: "7px 9px",
+            pointerEvents: "none",
+            position: "absolute",
+            bottom: "calc(100% + 8px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            whiteSpace: "normal",
+            width: "210px",
+            zIndex: 10000,
+          }}
+        >
+          {message}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function Row({
   title,
   subtitle,
@@ -390,7 +441,7 @@ function Row({
   secondaryValue,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   subtitle: string;
   value: string;
   secondaryValue?: string;
@@ -851,14 +902,29 @@ export function SwapIntentPreview({
       : flowMode === "send"
         ? "Send now"
         : "Swap now";
+  const shouldPulseCta =
+    !isLoading && !isRefreshing && !isExecuting && !quoteUnavailable;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <style>
         {`
-          @keyframes nexusSwapRouteDot {
-            0%, 12% { background: #006BF4; opacity: 1; transform: scale(1.18); }
-            30%, 100% { background: #9FC4FF; opacity: 0.45; transform: scale(1); }
+          @keyframes nexusPreviewCtaPulse {
+            0% {
+              background-color: #006BF4;
+              box-shadow: 0px 1px 4px 0px #5555550D, 0 0 0 0 rgba(0, 107, 244, 0.26);
+              transform: scale(1);
+            }
+            58% {
+              background-color: #005BDA;
+              box-shadow: 0px 6px 14px rgba(0, 107, 244, 0.14), 0 0 0 5px rgba(0, 107, 244, 0.07);
+              transform: scale(1.009);
+            }
+            100% {
+              background-color: #006BF4;
+              box-shadow: 0px 1px 4px 0px #5555550D, 0 0 0 8px rgba(0, 107, 244, 0);
+              transform: scale(1);
+            }
           }
         `}
       </style>
@@ -926,12 +992,11 @@ export function SwapIntentPreview({
               <span
                 key={index}
                 style={{
-                  animation: `nexusSwapRouteDot 2400ms ${index * 220}ms infinite`,
-                  background: "#9FC4FF",
+                  background: index === 2 ? "#006BF4" : "#9FC4FF",
                   borderRadius: "2px",
                   display: "block",
                   height: "6px",
-                  opacity: 0.45,
+                  opacity: index === 2 ? 1 : 0.55,
                   width: "6px",
                 }}
               />
@@ -1309,20 +1374,6 @@ export function SwapIntentPreview({
               Auto
             </span>
           </div>
-          <div
-            style={{
-              alignItems: "center",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span style={{ color: muted, fontFamily, fontSize: "12px" }}>
-              Swap Buffer
-            </span>
-            <span style={{ color: primary, fontFamily, fontSize: "12px" }}>
-              {swapBufferDisplay}
-            </span>
-          </div>
           {shouldShowMinReceived && (
             <div
               style={{
@@ -1340,6 +1391,23 @@ export function SwapIntentPreview({
             </div>
           )}
         </AnimatedDetails>
+
+        <Row
+          title={
+            <span
+              style={{
+                alignItems: "center",
+                display: "inline-flex",
+                gap: "6px",
+              }}
+            >
+              Swap Buffer
+              <InlineInfoTooltip message="Temporary buffer collected to ensure swaps succeed. Excess funds are refunded." />
+            </span>
+          }
+          subtitle="Excess funds are refunded"
+          value={swapBufferDisplay}
+        />
       </div>
 
       {isExecuting && steps && steps.length > 0 && (
@@ -1379,6 +1447,9 @@ export function SwapIntentPreview({
         onClick={onAccept}
         disabled={isLoading || isRefreshing || isExecuting || quoteUnavailable}
         style={{
+          animation: shouldPulseCta
+            ? "nexusPreviewCtaPulse 1800ms ease-in-out infinite"
+            : undefined,
           background: brand,
           borderRadius: "8px",
           boxShadow: "0px 1px 4px 0px #5555550D",
@@ -1387,6 +1458,10 @@ export function SwapIntentPreview({
           fontSize: "13px",
           fontWeight: 500,
           height: "52px",
+          transformOrigin: "center",
+          willChange: shouldPulseCta
+            ? "box-shadow, transform, background-color"
+            : undefined,
           width: "100%",
         }}
       >

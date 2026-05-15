@@ -1,12 +1,11 @@
 "use client";
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode, useCallback, useEffect, useState } from "react";
 import { LoaderPinwheel } from "lucide-react";
 import { type EthereumProvider } from "@avail-project/nexus-core";
 import { useAccount, useConnectorClient } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";
 import { Button } from "@/registry/nexus-elements/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 interface PreviewPanelProps {
   children: ReactNode;
   connectLabel: string;
@@ -19,35 +18,59 @@ export function PreviewPanel({
   const { status, connector } = useAccount();
   const { data: walletClient } = useConnectorClient();
   const { nexusSDK, handleInit, loading } = useNexus();
-  const isMobile = useIsMobile();
+  const [initializing, setInitializing] = useState(false);
 
-  const initializeNexus = async () => {
+  const initializeNexus = useCallback(async (silent = false) => {
+    if (loading || initializing || nexusSDK) return;
+    setInitializing(true);
     try {
       const mobileProvider = walletClient && {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         request: (args: unknown) => walletClient.request(args as any),
       };
-      const desktopProvider = (await connector?.getProvider()) as any;
+      let desktopProvider: any;
+      try {
+        desktopProvider = (await connector?.getProvider()) as any;
+      } catch (error) {
+        console.warn("Wallet provider is not ready yet", error);
+      }
       const effectiveProvider =
         desktopProvider && typeof desktopProvider.request === "function"
           ? desktopProvider
           : mobileProvider;
 
+      if (!effectiveProvider || typeof effectiveProvider.request !== "function") {
+        if (!silent) {
+          toast.error("Wallet provider is not ready yet. Please try again.");
+        }
+        return;
+      }
+
       await handleInit(effectiveProvider as EthereumProvider);
-      if (nexusSDK) {
+      if (!silent) {
         toast.success("Nexus initialized successfully");
       }
     } catch (error) {
       console.error(error);
-      toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
+      if (!silent) {
+        toast.error(`Failed to initialize Nexus ${(error as Error)?.message}`);
+      }
+    } finally {
+      setInitializing(false);
     }
-  };
+  }, [connector, handleInit, initializing, loading, nexusSDK, walletClient]);
 
   useEffect(() => {
-    if (status === "connected" && !nexusSDK) {
-      initializeNexus();
+    if (
+      status === "connected" &&
+      !nexusSDK &&
+      !loading &&
+      !initializing &&
+      walletClient
+    ) {
+      void initializeNexus(true);
     }
-  }, [status, nexusSDK]);
+  }, [connector, initializeNexus, initializing, loading, nexusSDK, status, walletClient]);
   return (
     <div className="w-full">
       <div className="flex flex-col w-full items-center justify-center relative">
@@ -55,8 +78,11 @@ export function PreviewPanel({
           <>{children}</>
         )}
         {status === "connected" && !nexusSDK && (
-          <Button onClick={initializeNexus}>
-            {loading ? (
+          <Button
+            disabled={loading || initializing}
+            onClick={() => void initializeNexus(false)}
+          >
+            {loading || initializing ? (
               <LoaderPinwheel className="size-6 animate-spin" />
             ) : (
               "Initialize Nexus"
