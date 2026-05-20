@@ -23,6 +23,7 @@ interface DepositIdleFormProps {
   routeStatus?: "loading" | "insufficient";
   routeMessage?: string;
   isCalculatingMax?: boolean;
+  calculatingPercent?: number | null;
   isQuoteRefreshing?: boolean;
   showAutoBadge?: boolean;
 }
@@ -422,6 +423,7 @@ export function DepositIdleForm({
   routeStatus,
   routeMessage,
   isCalculatingMax,
+  calculatingPercent,
   isQuoteRefreshing,
   showAutoBadge = true,
 }: DepositIdleFormProps) {
@@ -449,6 +451,9 @@ export function DepositIdleForm({
   const amountDisplayValue = isAmountFocused
     ? amount
     : formatAmountInputDisplay(amount);
+  const activePendingPercent =
+    calculatingPercent ?? (isCalculatingMax ? pendingPercent : null);
+  const isMaxCalculating = Boolean(isCalculatingMax && activePendingPercent === 100);
   const destinationBalanceLabel =
     isUsdMode
       ? formatUsdBalanceLabel(toToken?.balanceInFiat)
@@ -488,33 +493,64 @@ export function DepositIdleForm({
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <div style={{ alignItems: "center", display: "flex", gap: "10px", justifyContent: "space-between", width: "100%" }}>
             <div style={{ alignItems: "baseline", display: "flex", flex: "1 1 0%", minWidth: 0 }}>
-              {isUsdMode && amount && (
-                <span style={{ color: primary, fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif', fontSize: "30px", fontWeight: 500, lineHeight: "36px" }}>
-                  $
-                </span>
+              {isMaxCalculating ? (
+                <div
+                  aria-label="Calculating max amount"
+                  className="animate-pulse"
+                  style={{
+                    alignSelf: "center",
+                    backgroundColor: "#F0F0EF",
+                    borderRadius: "8px",
+                    height: "34px",
+                    maxWidth: "220px",
+                    minWidth: "132px",
+                    width: "62%",
+                  }}
+                />
+              ) : (
+                <>
+                  {isUsdMode && amount && (
+                    <span style={{ color: primary, fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif', fontSize: "30px", fontWeight: 500, lineHeight: "36px" }}>
+                      $
+                    </span>
+                  )}
+                  <input
+                    type="text"
+                    placeholder="0"
+                    value={amountDisplayValue}
+                    onChange={handleInput}
+                    onFocus={() => setIsAmountFocused(true)}
+                    onBlur={() => setIsAmountFocused(false)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      boxSizing: "border-box",
+                      color: amount ? primary : "#9E9E9C",
+                      fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
+                      fontSize: "32px",
+                      fontWeight: 500,
+                      lineHeight: "38px",
+                      minWidth: 0,
+                      outline: "none",
+                      padding: 0,
+                      width: "100%",
+                    }}
+                  />
+                </>
               )}
-              <input
-                type="text"
-                placeholder="0"
-                value={amountDisplayValue}
-                onChange={handleInput}
-                onFocus={() => setIsAmountFocused(true)}
-                onBlur={() => setIsAmountFocused(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  boxSizing: "border-box",
-                  color: amount ? primary : "#9E9E9C",
-                  fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
-                  fontSize: "32px",
-                  fontWeight: 500,
-                  lineHeight: "38px",
-                  minWidth: 0,
-                  outline: "none",
-                  padding: 0,
-                  width: "100%",
-                }}
-              />
+              {isCalculatingMax && !isMaxCalculating && (
+                <Loader2
+                  className="animate-spin"
+                  style={{
+                    alignSelf: "center",
+                    color: brand,
+                    flexShrink: 0,
+                    height: 18,
+                    marginLeft: 6,
+                    width: 18,
+                  }}
+                />
+              )}
             </div>
 
             <div
@@ -596,7 +632,7 @@ export function DepositIdleForm({
             }}
           >
             {[25, 50, 75].map((pct) => {
-              const isPending = Boolean(isCalculatingMax && pendingPercent === pct);
+              const isPending = Boolean(isCalculatingMax && activePendingPercent === pct);
               return (
               <button
                 key={pct}
@@ -624,7 +660,7 @@ export function DepositIdleForm({
               );
             })}
             {(() => {
-              const isPending = Boolean(isCalculatingMax && pendingPercent === 100);
+              const isPending = Boolean(isCalculatingMax && activePendingPercent === 100);
               return (
             <button
               onMouseDown={(event) => event.preventDefault()}
@@ -636,16 +672,17 @@ export function DepositIdleForm({
                 borderRadius: "7px",
                 cursor: "pointer",
                 display: "flex",
-                flex: "1 1 0%",
+                flex: isPending ? "1.8 1 0%" : "1 1 0%",
                 gap: "5px",
                 justifyContent: "center",
+                minWidth: 0,
                 padding: "4px 7px",
               }}
               type="button"
             >
               {isPending && <Loader2 className="animate-spin" style={{ color: brand, height: 12, width: 12 }} />}
-              <span style={{ color: isPending ? brand : "#363635", fontFamily: uiFont, fontSize: "11px", fontWeight: isPending ? 600 : 500, letterSpacing: "0.02em", lineHeight: "16px" }}>
-                MAX
+              <span style={{ color: isPending ? brand : "#363635", fontFamily: uiFont, fontSize: isPending ? "9px" : "11px", fontWeight: isPending ? 600 : 500, letterSpacing: "0.02em", lineHeight: "16px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {isPending ? "Calculating Max..." : "MAX"}
               </span>
             </button>
               );

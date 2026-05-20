@@ -22,6 +22,7 @@ interface SendIdleFormProps {
   routeStatus?: "loading" | "insufficient";
   routeMessage?: string;
   isCalculatingMax?: boolean;
+  calculatingPercent?: number | null;
   isQuoteRefreshing?: boolean;
   showAutoBadge?: boolean;
 }
@@ -487,6 +488,7 @@ export function SendIdleForm({
   routeStatus,
   routeMessage,
   isCalculatingMax,
+  calculatingPercent,
   isQuoteRefreshing,
   showAutoBadge = true,
 }: SendIdleFormProps) {
@@ -510,6 +512,9 @@ export function SendIdleForm({
   const amountDisplayValue = isAmountFocused
     ? amount
     : formatAmountInputDisplay(amount);
+  const activePendingPercent =
+    calculatingPercent ?? (isCalculatingMax ? pendingPercent : null);
+  const isMaxCalculating = Boolean(isCalculatingMax && activePendingPercent === 100);
 
   const destinationBalanceLabel =
     formatSelectedTokenBalanceLabel(toToken) || `0 ${toToken?.symbol || ""}`.trim();
@@ -694,29 +699,55 @@ export function SendIdleForm({
               width: "100%",
             }}
           >
-            <input
-              onChange={handleInput}
-              onFocus={() => setIsAmountFocused(true)}
-              onBlur={() => setIsAmountFocused(false)}
-              placeholder="0"
-              style={{
-                background: "transparent",
-                border: "none",
-                boxSizing: "border-box",
-                color: amount ? primary : "#9E9E9C",
-                flex: "1 1 0%",
-                fontFamily:
-                  '"Delight-Medium", "Delight", system-ui, sans-serif',
-                fontSize: "32px",
-                fontWeight: 500,
-                lineHeight: "38px",
-                minWidth: 0,
-                outline: "none",
-                padding: 0,
-              }}
-              type="text"
-              value={amountDisplayValue}
-            />
+            {isMaxCalculating ? (
+              <div
+                aria-label="Calculating max amount"
+                className="animate-pulse"
+                style={{
+                  backgroundColor: "#F0F0EF",
+                  borderRadius: "8px",
+                  flex: "1 1 0%",
+                  height: "34px",
+                  maxWidth: "220px",
+                  minWidth: "132px",
+                }}
+              />
+            ) : (
+              <input
+                onChange={handleInput}
+                onFocus={() => setIsAmountFocused(true)}
+                onBlur={() => setIsAmountFocused(false)}
+                placeholder="0"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  boxSizing: "border-box",
+                  color: amount ? primary : "#9E9E9C",
+                  flex: "1 1 0%",
+                  fontFamily:
+                    '"Delight-Medium", "Delight", system-ui, sans-serif',
+                  fontSize: "32px",
+                  fontWeight: 500,
+                  lineHeight: "38px",
+                  minWidth: 0,
+                  outline: "none",
+                  padding: 0,
+                }}
+                type="text"
+                value={amountDisplayValue}
+              />
+            )}
+            {isCalculatingMax && !isMaxCalculating && (
+              <Loader2
+                className="animate-spin"
+                style={{
+                  color: brand,
+                  flexShrink: 0,
+                  height: 18,
+                  width: 18,
+                }}
+              />
+            )}
 
             <button
               onClick={onOpenAssetPicker}
@@ -847,7 +878,7 @@ export function SendIdleForm({
           >
               {[25, 50, 75].map((pct) => (
                 (() => {
-                  const isPending = Boolean(isCalculatingMax && pendingPercent === pct);
+                  const isPending = Boolean(isCalculatingMax && activePendingPercent === pct);
                   const isDisabled = !toToken;
                   return (
                     <button
@@ -892,7 +923,7 @@ export function SendIdleForm({
                 })()
               ))}
               {(() => {
-                const isPending = Boolean(isCalculatingMax && pendingPercent === 100);
+                const isPending = Boolean(isCalculatingMax && activePendingPercent === 100);
                 const isDisabled = !toToken;
                 return (
               <button
@@ -906,9 +937,10 @@ export function SendIdleForm({
                   borderRadius: "7px",
                   cursor: isDisabled ? "not-allowed" : "pointer",
                   display: "flex",
-                  flex: "1 1 0%",
+                  flex: isPending ? "1.8 1 0%" : "1 1 0%",
                   gap: "5px",
                   justifyContent: "center",
+                  minWidth: 0,
                   opacity: isDisabled ? 0.55 : 1,
                   padding: "4px 7px",
                 }}
@@ -924,13 +956,16 @@ export function SendIdleForm({
                   style={{
                     color: isPending ? brand : "#363635",
                     fontFamily: uiFont,
-                    fontSize: "11px",
+                    fontSize: isPending ? "9px" : "11px",
                     fontWeight: isPending ? 600 : 500,
                     letterSpacing: "0.02em",
                     lineHeight: "16px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  MAX
+                  {isPending ? "Calculating Max..." : "MAX"}
                 </span>
               </button>
                 );
