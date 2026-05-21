@@ -110,6 +110,11 @@ import {
 } from "@avail-project/nexus-core";
 import { encodeFunctionData, type Abi } from "viem";
 
+const AAVE_POOL_BY_CHAIN: Partial<Record<number, Address>> = {
+  [SUPPORTED_CHAINS.BASE]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+  [SUPPORTED_CHAINS.MEGAETH]: "0x7e324abc5de01d112afc03a584966ff199741c28",
+};
+
 function DepositExample() {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -120,44 +125,47 @@ function DepositExample() {
         open={isOpen}
         onOpenChange={setIsOpen}
         destination={{
-          chainId: SUPPORTED_CHAINS.CITREA,
-          tokenAddress: "0x8D82c4E3c936C7B5724A382a9c5a4E6Eb7aB6d5D",
-          tokenSymbol: "ctUSD",
+          chainId: SUPPORTED_CHAINS.BASE,
+          tokenAddress: TOKEN_CONTRACT_ADDRESSES["USDC"][SUPPORTED_CHAINS.BASE],
+          tokenSymbol: "USDC",
           tokenDecimals: 6,
-          tokenLogo: "https://app.mysticfinance.xyz/assets/ctusd.png",
-          label: "Deposit ctUSD on Mystic on Citrea",
+          tokenLogo: TOKEN_METADATA["USDC"].icon,
+          label: "Deposit USDC on Aave's Base Market",
           gasTokenSymbol:
-            CHAIN_METADATA[SUPPORTED_CHAINS.CITREA].nativeCurrency.symbol,
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].nativeCurrency.symbol,
           estimatedTime: "≈ 30s",
           explorerUrl:
-            CHAIN_METADATA[SUPPORTED_CHAINS.CITREA].blockExplorerUrls[0],
-          depositTargetLogo: "https://app.mysticfinance.xyz/favicon.ico",
+            CHAIN_METADATA[SUPPORTED_CHAINS.BASE].blockExplorerUrls[0],
+          depositTargetLogo: "/aave.svg",
         }}
         executeDeposit={(tokenSymbol, tokenAddress, amount, _chainId, user) => {
-          const contractAddress =
-            "0x72f8C254548839Fa1Db4156aE01d8C6ae5885EE4" as const;
+          const contractAddress = AAVE_POOL_BY_CHAIN[chainId];
           const abi: Abi = [
             {
               inputs: [
                 {
+                  internalType: "address",
+                  name: "asset",
+                  type: "address",
+                },
+                {
                   internalType: "uint256",
-                  name: "assets",
+                  name: "amount",
                   type: "uint256",
                 },
                 {
                   internalType: "address",
-                  name: "onBehalf",
+                  name: "onBehalfOf",
                   type: "address",
                 },
-              ],
-              name: "deposit",
-              outputs: [
                 {
-                  internalType: "uint256",
-                  name: "",
-                  type: "uint256",
+                  internalType: "uint16",
+                  name: "referralCode",
+                  type: "uint16",
                 },
               ],
+              name: "supply",
+              outputs: [],
               stateMutability: "nonpayable",
               type: "function",
             },
@@ -165,8 +173,8 @@ function DepositExample() {
 
           const encoded = encodeFunctionData({
             abi: abi,
-            functionName: "deposit",
-            args: [amount, user],
+            functionName: "supply",
+            args: [tokenAddress, amount, user, 0],
           });
 
           return {
