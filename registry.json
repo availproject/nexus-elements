@@ -949,6 +949,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/nexus-elements/nexus-one/utils/citrea-tokens.ts",
+          "target": "components/nexus-one/utils/citrea-tokens.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/nexus-elements/common/components/ErrorBoundary.tsx",
           "target": "components/common/components/ErrorBoundary.tsx",
           "type": "registry:component"
