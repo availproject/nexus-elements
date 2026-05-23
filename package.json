@@ -14,7 +14,7 @@
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
-    "@avail-project/nexus-core": "github:availproject/nexus-sdk#d500edc105cb3b1fd142c1b930b89f578aa9d50c",
+    "@avail-project/nexus-core": "github:availproject/nexus-sdk#84fe31ba3b5e9d8dd70ea7166e0521e963f3c0aa",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-collapsible": "^1.1.12",
