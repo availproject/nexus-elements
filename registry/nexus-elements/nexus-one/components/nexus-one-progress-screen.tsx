@@ -621,7 +621,7 @@ export function NexusOneProgressScreen({
       opportunityName: opportunity?.title || opportunity?.protocol,
     },
   });
-  const [stepsExpanded, setStepsExpanded] = useState(false);
+  const [stepsExpanded, setStepsExpanded] = useState(true);
   const activeRow =
     statusRows.find(
       (row) => row.state === "preapproval" || row.state === "inProgress",
