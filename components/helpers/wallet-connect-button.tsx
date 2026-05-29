@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/registry/nexus-elements/ui/button";
 import { ConnectKitButton } from "connectkit";
-import { truncateAddress } from "@avail-project/nexus-core";
+import { truncateAddress } from "@avail-project/nexus-sdk-v2/utils";
 import { Loader2 } from "lucide-react";
 
 const ConnectWalletButton = () => {

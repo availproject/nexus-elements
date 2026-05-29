@@ -2,11 +2,10 @@
 import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
-  type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
-  type UserAsset,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+} from "../../common";
+import { type UserAsset } from "../../nexus/NexusProvider";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { DESTINATION_SWAP_TOKENS } from "../config/destination";
 import { DialogClose } from "../../ui/dialog";
 import {
@@ -25,7 +24,7 @@ import { type DestinationTokenInfo } from "../hooks/useSwaps";
 interface DestinationAssetSelectProps {
   swapBalance: UserAsset[] | null;
   onSelect: (
-    chainId: SUPPORTED_CHAINS_IDS,
+    chainId: number,
     token: DestinationTokenInfo,
   ) => void;
 }
@@ -99,7 +98,7 @@ const DestinationAssetSelect: FC<DestinationAssetSelectProps> = ({
   const handlePick = (tok: DestinationTokenInfo) => {
     const chainId = tempChain ?? tok.chainId;
     if (!chainId) return;
-    onSelect(chainId as SUPPORTED_CHAINS_IDS, tok);
+    onSelect(chainId, tok);
   };
 
   return (

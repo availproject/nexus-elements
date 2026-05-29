@@ -1,4 +1,4 @@
-import type { SupportedChainsAndTokensResult } from "@avail-project/nexus-core";
+import type { SupportedChainsAndTokensResult } from "@avail-project/nexus-sdk-v2";
 
 const COINBASE_SPOT_API_BASE = "https://api.coinbase.com/v2/prices";
 const COINBASE_EXCHANGE_RATES_API_BASE =

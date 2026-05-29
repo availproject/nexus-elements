@@ -18,7 +18,8 @@ import {
   type SwapTokenOption,
 } from "./swap-asset-selector";
 import { useNexus } from "../../nexus/NexusProvider";
-import { CHAIN_METADATA, formatTokenBalance } from "@avail-project/nexus-core";
+import { CHAIN_METADATA } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import {
   CITREA_CHAIN_ID,
   CITREA_STABLE_SYMBOLS,

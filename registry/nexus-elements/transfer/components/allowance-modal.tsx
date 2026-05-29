@@ -12,11 +12,10 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import {
   type AllowanceHookSource,
-  CHAIN_METADATA,
-  formatTokenBalance,
   type OnAllowanceHookData,
-  parseUnits,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
+import { CHAIN_METADATA } from "../../common";
+import { formatTokenBalance, parseUnits } from "@avail-project/nexus-sdk-v2/utils";
 import { useNexusError } from "../../common";
 
 interface AllowanceModalProps {

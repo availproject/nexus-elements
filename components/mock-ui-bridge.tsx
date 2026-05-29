@@ -12,7 +12,7 @@ import {
   CHAIN_METADATA,
   SUPPORTED_CHAINS,
   TOKEN_METADATA,
-} from "@avail-project/nexus-core";
+} from "@/registry/nexus-elements/common/utils/constant";
 import {
   Accordion,
   AccordionContent,
@@ -121,7 +121,7 @@ export default function MockBridgeUI() {
                 <SelectValue>
                   <div className="flex items-center gap-x-2 w-full">
                     <img
-                      src={TOKEN_METADATA["USDC"].icon}
+                      src={TOKEN_METADATA["USDC"].logo}
                       alt={TOKEN_METADATA["USDC"].name}
                       width={24}
                       height={24}

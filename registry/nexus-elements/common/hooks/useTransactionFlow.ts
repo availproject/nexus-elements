@@ -1,12 +1,10 @@
 import {
-  type BridgeStepType,
   type NexusNetwork,
-  NexusSDK,
+  type NexusClient,
   type OnAllowanceHookData,
   type OnIntentHookData,
-  parseUnits,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+  type TokenBalance,
+} from "@avail-project/nexus-sdk-v2";
 import {
   useEffect,
   useMemo,
@@ -16,7 +14,8 @@ import {
   useReducer,
   type RefObject,
 } from "react";
-import { type Address, isAddress } from "viem";
+import { type Address, isAddress, parseUnits } from "viem";
+import { CHAIN_METADATA } from "../utils/constant";
 import { useNexusError } from "./useNexusError";
 import { useTransactionExecution } from "./useTransactionExecution";
 import { usePolling } from "./usePolling";
@@ -30,6 +29,7 @@ import {
   type TransactionFlowInputs,
   type TransactionFlowPrefill,
   type TransactionFlowType,
+  type BridgeStepType,
 } from "../types/transaction-flow";
 import {
   MAX_AMOUNT_DEBOUNCE_MS,
@@ -43,10 +43,10 @@ import {
 interface BaseTransactionFlowProps {
   type: TransactionFlowType;
   network: NexusNetwork;
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAsset[] | null;
+  bridgableBalance: TokenBalance[] | null;
   prefill?: TransactionFlowPrefill;
   onComplete?: (explorerUrl?: string) => void;
   onStart?: () => void;
@@ -169,17 +169,27 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   }, [inputs]);
 
   const filteredBridgableBalance = useMemo(() => {
-    return bridgableBalance?.find((bal) =>
+    const found = bridgableBalance?.find((bal) =>
       inputs?.token === "USDM"
         ? bal?.symbol === "USDC"
         : bal?.symbol === inputs?.token,
     );
+    if (!found) return undefined;
+    const breakdown = (found as any).chainBalances?.map((cb: any) => ({
+      balance: cb.balance,
+      balanceInFiat: Number.parseFloat(cb.value),
+      chain: cb.chain,
+    })) ?? (found as any).breakdown ?? [];
+    return {
+      ...found,
+      breakdown,
+    };
   }, [bridgableBalance, inputs?.token]);
 
   const availableSources = useMemo(() => {
     const breakdown = filteredBridgableBalance?.breakdown ?? [];
     const destinationChainId = inputs?.chain;
-    const nonZero = breakdown.filter((source) => {
+    const nonZero = breakdown.filter((source: any) => {
       if (Number.parseFloat(source.balance ?? "0") <= 0) return false;
       if (typeof destinationChainId === "number") {
         return source.chain.id !== destinationChainId;
@@ -189,10 +199,10 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     const decimals = filteredBridgableBalance?.decimals;
     if (!nexusSDK || typeof decimals !== "number") {
       return nonZero.sort(
-        (a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance),
+        (a: any, b: any) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance),
       );
     }
-    return nonZero.sort((a, b) => {
+    return nonZero.sort((a: any, b: any) => {
       try {
         const aRaw = parseUnits(a.balance ?? "0", decimals);
         const bRaw = parseUnits(b.balance ?? "0", decimals);
@@ -210,7 +220,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   ]);
 
   const allAvailableSourceChainIds = useMemo(
-    () => availableSources.map((source) => source.chain.id),
+    () => availableSources.map((source: any) => source.chain.id),
     [availableSources],
   );
 
@@ -249,15 +259,27 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
 
   const getMaxForCurrentSelection = useCallback(async () => {
     if (!nexusSDK || !inputs?.token || !inputs?.chain) return undefined;
-    const maxBalAvailable = await nexusSDK.calculateMaxForBridge({
-      token: inputs.token,
-      toChainId: inputs.chain,
-      recipient: inputs.recipient,
-      sourceChains: sourceChainsForSdk,
-    });
-    if (!maxBalAvailable?.amount) return "0";
+    
+    let totalMax = 0;
+    const selectedChainSet = new Set(sourceChainsForSdk ?? allAvailableSourceChainIds);
+    
+    for (const source of availableSources) {
+      if (!selectedChainSet.has(source.chain.id)) continue;
+      const balVal = Number.parseFloat(source.balance ?? "0");
+      if (balVal <= 0) continue;
+      
+      let chainMax = balVal;
+      const chainMeta = CHAIN_METADATA[source.chain.id];
+      const nativeSymbol = chainMeta?.nativeCurrency?.symbol;
+      if (nativeSymbol && inputs.token === nativeSymbol) {
+        chainMax = Math.max(0, chainMax - 0.003);
+      }
+      totalMax += chainMax;
+    }
+    
+    const amountStr = totalMax.toString();
     return clampAmountToMax({
-      amount: maxBalAvailable.amount,
+      amount: amountStr,
       maxAmount: configuredMaxAmount,
       nexusSDK,
       token: inputs.token,
@@ -266,10 +288,11 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
   }, [
     configuredMaxAmount,
     inputs?.chain,
-    inputs?.recipient,
     inputs?.token,
     nexusSDK,
     sourceChainsForSdk,
+    allAvailableSourceChainIds,
+    availableSources,
   ]);
 
   const toggleSourceChain = useCallback(
@@ -279,14 +302,14 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
         const current =
           prev && prev.length > 0 ? prev : allAvailableSourceChainIds;
         const next = current.includes(chainId)
-          ? current.filter((id) => id !== chainId)
+          ? current.filter((id: number) => id !== chainId)
           : [...current, chainId];
         if (next.length === 0) {
           return current;
         }
         const isAllSelected =
           next.length === allAvailableSourceChainIds.length &&
-          allAvailableSourceChainIds.every((id) => next.includes(id));
+          allAvailableSourceChainIds.every((id: number) => next.includes(id));
         return isAllSelected ? null : next;
       });
     },
@@ -306,7 +329,7 @@ export function useTransactionFlow(props: UseTransactionFlowProps) {
     const selectedTotalRaw =
       !nexusSDK || typeof decimals !== "number"
         ? BigInt(0)
-        : availableSources.reduce((sum, source) => {
+        : availableSources.reduce((sum: bigint, source: any) => {
             if (!selectedChainSet.has(source.chain.id)) return sum;
             try {
               return sum + parseUnits(source.balance ?? "0", decimals);

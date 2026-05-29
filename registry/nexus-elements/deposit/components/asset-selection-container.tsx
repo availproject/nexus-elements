@@ -16,7 +16,8 @@ import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import TokenRow from "./token-row";
-import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
+import { type UserAsset } from "../../nexus/NexusProvider";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { usdFormatter } from "../../common";
 import { X } from "lucide-react";
 import {
@@ -162,8 +163,8 @@ function transformSwapBalanceToTokens(
     const chainsBySymbol = new Map<string, ChainItemWithTokenMeta[]>();
 
     asset.breakdown
-      .filter((b) => b.chain && b.balance)
-      .forEach((b) => {
+      .filter((b: any) => b.chain && b.balance)
+      .forEach((b: any) => {
         const balanceNum = parseFloat(b.balance);
         if (!Number.isFinite(balanceNum) || balanceNum <= 0) return;
 

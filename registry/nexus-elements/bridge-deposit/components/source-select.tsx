@@ -2,13 +2,10 @@ import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { Label } from "../../ui/label";
 import { Checkbox } from "../../ui/checkbox";
-import {
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import { type UserAsset } from "../../nexus/NexusProvider";
 
 interface SourceSelectProps {
-  token?: SUPPORTED_TOKENS;
+  token?: string;
   balanceBreakdown?: UserAsset;
   selected?: number[];
   onChange?: (selected: number[]) => void;

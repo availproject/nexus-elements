@@ -9,23 +9,21 @@ import type {
 } from "../types";
 import {
   ERROR_CODES,
-  NEXUS_EVENTS,
-  CHAIN_METADATA,
-  type SwapStepType,
   type ExecuteParams,
   type OnSwapIntentHookData,
   type SwapAndExecuteParams,
   type SwapAndExecuteResult,
-  parseUnits,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
 import {
   SWAP_EXPECTED_STEPS,
   useNexusError,
   usePolling,
   useStopwatch,
   useTransactionSteps,
+  type SwapStepType,
+  CHAIN_METADATA,
 } from "../../common";
-import { type Address, type Hex, formatEther } from "viem";
+import { type Address, type Hex, formatEther, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { useNexus } from "../../nexus/NexusProvider";
 import {
@@ -66,7 +64,7 @@ function parseUsdAmount(value?: string): number {
 function summarizeIntentSources(
   intentSources: OnSwapIntentHookData["intent"]["sources"] | undefined,
 ) {
-  return (intentSources ?? []).map((source) => ({
+  return (intentSources ?? []).map((source: any) => ({
     chainId: source.chain.id,
     chainName: source.chain.name,
     tokenAddress: source.token.contractAddress,
@@ -229,26 +227,25 @@ export function useDepositWidget(
         return;
       }
 
-      const inputsWithSources = {
+      const inputsWithSources: SwapAndExecuteParams = {
         ...inputs,
-        fromSources,
+        sources: fromSources,
       };
       nexusSDK
         .swapAndExecute(inputsWithSources, {
           onEvent: (event) => {
-            if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-              const step = event.args as SwapStepType & {
-                completed?: boolean;
-                data?: SwapSkippedData;
-              };
+            if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+              const list = event.plan.steps.map((step) => ({
+                ...step,
+                type: step.type.toUpperCase(),
+                typeID: step.type.toUpperCase(),
+                completed: false,
+              }));
+              seed(list as any);
 
-              // Handle SWAP_SKIPPED - go directly to transaction-status
-              if (step?.type === "SWAP_SKIPPED") {
+              // If swap is not required, handle as skipped
+              if (event.plan && !event.plan.swapRequired) {
                 dispatch({ type: "setSkipSwap", payload: true });
-                dispatch({
-                  type: "setSwapSkippedData",
-                  payload: step.data ?? null,
-                });
                 dispatch({ type: "setStatus", payload: "executing" });
                 dispatch({
                   type: "setStep",
@@ -256,14 +253,52 @@ export function useDepositWidget(
                 });
                 stopwatch.start();
               }
-
-              if (step?.type === "DETERMINING_SWAP" && step?.completed) {
-                determiningSwapComplete.current = true;
-                stopwatch.start();
-                dispatch({ type: "setIntentReady", payload: true });
-              }
-              onStepComplete(step);
             }
+            if (event.type === "plan_progress") {
+              const completed =
+                event.state === "completed" ||
+                event.state === "confirmed" ||
+                event.state === "submitted";
+              if (completed) {
+                const step = {
+                  ...event.step,
+                  type: event.stepType.toUpperCase(),
+                  typeID: event.stepType.toUpperCase(),
+                  completed: true,
+                };
+                if (event.stepType === "source_swap" && (event as any).txHash) {
+                  dispatch({
+                    type: "addSourceSwap",
+                    payload: {
+                      chainId: (event as any).step.chainId,
+                      chainName:
+                        CHAIN_METADATA[(event as any).step.chainId as keyof typeof CHAIN_METADATA]?.name ??
+                        `Chain ${(event as any).step.chainId}`,
+                      explorerUrl: (event as any).explorerUrl,
+                    },
+                  });
+                }
+                if ((event.stepType as string) === "determining_swap") {
+                  determiningSwapComplete.current = true;
+                  stopwatch.start();
+                  dispatch({ type: "setIntentReady", payload: true });
+                }
+                onStepComplete(step as any);
+              }
+            }
+          },
+          onIntent: (data) => {
+            const swapIntentData = data.intent.swapRequired ? {
+              allow: data.allow,
+              deny: data.deny,
+              intent: data.intent.swap,
+              refresh: async (sources?: any) => {
+                const refreshed = await data.refresh(sources);
+                return refreshed.swapRequired ? refreshed.swap : refreshed as any;
+              }
+            } : null;
+            swapIntent.current = swapIntentData as any;
+            dispatch({ type: "setIntentReady", payload: true });
           },
         })
         .then((data: SwapAndExecuteResult) => {
@@ -310,9 +345,9 @@ export function useDepositWidget(
             CHAIN_METADATA[destination.chainId as keyof typeof CHAIN_METADATA];
           const destBaseUrl = destChainMeta?.blockExplorerUrls?.[0] ?? "";
           const destinationExplorerUrl =
-            data.swapResult?.explorerURL ??
-            (data.executeResponse?.txHash && destBaseUrl
-              ? `${destBaseUrl}/tx/${data.executeResponse.txHash}`
+            data.swapResult?.intentExplorerUrl ??
+            (data.execute?.txHash && destBaseUrl
+              ? `${destBaseUrl}/tx/${data.execute.txHash}`
               : null);
 
           if (destinationExplorerUrl) {
@@ -325,15 +360,15 @@ export function useDepositWidget(
           // Store Nexus intent URL and deposit tx hash
           dispatch({
             type: "setNexusIntentUrl",
-            payload: data.swapResult?.explorerURL ?? null,
+            payload: data.swapResult?.intentExplorerUrl ?? null,
           });
           dispatch({
             type: "setDepositTxHash",
-            payload: data.executeResponse?.txHash ?? null,
+            payload: data.execute?.txHash ?? null,
           });
 
           // Calculate actual gas fee from receipt
-          const receipt = data.executeResponse?.receipt;
+          const receipt = data.execute?.receipt;
           if (receipt?.gasUsed && receipt?.effectiveGasPrice) {
             const gasUsed = BigInt(receipt.gasUsed);
             const effectiveGasPrice = BigInt(receipt.effectiveGasPrice);
@@ -361,10 +396,10 @@ export function useDepositWidget(
         .catch((error) => {
           const { code, message } = handleNexusError(error);
           const isUserRejectedError =
-            code === ERROR_CODES.USER_DENIED_INTENT ||
-            code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE ||
-            code === ERROR_CODES.USER_DENIED_ALLOWANCE ||
-            code === ERROR_CODES.USER_DENIED_SIWE_SIGNATURE;
+            code === ERROR_CODES.USER_INTENT_HOOK_DENIED ||
+            code === ERROR_CODES.USER_INTENT_SIGNATURE_DENIED ||
+            code === ERROR_CODES.USER_ALLOWANCE_APPROVAL_DENIED ||
+            code === ERROR_CODES.USER_SIWE_SIGNATURE_DENIED;
           const shouldSuppressWidgetError =
             suppressNextWidgetPreviewCancelError.current && isUserRejectedError;
 
@@ -476,17 +511,22 @@ export function useDepositWidget(
       const newInputs: SwapAndExecuteParams = {
         toChainId: destination.chainId,
         toTokenAddress: destination.tokenAddress,
-        toAmount: parsed,
+        toAmountRaw: parsed,
         execute: {
           to: executeParams.to,
           value: executeParams.value,
           data: executeParams.data,
           gasPrice: executeParams.gasPrice,
-          tokenApproval: executeParams.tokenApproval as {
-            token: `0x${string}`;
-            amount: bigint;
-            spender: Hex;
-          },
+          tokenApproval: executeParams.tokenApproval
+            ? {
+                toTokenAddress:
+                  (executeParams.tokenApproval as any).token ||
+                  (executeParams.tokenApproval as any).toTokenAddress ||
+                  destination.tokenAddress,
+                amount: executeParams.tokenApproval.amount,
+                spender: executeParams.tokenApproval.spender,
+              }
+            : undefined,
           gas: BigInt(400_000),
         },
       };

@@ -11,7 +11,8 @@ import {
 } from "../ui/accordion";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
-import { formatTokenBalance, type UserAsset } from "@avail-project/nexus-core";
+import { type UserAsset } from "../nexus/NexusProvider";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 const BalanceBreakdown = ({
@@ -56,9 +57,9 @@ const BalanceBreakdown = ({
                 <div className="flex items-center justify-between w-full">
                   <div className="flex sm:flex-row flex-col items-center gap-3">
                     <div className="relative size-6 sm:size-8">
-                      {token.icon && (
+                      {token.logo && (
                         <img
-                          src={token.icon}
+                          src={token.logo}
                           alt={token.symbol}
                           className="rounded-full size-full"
                           loading="lazy"
@@ -84,7 +85,7 @@ const BalanceBreakdown = ({
                         })}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        ${token.balanceInFiat.toFixed(2)}
+                        ${token.balanceInFiat != null ? token.balanceInFiat.toFixed(2) : "0.00"}
                       </p>
                     </div>
                   </div>
@@ -144,14 +145,14 @@ const UnifiedBalance = ({ className }: { className?: string }) => {
     if (!bridgableBalance) return "0.00";
 
     return bridgableBalance
-      .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
+      .reduce((acc, fiat) => acc + (fiat.balanceInFiat ?? 0), 0)
       .toFixed(2);
   }, [bridgableBalance]);
 
   const swapTotalFiat = useMemo(() => {
     if (!swapBalance) return "0.00";
     return swapBalance
-      .reduce((acc, fiat) => acc + fiat.balanceInFiat, 0)
+      .reduce((acc, fiat) => acc + (fiat.balanceInFiat ?? 0), 0)
       .toFixed(2);
   }, [swapBalance]);
 

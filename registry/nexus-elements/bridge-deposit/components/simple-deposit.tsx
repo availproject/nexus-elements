@@ -19,7 +19,6 @@ import { useNexus } from "../../nexus/NexusProvider";
 import useDeposit from "../hooks/useDeposit";
 import { LoaderPinwheel, X } from "lucide-react";
 import { Skeleton } from "../../ui/skeleton";
-import { type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
 interface SimpleDepositProps extends BaseDepositProps {
   destinationLabel?: string;
@@ -159,7 +158,7 @@ const SimpleDeposit = ({
         <>
           <SourceBreakdown
             isLoading
-            tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+            tokenSymbol={filteredBridgableBalance?.symbol as string}
             chain={chain}
           />
           <div className="w-full flex items-start justify-between gap-x-4">
@@ -181,7 +180,7 @@ const SimpleDeposit = ({
         <>
           <SourceBreakdown
             intent={simulation?.bridgeSimulation?.intent}
-            tokenSymbol={filteredBridgableBalance?.symbol as SUPPORTED_TOKENS}
+            tokenSymbol={filteredBridgableBalance?.symbol as string}
             isLoading={refreshing}
             chain={chain}
             bridgableBalance={filteredBridgableBalance}

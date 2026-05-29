@@ -6,7 +6,7 @@ import { ChevronDown, Info, Loader2 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { type NexusOneMode, type DepositOpportunity } from "../types";
 import { type SwapTokenOption } from "./swap-asset-selector";
-import { CHAIN_METADATA, type SwapStepType } from "@avail-project/nexus-core";
+import { CHAIN_METADATA, type SwapStepType } from "../../common";
 import TransactionProgress from "../../swaps/components/transaction-progress";
 
 export interface SwapIntentSource {

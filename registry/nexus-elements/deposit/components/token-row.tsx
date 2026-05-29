@@ -4,7 +4,7 @@ import { ChevronDownIcon } from "./icons";
 import type { Token } from "../types";
 import { Checkbox } from "../../ui/checkbox";
 import { usdFormatter } from "../../common";
-import { formatTokenBalance } from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { TOKEN_IMAGES } from "../constants/assets";
 import {
   CHAIN_ITEM_HEIGHT_PX,

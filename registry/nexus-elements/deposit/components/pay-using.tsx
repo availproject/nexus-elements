@@ -7,7 +7,7 @@ import {
   MIN_SELECTABLE_SOURCE_BALANCE_USD,
 } from "../constants/widget";
 import type { DestinationConfig, AssetFilterType } from "../types";
-import type { UserAsset } from "@avail-project/nexus-core";
+import type { UserAsset } from "../../nexus/NexusProvider";
 import { resolveDepositSourceSelection } from "../utils";
 
 function parseUsdAmount(value?: string): number {

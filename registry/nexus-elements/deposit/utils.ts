@@ -1,11 +1,21 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { STABLECOIN_SYMBOLS } from "./constants/widget";
-import {
-  CHAIN_METADATA,
-  sortSourcesByPriority,
-  UserAsset,
-} from "@avail-project/nexus-core";
+import { type UserAsset } from "../nexus/NexusProvider";
+import { CHAIN_METADATA } from "../common/utils/constant";
+
+function sortSourcesByPriority(
+  swapBalance: UserAsset[],
+  target: { chainID: number; tokenAddress: string; symbol: string },
+) {
+  const list = swapBalance.flatMap((asset) => asset.breakdown ?? []);
+  return list
+    .sort((a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance))
+    .map((cb) => ({
+      chainID: cb.chain.id,
+      tokenAddress: cb.contractAddress,
+    }));
+}
 import { AssetFilterType, DestinationConfig, Token } from "./types";
 import { Hex, padHex } from "viem";
 import { formatUsdForDisplay } from "../common";
@@ -35,7 +45,7 @@ export function isStablecoin(symbol: string): boolean {
 
 export function isNative(symbol: string): boolean {
   return Object.values(CHAIN_METADATA).some(
-    (chain) => chain.nativeCurrency.symbol === symbol,
+    (chain: any) => chain.nativeCurrency?.symbol === symbol,
   );
 }
 
@@ -307,13 +317,13 @@ export function buildDepositSourcePoolIds(params: {
   const sourceIds = new Set<string>();
 
   swapBalance?.forEach((asset) => {
-    asset.breakdown?.forEach((breakdown) => {
-      const chainId = breakdown.chain?.id;
-      const tokenAddress = breakdown.contractAddress;
+    asset.breakdown?.forEach((entry) => {
+      const chainId = entry.chain?.id;
+      const tokenAddress = entry.contractAddress;
       if (!chainId || !tokenAddress) return;
 
-      const stable = isStablecoin(breakdown.symbol);
-      const native = isNative(breakdown.symbol);
+      const stable = isStablecoin(entry.symbol);
+      const native = isNative(entry.symbol);
       const sourceId = `${tokenAddress}-${chainId}`;
       const include =
         filter === "all" ||

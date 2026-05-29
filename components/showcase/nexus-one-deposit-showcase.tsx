@@ -2,7 +2,7 @@
 import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
-import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
+import { SUPPORTED_CHAINS } from "@/registry/nexus-elements/common/utils/constant";
 import { encodeFunctionData } from "viem";
 import { useAccount } from "wagmi";
 

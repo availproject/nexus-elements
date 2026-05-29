@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import SimpleDeposit from "./simple-deposit";
 import { useNexus } from "../../nexus/NexusProvider";
 import { type BaseDepositProps } from "../deposit";
-import { truncateAddress } from "@avail-project/nexus-core";
+import { truncateAddress } from "@avail-project/nexus-sdk-v2/utils";
 
 interface ContainerProps extends BaseDepositProps {
   fiatSubheading?: string;

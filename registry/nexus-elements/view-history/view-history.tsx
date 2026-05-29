@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from "@/registry/nexus-elements/ui/dialog";
 import { Clock, LoaderPinwheel, SquareArrowOutUpRight } from "lucide-react";
-import { TOKEN_METADATA, type RFF } from "@avail-project/nexus-core";
+import { TOKEN_METADATA } from "../common";
+import { type IntentRecord } from "@avail-project/nexus-sdk-v2";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/registry/nexus-elements/ui/badge";
 import { Button } from "@/registry/nexus-elements/ui/button";
@@ -34,8 +35,8 @@ function resolveTokenMetadata(symbol?: string) {
   const upperMetadata = TOKEN_METADATA[upper as keyof typeof TOKEN_METADATA];
 
   const icon =
-    normalizedMetadata?.icon ||
-    upperMetadata?.icon ||
+    normalizedMetadata?.logo ||
+    upperMetadata?.logo ||
     TOKEN_ICON_FALLBACKS[normalized] ||
     TOKEN_ICON_FALLBACKS[upper] ||
     "";
@@ -44,7 +45,7 @@ function resolveTokenMetadata(symbol?: string) {
   return { icon, name };
 }
 
-const SourceChains = ({ sources }: { sources: RFF["sources"] }) => {
+const SourceChains = ({ sources }: { sources: IntentRecord["sources"] }) => {
   const sourceList = sources ?? [];
   return (
     <div className="flex items-center">
@@ -95,7 +96,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 const DestinationToken = ({
   destination,
 }: {
-  destination: RFF["destinations"];
+  destination: IntentRecord["destinations"];
 }) => {
   return (
     <div className="flex items-center">
@@ -156,7 +157,7 @@ const ViewHistory = ({
         <>
           {displayedHistory?.map((pastIntent) => (
             <Card
-              key={pastIntent.id}
+              key={pastIntent.requestHash}
               className="p-4 hover:shadow-md transition-shadow duration-200 border-border/50 gap-3"
             >
               <div className="flex items-start justify-between gap-4">
@@ -169,7 +170,7 @@ const ViewHistory = ({
                         .join(", ")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Intent #{pastIntent?.id}
+                      Intent #{pastIntent?.requestHash ? `${pastIntent.requestHash.slice(0, 10)}...` : ""}
                     </p>
                   </div>
                 </div>

@@ -1,10 +1,9 @@
 import type {
-  SUPPORTED_CHAINS_IDS,
   ExecuteParams,
   OnSwapIntentHookData,
-  SwapStepType,
-  UserAsset,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
+import type { UserAsset } from "../nexus/NexusProvider";
+import type { SwapStepType } from "../common/types/transaction-flow";
 import type { Address } from "viem";
 
 export type WidgetStep =
@@ -69,7 +68,7 @@ export interface SetAssetSelectionOptions {
 }
 
 export interface DestinationConfig {
-  chainId: SUPPORTED_CHAINS_IDS;
+  chainId: number;
   depositTargetLogo?: string;
   tokenAddress: `0x${string}`;
   tokenSymbol: string;

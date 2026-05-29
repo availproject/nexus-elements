@@ -2,7 +2,7 @@ import { type FC, useMemo } from "react";
 import {
   type BridgeStepType,
   type SwapStepType,
-} from "@avail-project/nexus-core";
+} from "../../common";
 import { StepFlow } from "./step-flow";
 
 export type DisplayStep = { id: string; label: string; completed: boolean; failed?: boolean; explorerUrl?: string | null };

@@ -11,11 +11,11 @@ import { createPortal } from "react-dom";
 import Decimal from "decimal.js";
 import { Search, X, Loader2, ChevronDown, ChevronUp, Info, Check, Minus, Globe } from "lucide-react";
 import {
-  type SupportedChainsResult,
-  type UserAsset,
-  CHAIN_METADATA,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+  type SupportedChainsAndTokensResult,
+} from "@avail-project/nexus-sdk-v2";
+import { type UserAsset } from "../../nexus/NexusProvider";
+import { CHAIN_METADATA } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 
 const tabularNums: React.CSSProperties = {
   fontFeatureSettings: '"tnum"',
@@ -44,7 +44,7 @@ export interface SwapTokenOption {
 interface SwapAssetSelectorProps {
   title: string;
   swapBalance: UserAsset[] | null;
-  swapSupportedChains?: SupportedChainsResult | null;
+  swapSupportedChains?: SupportedChainsAndTokensResult | null;
   staticOptions?: SwapTokenOption[];
   onSelect: (token: SwapTokenOption) => void;
   onBack: () => void;
@@ -74,7 +74,7 @@ export function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] 
         contractAddress: bd.contractAddress,
         symbol: bd.symbol ?? asset.symbol,
         name: bd.symbol ?? asset.symbol,
-        logo: asset.icon ?? "",
+        logo: asset.logo ?? "",
         decimals: bd.decimals ?? asset.decimals ?? 18,
         balance:
           formatTokenBalance(bd.balance, {

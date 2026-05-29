@@ -1,15 +1,28 @@
 import {
-  type NexusSDK,
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-} from "@avail-project/nexus-core";
+  type NexusClient,
+  type BridgeEvent,
+} from "@avail-project/nexus-sdk-v2";
 import { type Address } from "viem";
 
 export type TransactionFlowType = "bridge" | "transfer";
 
+export type BridgeStepType = {
+  type: string;
+  typeID: string;
+  completed?: boolean;
+  [key: string]: any;
+};
+
+export type SwapStepType = {
+  type: string;
+  typeID: string;
+  completed?: boolean;
+  [key: string]: any;
+};
+
 export interface TransactionFlowInputs {
-  chain: SUPPORTED_CHAINS_IDS;
-  token: SUPPORTED_TOKENS;
+  chain: number;
+  token: string;
   amount?: string;
   recipient?: `0x${string}`;
 }
@@ -21,19 +34,14 @@ export interface TransactionFlowPrefill {
   recipient?: Address;
 }
 
-type BridgeOptions = NonNullable<Parameters<NexusSDK["bridge"]>[1]>;
+export type TransactionFlowEvent = BridgeEvent;
 
-export type TransactionFlowEvent =
-  NonNullable<BridgeOptions["onEvent"]> extends (event: infer E) => void
-    ? E
-    : never;
-
-export type TransactionFlowOnEvent = NonNullable<BridgeOptions["onEvent"]>;
+export type TransactionFlowOnEvent = (event: BridgeEvent) => void;
 
 export interface TransactionFlowExecuteParams {
-  token: SUPPORTED_TOKENS;
+  token: string;
   amount: bigint;
-  toChainId: SUPPORTED_CHAINS_IDS;
+  toChainId: number;
   recipient: `0x${string}`;
   sourceChains?: number[];
   onEvent: TransactionFlowOnEvent;

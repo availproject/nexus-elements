@@ -3,10 +3,9 @@ import { Label } from "../../ui/label";
 import { cn } from "@/lib/utils";
 import {
   CHAIN_METADATA,
-  type OnSwapIntentHookData,
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+} from "../../common";
+import { type UserAsset } from "../../nexus/NexusProvider";
+import { type OnSwapIntentHookData } from "@avail-project/nexus-sdk-v2";
 import {
   type SwapInputs,
   type SwapMode,
@@ -123,7 +122,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                     breakdownIcon ||
                     TOKEN_IMAGES[breakdown.symbol] ||
                     TOKEN_IMAGES[normalizedSymbol] ||
-                    token.icon ||
+                    token.logo ||
                     "";
                   setInputs({
                     ...inputs,
@@ -134,7 +133,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                       name: breakdown.symbol,
                       symbol: breakdown.symbol,
                     },
-                    toChainID: breakdown.chain.id as SUPPORTED_CHAINS_IDS,
+                    toChainID: breakdown.chain.id,
                   });
                 }}
                 className="bg-transparent rounded-full hover:-translate-y-1 hover:object-scale-down"
@@ -145,7 +144,7 @@ const DestinationContainer: React.FC<DestinationContainerProps> = ({
                     (breakdown as AssetBreakdownWithOptionalIcon).icon ||
                     TOKEN_IMAGES[breakdown.symbol] ||
                     TOKEN_IMAGES[breakdown.symbol.toUpperCase()] ||
-                    token.icon ||
+                    token.logo ||
                     ""
                   }
                   chainLogo={breakdown.chain.logo}

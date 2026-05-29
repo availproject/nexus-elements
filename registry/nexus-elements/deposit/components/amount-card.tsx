@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState, useMemo } from "react";
-import type { MaxSwapInput } from "@avail-project/nexus-core";
+import type { SwapMaxParams } from "@avail-project/nexus-sdk-v2";
 import { TokenIcon } from "./token-icon";
 import { ErrorBanner } from "./error-banner";
 import { PercentageSelector } from "./percentage-selector";
@@ -26,7 +26,7 @@ interface AmountCardProps {
   amount?: string;
   onAmountChange?: (amount: string) => void;
   selectedTokenAmount?: number;
-  maxSwapInput?: MaxSwapInput;
+  maxSwapInput?: SwapMaxParams;
   onErrorStateChange?: (hasError: boolean) => void;
   totalSelectedBalance: number;
   totalBalance: {

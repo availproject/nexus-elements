@@ -8,19 +8,17 @@ import {
   useState,
 } from "react";
 import {
-  NexusSDK,
-  type SUPPORTED_CHAINS_IDS,
-  type ExactInSwapInput,
-  type ExactOutSwapInput,
-  NEXUS_EVENTS,
-  type SwapStepType,
+  type NexusClient,
+  type SwapExactInParams,
+  type SwapExactOutParams,
   type OnSwapIntentHookData,
   type Source as SwapSource,
-  type UserAsset,
-  sortSourcesByPriority,
-  parseUnits,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+  type TokenBalance,
+  type ChainBalance,
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { parseUnits } from "viem";
+import { type SwapStepType } from "../../common/types/transaction-flow";
 import { padHex, type Hex } from "viem";
 import {
   useTransactionSteps,
@@ -52,6 +50,16 @@ function toComparableSdkAddress(address: string): string {
   } catch {
     return effectiveAddress;
   }
+}
+
+import { type UserAsset } from "../../nexus/NexusProvider";
+
+function sortSourcesByPriority(swapBalance: UserAsset[], target: { chainID: number; tokenAddress: string; symbol: string }) {
+  const list = swapBalance.flatMap(asset => asset.breakdown ?? []);
+  return list.sort((a, b) => Number.parseFloat(b.balance) - Number.parseFloat(a.balance)).map(cb => ({
+    chainID: cb.chain.id,
+    tokenAddress: cb.contractAddress,
+  }));
 }
 
 type AssetBreakdownWithOptionalIcon = UserAsset["breakdown"][number] & {
@@ -109,10 +117,10 @@ export type TransactionStatus =
 export type SwapMode = "exactIn" | "exactOut";
 
 export interface SwapInputs {
-  fromChainID?: SUPPORTED_CHAINS_IDS;
+  fromChainID?: number;
   fromToken?: SourceTokenInfo;
   fromAmount?: string;
-  toChainID?: SUPPORTED_CHAINS_IDS;
+  toChainID?: number;
   toToken?: DestinationTokenInfo;
   toAmount?: string;
 }
@@ -187,9 +195,9 @@ function reducer(state: SwapState, action: Action): SwapState {
 }
 
 interface UseSwapsProps {
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   swapIntent: RefObject<OnSwapIntentHookData | null>;
-  swapBalance: UserAsset[] | null;
+  swapBalance: TokenBalance[] | null;
   fetchBalance: () => Promise<void>;
   onComplete?: (amount?: string) => void;
   onStart?: () => void;
@@ -199,13 +207,32 @@ interface UseSwapsProps {
 const useSwaps = ({
   nexusSDK,
   swapIntent,
-  swapBalance,
+  swapBalance: rawSwapBalance,
   fetchBalance,
   onComplete,
   onStart,
   onError,
 }: UseSwapsProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const swapBalance = useMemo<UserAsset[] | null>(() => {
+    if (!rawSwapBalance) return null;
+    return rawSwapBalance.map((asset) => {
+      const breakdown = asset.chainBalances?.map((cb: any) => ({
+        ...cb,
+        balance: cb.balance,
+        balanceInFiat: Number.parseFloat(cb.value),
+        chain: cb.chain,
+        contractAddress: cb.contractAddress,
+        decimals: cb.decimals,
+        symbol: cb.symbol,
+      })) ?? (asset as any).breakdown ?? [];
+      return {
+        ...asset,
+        breakdown,
+      };
+    });
+  }, [rawSwapBalance]);
   const {
     steps,
     seed,
@@ -534,26 +561,6 @@ const useSwaps = ({
 
   const handleNexusError = useNexusError();
 
-  // Event handler shared between exact-in and exact-out
-  const handleSwapEvent = (event: { name: string; args: SwapStepType }) => {
-    if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
-      const step = event.args;
-      if (step?.type === "SOURCE_SWAP_HASH" && step.explorerURL) {
-        dispatch({
-          type: "setExplorerUrls",
-          payload: { sourceExplorerUrl: step.explorerURL },
-        });
-      }
-      if (step?.type === "DESTINATION_SWAP_HASH" && step.explorerURL) {
-        dispatch({
-          type: "setExplorerUrls",
-          payload: { destinationExplorerUrl: step.explorerURL },
-        });
-      }
-      onStepComplete(step);
-    }
-  };
-
   const handleExactInSwap = async (runId: number) => {
     const fromToken = state.inputs.fromToken;
     const toToken = state.inputs.toToken;
@@ -590,11 +597,11 @@ const useSwaps = ({
     }
 
     const amountBigInt = parseUnits(fromAmount, fromToken.decimals);
-    const swapInput: ExactInSwapInput = {
-      from: [
+    const swapInput: SwapExactInParams = {
+      sources: [
         {
           chainId: fromChainID,
-          amount: amountBigInt,
+          amountRaw: amountBigInt,
           tokenAddress: fromToken.contractAddress,
         },
       ],
@@ -602,16 +609,56 @@ const useSwaps = ({
       toTokenAddress: toToken.tokenAddress,
     };
 
-    const result = await nexusSDK.swapWithExactIn(swapInput, {
+    await nexusSDK.swapWithExactIn(swapInput, {
       onEvent: (event) => {
         if (swapRunIdRef.current !== runId) return;
-        handleSwapEvent(event as { name: string; args: SwapStepType });
+        if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+          const list = event.plan.steps.map((step) => {
+            const { type, ...rest } = step;
+            return {
+              type: type.toUpperCase(),
+              typeID: type.toUpperCase(),
+              completed: false,
+              ...rest,
+            };
+          });
+          seed(list as any);
+        }
+        if (event.type === "plan_progress") {
+          const completed =
+            event.state === "completed" ||
+            event.state === "confirmed" ||
+            event.state === "submitted";
+          if (completed) {
+            const { type, ...restStep } = event.step;
+            const step = {
+              type: event.stepType.toUpperCase(),
+              typeID: event.stepType.toUpperCase(),
+              completed: true,
+              ...restStep,
+            };
+            if (event.stepType === "source_swap" && (event as any).txHash) {
+              dispatch({
+                type: "setExplorerUrls",
+                payload: { sourceExplorerUrl: (event as any).explorerUrl },
+              });
+            }
+            if (event.stepType === "destination_swap" && (event as any).txHash) {
+              dispatch({
+                type: "setExplorerUrls",
+                payload: { destinationExplorerUrl: (event as any).explorerUrl },
+              });
+            }
+            onStepComplete(step as any);
+          }
+        }
+      },
+      hooks: {
+        onIntent: (data) => {
+          swapIntent.current = data;
+        },
       },
     });
-
-    if (!result?.success) {
-      throw new Error(result?.error || "Swap failed");
-    }
   };
 
   const handleExactOutSwap = async (runId: number) => {
@@ -637,22 +684,63 @@ const useSwaps = ({
     }
 
     const amountBigInt = parseUnits(toAmount, toToken.decimals);
-    const swapInput: ExactOutSwapInput = {
-      toAmount: amountBigInt,
+    const swapInput: SwapExactOutParams = {
+      toAmountRaw: amountBigInt,
       toChainId: toChainID,
       toTokenAddress: toToken.tokenAddress,
-      ...(exactOutFromSources ? { fromSources: exactOutFromSources } : {}),
+      sources: exactOutFromSources,
     };
 
-    const result = await nexusSDK.swapWithExactOut(swapInput, {
+    await nexusSDK.swapWithExactOut(swapInput, {
       onEvent: (event) => {
         if (swapRunIdRef.current !== runId) return;
-        handleSwapEvent(event as { name: string; args: SwapStepType });
+        if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+          const list = event.plan.steps.map((step) => {
+            const { type, ...rest } = step;
+            return {
+              type: type.toUpperCase(),
+              typeID: type.toUpperCase(),
+              completed: false,
+              ...rest,
+            };
+          });
+          seed(list as any);
+        }
+        if (event.type === "plan_progress") {
+          const completed =
+            event.state === "completed" ||
+            event.state === "confirmed" ||
+            event.state === "submitted";
+          if (completed) {
+            const { type, ...restStep } = event.step;
+            const step = {
+              type: event.stepType.toUpperCase(),
+              typeID: event.stepType.toUpperCase(),
+              completed: true,
+              ...restStep,
+            };
+            if (event.stepType === "source_swap" && (event as any).txHash) {
+              dispatch({
+                type: "setExplorerUrls",
+                payload: { sourceExplorerUrl: (event as any).explorerUrl },
+              });
+            }
+            if (event.stepType === "destination_swap" && (event as any).txHash) {
+              dispatch({
+                type: "setExplorerUrls",
+                payload: { destinationExplorerUrl: (event as any).explorerUrl },
+              });
+            }
+            onStepComplete(step as any);
+          }
+        }
+      },
+      hooks: {
+        onIntent: (data) => {
+          swapIntent.current = data;
+        },
       },
     });
-    if (!result?.success) {
-      throw new Error(result?.error || "Swap failed");
-    }
   };
 
   const runSwap = async (runId: number) => {

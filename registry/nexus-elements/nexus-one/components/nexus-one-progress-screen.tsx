@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Decimal from "decimal.js";
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
-import { type BridgeStepType, type SwapStepType } from "@avail-project/nexus-core";
+import { type BridgeStepType, type SwapStepType } from "../../common";
 import { type NexusOneMode, type DepositOpportunity } from "../types";
 import { type SwapTokenOption } from "./swap-asset-selector";
 import { type SwapIntentData } from "./swap-intent-preview";

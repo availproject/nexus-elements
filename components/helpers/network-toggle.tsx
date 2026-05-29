@@ -1,5 +1,5 @@
 "use client";
-import { NexusNetwork } from "@avail-project/nexus-core";
+import { type NexusNetwork } from "@avail-project/nexus-sdk-v2";
 import React, { useState, useEffect } from "react";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import {

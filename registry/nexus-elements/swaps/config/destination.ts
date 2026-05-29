@@ -1,4 +1,4 @@
-import { SUPPORTED_CHAINS } from "@avail-project/nexus-core";
+import { SUPPORTED_CHAINS } from "../../common";
 
 export const DESTINATION_SWAP_TOKENS = new Map<
   number,

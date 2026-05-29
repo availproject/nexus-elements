@@ -1,12 +1,10 @@
 import {
   type NexusNetwork,
-  NexusSDK,
+  type NexusClient,
   type OnAllowanceHookData,
   type OnIntentHookData,
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+  type TokenBalance,
+} from "@avail-project/nexus-sdk-v2";
 import { useCallback, type RefObject } from "react";
 import { type Address } from "viem";
 import {
@@ -21,13 +19,13 @@ export type FastTransferState = TransactionFlowInputs;
 
 interface UseTransferProps {
   network: NexusNetwork;
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAsset[] | null;
+  bridgableBalance: TokenBalance[] | null;
   prefill?: {
-    token: SUPPORTED_TOKENS;
-    chainId: SUPPORTED_CHAINS_IDS;
+    token: string;
+    chainId: number;
     amount?: string;
     recipient?: Address;
   };
@@ -63,18 +61,34 @@ const useTransfer = ({
       onEvent,
     }: TransactionFlowExecuteParams) => {
       if (!nexusSDK) return null;
-      return nexusSDK.bridgeAndTransfer(
+      const result = await nexusSDK.bridgeAndTransfer(
         {
-          token,
-          amount,
+          toTokenSymbol: token,
+          toAmountRaw: amount,
           toChainId,
           recipient,
-          sourceChains,
+          sources: sourceChains,
         },
-        { onEvent },
+        {
+          onEvent,
+          hooks: {
+            onIntent: (data) => {
+              intent.current = data;
+            },
+            onAllowance: (data) => {
+              allowance.current = data;
+            },
+          },
+        },
       );
+      return {
+        ...result,
+        explorerUrl: result.bridgeSkipped
+          ? result.execute.txExplorerUrl
+          : (result.bridgeResult?.intentExplorerUrl ?? result.execute.txExplorerUrl),
+      };
     },
-    [nexusSDK],
+    [nexusSDK, intent, allowance],
   );
 
   const flow = useTransactionFlow({

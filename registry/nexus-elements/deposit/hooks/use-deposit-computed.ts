@@ -4,10 +4,11 @@ import { useMemo } from "react";
 import type { DestinationConfig, AssetSelectionState } from "../types";
 import type {
   OnSwapIntentHookData,
-  NexusSDK,
-  UserAsset,
-} from "@avail-project/nexus-core";
-import { CHAIN_METADATA, formatTokenBalance } from "@avail-project/nexus-core";
+  NexusClient as NexusSDK,
+} from "@avail-project/nexus-sdk-v2";
+import type { UserAsset } from "../../nexus/NexusProvider";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { CHAIN_METADATA } from "../../common/utils/constant";
 import { usdFormatter } from "../../common";
 import type { SwapSkippedData } from "./use-deposit-state";
 
@@ -183,7 +184,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
         0,
       ) ?? 0;
     const usdBalance =
-      swapBalance?.reduce((acc, balance) => acc + balance.balanceInFiat, 0) ??
+      swapBalance?.reduce((acc, balance) => acc + (balance.balanceInFiat ?? 0), 0) ??
       0;
     return { balance, usdBalance };
   }, [swapBalance]);
@@ -321,7 +322,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
 
     // Calculate total spent from cross-chain sources
     const totalAmountSpentUsd = activeIntent.intent.sources?.reduce(
-      (acc, source) => acc + parseNonNegativeNumber(source.value),
+      (acc: number, source: any) => acc + parseNonNegativeNumber(source.value),
       0,
     );
 
@@ -484,7 +485,7 @@ export function useDepositComputed(props: UseDepositComputedProps) {
     const gasFormatted = usdFormatter.format(gasUsd);
 
     const sourceValueUsd = (activeIntent?.intent?.sources ?? []).reduce(
-      (sum, source) => sum + parseNonNegativeNumber(source.value),
+      (sum: number, source: any) => sum + parseNonNegativeNumber(source.value),
       0,
     );
 

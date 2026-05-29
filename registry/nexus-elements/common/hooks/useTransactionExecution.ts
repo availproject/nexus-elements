@@ -1,10 +1,8 @@
 import {
-  type BridgeStepType,
-  NEXUS_EVENTS,
-  type NexusSDK,
+  type NexusClient,
   type OnAllowanceHookData,
   type OnIntentHookData,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
 import {
   type Dispatch,
   type RefObject,
@@ -18,6 +16,7 @@ import {
   type TransactionFlowEvent,
   type TransactionFlowExecutor,
   type TransactionFlowInputs,
+  type BridgeStepType,
 } from "../types/transaction-flow";
 
 interface NexusErrorInfo {
@@ -31,7 +30,7 @@ type NexusErrorHandler = (error: unknown) => NexusErrorInfo;
 
 interface UseTransactionExecutionProps {
   operationName: "bridge" | "transfer";
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   inputs: TransactionFlowInputs;
@@ -251,20 +250,33 @@ export function useTransactionExecution({
 
       const onEvent = (event: TransactionFlowEvent) => {
         if (currentRunId !== runIdRef.current) return;
-        if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-          const list = Array.isArray(event.args) ? event.args : [];
-          onStepsList(list as BridgeStepType[]);
+        if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+          const steps = event.plan.steps.map((step) => ({
+            ...step,
+            type: step.type.toUpperCase(),
+            typeID: step.type.toUpperCase(),
+            completed: false,
+          }));
+          onStepsList(steps);
         }
-        if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+        if (event.type === "plan_progress") {
           if (
-            !Array.isArray(event.args) &&
-            "type" in event.args &&
-            event.args.type === "INTENT_HASH_SIGNED"
+            event.stepType === "request_signing" &&
+            event.state === "completed"
           ) {
             stopwatch.start();
           }
-          if (!Array.isArray(event.args)) {
-            onStepComplete(event.args as BridgeStepType);
+          const completed =
+            event.state === "completed" ||
+            event.state === "confirmed" ||
+            event.state === "submitted";
+          if (completed) {
+            onStepComplete({
+              ...event.step,
+              type: event.stepType.toUpperCase(),
+              typeID: event.stepType.toUpperCase(),
+              completed: true,
+            });
           }
         }
       };

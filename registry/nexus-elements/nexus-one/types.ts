@@ -1,5 +1,4 @@
 import { type Address } from "viem";
-import { type SUPPORTED_CHAINS_IDS, type SUPPORTED_TOKENS } from "@avail-project/nexus-core";
 
 export type NexusOneMode = "swap" | "send" | "deposit";
 

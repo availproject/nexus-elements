@@ -1,9 +1,8 @@
 import {
-  formatTokenBalance,
-  type ReadableIntent,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+  type BridgeIntent,
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { type UserAsset } from "../../nexus/NexusProvider";
 import {
   Accordion,
   AccordionContent,
@@ -18,8 +17,8 @@ import { cn } from "@/lib/utils";
 type SourceCoverageState = "healthy" | "warning" | "error";
 
 interface SourceBreakdownProps {
-  intent?: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  intent?: BridgeIntent;
+  tokenSymbol: string;
   isLoading?: boolean;
   requiredAmount?: string;
   availableSources: UserAsset["breakdown"];
@@ -110,9 +109,9 @@ const SourceBreakdown = ({
   };
 
   const spendOnSources = useMemo(() => {
-    if (!intent || (intent?.sources?.length ?? 0) < 2)
+    if (!intent || (intent?.selectedSources?.length ?? 0) < 2)
       return `1 asset on 1 chain`;
-    return `${intent?.sources?.length} Assets on ${intent?.sources?.length} chains`;
+    return `${intent?.selectedSources?.length} Assets on ${intent?.selectedSources?.length} chains`;
   }, [intent]);
 
   const amountSpend = useMemo(() => {
@@ -156,7 +155,7 @@ const SourceBreakdown = ({
                   <p className="text-base font-light">
                     {formatTokenBalance(amountSpend, {
                       symbol: displayTokenSymbol,
-                      decimals: intent?.token?.decimals,
+                    decimals: intent?.destination?.token?.decimals,
                     })}
                   </p>
 
@@ -279,8 +278,8 @@ const SourceBreakdown = ({
                     ? selectedSourceChains.length === 1
                     : false;
 
-                  const willUseFromIntent = intent?.sources?.find(
-                    (s) => s.chainID === chainId,
+                  const willUseFromIntent = intent?.selectedSources?.find(
+                    (s) => s.chain.id === chainId,
                   )?.amount;
 
                   return (
@@ -341,7 +340,7 @@ const SourceBreakdown = ({
                             Estimated to use:{" "}
                             {formatTokenBalance(willUseFromIntent, {
                               symbol: source.symbol,
-                              decimals: intent?.token?.decimals,
+                              decimals: intent?.destination?.token?.decimals,
                             })}
                           </p>
                         )}

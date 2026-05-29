@@ -7,7 +7,7 @@ import type {
   DepositInputs,
   NavigationDirection,
 } from "../types";
-import type { OnSwapIntentHookData } from "@avail-project/nexus-core";
+import type { OnSwapIntentHookData } from "@avail-project/nexus-sdk-v2";
 
 /**
  * Source swap info collected during transaction execution

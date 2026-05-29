@@ -1,8 +1,4 @@
 import {
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-} from "@avail-project/nexus-core";
-import {
   Select,
   SelectContent,
   SelectGroup,
@@ -15,9 +11,9 @@ import { useNexus } from "../../nexus/NexusProvider";
 import { useMemo } from "react";
 
 interface TokenSelectProps {
-  selectedToken?: SUPPORTED_TOKENS;
-  selectedChain: SUPPORTED_CHAINS_IDS;
-  handleTokenSelect: (token: SUPPORTED_TOKENS) => void;
+  selectedToken?: string;
+  selectedChain: number;
+  handleTokenSelect: (token: string) => void;
   isTestnet?: boolean;
   disabled?: boolean;
   label?: string;
@@ -46,7 +42,7 @@ const TokenSelect = ({
     <Select
       value={selectedToken}
       onValueChange={(value) =>
-        !disabled && handleTokenSelect(value as SUPPORTED_TOKENS)
+        !disabled && handleTokenSelect(value)
       }
     >
       <div className="flex flex-col items-start gap-y-1">

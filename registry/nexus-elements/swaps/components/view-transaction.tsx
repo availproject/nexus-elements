@@ -7,9 +7,11 @@ import {
 } from "../../ui/dialog";
 import {
   type SwapStepType,
+} from "../../common";
+import {
   type OnSwapIntentHookData,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { ChevronDown, ChevronUp, Info, MoveDown, XIcon } from "lucide-react";
 import { TokenIcon } from "./token-icon";
 import { StackedTokenIcons } from "./stacked-token-icons";

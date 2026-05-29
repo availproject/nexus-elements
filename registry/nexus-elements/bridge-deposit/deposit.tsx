@@ -1,8 +1,4 @@
-import {
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-  type ExecuteParams,
-} from "@avail-project/nexus-core";
+import { type ExecuteParams } from "@avail-project/nexus-sdk-v2";
 import DepositModal from "./components/deposit-modal";
 import { type Address } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -11,17 +7,17 @@ import SimpleDeposit from "./components/simple-deposit";
 
 export interface BaseDepositProps {
   address: Address;
-  token?: SUPPORTED_TOKENS;
-  chain: SUPPORTED_CHAINS_IDS;
+  token?: string;
+  chain: number;
   chainOptions?: {
     id: number;
     name: string;
     logo: string;
   }[];
   depositExecute: (
-    token: SUPPORTED_TOKENS,
+    token: string,
     amount: string,
-    chainId: SUPPORTED_CHAINS_IDS,
+    chainId: number,
     userAddress: `0x${string}`
   ) => Omit<ExecuteParams, "toChainId">;
 }

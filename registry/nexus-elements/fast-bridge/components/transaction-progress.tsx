@@ -3,7 +3,7 @@ import { type FC, memo, useMemo } from "react";
 import {
   type BridgeStepType,
   type SwapStepType,
-} from "@avail-project/nexus-core";
+} from "../../common";
 import { Button } from "../../ui/button";
 
 type ProgressStep = BridgeStepType | SwapStepType;

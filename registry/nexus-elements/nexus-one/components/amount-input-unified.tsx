@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { type UserAssetDatum } from "@avail-project/nexus-core";
+import { type UserAssetDatum } from "../../nexus/NexusProvider";
 import Decimal from "decimal.js";
 import {
   formatTokenAmountDisplay,

@@ -1,12 +1,10 @@
 import {
   type NexusNetwork,
-  NexusSDK,
+  type NexusClient,
   type OnAllowanceHookData,
   type OnIntentHookData,
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+} from "@avail-project/nexus-sdk-v2";
+import { type UserAsset } from "../../nexus/NexusProvider";
 import { useCallback, type RefObject } from "react";
 import { type Address } from "viem";
 import {
@@ -22,13 +20,13 @@ export type FastBridgeState = TransactionFlowInputs;
 interface UseBridgeProps {
   network: NexusNetwork;
   connectedAddress: Address;
-  nexusSDK: NexusSDK | null;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
   bridgableBalance: UserAsset[] | null;
   prefill?: {
-    token: SUPPORTED_TOKENS;
-    chainId: SUPPORTED_CHAINS_IDS;
+    token: string;
+    chainId: number;
     amount?: string;
     recipient?: Address;
   };
@@ -65,16 +63,17 @@ const useBridge = ({
       onEvent,
     }: TransactionFlowExecuteParams) => {
       if (!nexusSDK) return null;
-      return nexusSDK.bridge(
+      const res = await nexusSDK.bridge(
         {
-          token,
-          amount,
+          toTokenSymbol: token,
+          toAmountRaw: amount,
           toChainId,
           recipient: recipient ?? connectedAddress,
-          sourceChains,
+          sources: sourceChains,
         },
         { onEvent },
       );
+      return res ? { explorerUrl: res.intentExplorerUrl } : null;
     },
     [connectedAddress, nexusSDK],
   );

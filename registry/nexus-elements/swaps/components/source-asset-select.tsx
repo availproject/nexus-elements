@@ -3,11 +3,10 @@ import { type FC, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import { useNexus } from "../../nexus/NexusProvider";
 import {
-  type UserAsset,
-  type SUPPORTED_CHAINS_IDS,
   CHAIN_METADATA,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+} from "../../common";
+import { type UserAsset } from "../../nexus/NexusProvider";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
 import { TOKEN_IMAGES } from "../config/destination";
 import { Link2, Loader2, Search, X } from "lucide-react";
 import { DialogClose } from "../../ui/dialog";
@@ -23,7 +22,7 @@ import { SHORT_CHAIN_NAME } from "../../common";
 import { type SourceTokenInfo } from "../hooks/useSwaps";
 
 interface SourceAssetSelectProps {
-  onSelect: (chainId: SUPPORTED_CHAINS_IDS, token: SourceTokenInfo) => void;
+  onSelect: (chainId: number, token: SourceTokenInfo) => void;
   swapBalance: UserAsset[] | null;
 }
 
@@ -59,7 +58,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
           breakdownIcon ||
           TOKEN_IMAGES[tokenSymbol] ||
           TOKEN_IMAGES[normalizedTokenSymbol] ||
-          asset.icon ||
+          asset.logo ||
           "";
 
         tokens.push({
@@ -122,7 +121,7 @@ const SourceAssetSelect: FC<SourceAssetSelectProps> = ({
   const handlePick = (tok: SourceTokenInfo) => {
     const chainId = tempChain?.id ?? tok.chainId;
     if (!chainId) return;
-    onSelect(chainId as SUPPORTED_CHAINS_IDS, tok);
+    onSelect(chainId, tok);
   };
 
   if (!swapBalance)

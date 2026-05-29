@@ -1,11 +1,7 @@
-import {
-  CHAIN_METADATA,
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
-  type ReadableIntent,
-  type SUPPORTED_TOKENS,
-  formatTokenBalance,
-} from "@avail-project/nexus-core";
+import { CHAIN_METADATA } from "../../common";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { type BridgeIntent } from "@avail-project/nexus-sdk-v2";
+import { type UserAsset } from "../../nexus/NexusProvider";
 import {
   Accordion,
   AccordionContent,
@@ -17,10 +13,10 @@ import { useMemo } from "react";
 import { useNexus } from "../../nexus/NexusProvider";
 
 interface SourceBreakdownProps {
-  intent?: ReadableIntent;
-  tokenSymbol: SUPPORTED_TOKENS;
+  intent?: BridgeIntent;
+  tokenSymbol: string;
   isLoading?: boolean;
-  chain: SUPPORTED_CHAINS_IDS;
+  chain: number;
   bridgableBalance?: UserAsset;
   requiredAmount?: string;
 }
@@ -56,7 +52,7 @@ const SourceBreakdown = ({
       : (requiredAmount ?? "0");
     return formatTokenBalance(amountToFormat, {
       symbol: tokenSymbol,
-      decimals: intent?.token?.decimals,
+      decimals: intent?.destination?.token?.decimals,
     });
   }, [requiredAmount, intent, tokenSymbol]);
 
@@ -71,7 +67,13 @@ const SourceBreakdown = ({
           contractAddress: "",
         },
       ];
-    const baseSources: ReadableIntentSource[] = intent?.sources ?? [];
+    const baseSources: ReadableIntentSource[] = (intent?.selectedSources ?? []).map((s) => ({
+      chainID: s.chain.id,
+      chainLogo: s.chain.logo,
+      chainName: s.chain.name,
+      amount: s.amount,
+      contractAddress: s.token.contractAddress,
+    }));
     const requiredAmountNumber = Number(requiredAmount ?? "0");
     const destUsed = Math.max(
       Math.min(requiredAmountNumber, fundsOnDestination),
@@ -80,12 +82,18 @@ const SourceBreakdown = ({
     if (destUsed <= 0) {
       return baseSources;
     }
-    const allSources = intent?.allSources ?? [];
+    const allSources: ReadableIntentSource[] = (intent?.availableSources ?? []).map((s) => ({
+      chainID: s.chain.id,
+      chainLogo: s.chain.logo,
+      chainName: s.chain.name,
+      amount: s.amount,
+      contractAddress: s.token.contractAddress,
+    }));
     const destDetails = allSources?.find?.(
-      (s: ReadableIntentSource) => s?.chainID === chain,
+      (s) => s?.chainID === chain,
     );
     const hasDest = baseSources?.some?.(
-      (s: ReadableIntentSource) => s?.chainID === chain,
+      (s) => s?.chainID === chain,
     );
     const destSource = {
       chainID: chain,

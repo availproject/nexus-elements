@@ -10,9 +10,9 @@ import {
 import { computeAmountFromFraction, usdFormatter } from "../../common";
 import {
   CHAIN_METADATA,
-  type UserAsset,
-  type OnSwapIntentHookData,
-} from "@avail-project/nexus-core";
+} from "../../common";
+import { type UserAsset } from "../../nexus/NexusProvider";
+import { type OnSwapIntentHookData } from "@avail-project/nexus-sdk-v2";
 import AmountInput from "./amount-input";
 import {
   Dialog,

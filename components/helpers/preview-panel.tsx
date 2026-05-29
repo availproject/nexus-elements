@@ -1,7 +1,7 @@
 "use client";
 import React, { ReactNode, useCallback, useEffect, useState } from "react";
 import { LoaderPinwheel } from "lucide-react";
-import { type EthereumProvider } from "@avail-project/nexus-core";
+import { type EthereumProvider } from "@avail-project/nexus-sdk-v2";
 import { useAccount, useConnectorClient } from "wagmi";
 import { useNexus } from "@/registry/nexus-elements/nexus/NexusProvider";
 import { toast } from "sonner";

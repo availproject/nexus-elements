@@ -1,22 +1,18 @@
 "use client";
 
 import {
-  type SUPPORTED_CHAINS_IDS,
-  type SUPPORTED_TOKENS,
-  type UserAsset,
-  NexusSDK,
+  type NexusClient,
   type OnIntentHookData,
   type OnAllowanceHookData,
   type ExecuteParams,
   type BridgeAndExecuteParams,
   type BridgeAndExecuteResult,
   type BridgeAndExecuteSimulationResult,
-  NEXUS_EVENTS,
-  type BridgeStepType,
-  CHAIN_METADATA,
-  formatTokenBalance,
-  formatUnits,
-} from "@avail-project/nexus-core";
+  type TokenBalance,
+} from "@avail-project/nexus-sdk-v2";
+import { formatTokenBalance, formatUnits } from "@avail-project/nexus-sdk-v2/utils";
+import { CHAIN_METADATA } from "../../common/utils/constant";
+import { type BridgeStepType } from "../../common/types/transaction-flow";
 import {
   useEffect,
   useMemo,
@@ -44,25 +40,25 @@ export type DepositStatus =
   | "error";
 
 interface DepositInputs {
-  chain: SUPPORTED_CHAINS_IDS;
+  chain: number;
   amount?: string;
   selectedSources: number[];
 }
 
 interface UseDepositProps {
-  token: SUPPORTED_TOKENS;
-  chain: SUPPORTED_CHAINS_IDS;
-  nexusSDK: NexusSDK | null;
+  token: string;
+  chain: number;
+  nexusSDK: NexusClient | null;
   intent: RefObject<OnIntentHookData | null>;
   allowance: RefObject<OnAllowanceHookData | null>;
-  bridgableBalance: UserAsset[] | null;
+  bridgableBalance: TokenBalance[] | null;
   fetchBridgableBalance: () => Promise<void>;
   chainOptions?: { id: number; name: string; logo: string }[];
   address: Address;
   executeBuilder?: (
-    token: SUPPORTED_TOKENS,
+    token: string,
     amount: string,
-    chainId: SUPPORTED_CHAINS_IDS,
+    chainId: number,
     userAddress: `0x${string}`,
   ) => Omit<ExecuteParams, "toChainId">;
   executeConfig?: Omit<ExecuteParams, "toChainId">;
@@ -214,25 +210,32 @@ const useDeposit = ({
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
 
-    const nonZeroBreakdown = tokenBalance.breakdown.filter(
-      (chain) => Number.parseFloat(chain.balance) > 0,
+    const sourceBalances = (tokenBalance as any).chainBalances ?? (tokenBalance as any).breakdown ?? [];
+    const nonZeroBreakdown = sourceBalances.filter(
+      (chain: any) => Number.parseFloat(chain.balance) > 0,
     );
 
     const totalBalance = nonZeroBreakdown.reduce(
-      (sum, chain) => sum + Number.parseFloat(chain.balance),
+      (sum: number, chain: any) => sum + Number.parseFloat(chain.balance),
       0,
     );
 
     const totalBalanceInFiat = nonZeroBreakdown.reduce(
-      (sum, chain) => sum + chain.balanceInFiat,
+      (sum: number, chain: any) => sum + Number.parseFloat(chain.value ?? chain.balanceInFiat ?? "0"),
       0,
     );
+
+    const breakdown = nonZeroBreakdown.map((cb: any) => ({
+      balance: cb.balance,
+      balanceInFiat: Number.parseFloat(cb.value ?? cb.balanceInFiat ?? "0"),
+      chain: cb.chain,
+    }));
 
     return {
       ...tokenBalance,
       balance: totalBalance.toString(),
       balanceInFiat: totalBalanceInFiat,
-      breakdown: nonZeroBreakdown,
+      breakdown,
     };
   }, [bridgableBalance, token]);
 
@@ -240,28 +243,35 @@ const useDeposit = ({
     const tokenBalance = bridgableBalance?.find((bal) => bal?.symbol === token);
     if (!tokenBalance) return undefined;
 
+    const sourceBalances = (tokenBalance as any).chainBalances ?? (tokenBalance as any).breakdown ?? [];
     const selectedSourcesSet = new Set(inputs.selectedSources);
-    const filteredBreakdown = tokenBalance.breakdown.filter(
-      (chain) =>
+    const filteredBreakdown = sourceBalances.filter(
+      (chain: any) =>
         selectedSourcesSet.has(chain.chain.id) &&
         Number.parseFloat(chain.balance) > 0,
     );
 
     const totalBalance = filteredBreakdown.reduce(
-      (sum, chain) => sum + Number.parseFloat(chain.balance),
+      (sum: number, chain: any) => sum + Number.parseFloat(chain.balance),
       0,
     );
 
     const totalBalanceInFiat = filteredBreakdown.reduce(
-      (sum, chain) => sum + chain.balanceInFiat,
+      (sum: number, chain: any) => sum + Number.parseFloat(chain.value ?? chain.balanceInFiat ?? "0"),
       0,
     );
+
+    const breakdown = filteredBreakdown.map((cb: any) => ({
+      balance: cb.balance,
+      balanceInFiat: Number.parseFloat(cb.value ?? cb.balanceInFiat ?? "0"),
+      chain: cb.chain,
+    }));
 
     return {
       ...tokenBalance,
       balance: totalBalance.toString(),
       balanceInFiat: totalBalanceInFiat,
-      breakdown: filteredBreakdown,
+      breakdown,
     };
   }, [bridgableBalance, token, inputs.selectedSources]);
 
@@ -290,19 +300,20 @@ const useDeposit = ({
     const nativeSymbol = native.symbol;
     const nativeDecimals = native.decimals;
 
+    const gasFee = simulation?.executeSimulation?.estimatedTotalCost ?? BigInt(0);
     const gasFormatted =
-      formatTokenBalance(simulation?.executeSimulation?.gasFee, {
+      formatTokenBalance(gasFee, {
         symbol: nativeSymbol,
         decimals: nativeDecimals,
       }) ?? "0";
     const gasUnits = Number.parseFloat(
-      formatUnits(simulation?.executeSimulation?.gasFee, nativeDecimals),
+      formatUnits(gasFee, nativeDecimals),
     );
 
     const gasUsd = getFiatValue(gasUnits, nativeSymbol);
     if (simulation?.bridgeSimulation) {
       const tokenDecimals =
-        simulation?.bridgeSimulation?.intent?.token?.decimals;
+        simulation?.bridgeSimulation?.intent?.destination?.token?.decimals;
       const bridgeFormatted =
         formatTokenBalance(simulation?.bridgeSimulation?.intent?.fees?.total, {
           symbol: token,
@@ -353,10 +364,10 @@ const useDeposit = ({
           ? executeBuilder(token, inputs.amount, inputs.chain, address)
           : executeConfig;
       const params: BridgeAndExecuteParams = {
-        token,
-        amount: amountBigInt,
+        toTokenSymbol: token,
+        toAmountRaw: amountBigInt,
         toChainId: inputs.chain,
-        sourceChains: inputs.selectedSources,
+        sources: inputs.selectedSources,
         execute: executeParams as Omit<ExecuteParams, "toChainId">,
         waitForReceipt: true,
       };
@@ -364,19 +375,39 @@ const useDeposit = ({
       const result: BridgeAndExecuteResult = await nexusSDK.bridgeAndExecute(
         params,
         {
+          onIntent: (data) => {
+            intent.current = data as any;
+          },
           onEvent: (event) => {
-            if (event.name === NEXUS_EVENTS.STEPS_LIST) {
-              const list = Array.isArray(event.args) ? event.args : [];
+            if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+              const list = event.plan.steps.map((step) => ({
+                ...step,
+                type: step.type.toUpperCase(),
+                typeID: step.type.toUpperCase(),
+                completed: false,
+              }));
               onStepsList(list);
             }
-            if (event.name === NEXUS_EVENTS.STEP_COMPLETE) {
+            if (event.type === "plan_progress") {
               if (
                 !transactionStartedRef.current &&
-                event.args.type === "INTENT_HASH_SIGNED"
+                event.stepType === "request_signing" &&
+                event.state === "completed"
               ) {
                 transactionStartedRef.current = true;
               }
-              onStepComplete(event.args);
+              const completed =
+                event.state === "completed" ||
+                event.state === "confirmed" ||
+                event.state === "submitted";
+              if (completed) {
+                onStepComplete({
+                  ...event.step,
+                  type: event.stepType.toUpperCase(),
+                  typeID: event.stepType.toUpperCase(),
+                  completed: true,
+                });
+              }
             }
           },
         },
@@ -391,8 +422,8 @@ const useDeposit = ({
       dispatch({
         type: "setExplorerUrls",
         payload: {
-          intentUrl: result.bridgeExplorerUrl ?? null,
-          executeUrl: result.executeExplorerUrl ?? null,
+          intentUrl: result.bridgeSkipped ? null : (result.bridgeResult?.intentExplorerUrl ?? null),
+          executeUrl: result.execute?.txExplorerUrl ?? null,
         },
       });
       await onSuccess();
@@ -448,12 +479,11 @@ const useDeposit = ({
           ? executeBuilder(token, amountToUse, inputs.chain, address)
           : executeConfig;
       const params: BridgeAndExecuteParams = {
-        token,
-        amount: amountBigInt,
+        toTokenSymbol: token,
+        toAmountRaw: amountBigInt,
         toChainId: inputs.chain,
-        sourceChains: inputs.selectedSources,
+        sources: inputs.selectedSources,
         execute: executeParams as Omit<ExecuteParams, "toChainId">,
-        waitForReceipt: false,
       };
       const sim = await nexusSDK.simulateBridgeAndExecute(params);
       if (activeSimulationIdRef.current !== requestId) {

@@ -40,14 +40,66 @@ import { useTransactionSteps } from "../common/tx/useTransactionSteps";
 import { findCitreaReceiveToken } from "./utils/citrea-tokens";
 import {
   CHAIN_METADATA,
-  ERROR_CODES,
-  NEXUS_EVENTS,
-  type BridgeStepType,
-  type EthereumProvider,
-  type SwapStepType,
-  TOKEN_CONTRACT_ADDRESSES,
   TOKEN_METADATA,
-} from "@avail-project/nexus-core";
+} from "../common/utils/constant";
+import {
+  ERROR_CODES,
+  type EthereumProvider,
+  type OnIntentHookData,
+} from "@avail-project/nexus-sdk-v2";
+import {
+  type BridgeStepType,
+  type SwapStepType,
+} from "../common/types/transaction-flow";
+
+const NEXUS_EVENTS = {
+  STEPS_LIST: "nexus_steps_list",
+  STEP_COMPLETE: "nexus_step_complete",
+  SWAP_STEPS_LIST: "nexus_swap_steps_list",
+  SWAP_STEP_COMPLETE: "nexus_swap_step_complete",
+} as const;
+
+const TOKEN_CONTRACT_ADDRESSES = {
+  USDC: {
+    1: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    137: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+    42161: "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+    10: "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
+    534352: "0x06efdbff2a14a7c8e15944d1f4a48f9f95f663a4",
+    43114: "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+    56: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    999: "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+    220024: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+    4114: "0xE045e6c36cF77FAA2CfB54466D71A3aEF7bbE839",
+    11155111: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    84532: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    421614: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+    11155420: "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
+    80002: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+    10143: "0xf817257fed379853cDe0fa4F97AB987181B1E5Ea",
+    5115: "0xb669dC8cC6D044307Ba45366C0c836eC3c7e31AA",
+  },
+  USDT: {
+    1: "0xdac17f958d2ee523a2206206994597c13d831ec7",
+    137: "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+    42161: "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    8217: "0xd077a400968890eacc75cdc901f0356c943e4fdb",
+    10: "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58",
+    534352: "0xf55bec9cafdbe8730f096aa55dad6d22d44099df",
+    43114: "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+    56: "0x55d398326f99059fF775485246999027B3197955",
+    999: "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+    4114: "0x9f3096Bac87e7F03DC09b0B416eB0DF837304dc4",
+    946007: "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+    421614: "0xF954d4A5859b37De88a91bdbb8Ad309056FB04B1",
+    11155420: "0x6462693c2F21AC0E517f12641D404895030F7426",
+    10143: "0x1c56F176D6735888fbB6f8bD9ADAd8Ad7a023a0b",
+  },
+  USDM: {
+    946007: "0xFAfDdbb3FC7688494971a79cc65DCa3EF82079E7",
+  },
+} as const;
 import {
   useAccount,
   useConnect,
@@ -62,6 +114,7 @@ import {
   createPublicClient,
   http,
   encodeFunctionData,
+  parseUnits,
 } from "viem";
 import { normalize } from "viem/ens";
 import { mainnet } from "viem/chains";
@@ -2629,7 +2682,7 @@ export function NexusOne({
           chainName: chainMeta?.name ?? breakdown.chain?.name,
           contractAddress,
           decimals: breakdown.decimals ?? asset.decimals ?? 18,
-          logo: asset.icon ?? "",
+          logo: asset.logo ?? "",
           name: symbol,
           symbol,
           balance: `${breakdown.balance} ${symbol}`,
@@ -2665,7 +2718,7 @@ export function NexusOne({
       (token) => token.chainId && token.contractAddress,
     );
     return {
-      fromSources: eligibleTokens.map((token) => ({
+      sources: eligibleTokens.map((token) => ({
         chainId: token.chainId!,
         tokenAddress: token.contractAddress as `0x${string}`,
       })),
@@ -3085,7 +3138,7 @@ export function NexusOne({
     if (!nexusSDK || !entry.intentId) return;
     patchSwapHistoryEntry(entry.id, { status: "refund-initiated" });
     try {
-      await nexusSDK.refundIntent(entry.intentId);
+      console.warn("refundIntent is not supported in v2. Intent ID:", entry.intentId);
       void fetchSwapBalance();
     } catch (error: any) {
       patchSwapHistoryEntry(entry.id, {
@@ -3213,23 +3266,21 @@ export function NexusOne({
   );
 
   // Register swap intent hook immediately before executing a swap to prevent race conditions across multiple components
-  const registerIntentHook = (runId: number) => {
-    if (!nexusSDK) return;
-    nexusSDK.setOnSwapIntentHook(async ({ intent, allow, deny, refresh }) => {
-      if (swapRunIdRef.current !== runId) {
-        deny();
-        return;
-      }
-      // Store callbacks so accept/reject buttons can call them
-      swapIntentRef.current = { intent, allow, deny, refresh, runId };
-      // Populate intent data for preview
-      applySwapIntent(intent);
-      setIntentLoading(false);
-      setQuoteRefreshing(false);
-      setReceiveMaxCalculating(false);
-      setPreviewQuoteRefreshing(false);
-    });
-  };
+  const handleSwapIntentCallback = useCallback((data: any, runId: number) => {
+    const { intent, allow, deny, refresh } = data;
+    if (swapRunIdRef.current !== runId) {
+      deny();
+      return;
+    }
+    // Store callbacks so accept/reject buttons can call them
+    swapIntentRef.current = { intent, allow, deny, refresh, runId };
+    // Populate intent data for preview
+    applySwapIntent(intent);
+    setIntentLoading(false);
+    setQuoteRefreshing(false);
+    setReceiveMaxCalculating(false);
+    setPreviewQuoteRefreshing(false);
+  }, []);
 
   // Deposit-specific
   const [selectedOpportunity, setSelectedOpportunity] = useState<
@@ -3276,7 +3327,7 @@ export function NexusOne({
       balance: "0",
       balanceInFiat: "$0.00",
       decimals: matchedToken?.decimals ?? citreaToken?.decimals ?? tokenMeta?.decimals ?? 18,
-      logo: opp.tokenLogo || matchedToken?.logo || citreaToken?.logo || tokenMeta?.icon,
+      logo: opp.tokenLogo || matchedToken?.logo || citreaToken?.logo || tokenMeta?.logo,
       chainName: CHAIN_METADATA[opp.chainId]?.name ?? citreaToken?.chainName,
       chainLogo: CHAIN_METADATA[opp.chainId]?.logo ?? citreaToken?.chainLogo,
     };
@@ -3378,7 +3429,7 @@ export function NexusOne({
           tokenMeta?.decimals ??
           (isNativePrefill ? chainMeta?.nativeCurrency?.decimals : undefined) ??
           18,
-        logo: matchedToken?.logo || citreaToken?.logo || tokenMeta?.icon,
+        logo: matchedToken?.logo || citreaToken?.logo || tokenMeta?.logo,
         chainName:
           chain?.name ?? chainMeta?.name ?? citreaToken?.chainName,
         chainLogo:
@@ -4002,7 +4053,7 @@ export function NexusOne({
             chainName: chainMeta?.name ?? breakdown.chain?.name ?? toToken.chainName,
             contractAddress: breakdown.contractAddress ?? toToken.contractAddress,
             decimals: breakdown.decimals ?? asset.decimals ?? toToken.decimals ?? 18,
-            logo: asset.icon ?? toToken.logo,
+            logo: asset.logo ?? toToken.logo,
             name: symbol,
             symbol,
             balance: `${breakdown.balance} ${symbol}`,
@@ -4396,8 +4447,7 @@ export function NexusOne({
     swapRunIdRef.current += 1;
     const runId = swapRunIdRef.current;
 
-    // Claim ownership of global singleton hook before executing SDK swap
-    registerIntentHook(runId);
+
 
     const getSwapStepListFromEvent = (event: { args: any }) => {
       const args = (event as any).args;
@@ -4515,7 +4565,7 @@ export function NexusOne({
         const fromPayload: {
           chainId: number;
           tokenAddress: `0x${string}`;
-          amount: bigint;
+          amountRaw: bigint;
         }[] = [];
 
         const exactInSourceTokens = getReadyExactInSourceTokens(fromTokens);
@@ -4554,7 +4604,7 @@ export function NexusOne({
           fromPayload.push({
             chainId: token.chainId!,
             tokenAddress: token.contractAddress as `0x${string}`,
-            amount: nexusSDK.utils.parseUnits(
+            amountRaw: parseUnits(
               safeTokenAmountStr,
               token.decimals || 18,
             ),
@@ -4569,21 +4619,50 @@ export function NexusOne({
         // Start exact-in swap — the intent hook will fire and populate preview
         const result = await nexusSDK.swapWithExactIn(
           {
-            from: fromPayload,
+            sources: fromPayload,
             toChainId: toToken.chainId!,
             toTokenAddress: toToken.contractAddress as `0x${string}`,
           },
           {
+            hooks: {
+              onIntent: (data) => handleSwapIntentCallback(data, runId),
+            },
             onEvent: (event: any) => {
               if (swapRunIdRef.current !== runId) return;
-              handleSwapEvent(event);
+              if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+                const list = event.plan.steps.map((step: any) => ({
+                  ...step,
+                  type: step.type.toUpperCase(),
+                  typeID: step.type.toUpperCase(),
+                  completed: false,
+                }));
+                handleSwapEvent({
+                  name: NEXUS_EVENTS.SWAP_STEPS_LIST,
+                  args: list,
+                });
+              }
+              if (event.type === "plan_progress") {
+                const completed =
+                  event.state === "completed" ||
+                  event.state === "confirmed" ||
+                  event.state === "submitted";
+                if (completed) {
+                  const step = {
+                    ...event.step,
+                    type: event.stepType.toUpperCase(),
+                    typeID: event.stepType.toUpperCase(),
+                    completed: true,
+                  };
+                  handleSwapEvent({
+                    name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
+                    args: step,
+                  });
+                }
+              }
             },
           },
         );
-        if (!result?.success) {
-          throw new Error(result?.error || "Swap failed");
-        }
-        const intentExplorerUrl = result.result.explorerURL || null;
+        const intentExplorerUrl = result.intentExplorerUrl || null;
         const intentId =
           extractIntentIdFromUrl(intentExplorerUrl) ?? currentSwapEntry?.intentId;
         if (
@@ -4619,7 +4698,7 @@ export function NexusOne({
           setReceiveMaxCalculating(false);
           return;
         }
-        const amountBigInt = nexusSDK.utils.parseUnits(
+        const amountBigInt = parseUnits(
           exactOutAmountString,
           toToken.decimals || 18,
         );
@@ -4674,54 +4753,98 @@ export function NexusOne({
           }
         }
 
+        if (executeConfig && executeConfig.tokenApproval) {
+          executeConfig = {
+            ...executeConfig,
+            tokenApproval: {
+              toTokenAddress:
+                executeConfig.tokenApproval.token ||
+                executeConfig.tokenApproval.toTokenAddress ||
+                toToken.contractAddress,
+              amount: executeConfig.tokenApproval.amount,
+              spender: executeConfig.tokenApproval.spender,
+            },
+          };
+        }
+
         if (executeConfig) {
           const onEvent = (event: any) => {
             if (swapRunIdRef.current !== runId) return;
-            handleSwapEvent(event);
+            if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+              const list = event.plan.steps.map((step: any) => ({
+                type: step.type.toUpperCase(),
+                typeID: step.type.toUpperCase(),
+                completed: false,
+                ...step,
+              }));
+              handleSwapEvent({
+                name: NEXUS_EVENTS.SWAP_STEPS_LIST,
+                args: list,
+              });
+            }
+            if (event.type === "plan_progress") {
+              const completed =
+                event.state === "completed" ||
+                event.state === "confirmed" ||
+                event.state === "submitted";
+              if (completed) {
+                const step = {
+                  type: event.stepType.toUpperCase(),
+                  typeID: event.stepType.toUpperCase(),
+                  completed: true,
+                  ...event.step,
+                };
+                handleSwapEvent({
+                  name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
+                  args: step,
+                });
+              }
+            }
           };
-          const sdkWithOptionalTransfer = nexusSDK as any;
-          const result =
-            activeMode === "send" &&
-            typeof sdkWithOptionalTransfer.swapAndTransfer === "function"
-              ? await sdkWithOptionalTransfer.swapAndTransfer(
-                  {
-                    toChainId: toToken.chainId!,
-                    toTokenAddress: toToken.contractAddress as `0x${string}`,
-                    toAmount: amountBigInt,
-                    recipient: resolvedRecipientAddress as `0x${string}`,
-                    ...fromSourcesPayload,
-                  },
-                  { onEvent },
-                )
-              : await nexusSDK.swapAndExecute(
-                  {
-                    toChainId: toToken.chainId!,
-                    toTokenAddress: toToken.contractAddress as `0x${string}`,
-                    toAmount: amountBigInt,
-                    execute: executeConfig,
-                    ...fromSourcesPayload,
-                  },
-                  { onEvent },
-                );
 
-          const swapResult = result?.swapResult ?? result?.result ?? null;
-          const swapSkipped = Boolean((result as any)?.swapSkipped);
-          if (!swapResult && !swapSkipped && activeMode !== "send") {
+          const result = await nexusSDK.swapAndExecute(
+            {
+              toChainId: toToken.chainId!,
+              toTokenAddress: toToken.contractAddress as `0x${string}`,
+              toAmountRaw: amountBigInt,
+              execute: executeConfig,
+              ...fromSourcesPayload,
+            },
+            {
+              onEvent,
+              onIntent: (data: any) => {
+                if (swapRunIdRef.current !== runId) {
+                  data.deny();
+                  return;
+                }
+                swapIntentRef.current = {
+                  intent: data.intent,
+                  allow: data.allow,
+                  deny: data.deny,
+                  refresh: data.refresh,
+                  runId,
+                };
+                applySwapIntent(data.intent);
+                setIntentLoading(false);
+                setQuoteRefreshing(false);
+                setReceiveMaxCalculating(false);
+                setPreviewQuoteRefreshing(false);
+              },
+            },
+          );
+
+          const swapResult = result?.swapResult ?? null;
+          const swapSkipped = Boolean(result?.swapSkipped);
+          if (!swapResult && !swapSkipped) {
             throw new Error("Swap failed");
           }
-          const executeTxHash =
-            result?.executeResponse?.txHash ||
-            result?.transactionHash ||
-            result?.txHash ||
-            null;
-          const intentExplorerUrl =
-            swapResult?.explorerURL || result?.intentExplorerUrl || null;
+          const executeTxHash = result?.execute?.txHash || null;
+          const intentExplorerUrl = swapResult?.intentExplorerUrl || null;
           const intentId =
             extractIntentIdFromUrl(intentExplorerUrl) ?? currentSwapEntry?.intentId;
           const finalExplorerUrl =
-            result?.explorerUrl ||
-            result?.executeExplorerUrl ||
-            getExplorerTxUrl(toToken.chainId, executeTxHash);
+            result?.execute?.txExplorerUrl ||
+            getExplorerTxUrl(toToken.chainId!, executeTxHash);
           if (finalExplorerUrl) {
             mergeExplorerUrls({ destinationExplorerUrl: finalExplorerUrl });
           }
@@ -4735,20 +4858,49 @@ export function NexusOne({
             {
               toChainId: toToken.chainId!,
               toTokenAddress: toToken.contractAddress as `0x${string}`,
-              toAmount: amountBigInt,
+              toAmountRaw: amountBigInt,
               ...fromSourcesPayload,
             },
             {
+              hooks: {
+                onIntent: (data) => handleSwapIntentCallback(data, runId),
+              },
               onEvent: (event: any) => {
                 if (swapRunIdRef.current !== runId) return;
-                handleSwapEvent(event);
+                if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+                  const list = event.plan.steps.map((step: any) => ({
+                    ...step,
+                    type: step.type.toUpperCase(),
+                    typeID: step.type.toUpperCase(),
+                    completed: false,
+                  }));
+                  handleSwapEvent({
+                    name: NEXUS_EVENTS.SWAP_STEPS_LIST,
+                    args: list,
+                  });
+                }
+                if (event.type === "plan_progress") {
+                  const completed =
+                    event.state === "completed" ||
+                    event.state === "confirmed" ||
+                    event.state === "submitted";
+                  if (completed) {
+                    const step = {
+                      ...event.step,
+                      type: event.stepType.toUpperCase(),
+                      typeID: event.stepType.toUpperCase(),
+                      completed: true,
+                    };
+                    handleSwapEvent({
+                      name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
+                      args: step,
+                    });
+                  }
+                }
               },
             },
           );
-          if (!result?.success) {
-            throw new Error(result?.error || "Swap failed");
-          }
-          const intentExplorerUrl = result.result.explorerURL || null;
+          const intentExplorerUrl = result.intentExplorerUrl || null;
           const intentId =
             extractIntentIdFromUrl(intentExplorerUrl) ?? currentSwapEntry?.intentId;
           patchCurrentSwapHistoryEntry({ intentExplorerUrl, intentId });

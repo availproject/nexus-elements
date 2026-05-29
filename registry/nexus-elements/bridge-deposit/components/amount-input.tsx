@@ -1,10 +1,7 @@
 "use client";
 
-import {
-  formatTokenBalance,
-  type SUPPORTED_CHAINS_IDS,
-  type UserAsset,
-} from "@avail-project/nexus-core";
+import { formatTokenBalance } from "@avail-project/nexus-sdk-v2/utils";
+import { type UserAsset } from "../../nexus/NexusProvider";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Fragment } from "react";
@@ -47,7 +44,7 @@ interface AmountInputProps
   value?: string;
   onChange?: (value: string) => void;
   bridgableBalance?: UserAsset;
-  destinationChain: SUPPORTED_CHAINS_IDS;
+  destinationChain: number;
 }
 
 const AmountInput = ({
@@ -168,7 +165,7 @@ const AmountInput = ({
                           })}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          ${chain.balanceInFiat.toFixed(2)}
+                          ${chain.balanceInFiat != null ? Number(chain.balanceInFiat).toFixed(2) : "0.00"}
                         </p>
                       </div>
                     </div>

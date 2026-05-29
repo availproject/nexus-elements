@@ -1,4 +1,4 @@
-import { ERROR_CODES, NexusError } from "@avail-project/nexus-core";
+import { ERROR_CODES, NexusError } from "@avail-project/nexus-sdk-v2";
 
 const DEFAULT_ERROR_MESSAGE = "Oops! Something went wrong. Please try again.";
 const USER_REJECTED_MESSAGE = "Transaction was rejected in your wallet.";
@@ -18,8 +18,6 @@ const ERROR_MESSAGE_BY_CODE: Partial<Record<string, string>> = {
     "Chain metadata is unavailable for this route. Please try another chain.",
   [ERROR_CODES.ASSET_NOT_FOUND]:
     "Requested asset was not found in your balances.",
-  [ERROR_CODES.COSMOS_ERROR]:
-    "Cosmos-side operation failed. Please retry in a moment.",
   [ERROR_CODES.TOKEN_NOT_SUPPORTED]:
     "Selected token is not supported for this route.",
   [ERROR_CODES.UNIVERSE_NOT_SUPPORTED]:
@@ -28,42 +26,38 @@ const ERROR_MESSAGE_BY_CODE: Partial<Record<string, string>> = {
     "Selected environment is not supported yet.",
   [ERROR_CODES.ENVIRONMENT_NOT_KNOWN]:
     "Selected environment is not recognized.",
-  [ERROR_CODES.UNKNOWN_SIGNATURE]:
+  [ERROR_CODES.INTERNAL_UNKNOWN_SIGNATURE]:
     "Unsupported signature type for this transaction.",
-  [ERROR_CODES.LIQUIDITY_TIMEOUT]:
-    "Timed out waiting for liquidity. Please retry.",
-  [ERROR_CODES.USER_DENIED_INTENT]: USER_REJECTED_MESSAGE,
-  [ERROR_CODES.USER_DENIED_ALLOWANCE]: USER_REJECTED_MESSAGE,
-  [ERROR_CODES.USER_DENIED_INTENT_SIGNATURE]: USER_REJECTED_MESSAGE,
-  [ERROR_CODES.USER_DENIED_SIWE_SIGNATURE]: USER_REJECTED_MESSAGE,
+  [ERROR_CODES.USER_INTENT_HOOK_DENIED]: USER_REJECTED_MESSAGE,
+  [ERROR_CODES.USER_ALLOWANCE_APPROVAL_DENIED]: USER_REJECTED_MESSAGE,
+  [ERROR_CODES.USER_INTENT_SIGNATURE_DENIED]: USER_REJECTED_MESSAGE,
+  [ERROR_CODES.USER_SIWE_SIGNATURE_DENIED]: USER_REJECTED_MESSAGE,
   [ERROR_CODES.INSUFFICIENT_BALANCE]: "Insufficient balance to proceed.",
   [ERROR_CODES.WALLET_NOT_CONNECTED]:
     "Wallet is not connected. Connect your wallet and try again.",
-  [ERROR_CODES.FETCH_GAS_PRICE_FAILED]:
+  [ERROR_CODES.EXEC_GAS_PRICE_FETCH_FAILED]:
     "Unable to estimate gas right now. Please retry.",
-  [ERROR_CODES.SIMULATION_FAILED]:
+  [ERROR_CODES.SIMULATION_ERROR]:
     "Simulation failed. Please review your inputs and try again.",
-  [ERROR_CODES.QUOTE_FAILED]:
+  [ERROR_CODES.BACKEND_GET_QUOTE_FAILED]:
     "Unable to fetch a quote right now. Please retry.",
-  [ERROR_CODES.SWAP_FAILED]: "Swap execution failed. Please retry.",
   [ERROR_CODES.VAULT_CONTRACT_NOT_FOUND]:
     "Required vault contract is unavailable on this chain.",
-  [ERROR_CODES.SLIPPAGE_EXCEEDED_ALLOWANCE]:
+  [ERROR_CODES.EXEC_SLIPPAGE_EXCEEDED]:
     "Slippage exceeded tolerance. Refresh quote and retry.",
-  [ERROR_CODES.RATES_CHANGED_BEYOND_TOLERANCE]:
+  [ERROR_CODES.EXTERNAL_RATES_DRIFT_EXCEEDED]:
     "Rates changed beyond tolerance. Review and retry.",
-  [ERROR_CODES.RFF_FEE_EXPIRED]: "Quote expired. Refresh and try again.",
   [ERROR_CODES.INVALID_INPUT]:
     "Some transaction inputs are invalid. Please review and try again.",
   [ERROR_CODES.INVALID_ADDRESS_LENGTH]:
     "Address format is invalid for the selected chain.",
   [ERROR_CODES.NO_BALANCE_FOR_ADDRESS]:
     "No balance found for this wallet on supported source chains.",
-  [ERROR_CODES.TRANSACTION_TIMEOUT]:
+  [ERROR_CODES.EXEC_TX_RECEIPT_WAIT_TIMEOUT]:
     "Transaction is taking longer than expected. Check your wallet and explorer.",
-  [ERROR_CODES.TRANSACTION_REVERTED]:
+  [ERROR_CODES.EXEC_TX_ONCHAIN_REVERTED]:
     "Transaction reverted on-chain. Please verify inputs and retry.",
-  [ERROR_CODES.DESTINATION_REQUEST_HASH_NOT_FOUND]:
+  [ERROR_CODES.INTERNAL_DESTINATION_REQUEST_HASH_NOT_FOUND]:
     "Could not finalize destination request. Please retry.",
 };
 
@@ -89,10 +83,10 @@ function getErrorCode(value: unknown): string | number | undefined {
 function looksLikeUserRejection(err: unknown): boolean {
   if (err instanceof NexusError) {
     return (
-      err.code === ERROR_CODES.USER_DENIED_ALLOWANCE ||
-      err.code === ERROR_CODES.USER_DENIED_INTENT ||
-      err.code === ERROR_CODES.USER_DENIED_INTENT_SIGNATURE ||
-      err.code === ERROR_CODES.USER_DENIED_SIWE_SIGNATURE
+      err.code === ERROR_CODES.USER_ALLOWANCE_APPROVAL_DENIED ||
+      err.code === ERROR_CODES.USER_INTENT_HOOK_DENIED ||
+      err.code === ERROR_CODES.USER_INTENT_SIGNATURE_DENIED ||
+      err.code === ERROR_CODES.USER_SIWE_SIGNATURE_DENIED
     );
   }
 
@@ -133,7 +127,7 @@ function handler(err: unknown) {
 
   if (looksLikeUserRejection(err)) {
     return {
-      code: ERROR_CODES.USER_DENIED_INTENT,
+      code: ERROR_CODES.USER_INTENT_HOOK_DENIED,
       message: USER_REJECTED_MESSAGE,
       context: undefined,
       details: undefined,
@@ -146,8 +140,8 @@ function handler(err: unknown) {
     return {
       code: err.code,
       message: mappedMessage,
-      context: err?.data?.context,
-      details: err?.data?.details,
+      context: err.context,
+      details: err.details,
     };
   }
 

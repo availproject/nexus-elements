@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { MaxSwapInput } from "@avail-project/nexus-core";
+import type { SwapMaxParams } from "@avail-project/nexus-sdk-v2";
 import WidgetHeader from "./widget-header";
 import type { DepositWidgetContextValue } from "../types";
 import AmountCard from "./amount-card";
@@ -30,7 +30,7 @@ const AmountContainer = ({
   const hasPositiveSwapBalance = useMemo(
     () =>
       (widget.swapBalance ?? []).some((asset) =>
-        (asset.breakdown ?? []).some((chain) => {
+        (asset.breakdown ?? []).some((chain: any) => {
           const amount = Number.parseFloat(chain.balance ?? "0");
           return Number.isFinite(amount) && amount > 0;
         }),
@@ -49,7 +49,7 @@ const AmountContainer = ({
     widget.totalBalance?.usdBalance,
     widget.totalSelectedBalance,
   ]);
-  const maxSwapInput = useMemo<MaxSwapInput | undefined>(() => {
+  const maxSwapInput = useMemo<SwapMaxParams | undefined>(() => {
     const sourcePoolIds = buildDepositSourcePoolIds({
       swapBalance: widget.swapBalance,
       filter: widget.assetSelection.filter,
@@ -66,7 +66,7 @@ const AmountContainer = ({
     return {
       toChainId: widget.destination.chainId,
       toTokenAddress: widget.destination.tokenAddress,
-      fromSources: fromSources.length > 0 ? fromSources : undefined,
+      sources: fromSources.length > 0 ? fromSources : undefined,
     };
   }, [
     widget.swapBalance,

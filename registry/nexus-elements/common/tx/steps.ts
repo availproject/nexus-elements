@@ -1,4 +1,4 @@
-import type { SwapStepType } from "@avail-project/nexus-core";
+import type { SwapStepType } from "../types/transaction-flow";
 import type { GenericStep } from "./types";
 import { getStepKey } from "./types";
 
