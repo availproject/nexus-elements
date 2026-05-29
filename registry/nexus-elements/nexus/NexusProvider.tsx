@@ -133,15 +133,22 @@ const NexusProvider = ({
   const swapIntent = useRef<OnSwapIntentHookData | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const nextSdk = createNexusClient({
       network: stableConfig.network,
       debug: stableConfig.debug,
     });
 
-    sdkRef.current = nextSdk;
-    setSdk(nextSdk);
+    void nextSdk.initialize().then(() => {
+      if (cancelled) return;
+      sdkRef.current = nextSdk;
+      setSdk(nextSdk);
+    }).catch((err) => {
+      console.error("Failed to initialize default read-only Nexus client:", err);
+    });
 
     return () => {
+      cancelled = true;
       nextSdk.destroy();
       if (sdkRef.current === nextSdk) {
         sdkRef.current = null;
@@ -193,13 +200,20 @@ const NexusProvider = ({
     if (!sdk) return;
 
     let cancelled = false;
-    const list = sdk.getSupportedChains();
-    const swapList = sdk.getSupportedChains();
-    supportedChainsAndTokens.current = list ?? null;
-    swapSupportedChainsAndTokens.current = swapList ?? null;
-    usdPeggedSymbols.current = buildUsdPeggedSymbolSet(list ?? null);
-    setSupportedChainsAndTokensState(list ?? null);
-    setSwapSupportedChainsAndTokensState(swapList ?? null);
+    let list: SupportedChainsAndTokensResult | null = null;
+    let swapList: SupportedChainsAndTokensResult | null = null;
+    try {
+      list = sdk.getSupportedChains();
+      swapList = sdk.getSupportedChains();
+    } catch (e) {
+      console.warn("SDK getSupportedChains failed (likely not initialized yet):", e);
+    }
+
+    supportedChainsAndTokens.current = list;
+    swapSupportedChainsAndTokens.current = swapList;
+    usdPeggedSymbols.current = buildUsdPeggedSymbolSet(list);
+    setSupportedChainsAndTokensState(list);
+    setSwapSupportedChainsAndTokensState(swapList);
 
     void getCoinbaseRates()
       .then((rates) => {
@@ -416,11 +430,12 @@ const NexusProvider = ({
           network: stableConfig.network,
           debug: stableConfig.debug,
         });
-        sdkRef.current = nextSdk;
-        setSdk(nextSdk);
 
         await nextSdk.initialize();
         await nextSdk.setEVMProvider(provider);
+
+        sdkRef.current = nextSdk;
+        setSdk(nextSdk);
         initializedRef.current = true;
         setNexusSDK(nextSdk);
       } catch (error) {
