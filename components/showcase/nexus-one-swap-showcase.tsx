@@ -25,7 +25,6 @@ const NexusOneSwapShowcase = () => {
           config={{
             mode: "swap",
             prefill: {
-              amount: "1",
               source: {
                 token: USDC_ARBITRUM,
                 chain: 42161,
