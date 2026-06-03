@@ -853,6 +853,13 @@
       ]
     },
     {
+      "name": "nexus-one",
+      "type": "registry:component",
+      "title": "Nexus One",
+      "description": "UI primitive: Nexus One",
+      "files": []
+    },
+    {
       "name": "nexus-provider",
       "type": "registry:component",
       "title": "Nexus Provider",
