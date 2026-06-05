@@ -522,6 +522,38 @@ const getExplorerTxUrl = (chainId?: number, txHash?: string | null) => {
   return baseUrl ? `${String(baseUrl).replace(/\/$/, "")}/tx/${txHash}` : null;
 };
 
+const getSdkSwapResult = (result: any) => {
+  const candidate = result?.swapResult ?? result?.result;
+  return candidate && typeof candidate === "object" ? candidate : null;
+};
+
+const getSdkIntentExplorerUrl = (result: any) => {
+  const swapResult = getSdkSwapResult(result);
+  return (
+    result?.intentExplorerUrl ||
+    swapResult?.intentExplorerUrl ||
+    swapResult?.explorerURL ||
+    null
+  );
+};
+
+const getSdkTransactionHash = (result: any) =>
+  result?.execute?.txHash ||
+  result?.executeResponse?.txHash ||
+  result?.transactionHash ||
+  result?.transferTransactionHash ||
+  result?.executeTransactionHash ||
+  result?.txHash ||
+  null;
+
+const getSdkExplorerUrl = (result: any) =>
+  result?.execute?.txExplorerUrl ||
+  result?.explorerUrl ||
+  result?.explorerURL ||
+  result?.executeExplorerUrl ||
+  result?.transferExplorerUrl ||
+  null;
+
 function MiniLogo({
   src,
   label,
@@ -983,6 +1015,7 @@ function SwapReceiptPanel({
   const isFailed = entry.status === "failed";
   const isDeposit = entry.mode === "deposit";
   const isSend = entry.mode === "send";
+  const isRecipientTransfer = isSend || Boolean(entry.recipientAddress);
   const tokenSymbol = destination?.token.symbol || entry.toToken?.symbol || "";
   const chainName = destination?.chain.name || entry.toToken?.chainName || "";
   const depositVenue =
@@ -1017,7 +1050,7 @@ function SwapReceiptPanel({
     storedFailureMessage ||
     (isDeposit
       ? "Deposit failed. Funds are in your wallet"
-      : isSend
+      : isRecipientTransfer
         ? "Send failed. Funds are in your wallet"
         : defaultSwapFailureHeadline);
   const receiptLocation = isDeposit ? depositVenue : chainName;
@@ -1079,7 +1112,7 @@ function SwapReceiptPanel({
             ? failureHeadline
             : isDeposit
               ? "You deposited"
-              : isSend
+              : isRecipientTransfer
                 ? "You sent"
                 : "You received"}
         </div>
@@ -1214,7 +1247,7 @@ function SwapReceiptPanel({
             />
           </div>
         </div>
-        {isSend && entry.recipientAddress && (
+        {isRecipientTransfer && entry.recipientAddress && (
           <div
             style={{
               alignItems: "center",
@@ -1779,6 +1812,20 @@ export function NexusOne({
       isAddress(recipientAddress) &&
       recipientAddress.toLowerCase() === ownerAddress.toLowerCase(),
     );
+  const hasCustomSwapRecipient =
+    activeMode === "swap" &&
+    Boolean(
+      recipientAddress &&
+        (!defaultRecipientAddress ||
+          recipientAddress.toLowerCase() !==
+            defaultRecipientAddress.toLowerCase()),
+    );
+  const transferRecipientAddress =
+    activeMode === "send"
+      ? recipientAddress
+      : hasCustomSwapRecipient
+        ? recipientAddress
+        : undefined;
   const previousDefaultRecipientRef = useRef(defaultRecipientAddress);
 
   // Swap-specific
@@ -3245,7 +3292,7 @@ export function NexusOne({
         activeMode === "deposit" || activeMode === "send"
           ? previewToAmountUsd
           : undefined,
-      recipientAddress: activeMode === "send" ? recipientAddress : undefined,
+      recipientAddress: transferRecipientAddress,
       opportunity: selectedOpportunity,
       feeUsd: intentFeeUsd,
       sourceExplorerUrl: null,
@@ -4546,13 +4593,6 @@ export function NexusOne({
       return;
     }
 
-    const hasCustomSwapRecipient =
-      activeMode === "swap" &&
-      Boolean(recipientAddress) &&
-      (!defaultRecipientAddress ||
-        recipientAddress.toLowerCase() !==
-          defaultRecipientAddress.toLowerCase());
-
     let resolvedRecipientAddress =
       activeMode === "swap" ? effectiveRecipientAddress : recipientAddress;
 
@@ -4761,6 +4801,94 @@ export function NexusOne({
       }
     };
 
+    const onEvent = (event: any) => {
+      if (swapRunIdRef.current !== runId) return;
+      if (event?.name) {
+        handleSwapEvent(event);
+        return;
+      }
+
+      if (event.type === "plan_preview" || event.type === "plan_confirmed") {
+        const list = event.plan.steps.map((step: any) => ({
+          ...step,
+          type: step.type.toUpperCase(),
+          typeID: step.type.toUpperCase(),
+          completed: false,
+        }));
+        handleSwapEvent({
+          name: NEXUS_EVENTS.SWAP_STEPS_LIST,
+          args: list,
+        });
+      }
+      if (event.type === "plan_progress") {
+        const completed =
+          event.state === "completed" ||
+          event.state === "confirmed" ||
+          event.state === "submitted";
+        if (completed) {
+          const step = {
+            ...event.step,
+            type: event.stepType.toUpperCase(),
+            typeID: event.stepType.toUpperCase(),
+            completed: true,
+          };
+          handleSwapEvent({
+            name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
+            args: step,
+          });
+        }
+      }
+    };
+
+    const buildRecipientTransferExecuteConfig = (transferAmount: bigint) => {
+      if (!resolvedRecipientAddress) {
+        throw new Error("Recipient address is required");
+      }
+
+      const isNative =
+        !toToken.contractAddress ||
+        toToken.contractAddress.toLowerCase() ===
+          "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
+        toToken.contractAddress ===
+          "0x0000000000000000000000000000000000000000";
+
+      if (isNative) {
+        return {
+          to: resolvedRecipientAddress as `0x${string}`,
+          value: transferAmount,
+          gas: BigInt(100000),
+        };
+      }
+
+      return {
+        to: toToken.contractAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          functionName: "transfer",
+          args: [resolvedRecipientAddress as `0x${string}`, transferAmount],
+        }),
+        gas: BigInt(100000),
+      };
+    };
+
+    const executeRecipientTransfer = async (transferAmount: bigint) => {
+      const result = await nexusSDK.execute(
+        {
+          toChainId: toToken.chainId!,
+          ...buildRecipientTransferExecuteConfig(transferAmount),
+        },
+        { onEvent },
+      );
+      const finalExplorerUrl =
+        getSdkExplorerUrl(result) ||
+        getExplorerTxUrl(toToken.chainId, getSdkTransactionHash(result));
+      if (finalExplorerUrl) {
+        setTransferExplorerUrl(finalExplorerUrl);
+        mergeExplorerUrls({ destinationExplorerUrl: finalExplorerUrl });
+      }
+      return finalExplorerUrl;
+    };
+
     try {
       if (!isExactOutFlow) {
         const fromPayload: {
@@ -4817,59 +4945,63 @@ export function NexusOne({
         }
 
         resetExplorerUrls();
-        // Start exact-in swap — the intent hook will fire and populate preview
-        const result = await nexusSDK.swapWithExactIn(
-          {
-            sources: fromPayload,
-            toChainId: toToken.chainId!,
-            toTokenAddress: toToken.contractAddress as `0x${string}`,
-          },
-          {
+        const exactInSwapPayload = {
+          sources: fromPayload,
+          toChainId: toToken.chainId!,
+          toTokenAddress: toToken.contractAddress as `0x${string}`,
+        };
+        let intentExplorerUrl: string | null = null;
+        let intentId = currentSwapEntry?.intentId;
+        let finalExplorerUrl: string | null =
+          explorerUrlsRef.current.destinationExplorerUrl ||
+          explorerUrlsRef.current.sourceExplorerUrl;
+
+        if (hasCustomSwapRecipient && resolvedRecipientAddress) {
+          const result = await nexusSDK.swapWithExactIn(exactInSwapPayload, {
             hooks: {
               onIntent: (data) => handleSwapIntentCallback(data, runId),
             },
-            onEvent: (event: any) => {
-              if (swapRunIdRef.current !== runId) return;
-              if (
-                event.type === "plan_preview" ||
-                event.type === "plan_confirmed"
-              ) {
-                const list = event.plan.steps.map((step: any) => ({
-                  ...step,
-                  type: step.type.toUpperCase(),
-                  typeID: step.type.toUpperCase(),
-                  completed: false,
-                }));
-                handleSwapEvent({
-                  name: NEXUS_EVENTS.SWAP_STEPS_LIST,
-                  args: list,
-                });
-              }
-              if (event.type === "plan_progress") {
-                const completed =
-                  event.state === "completed" ||
-                  event.state === "confirmed" ||
-                  event.state === "submitted";
-                if (completed) {
-                  const step = {
-                    ...event.step,
-                    type: event.stepType.toUpperCase(),
-                    typeID: event.stepType.toUpperCase(),
-                    completed: true,
-                  };
-                  handleSwapEvent({
-                    name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
-                    args: step,
-                  });
-                }
-              }
+            onEvent,
+          });
+          intentExplorerUrl = getSdkIntentExplorerUrl(result);
+          intentId =
+            extractIntentIdFromUrl(intentExplorerUrl) ??
+            currentSwapEntry?.intentId;
+
+          const latestSwapIntent = (
+            swapIntentRef.current as unknown as {
+              intent?: SwapIntentData;
+            } | null
+          )?.intent;
+          const transferAmount = latestSwapIntent?.destination?.amount;
+          if (!transferAmount) {
+            throw new Error("Unable to determine received amount to transfer.");
+          }
+
+          const transferAmountBigInt = parseUnits(
+            transferAmount,
+            toToken.decimals || 18,
+          );
+          finalExplorerUrl =
+            (await executeRecipientTransfer(transferAmountBigInt)) ||
+            finalExplorerUrl;
+        } else {
+          // Start exact-in swap — the intent hook will fire and populate preview
+          const result = await nexusSDK.swapWithExactIn(
+            exactInSwapPayload,
+            {
+              hooks: {
+                onIntent: (data) => handleSwapIntentCallback(data, runId),
+              },
+              onEvent,
             },
-          },
-        );
-        const intentExplorerUrl = result.intentExplorerUrl || null;
-        const intentId =
-          extractIntentIdFromUrl(intentExplorerUrl) ??
-          currentSwapEntry?.intentId;
+          );
+          intentExplorerUrl = getSdkIntentExplorerUrl(result);
+          intentId =
+            extractIntentIdFromUrl(intentExplorerUrl) ??
+            currentSwapEntry?.intentId;
+        }
+
         if (
           swapRunIdRef.current === runId &&
           swapStepRef.current === "progress"
@@ -4877,9 +5009,7 @@ export function NexusOne({
           finishCurrentSwapHistoryEntry("fulfilled", {
             intentExplorerUrl,
             intentId,
-            finalExplorerUrl:
-              explorerUrlsRef.current.destinationExplorerUrl ||
-              explorerUrlsRef.current.sourceExplorerUrl,
+            finalExplorerUrl,
           });
           resetInputsAfterSuccessfulExecution();
           onComplete?.();
@@ -4914,12 +5044,6 @@ export function NexusOne({
           getExactOutSourceTokens(),
         );
 
-        const isNative =
-          !toToken.contractAddress ||
-          toToken.contractAddress.toLowerCase() ===
-            "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ||
-          toToken.contractAddress ===
-            "0x0000000000000000000000000000000000000000";
         let executeConfig: any;
         if (activeMode === "deposit" && !selectedOpportunity?.execute) {
           throw new Error(
@@ -4935,24 +5059,11 @@ export function NexusOne({
                   (ownerAddress ?? connectedAddress) as `0x${string}`,
                 )
               : selectedOpportunity.execute;
-        } else if (activeMode === "send" && resolvedRecipientAddress) {
-          if (isNative) {
-            executeConfig = {
-              to: resolvedRecipientAddress as `0x${string}`,
-              value: amountBigInt,
-              gas: BigInt(100000),
-            };
-          } else {
-            executeConfig = {
-              to: toToken.contractAddress as `0x${string}`,
-              data: encodeFunctionData({
-                abi: erc20Abi,
-                functionName: "transfer",
-                args: [resolvedRecipientAddress as `0x${string}`, amountBigInt],
-              }),
-              gas: BigInt(100000),
-            };
-          }
+        } else if (
+          (activeMode === "send" || hasCustomSwapRecipient) &&
+          resolvedRecipientAddress
+        ) {
+          executeConfig = buildRecipientTransferExecuteConfig(amountBigInt);
         }
 
         if (executeConfig && executeConfig.tokenApproval) {
@@ -4970,43 +5081,6 @@ export function NexusOne({
         }
 
         if (executeConfig) {
-          const onEvent = (event: any) => {
-            if (swapRunIdRef.current !== runId) return;
-            if (
-              event.type === "plan_preview" ||
-              event.type === "plan_confirmed"
-            ) {
-              const list = event.plan.steps.map((step: any) => ({
-                type: step.type.toUpperCase(),
-                typeID: step.type.toUpperCase(),
-                completed: false,
-                ...step,
-              }));
-              handleSwapEvent({
-                name: NEXUS_EVENTS.SWAP_STEPS_LIST,
-                args: list,
-              });
-            }
-            if (event.type === "plan_progress") {
-              const completed =
-                event.state === "completed" ||
-                event.state === "confirmed" ||
-                event.state === "submitted";
-              if (completed) {
-                const step = {
-                  type: event.stepType.toUpperCase(),
-                  typeID: event.stepType.toUpperCase(),
-                  completed: true,
-                  ...event.step,
-                };
-                handleSwapEvent({
-                  name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
-                  args: step,
-                });
-              }
-            }
-          };
-
           const result = await nexusSDK.swapAndExecute(
             {
               toChainId: toToken.chainId!,
@@ -5039,20 +5113,28 @@ export function NexusOne({
             },
           );
 
-          const swapResult = result?.swapResult ?? null;
+          const swapResult = getSdkSwapResult(result);
           const swapSkipped = Boolean(result?.swapSkipped);
-          if (!swapResult && !swapSkipped) {
+          if (
+            !swapResult &&
+            !swapSkipped &&
+            activeMode !== "send" &&
+            !hasCustomSwapRecipient
+          ) {
             throw new Error("Swap failed");
           }
-          const executeTxHash = result?.execute?.txHash || null;
-          const intentExplorerUrl = swapResult?.intentExplorerUrl || null;
+          const executeTxHash = getSdkTransactionHash(result);
+          const intentExplorerUrl = getSdkIntentExplorerUrl(result);
           const intentId =
             extractIntentIdFromUrl(intentExplorerUrl) ??
             currentSwapEntry?.intentId;
           const finalExplorerUrl =
-            result?.execute?.txExplorerUrl ||
-            getExplorerTxUrl(toToken.chainId!, executeTxHash);
+            getSdkExplorerUrl(result) ||
+            getExplorerTxUrl(toToken.chainId, executeTxHash);
           if (finalExplorerUrl) {
+            if (activeMode === "send" || hasCustomSwapRecipient) {
+              setTransferExplorerUrl(finalExplorerUrl);
+            }
             mergeExplorerUrls({ destinationExplorerUrl: finalExplorerUrl });
           }
           patchCurrentSwapHistoryEntry({
@@ -5072,42 +5154,7 @@ export function NexusOne({
               hooks: {
                 onIntent: (data) => handleSwapIntentCallback(data, runId),
               },
-              onEvent: (event: any) => {
-                if (swapRunIdRef.current !== runId) return;
-                if (
-                  event.type === "plan_preview" ||
-                  event.type === "plan_confirmed"
-                ) {
-                  const list = event.plan.steps.map((step: any) => ({
-                    ...step,
-                    type: step.type.toUpperCase(),
-                    typeID: step.type.toUpperCase(),
-                    completed: false,
-                  }));
-                  handleSwapEvent({
-                    name: NEXUS_EVENTS.SWAP_STEPS_LIST,
-                    args: list,
-                  });
-                }
-                if (event.type === "plan_progress") {
-                  const completed =
-                    event.state === "completed" ||
-                    event.state === "confirmed" ||
-                    event.state === "submitted";
-                  if (completed) {
-                    const step = {
-                      ...event.step,
-                      type: event.stepType.toUpperCase(),
-                      typeID: event.stepType.toUpperCase(),
-                      completed: true,
-                    };
-                    handleSwapEvent({
-                      name: NEXUS_EVENTS.SWAP_STEP_COMPLETE,
-                      args: step,
-                    });
-                  }
-                }
-              },
+              onEvent,
             },
           );
           const intentExplorerUrl = result.intentExplorerUrl || null;
@@ -5142,8 +5189,10 @@ export function NexusOne({
         patch: Partial<SwapHistoryEntry> = {},
       ) => {
         const failedProgressEvent = progressEventsRef.current.at(-1);
+        const isTransferExecution =
+          activeMode === "send" || hasCustomSwapRecipient;
         const fallbackFailedStep =
-          activeMode === "deposit" || activeMode === "send"
+          activeMode === "deposit" || isTransferExecution
             ? ({ type: "APPROVAL", typeID: "AP" } as BridgeStepType)
             : ({
                 type: "DETERMINING_SWAP",
@@ -5158,7 +5207,7 @@ export function NexusOne({
           autoRefundAvailable,
           failureMessage: getFailureMessageForProgressStep(
             failedStep,
-            activeMode,
+            hasCustomSwapRecipient ? "send" : activeMode,
             autoRefundAvailable,
           ),
           failedStepType: getProgressStepType(failedStep),
@@ -5236,7 +5285,16 @@ export function NexusOne({
         clearPendingSwapIntent(true, { keepQuoteRefreshing: true });
       }
     };
-  }, [activeMode, amount, fromTokens, nexusSDK, swapStep, toToken]);
+  }, [
+    activeMode,
+    amount,
+    defaultRecipientAddress,
+    fromTokens,
+    nexusSDK,
+    recipientAddress,
+    swapStep,
+    toToken,
+  ]);
 
   useEffect(() => {
     if (activeMode !== "deposit" || swapStep !== "idle" || !nexusSDK) return;
@@ -6430,9 +6488,7 @@ export function NexusOne({
                       opportunity={selectedOpportunity}
                       steps={steps}
                       explorerUrls={explorerUrls}
-                      recipientAddress={
-                        activeMode === "send" ? recipientAddress : undefined
-                      }
+                      recipientAddress={transferRecipientAddress}
                       onAccept={handleSwapAccept}
                       onReject={() => {
                         clearPendingSwapIntent();
@@ -6455,6 +6511,7 @@ export function NexusOne({
                     steps={steps}
                     progressEvents={progressEvents}
                     failedStep={failedProgressStep}
+                    recipientAddress={transferRecipientAddress}
                   />
                 )}
 

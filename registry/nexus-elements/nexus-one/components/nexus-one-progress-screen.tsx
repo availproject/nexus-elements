@@ -36,6 +36,7 @@ interface NexusOneProgressScreenProps {
   steps?: ProgressStep[];
   progressEvents?: NexusOneProgressEvent[];
   failedStep?: ProgressSdkStep | null;
+  recipientAddress?: string;
 }
 
 const fontFamily = '"Geist", var(--font-geist-sans), system-ui, sans-serif';
@@ -118,6 +119,7 @@ const DESTINATION_SWAP_TYPES = [
 const getStatusForStep = (
   step: ProgressSdkStep | undefined,
   mode: NexusOneMode,
+  hasTransferAction = false,
 ): ProgressStatusId | null => {
   const type = getStepType(step);
 
@@ -126,7 +128,7 @@ const getStatusForStep = (
     type === "TRANSACTION_SENT" ||
     type === "TRANSACTION_CONFIRMED"
   ) {
-    return mode === "swap" ? null : "action";
+    return mode === "swap" && !hasTransferAction ? null : "action";
   }
 
   if (type.includes("SWAP_START")) {
@@ -231,7 +233,12 @@ const hasStartedStatus = (
   events: NexusOneProgressEvent[],
   id: ProgressStatusId,
   mode: NexusOneMode,
-) => events.some((event) => getStatusForStep(event.step, mode) === id);
+  hasTransferAction = false,
+) =>
+  events.some(
+    (event) =>
+      getStatusForStep(event.step, mode, hasTransferAction) === id,
+  );
 
 const buildStatusRows = ({
   events,
@@ -250,9 +257,14 @@ const buildStatusRows = ({
     destinationChain?: string;
     destinationSymbol?: string;
     opportunityName?: string;
+    recipientAddress?: string;
   };
 }): ProgressStatusRow[] => {
-  const failedStatus = failedStep ? getStatusForStep(failedStep, mode) : null;
+  const hasTransferAction =
+    mode === "send" || (mode === "swap" && Boolean(context.recipientAddress));
+  const failedStatus = failedStep
+    ? getStatusForStep(failedStep, mode, hasTransferAction)
+    : null;
   const swapListSteps = getListedSteps(events, "SWAP_STEPS_LIST");
   const fallbackSteps = steps.map((item) => item.step);
   const destinationSymbol = context.destinationSymbol || "token";
@@ -320,7 +332,7 @@ const buildStatusRows = ({
     } else if (approvalCompletedCount >= immutableApprovalTotal) {
       state = "completed";
     } else if (
-      hasStartedStatus(events, "approveTokens", mode) ||
+      hasStartedStatus(events, "approveTokens", mode, hasTransferAction) ||
       events.length === 0
     ) {
       state = "preapproval";
@@ -350,7 +362,7 @@ const buildStatusRows = ({
       state = "completed";
     } else if (
       approvalsSatisfied &&
-      (hasStartedStatus(events, "swapTokens", mode) ||
+      (hasStartedStatus(events, "swapTokens", mode, hasTransferAction) ||
         hasEventType(events, [
           "DESTINATION_SWAP_BATCH_TX",
           "BRIDGE_DEPOSIT",
@@ -402,7 +414,7 @@ const buildStatusRows = ({
     }
   }
 
-  if (mode === "deposit" || mode === "send") {
+  if (mode === "deposit" || hasTransferAction) {
     const receiveComplete =
       swapSkipped ||
       !shouldShowSwapRows ||
@@ -591,6 +603,7 @@ export function NexusOneProgressScreen({
   steps,
   progressEvents = [],
   failedStep,
+  recipientAddress,
 }: NexusOneProgressScreenProps) {
   const intentSources = intentData?.sources ?? [];
   const intentDestination = intentData?.destination;
@@ -648,6 +661,7 @@ export function NexusOneProgressScreen({
       destinationChain: destinationChainName || destinationChain,
       destinationSymbol,
       opportunityName: opportunity?.title || opportunity?.protocol,
+      recipientAddress,
     },
   });
   const [stepsExpanded, setStepsExpanded] = useState(true);
