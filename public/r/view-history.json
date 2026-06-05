@@ -3,9 +3,9 @@
   "name": "view-history",
   "type": "registry:component",
   "title": "View History",
-  "description": "A simple component built with Nexus to display view history",
+  "description": "Deprecated: use Nexus One instead. View History has been removed. Use sdk.getMyIntents() for programmatic access.",
   "dependencies": [
-    "@avail-project/nexus-core@1.2.0",
+    "@avail-project/nexus-sdk-v2",
     "lucide-react"
   ],
   "registryDependencies": [
@@ -150,5 +150,10 @@
       "type": "registry:component",
       "target": "components/common/utils/transaction-flow.ts"
     }
-  ]
+  ],
+  "meta": {
+    "deprecated": true,
+    "deprecationMessage": "View History is deprecated. Use sdk.getMyIntents() for programmatic intent history access."
+  },
+  "docs": "Deprecated in favor of Nexus One. Intent history is not included in Nexus One V1. Use sdk.getMyIntents() directly."
 }

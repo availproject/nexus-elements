@@ -3,9 +3,9 @@
   "name": "bridge-deposit",
   "type": "registry:component",
   "title": "Bridge Deposit",
-  "description": "A component built with Nexus for bridge deposit functionality",
+  "description": "Deprecated: use Nexus One instead. Bridge Deposit has been removed in favor of Nexus One deposit mode.",
   "dependencies": [
-    "@avail-project/nexus-core@1.2.0",
+    "@avail-project/nexus-sdk-v2",
     "lucide-react",
     "viem"
   ],
@@ -218,5 +218,10 @@
       "type": "registry:component",
       "target": "components/common/utils/transaction-flow.ts"
     }
-  ]
+  ],
+  "meta": {
+    "deprecated": true,
+    "deprecationMessage": "Bridge Deposit is deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"deposit\" and opportunities for new integrations."
+  },
+  "docs": "Deprecated in favor of Nexus One. Use @nexus-elements/nexus-one with config.mode = \"deposit\" and opportunities for new integrations."
 }
