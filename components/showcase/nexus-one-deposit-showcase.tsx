@@ -37,9 +37,6 @@ const NexusOneDepositShowcase = () => {
         <NexusOne
           config={{
             mode: "deposit",
-            prefill: {
-              amount: "0.1",
-            },
             deposit: {
               title: "Aave",
               protocol: "Aave",

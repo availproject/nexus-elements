@@ -3146,6 +3146,13 @@ export function NexusOne({
   };
 
   const buildFromSourcesPayload = (tokens: SwapTokenOption[]) => {
+    if (
+      (activeMode === "deposit" || activeMode === "send") &&
+      !sourceSelectionTouched
+    ) {
+      return {};
+    }
+
     if (activeMode === "deposit") {
       return {
         fromSources: getResolvedDepositSourceSelection().fromSources,

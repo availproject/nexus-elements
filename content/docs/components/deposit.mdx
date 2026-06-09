@@ -9,7 +9,7 @@ links:
 
 <ComponentPreview
   name="nexus-one-deposit"
-  description="Deposit mode with a single configured destination and amount prefilled."
+  description="Deposit mode with a single configured destination."
   align="center"
   hideCode
 />
@@ -74,9 +74,6 @@ function buildDepositExecuteConfig(
 
 const depositConfig = {
   mode: "deposit",
-  prefill: {
-    amount: "0.1",
-  },
   deposit: {
     // Configure the destination asset Nexus should deliver.
     chainId: DESTINATION_CHAIN_ID,
