@@ -790,9 +790,6 @@ const getDestinationBalanceCoverage = (entry: SwapHistoryEntry) => {
   if (!entry.toToken || !entry.requestedToAmount) return null;
 
   const requestedAmount = parseDecimalLoose(entry.requestedToAmount);
-  const intentDestinationAmount = parseDecimalLoose(
-    entry.intentData?.destination.amount,
-  );
   const destinationBalanceAmount = parseDecimalLoose(
     entry.toToken.balance?.replace(entry.toToken.symbol, ""),
   );
@@ -805,11 +802,7 @@ const getDestinationBalanceCoverage = (entry: SwapHistoryEntry) => {
     return null;
   }
 
-  const intentCoversAmount = intentDestinationAmount ?? new Decimal(0);
-  const displayAmount = Decimal.min(
-    destinationBalanceAmount,
-    Decimal.max(0, requestedAmount.minus(intentCoversAmount)),
-  );
+  const displayAmount = Decimal.min(destinationBalanceAmount, requestedAmount);
   if (displayAmount.lte(0)) return null;
 
   const requestedValue = parseDecimalLoose(entry.requestedToValue);
@@ -820,8 +813,8 @@ const getDestinationBalanceCoverage = (entry: SwapHistoryEntry) => {
   const rate =
     requestedValue && requestedAmount.gt(0)
       ? requestedValue.div(requestedAmount)
-      : destinationValue && intentCoversAmount.gt(0)
-        ? destinationValue.div(intentCoversAmount)
+      : destinationValue && requestedAmount.gt(0)
+        ? destinationValue.div(requestedAmount)
         : destinationBalanceValue && destinationBalanceAmount.gt(0)
           ? destinationBalanceValue.div(destinationBalanceAmount)
           : undefined;
@@ -997,14 +990,28 @@ const getSourceRows = (entry: SwapHistoryEntry) => {
       return row;
     }
     mergedDestinationSource = true;
+    const rowAmount = parseDecimalLoose(row.amount) ?? new Decimal(0);
+    const destinationAmount =
+      parseDecimalLoose(displayDestinationSourceRow.amount) ?? new Decimal(0);
+    const rowValue = parseDecimalLoose(row.value) ?? new Decimal(0);
+    const destinationValue =
+      parseDecimalLoose(displayDestinationSourceRow.value) ?? new Decimal(0);
+    const totalAmount = rowAmount.plus(destinationAmount);
+    const totalValue = rowValue.plus(destinationValue);
+    const displayLimit = destinationAmount.gt(0)
+      ? destinationAmount
+      : totalAmount;
+    const displayAmount = displayLimit.gt(0)
+      ? Decimal.min(totalAmount, displayLimit)
+      : totalAmount;
+    const displayValue =
+      totalAmount.gt(0) && totalValue.gt(0)
+        ? displayAmount.mul(totalValue.div(totalAmount))
+        : totalValue;
     return {
       ...row,
-      amount: (parseDecimalLoose(row.amount) ?? new Decimal(0))
-        .plus(parseDecimalLoose(displayDestinationSourceRow.amount) ?? 0)
-        .toFixed(),
-      value: (parseDecimalLoose(row.value) ?? new Decimal(0))
-        .plus(parseDecimalLoose(displayDestinationSourceRow.value) ?? 0)
-        .toFixed(),
+      amount: displayAmount.toFixed(),
+      value: displayValue.toFixed(),
     };
   };
 
@@ -2860,8 +2867,6 @@ export function NexusOne({
   const getExactOutDestinationBalanceCoverage = ({
     requestedAmount,
     requestedUsd,
-    producedAmount,
-    producedUsd,
     token = toToken,
   }: {
     requestedAmount?: Decimal;
@@ -2885,30 +2890,18 @@ export function NexusOne({
       new Decimal(0);
     if (balanceAmount.lte(0)) return null;
 
-    const externalAmount =
-      producedAmount && producedAmount.gt(0) ? producedAmount : new Decimal(0);
-    const uncoveredAmount = Decimal.max(
-      requestedAmount.minus(externalAmount),
-      new Decimal(0),
-    );
-    const coveredAmount = Decimal.min(balanceAmount, uncoveredAmount);
+    const coveredAmount = Decimal.min(balanceAmount, requestedAmount);
     if (coveredAmount.lte(0)) return null;
 
     const requestedRate =
       requestedUsd && requestedUsd.gt(0)
         ? requestedUsd.div(requestedAmount)
         : undefined;
-    const producedRate =
-      producedUsd && producedUsd.gt(0) && producedAmount && producedAmount.gt(0)
-        ? producedUsd.div(producedAmount)
-        : undefined;
     const fallbackRate = getTokenUsdRate(token);
     const usdRate =
       requestedRate && requestedRate.gt(0)
         ? requestedRate
-        : producedRate && producedRate.gt(0)
-          ? producedRate
-          : fallbackRate.gt(0)
+        : fallbackRate.gt(0)
             ? fallbackRate
             : undefined;
 
@@ -7084,13 +7077,25 @@ export function NexusOne({
         parseFiatNumber(destinationBalanceDisplayToken.userAmountUsd) ??
         new Decimal(0);
       const displayUsd = sourceUsd.plus(destinationUsd);
-      const userAmount = displayAmount.gt(0)
-        ? displayAmount
+      const displayLimit = destinationAmount.gt(0)
+        ? destinationAmount
+        : parseFiatNumber(destinationBalanceDisplayToken.balance) ??
+          parseFiatNumber(token.balance) ??
+          displayAmount;
+      const cappedDisplayAmount = displayLimit.gt(0)
+        ? Decimal.min(displayAmount, displayLimit)
+        : displayAmount;
+      const cappedDisplayUsd =
+        displayAmount.gt(0) && displayUsd.gt(0)
+          ? cappedDisplayAmount.mul(displayUsd.div(displayAmount))
+          : displayUsd;
+      const userAmount = cappedDisplayAmount.gt(0)
+        ? cappedDisplayAmount
             .toDecimalPlaces(token.decimals ?? 18, Decimal.ROUND_DOWN)
             .toFixed()
         : token.userAmount;
-      const userAmountUsd = displayUsd.gt(0)
-        ? displayUsd.toDecimalPlaces(6, Decimal.ROUND_DOWN).toFixed()
+      const userAmountUsd = cappedDisplayUsd.gt(0)
+        ? cappedDisplayUsd.toDecimalPlaces(6, Decimal.ROUND_DOWN).toFixed()
         : token.userAmountUsd;
 
       return {
