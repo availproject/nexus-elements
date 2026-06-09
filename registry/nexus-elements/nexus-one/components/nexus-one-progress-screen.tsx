@@ -349,10 +349,10 @@ const buildStatusRows = ({
       description: state === "preapproval" ? "Approve in wallet" : undefined,
       label:
         state === "completed"
-          ? `Approved tokens for swap (${immutableApprovalTotal} of ${immutableApprovalTotal})`
+          ? `Approved swaps (${immutableApprovalTotal} of ${immutableApprovalTotal})`
           : state === "error"
             ? "Collection failed"
-            : `Approve tokens for swap (${approvalCurrent} of ${immutableApprovalTotal})`,
+            : `Approve swaps (${approvalCurrent} of ${immutableApprovalTotal})`,
     });
   }
 

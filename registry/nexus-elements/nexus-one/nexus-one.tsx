@@ -5524,11 +5524,12 @@ export function NexusOne({
       }
       if (event.name === NEXUS_EVENTS.SWAP_STEP_COMPLETE) {
         const step = event.args;
+        const completed = step?.completed !== false;
         const swapSkipped = isSwapSkippedStepType(getProgressStepType(step));
         if (swapSkipped) {
           enterSkippedSwapProgress();
         }
-        appendProgressEvent(event.name, step, true);
+        appendProgressEvent(event.name, step, completed);
         if (
           [
             "SOURCE_SWAP_BATCH_TX",
@@ -5575,7 +5576,7 @@ export function NexusOne({
             patchCurrentSwapHistoryEntry({ intentId: nextIntentId });
           }
         }
-        if (step?.completed !== false) {
+        if (completed) {
           onStepComplete(step);
         }
       }
