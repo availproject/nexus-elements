@@ -448,7 +448,7 @@ const buildStatusRows = ({
             : state === "error"
               ? "Deposit failed. Funds are in your wallet."
               : state === "preapproval"
-                ? `Approve ${destinationSymbol} deposit to ${opportunityName}`
+                ? "Approve Deposit"
                 : `Deposit ${destinationSymbol} to ${opportunityName}`
         : state === "completed"
           ? `${destinationSymbol} sent`
@@ -894,7 +894,7 @@ export function NexusOneProgressScreen({
               ? `${Math.max(48, expandedStatusHeight)}px`
               : `${collapsedStatusHeight}px`,
             overflow: "hidden",
-            transition: "max-height 260ms ease",
+            transition: "max-height 220ms ease",
           }}
         >
           <div

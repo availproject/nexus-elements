@@ -188,6 +188,17 @@ const formatSymbolSummary = (symbols: string[]) => {
   return `${visible[0]}, ${visible[1]} and ${others} other${others === 1 ? "" : "s"}`;
 };
 
+const sortSourceDetailRowsByUsdDesc = <
+  T extends { symbol?: string; usdAmount?: string },
+>(
+  rows: T[],
+) =>
+  [...rows].sort((a, b) => {
+    const usdDelta = toDecimal(b.usdAmount).cmp(toDecimal(a.usdAmount));
+    if (usdDelta !== 0) return usdDelta;
+    return (a.symbol ?? "").localeCompare(b.symbol ?? "");
+  });
+
 function IntentLogo({
   src,
   alt,
@@ -1052,9 +1063,11 @@ export function SwapIntentPreview({
           index: baseSourceDetailRows.length,
         }
       : undefined;
-  const sourceDetailRows = displayOnlyDestinationSourceRow
-    ? [...baseSourceDetailRows, displayOnlyDestinationSourceRow]
-    : baseSourceDetailRows;
+  const sourceDetailRows = sortSourceDetailRowsByUsdDesc(
+    displayOnlyDestinationSourceRow
+      ? [...baseSourceDetailRows, displayOnlyDestinationSourceRow]
+      : baseSourceDetailRows,
+  );
   const sourceSymbols = (() => {
     const symbols =
       sourceDetailRows.length > 0

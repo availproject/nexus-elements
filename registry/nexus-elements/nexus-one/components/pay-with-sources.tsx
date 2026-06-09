@@ -157,12 +157,16 @@ export function PayWithSources({
   routeStatus,
   routeMessage,
   showAutoBadge = true,
+  isSourcePickerDisabled = false,
+  reserveSourceRows = false,
 }: {
   fromTokens: SwapTokenOption[];
   onOpenSourcePicker: () => void;
   routeStatus?: "loading" | "insufficient";
   routeMessage?: string;
   showAutoBadge?: boolean;
+  isSourcePickerDisabled?: boolean;
+  reserveSourceRows?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const isRouteLoading = routeStatus === "loading";
@@ -228,17 +232,19 @@ export function PayWithSources({
         </div>
         {shouldShowSourceSummary && (
           <button
+            disabled={isSourcePickerDisabled}
             onClick={onOpenSourcePicker}
             style={{
-              backgroundColor: "#F4F7FE",
+              backgroundColor: isSourcePickerDisabled ? "#F4F4F3" : "#F4F7FE",
               border: "none",
               borderRadius: "6px",
-              color: brand,
-              cursor: "pointer",
+              color: isSourcePickerDisabled ? "#A8A8A6" : brand,
+              cursor: isSourcePickerDisabled ? "not-allowed" : "pointer",
               fontFamily: uiFont,
               fontSize: "12px",
               fontWeight: 500,
               lineHeight: "16px",
+              opacity: isSourcePickerDisabled ? 0.75 : 1,
               padding: "7px 10px",
             }}
             type="button"
@@ -273,6 +279,8 @@ export function PayWithSources({
               display: "flex",
               flexDirection: "column",
               maxHeight: shouldScroll ? "184px" : undefined,
+              minHeight:
+                reserveSourceRows && !shouldScroll ? "156px" : undefined,
               overflowY: shouldScroll ? "auto" : undefined,
               paddingRight: shouldScroll ? "6px" : 0,
             }}
