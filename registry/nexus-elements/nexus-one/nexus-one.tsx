@@ -4797,12 +4797,19 @@ export function NexusOne({
     currentSwapIdRef.current = null;
     currentSwapStartedAtRef.current = 0;
     clearSelectedSources();
-    setToToken(undefined);
-    setSelectedOpportunity(undefined);
     setDepositAmountMode("token");
     if (activeMode === "deposit") {
+      setSelectedOpportunity(configuredDeposit);
+      setToToken(
+        configuredDeposit
+          ? toTokenFromOpportunity(configuredDeposit)
+          : undefined,
+      );
       amountEnteredLastValueRef.current = "";
       rotateAttempt();
+    } else {
+      setToToken(undefined);
+      setSelectedOpportunity(undefined);
     }
   };
 
@@ -4817,8 +4824,17 @@ export function NexusOne({
     setFromTokens((current) => (current.length === 0 ? current : []));
     setSourceSelectionTouched(false);
     setDepositSourceFilter("all");
-    setToToken(undefined);
     setDepositAmountMode("token");
+    if (activeMode === "deposit") {
+      setSelectedOpportunity(configuredDeposit);
+      setToToken(
+        configuredDeposit
+          ? toTokenFromOpportunity(configuredDeposit)
+          : undefined,
+      );
+    } else {
+      setToToken(undefined);
+    }
   };
 
   const handleModalOpenChange = useCallback(
