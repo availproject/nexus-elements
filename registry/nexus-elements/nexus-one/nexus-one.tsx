@@ -8371,11 +8371,15 @@ export function NexusOne({
                     : undefined
                 }
                 lockedTokens={lockedDestinationSourceTokens}
-                requiredUsd={
+                 requiredUsd={
                   activeMode === "deposit"
-                    ? depositUsdDisplay
+                    ? previewIntentSourceUsdNumber.gt(0)
+                      ? previewIntentSourceUsdNumber.toFixed(2)
+                      : depositUsdDisplay
                     : activeMode === "send" && sendAmountUsd > 0
-                      ? sendAmountUsd.toFixed(2)
+                      ? previewIntentSourceUsdNumber.gt(0)
+                        ? previewIntentSourceUsdNumber.toFixed(2)
+                        : sendAmountUsd.toFixed(2)
                       : undefined
                 }
                 selectedTokens={fromTokens}
