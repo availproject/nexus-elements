@@ -72,6 +72,7 @@ export interface NexusOneConfig {
   }[];
   /** Required for deposit mode. Describes the single destination and app call. */
   deposit?: NexusOneDepositConfig;
+  onConnectWalletClick?: () => void | Promise<void>;
 }
 
 export interface NexusOneProps {

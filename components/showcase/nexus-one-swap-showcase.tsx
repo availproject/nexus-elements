@@ -3,12 +3,14 @@ import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { useAccount } from "wagmi";
+import { useModal } from "connectkit";
 
 const USDC_ARBITRUM = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 const NexusOneSwapShowcase = () => {
   const { address } = useAccount();
+  const { setOpen } = useModal();
 
   return (
     <ShowcaseWrapper
@@ -34,6 +36,7 @@ const NexusOneSwapShowcase = () => {
                 chain: 8453,
               },
             },
+            onConnectWalletClick: () => setOpen(true),
           }}
           connectedAddress={address}
         />

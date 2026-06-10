@@ -231,6 +231,7 @@ export function RestrictedSwap({ address }: { address?: `0x${string}` }) {
 | `allowedSourcePairs` | `{ token; chain }[]` | Restricts selectable source pairs. |
 | `allowedDestinationPairs` | `{ token; chain }[]` | Restricts selectable destination pairs. |
 | `deposit` | `object` | Required for deposit mode. |
+| `onConnectWalletClick` | `() => void \| Promise<void>` | Callback triggered when the "Connect Wallet" CTA button is clicked. If omitted, the CTA will instead render as a disabled button reading "Connect your wallet to proceed". |
 
 ## References
 

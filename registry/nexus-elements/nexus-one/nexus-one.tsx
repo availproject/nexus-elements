@@ -5273,12 +5273,13 @@ export function NexusOne({
 
   const handleConnectWallet = async () => {
     if (walletActionPending || nexusLoading) return;
-    if (!onConnectWallet) return;
+    const clickHandler = config.onConnectWalletClick || onConnectWallet;
+    if (!clickHandler) return;
 
     setWalletActionPending(true);
     setTxError(null);
     try {
-      await onConnectWallet();
+      await clickHandler();
     } catch (error: any) {
       setTxError(error?.message || "Unable to connect wallet.");
     } finally {
@@ -6925,15 +6926,18 @@ export function NexusOne({
   const hasReadySwapQuoteInput = hasReadyExactInSwapInput(fromTokens, toToken);
   const needsWalletConnection = !ownerAddress || !nexusSDK;
   const walletConnectBusy = walletActionPending || nexusLoading;
-  const walletCtaLabel = walletConnectBusy ? "Connecting..." : "Connect Wallet";
+  const hasConnectWalletHandler = Boolean(config.onConnectWalletClick || onConnectWallet);
+  const walletCtaLabel = hasConnectWalletHandler
+    ? (walletConnectBusy ? "Connecting..." : "Connect Wallet")
+    : "Connect your wallet to proceed";
   const isSwapCtaDisabled = needsWalletConnection
-    ? walletConnectBusy
+    ? (!hasConnectWalletHandler || walletConnectBusy)
     : !hasReadySwapQuoteInput ||
       receiveMaxCalculating ||
       quoteRefreshing ||
       Boolean(exactOutInsufficientSourceIssue);
   const isDepositCtaDisabled = needsWalletConnection
-    ? walletConnectBusy
+    ? (!hasConnectWalletHandler || walletConnectBusy)
     : !hasPositiveRootAmount ||
       !toToken ||
       receiveMaxCalculating ||
@@ -6943,7 +6947,7 @@ export function NexusOne({
       Boolean(exactOutInsufficientSourceIssue);
   const sendNeedsRecipient = activeMode === "send" && !recipientAddress;
   const isSendCtaDisabled = needsWalletConnection
-    ? walletConnectBusy
+    ? (!hasConnectWalletHandler || walletConnectBusy)
     : !hasPositiveRootAmount ||
       !toToken ||
       hasSameOwnerSendRecipient ||

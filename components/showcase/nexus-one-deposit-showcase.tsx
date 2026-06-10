@@ -4,6 +4,7 @@ import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { encodeFunctionData } from "viem";
 import { useAccount } from "wagmi";
+import { useModal } from "connectkit";
 
 const AAVE_ABI = [
   {
@@ -22,6 +23,7 @@ const AAVE_ABI = [
 
 const NexusOneDepositShowcase = () => {
   const { address } = useAccount();
+  const { setOpen } = useModal();
 
   return (
     <ShowcaseWrapper
@@ -69,6 +71,7 @@ const NexusOneDepositShowcase = () => {
                 },
               }),
             },
+            onConnectWalletClick: () => setOpen(true),
           }}
           connectedAddress={address}
         />
