@@ -14,8 +14,8 @@ importers:
   .:
     dependencies:
       '@avail-project/nexus-core':
-        specifier: 1.5.0
-        version: 1.5.0(@opentelemetry/api@1.9.1)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+        specifier: github:availproject/nexus-sdk#aecbf493bf867f6ca3b3b12869e2d13dd0faa1c3
+        version: https://codeload.github.com/availproject/nexus-sdk/tar.gz/aecbf493bf867f6ca3b3b12869e2d13dd0faa1c3(@opentelemetry/api@1.9.1)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.2.2(react@19.2.2))(react@19.2.2)
@@ -215,8 +215,9 @@ packages:
       msgpackr: ^1.11.4
       viem: ^2.31.7
 
-  '@avail-project/nexus-core@1.5.0':
-    resolution: {integrity: sha512-V4jO9NnNxIKErMaTgohf67dZRezY+c2bq09i1bVq0xUPoXNoEDpC8/MNxMM6YMYx9lhPlDlCKefQEU1ztgJ3sA==}
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/aecbf493bf867f6ca3b3b12869e2d13dd0faa1c3':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/availproject/nexus-sdk/tar.gz/aecbf493bf867f6ca3b3b12869e2d13dd0faa1c3}
+    version: 1.5.0
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
   '@babel/code-frame@7.29.7':
@@ -6817,7 +6818,7 @@ snapshots:
     transitivePeerDependencies:
       - google-protobuf
 
-  '@avail-project/nexus-core@1.5.0(@opentelemetry/api@1.9.1)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@avail-project/nexus-core@https://codeload.github.com/availproject/nexus-sdk/tar.gz/aecbf493bf867f6ca3b3b12869e2d13dd0faa1c3(@opentelemetry/api@1.9.1)(bufferutil@4.1.0)(google-protobuf@3.21.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@avail-project/ca-common': 2.3.0(@cosmjs/proto-signing@0.34.1)(@cosmjs/stargate@0.34.1(bufferutil@4.1.0)(utf-8-validate@5.0.10))(axios@1.17.0)(decimal.js@10.6.0)(google-protobuf@3.21.4)(long@5.3.2)(msgpackr@1.11.12)(viem@2.38.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@cosmjs/proto-signing': 0.34.1
@@ -7854,7 +7855,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
       '@types/debug': 4.1.13
-      debug: 4.3.4
+      debug: 4.4.3(supports-color@5.5.0)
       pony-cause: 2.1.11
       semver: 7.8.1
       uuid: 9.0.1
@@ -7868,7 +7869,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
       '@types/debug': 4.1.13
-      debug: 4.3.4
+      debug: 4.4.3(supports-color@5.5.0)
       pony-cause: 2.1.11
       semver: 7.8.1
       uuid: 9.0.1

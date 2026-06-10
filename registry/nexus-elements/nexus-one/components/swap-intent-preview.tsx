@@ -142,6 +142,25 @@ const formatTokenAmount = (value: unknown) => {
   return amount.toDecimalPlaces(9).toFixed();
 };
 
+const formatHeaderTokenAmount = (value: unknown) => {
+  const amount = toDecimal(value);
+  if (amount.isZero()) return "0";
+  if (amount.abs().gte(1000)) {
+    return amount.toDecimalPlaces(2).toFixed();
+  }
+  if (amount.abs().gte(1)) {
+    return amount.toDecimalPlaces(4).toFixed();
+  }
+  return amount.toDecimalPlaces(6).toFixed();
+};
+
+const getFontSize = (amountStr: string, symbolStr: string) => {
+  const totalLength = String(amountStr || "").length + String(symbolStr || "").length;
+  if (totalLength > 16) return "15px";
+  if (totalLength > 12) return "17px";
+  return "21px";
+};
+
 const unique = (values: string[]) => Array.from(new Set(values.filter(Boolean)));
 
 const isNativeTokenAddress = (address?: string) => {
@@ -901,7 +920,7 @@ export function SwapIntentPreview({
         })}%`
       : pendingValue;
   const destinationHeaderAmount = hasResolvedQuote
-    ? formatTokenAmount(destinationTokenAmount)
+    ? formatHeaderTokenAmount(destinationTokenAmount)
     : pendingValue;
   const destinationTokenDisplay = hasResolvedQuote
     ? `${formatTokenAmount(destinationTokenAmount)} ${destTokenSymbol}`
@@ -1087,9 +1106,8 @@ export function SwapIntentPreview({
     if (displayOnlyDestinationSourceRow) return null;
     if (!displayOnlyDestinationSourceRow && normalizedIntentSources.length === 1) {
       const source = normalizedIntentSources[0];
-      const sourceRow = baseSourceDetailRows[0];
       return {
-        amount: sourceRow?.tokenAmountValue ?? formatTokenAmount(source.amount),
+        amount: formatHeaderTokenAmount(source.amount),
         chainName: getShortChainName(source.chain.id, source.chain.name),
         symbol: source.token.symbol,
       };
@@ -1100,9 +1118,7 @@ export function SwapIntentPreview({
       const sourceAmount = source.userAmount || fromAmount;
       if (!sourceAmount) return null;
       return {
-        amount:
-          baseSourceDetailRows[0]?.tokenAmountValue ??
-          formatTokenAmount(sourceAmount),
+        amount: formatHeaderTokenAmount(sourceAmount),
         chainName: getShortChainName(source.chainId, source.chainName),
         symbol: source.symbol,
       };
@@ -1216,7 +1232,7 @@ export function SwapIntentPreview({
                 display: "flex",
                 gap: "6px",
                 fontFamily,
-                fontSize: "21px",
+                fontSize: getFontSize(sourceHeaderAmount, sourceHeaderUnit),
                 fontWeight: 600,
                 lineHeight: "26px",
               }}
@@ -1279,7 +1295,7 @@ export function SwapIntentPreview({
                 display: "flex",
                 gap: "6px",
                 fontFamily,
-                fontSize: "21px",
+                fontSize: getFontSize(destinationHeaderAmount, destTokenSymbol),
                 fontWeight: 600,
                 lineHeight: "26px",
               }}
