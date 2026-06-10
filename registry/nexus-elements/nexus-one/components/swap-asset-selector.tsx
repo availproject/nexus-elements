@@ -1699,10 +1699,15 @@ export function SwapAssetSelector({
           <button
             key={tab.key}
             onClick={() => handleFilterTabClick(tab.key)}
+            disabled={tab.key === "custom" && autoSelectFilterTabs}
             style={{
               flex: 1, padding: "6px 0", backgroundColor: activeTab === tab.key ? "#FFFFFE" : "transparent", border: "none",
-              borderRadius: 6, cursor: "pointer", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, fontWeight: 500,
-              color: activeTab === tab.key ? "#161615" : "#848483", boxShadow: activeTab === tab.key ? "0px 1px 2px rgba(0,0,0,0.05)" : "none",
+              borderRadius: 6,
+              cursor: (tab.key === "custom" && autoSelectFilterTabs) ? "default" : "pointer",
+              fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, fontWeight: 500,
+              color: activeTab === tab.key ? "#161615" : "#848483",
+              opacity: (tab.key === "custom" && autoSelectFilterTabs && activeTab !== "custom") ? 0.5 : 1,
+              boxShadow: activeTab === tab.key ? "0px 1px 2px rgba(0,0,0,0.05)" : "none",
               transition: "all 0.15s",
             }}
           >

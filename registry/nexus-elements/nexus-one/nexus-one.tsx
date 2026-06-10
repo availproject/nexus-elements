@@ -2259,6 +2259,7 @@ export function NexusOne({
   const syncingIntentSourcesRef = useRef(false);
   const lastIntentSourceTokensRef = useRef<SwapTokenOption[]>([]);
   const autoPickedSourcesRef = useRef<SwapTokenOption[]>([]);
+  const originalAutoIntentRef = useRef<SwapIntentData | null>(null);
   const immediateQuoteAfterSourceEditRef = useRef(false);
   const lastSwapIntentRefreshAtRef = useRef(0);
   const [destinationBalance, setDestinationBalance] = useState<string | null>(
@@ -2353,8 +2354,13 @@ export function NexusOne({
     setClosingDrawerStep(null);
     if (nextStep === "choose-swap-asset" && (activeMode === "deposit" || activeMode === "send")) {
       setSourceFilter("all");
+      setSourceSelectionTouched(false);
+      setExactOutQuoteSourceModeValue("all");
       if (autoPickedSourcesRef.current.length > 0) {
         setFromTokens(autoPickedSourcesRef.current);
+      }
+      if (originalAutoIntentRef.current) {
+        applySwapIntent(originalAutoIntentRef.current);
       }
     }
     swapStepRef.current = nextStep;
@@ -3353,6 +3359,10 @@ export function NexusOne({
   const applySourceFilterTabSelection = (tab: SourceFilterTab) => {
     setSourceFilter(tab);
 
+    if (tab === "custom") {
+      return;
+    }
+
     if (tab === "all") {
       setSourceSelectionTouched(false);
       setExactOutQuoteSourceModeValue("all");
@@ -3361,16 +3371,15 @@ export function NexusOne({
       } else {
         setFromTokens([]);
       }
-      immediateQuoteAfterSourceEditRef.current = true;
-      invalidateExactOutQuoteForRefresh();
+      if (originalAutoIntentRef.current) {
+        applySwapIntent(originalAutoIntentRef.current);
+      }
       setSourceSelectionRevision((current) => current + 1);
       return;
     }
 
     setSourceSelectionTouched(true);
     setExactOutQuoteSourceModeValue("selected");
-    immediateQuoteAfterSourceEditRef.current = true;
-    invalidateExactOutQuoteForRefresh();
     setSourceSelectionRevision((current) => current + 1);
 
     const tabTokens = getDefaultSourceFilterTokens(tab);
@@ -4101,6 +4110,7 @@ export function NexusOne({
 
       if (!sourceSelectionTouched && sortedIntentSourceTokens.length > 0) {
         autoPickedSourcesRef.current = sortedIntentSourceTokens;
+        originalAutoIntentRef.current = sortedIntent;
       }
 
       const isDrawerOpen =
@@ -8414,9 +8424,14 @@ export function NexusOne({
                 onSelectionChange={
                   activeMode === "deposit" || activeMode === "send"
                     ? (tokens) => {
+                        if (sourceFilter === "all") {
+                          return;
+                        }
                         setSourceSelectionTouched(true);
                         setExactOutQuoteSourceModeValue("selected");
-                        setSourceFilter("custom");
+                        if (sourceFilter !== "stables" && sourceFilter !== "native") {
+                          setSourceFilter("custom");
+                        }
                         immediateQuoteAfterSourceEditRef.current = true;
                         invalidateExactOutQuoteForRefresh();
                         setSourceSelectionRevision((current) => current + 1);
