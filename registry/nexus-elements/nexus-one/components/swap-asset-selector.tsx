@@ -79,11 +79,7 @@ export function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] 
         name: bd.symbol ?? asset.symbol,
         logo: asset.icon ?? "",
         decimals: bd.decimals ?? asset.decimals ?? 18,
-        balance:
-          formatTokenBalance(bd.balance, {
-            symbol: bd.symbol ?? asset.symbol,
-            decimals: bd.decimals ?? asset.decimals ?? 18,
-          }) ?? bd.balance,
+        balance: bd.balance,
         balanceInFiat:
           bd.balanceInFiat != null
             ? `$${Number(bd.balanceInFiat).toFixed(2)}`
@@ -428,7 +424,14 @@ const escapeRegExp = (value: string) =>
 const getTokenFiatValue = (token: Pick<SwapTokenOption, "balanceInFiat">) =>
   Number(String(token.balanceInFiat ?? "").replace(/[^0-9.]/g, "") || 0);
 
-const formatBalanceWithSymbol = (token: Pick<SwapTokenOption, "balance" | "symbol">) => {
+const formatBalanceWithSymbol = (
+  token: Pick<SwapTokenOption, "balance" | "symbol" | "decimals">,
+) => {
+  const formatted = formatTokenBalance(token.balance, {
+    symbol: token.symbol,
+    decimals: token.decimals,
+  });
+  if (formatted) return formatted;
   const balance = String(token.balance ?? "").trim();
   const symbol = token.symbol?.trim();
   if (!symbol) return balance || "0";

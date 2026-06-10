@@ -274,11 +274,7 @@ export function ReceiveAssetSelector({
         const symbol = bd.symbol ?? asset.symbol;
         const decimals = bd.decimals ?? asset.decimals ?? 18;
         map.set(key, {
-          balance:
-            formatTokenBalance(bd.balance ?? "0", {
-              symbol,
-              decimals,
-            }) ?? `0 ${symbol}`,
+          balance: bd.balance ?? "0",
           balanceInFiat:
             bd.balanceInFiat != null
               ? `$${fiatBalance.toFixed(2)}`
@@ -708,7 +704,12 @@ export function ReceiveAssetSelector({
                   </div>
                   {hasBalance && (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>{t.balance}</span>
+                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>
+                        {formatTokenBalance(t.balance, {
+                          symbol: t.symbol,
+                          decimals: t.decimals,
+                        }) ?? `${t.balance} ${t.symbol}`}
+                      </span>
                       <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>{t.balanceInFiat}</span>
                     </div>
                   )}
