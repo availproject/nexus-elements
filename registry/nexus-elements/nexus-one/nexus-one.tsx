@@ -6017,7 +6017,7 @@ export function NexusOne({
               : {
                   toChainId: toToken.chainId!,
                   toTokenAddress: toToken.contractAddress as `0x${string}`,
-                  toAmountRaw: amountBigInt,
+                  toAmount: amountBigInt,
                   execute: executeConfig,
                   ...fromSourcesPayload,
                 };
@@ -8482,14 +8482,53 @@ export function NexusOne({
                 onSelectionChange={
                   activeMode === "deposit" || activeMode === "send"
                     ? (tokens) => {
-                        const isAnyTab = sourceFilter === "all";
+                        const isSameTokenList = (a: SwapTokenOption[], b: SwapTokenOption[]) => {
+                          if (a.length !== b.length) return false;
+                          const isSameToken = (x: SwapTokenOption, y: SwapTokenOption) => {
+                            if (x.isUnified || y.isUnified) {
+                              return Boolean(
+                                x.isUnified &&
+                                y.isUnified &&
+                                x.unifiedSymbol === y.unifiedSymbol,
+                              );
+                            }
+                            return (
+                              (x.contractAddress || "").toLowerCase() ===
+                                (y.contractAddress || "").toLowerCase() &&
+                              x.chainId === y.chainId
+                            );
+                          };
+                          return a.every((x) => b.some((y) => isSameToken(x, y)));
+                        };
+
+                        let isTabUnchanged = false;
+                        if (sourceFilter === "all") {
+                          isTabUnchanged = isSameTokenList(tokens, autoPickedSourcesRef.current);
+                        } else if (sourceFilter === "stables" || sourceFilter === "native") {
+                          const tabTokens = getDefaultSourceFilterTokens(sourceFilter);
+                          const mergedTokens = [...tabTokens];
+                          for (const locked of lockedDestinationSourceTokens) {
+                            if (
+                              !mergedTokens.some(
+                                (t) =>
+                                  t.chainId === locked.chainId &&
+                                  t.contractAddress?.toLowerCase() === locked.contractAddress?.toLowerCase(),
+                              )
+                            ) {
+                              mergedTokens.push(locked);
+                            }
+                          }
+                          isTabUnchanged = isSameTokenList(tokens, mergedTokens);
+                        }
+
+                        const isAnyTab = sourceFilter === "all" && isTabUnchanged;
                         if (isAnyTab) {
                           setSourceSelectionTouched(false);
                           setExactOutQuoteSourceModeValue("all");
                         } else {
                           setSourceSelectionTouched(true);
                           setExactOutQuoteSourceModeValue("selected");
-                          if (sourceFilter !== "stables" && sourceFilter !== "native") {
+                          if (!isTabUnchanged) {
                             setSourceFilter("custom");
                           }
                         }
@@ -8657,7 +8696,13 @@ export function NexusOne({
                     return [...next, withDefaultAmount(token)];
                   });
                 }}
-                onDone={closeDrawerToIdle}
+                onDone={() => {
+                  if (activeMode === "deposit" || activeMode === "send") {
+                    immediateQuoteAfterSourceEditRef.current = true;
+                    invalidateExactOutQuoteForRefresh(true);
+                  }
+                  closeDrawerToIdle();
+                }}
                 onSelect={(token) => {
                   if (activeMode === "swap") {
                     const next = [...fromTokens];
