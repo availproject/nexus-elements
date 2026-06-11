@@ -2131,6 +2131,10 @@ export function NexusOne({
   const toTokenQuoteKey = getTokenQuoteKey(toToken);
   const appliedTokenPrefillRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    setPersistedRequirementUsd(null);
+  }, [activeMode, toTokenQuoteKey, amount, recipientAddress]);
+
   const setExactOutQuoteSourceModeValue = useCallback(
     (mode: "all" | "selected") => {
       exactOutQuoteSourceModeRef.current = mode;
@@ -2245,6 +2249,9 @@ export function NexusOne({
   }, [newAttemptId]);
   const [intentToAmount, setIntentToAmount] = useState<string | undefined>(
     undefined,
+  );
+  const [persistedRequirementUsd, setPersistedRequirementUsd] = useState<Decimal | null>(
+    null,
   );
   const [intentFeeUsd, setIntentFeeUsd] = useState<string | undefined>(
     undefined,
@@ -3830,11 +3837,15 @@ export function NexusOne({
           ? requiredFromError.minus(availableFromError)
           : undefined;
 
+    const targetUsd = (activeMode === "deposit" || activeMode === "send") && persistedRequirementUsd
+      ? persistedRequirementUsd
+      : requestedUsd;
+
     if (
-      requestedUsd &&
-      (!missingUsd || missingUsd.lte(0) || missingUsd.gt(requestedUsd.mul(5)))
+      targetUsd &&
+      (!missingUsd || missingUsd.lte(0) || missingUsd.gt(targetUsd.mul(5)))
     ) {
-      missingUsd = requestedUsd.minus(availableUsd);
+      missingUsd = targetUsd.minus(availableUsd);
     }
 
     if (missingUsd && missingUsd.gt(0)) {
@@ -7246,6 +7257,18 @@ export function NexusOne({
     }
     return sum;
   }, [previewIntentSourceUsdNumber, destinationBalanceDisplayToken]);
+
+  useEffect(() => {
+    if (
+      (activeMode === "deposit" || activeMode === "send") &&
+      intentData &&
+      exactOutDisplaySourcesRequiredUsd.gt(0)
+    ) {
+      const buffer = Decimal.min(exactOutDisplaySourcesRequiredUsd.mul(0.01), new Decimal(2));
+      const bufferedRequirement = exactOutDisplaySourcesRequiredUsd.plus(buffer);
+      setPersistedRequirementUsd(bufferedRequirement);
+    }
+  }, [exactOutDisplaySourcesRequiredUsd, intentData, activeMode]);
   const quotedExactOutSourceTokens =
     (activeMode === "deposit" || activeMode === "send") &&
     hasCurrentExactOutPaymentIntent
@@ -8501,13 +8524,17 @@ export function NexusOne({
                 lockedTokens={lockedDestinationSourceTokens}
                 requiredUsd={
                   activeMode === "deposit"
-                    ? previewIntentSourceUsdNumber.gt(0)
-                      ? exactOutDisplaySourcesRequiredUsd.toFixed(2)
-                      : depositUsdDisplay
-                    : activeMode === "send" && sendAmountUsd > 0
-                      ? previewIntentSourceUsdNumber.gt(0)
+                    ? persistedRequirementUsd
+                      ? persistedRequirementUsd.toFixed(2)
+                      : previewIntentSourceUsdNumber.gt(0)
                         ? exactOutDisplaySourcesRequiredUsd.toFixed(2)
-                        : sendAmountUsd.toFixed(2)
+                        : depositUsdDisplay
+                    : activeMode === "send" && sendAmountUsd > 0
+                      ? persistedRequirementUsd
+                        ? persistedRequirementUsd.toFixed(2)
+                        : previewIntentSourceUsdNumber.gt(0)
+                          ? exactOutDisplaySourcesRequiredUsd.toFixed(2)
+                          : sendAmountUsd.toFixed(2)
                       : undefined
                 }
                 selectedTokens={fromTokens}
