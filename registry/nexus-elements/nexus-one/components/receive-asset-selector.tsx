@@ -19,6 +19,7 @@ import {
 } from "./swap-asset-selector";
 import { useNexus } from "../../nexus/NexusProvider";
 import { CHAIN_METADATA, formatTokenBalance } from "@avail-project/nexus-core";
+import { getShortChainName } from "../../common/utils/constant";
 import {
   CITREA_CHAIN_ID,
   CITREA_STABLE_SYMBOLS,
@@ -273,11 +274,7 @@ export function ReceiveAssetSelector({
         const symbol = bd.symbol ?? asset.symbol;
         const decimals = bd.decimals ?? asset.decimals ?? 18;
         map.set(key, {
-          balance:
-            formatTokenBalance(bd.balance ?? "0", {
-              symbol,
-              decimals,
-            }) ?? `0 ${symbol}`,
+          balance: bd.balance ?? "0",
           balanceInFiat:
             bd.balanceInFiat != null
               ? `$${fiatBalance.toFixed(2)}`
@@ -350,12 +347,12 @@ export function ReceiveAssetSelector({
     const map = new Map<number, { name: string; logo: string }>();
     if (supportedChainsAndTokens) {
       for (const c of supportedChainsAndTokens) {
-        map.set(c.id, { name: c.name, logo: c.logo });
+        map.set(c.id, { name: getShortChainName(c.id, c.name), logo: c.logo });
       }
     }
     if (swapSupportedChainsAndTokens) {
       for (const c of swapSupportedChainsAndTokens) {
-        map.set(c.id, { name: c.name, logo: c.logo });
+        map.set(c.id, { name: getShortChainName(c.id, c.name), logo: c.logo });
       }
     }
     if (!map.has(CITREA_CHAIN_ID)) {
@@ -404,7 +401,10 @@ export function ReceiveAssetSelector({
         for (const chainIdStr of Object.keys(chains)) {
           const chainId = parseInt(chainIdStr, 10);
           if (!SUPPORTED_RECEIVE_CHAIN_IDS.has(chainId)) continue;
-          const meta = chainMetaMap.get(chainId) || { name: `Chain ${chainId}`, logo: "" };
+          const meta = chainMetaMap.get(chainId) || {
+            name: getShortChainName(chainId, `Chain ${chainId}`),
+            logo: "",
+          };
           for (const t of chains[chainIdStr]) {
             allParsed.push({
               contractAddress: t.address,
@@ -704,7 +704,12 @@ export function ReceiveAssetSelector({
                   </div>
                   {hasBalance && (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>{t.balance}</span>
+                      <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontWeight: 500, fontSize: 14, color: "#161615" }}>
+                        {formatTokenBalance(t.balance, {
+                          symbol: t.symbol,
+                          decimals: t.decimals,
+                        }) ?? `${t.balance} ${t.symbol}`}
+                      </span>
                       <span style={{ fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, color: "#848483" }}>{t.balanceInFiat}</span>
                     </div>
                   )}

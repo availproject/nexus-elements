@@ -157,12 +157,16 @@ export function PayWithSources({
   routeStatus,
   routeMessage,
   showAutoBadge = true,
+  isSourcePickerDisabled = false,
+  reserveSourceRows = false,
 }: {
   fromTokens: SwapTokenOption[];
   onOpenSourcePicker: () => void;
   routeStatus?: "loading" | "insufficient";
   routeMessage?: string;
   showAutoBadge?: boolean;
+  isSourcePickerDisabled?: boolean;
+  reserveSourceRows?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const isRouteLoading = routeStatus === "loading";
@@ -228,17 +232,19 @@ export function PayWithSources({
         </div>
         {shouldShowSourceSummary && (
           <button
+            disabled={isSourcePickerDisabled}
             onClick={onOpenSourcePicker}
             style={{
-              backgroundColor: "#F4F7FE",
+              backgroundColor: isSourcePickerDisabled ? "#F4F4F3" : "#F4F7FE",
               border: "none",
               borderRadius: "6px",
-              color: brand,
-              cursor: "pointer",
+              color: isSourcePickerDisabled ? "#A8A8A6" : brand,
+              cursor: isSourcePickerDisabled ? "not-allowed" : "pointer",
               fontFamily: uiFont,
               fontSize: "12px",
               fontWeight: 500,
               lineHeight: "16px",
+              opacity: isSourcePickerDisabled ? 0.75 : 1,
               padding: "7px 10px",
             }}
             type="button"
@@ -248,161 +254,170 @@ export function PayWithSources({
         )}
       </div>
 
-      {isRouteLoading ? (
-        <>
-          <SkeletonRow />
-          <div
-            style={{
-              alignItems: "center",
-              color: brand,
-              display: "flex",
-              fontFamily: uiFont,
-              fontSize: "13px",
-              gap: "6px",
-            }}
-          >
-            <Loader2 className="animate-spin" style={{ height: 13, width: 13 }} />
-            Calculating best route...
-          </div>
-        </>
-      ) : shouldShowSourceSummary ? (
-        <div style={{ position: "relative" }}>
-          <div
-            ref={scrollRef}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              maxHeight: shouldScroll ? "184px" : undefined,
-              overflowY: shouldScroll ? "auto" : undefined,
-              paddingRight: shouldScroll ? "6px" : 0,
-            }}
-          >
-            {fromTokens.map((token, index) => (
-              <div
-                key={`${token.contractAddress}-${token.chainId ?? "unified"}-${index}`}
-                style={{
-                  alignItems: "center",
-                  borderTop: index === 0 ? "none" : "1px solid #F0F0EF",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  minHeight: "52px",
-                  padding: "6px 0",
-                }}
-              >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: reserveSourceRows ? "156px" : undefined,
+          position: "relative",
+        }}
+      >
+        {isRouteLoading ? (
+          <>
+            <SkeletonRow />
+            <div
+              style={{
+                alignItems: "center",
+                color: brand,
+                display: "flex",
+                fontFamily: uiFont,
+                fontSize: "13px",
+                gap: "6px",
+              }}
+            >
+              <Loader2 className="animate-spin" style={{ height: 13, width: 13 }} />
+              Calculating best route...
+            </div>
+          </>
+        ) : shouldShowSourceSummary ? (
+          <div style={{ position: "relative" }}>
+            <div
+              ref={scrollRef}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                maxHeight: shouldScroll ? "184px" : undefined,
+                overflowY: shouldScroll ? "auto" : undefined,
+                paddingRight: shouldScroll ? "6px" : 0,
+              }}
+            >
+              {fromTokens.map((token, index) => (
                 <div
+                  key={`${token.contractAddress}-${token.chainId ?? "unified"}-${index}`}
                   style={{
                     alignItems: "center",
+                    borderTop: index === 0 ? "none" : "1px solid #F0F0EF",
                     display: "flex",
-                    gap: "10px",
-                    minWidth: 0,
+                    justifyContent: "space-between",
+                    minHeight: "52px",
+                    padding: "6px 0",
                   }}
                 >
-                  <SourceLogoPair token={token} />
+                  <div
+                    style={{
+                      alignItems: "center",
+                      display: "flex",
+                      gap: "10px",
+                      minWidth: 0,
+                    }}
+                  >
+                    <SourceLogoPair token={token} />
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "3px",
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: primary,
+                          fontFamily: uiFont,
+                          fontSize: "14px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {token.symbol}
+                      </span>
+                      <span
+                        style={{
+                          color: muted,
+                          fontFamily: uiFont,
+                          fontSize: "12px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {token.isUnified
+                          ? "Unified balance"
+                          : `on ${token.chainName || "Unknown chain"}`}
+                      </span>
+                    </div>
+                  </div>
                   <div
                     style={{
                       display: "flex",
                       flexDirection: "column",
                       gap: "3px",
-                      minWidth: 0,
+                      textAlign: "right",
                     }}
                   >
                     <span
                       style={{
                         color: primary,
                         fontFamily: uiFont,
-                        fontSize: "14px",
-                        fontWeight: 600,
+                        fontSize: "13px",
                       }}
                     >
-                      {token.symbol}
+                      {formatToken(token.userAmount || token.balance)} {token.symbol}
                     </span>
                     <span
                       style={{
                         color: muted,
                         fontFamily: uiFont,
                         fontSize: "12px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
                       }}
                     >
-                      {token.isUnified
-                        ? "Unified balance"
-                        : `on ${token.chainName || "Unknown chain"}`}
+                      {formatUsd(token.userAmountUsd || token.balanceInFiat)}
                     </span>
                   </div>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "3px",
-                    textAlign: "right",
-                  }}
-                >
-                  <span
-                    style={{
-                      color: primary,
-                      fontFamily: uiFont,
-                      fontSize: "13px",
-                    }}
-                  >
-                    {formatToken(token.userAmount || token.balance)} {token.symbol}
-                  </span>
-                  <span
-                    style={{
-                      color: muted,
-                      fontFamily: uiFont,
-                      fontSize: "12px",
-                    }}
-                  >
-                    {formatUsd(token.userAmountUsd || token.balanceInFiat)}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            {shouldScroll && (
+              <button
+                aria-label="Scroll payment sources"
+                onClick={() =>
+                  scrollRef.current?.scrollBy({ behavior: "smooth", top: 64 })
+                }
+                style={{
+                  alignItems: "center",
+                  background: "#FFFFFE",
+                  border: `1px solid ${border}`,
+                  borderRadius: "999px",
+                  bottom: "4px",
+                  boxShadow: "0 2px 8px rgba(22,22,21,0.08)",
+                  cursor: "pointer",
+                  display: "flex",
+                  height: "22px",
+                  justifyContent: "center",
+                  left: "50%",
+                  padding: 0,
+                  position: "absolute",
+                  transform: "translateX(-50%)",
+                  width: "22px",
+                }}
+                type="button"
+              >
+                <ChevronDown style={{ color: muted, height: 14, width: 14 }} />
+              </button>
+            )}
           </div>
-          {shouldScroll && (
-            <button
-              aria-label="Scroll payment sources"
-              onClick={() =>
-                scrollRef.current?.scrollBy({ behavior: "smooth", top: 64 })
-              }
-              style={{
-                alignItems: "center",
-                background: "#FFFFFE",
-                border: `1px solid ${border}`,
-                borderRadius: "999px",
-                bottom: "4px",
-                boxShadow: "0 2px 8px rgba(22,22,21,0.08)",
-                cursor: "pointer",
-                display: "flex",
-                height: "22px",
-                justifyContent: "center",
-                left: "50%",
-                padding: 0,
-                position: "absolute",
-                transform: "translateX(-50%)",
-                width: "22px",
-              }}
-              type="button"
-            >
-              <ChevronDown style={{ color: muted, height: 14, width: 14 }} />
-            </button>
-          )}
-        </div>
-      ) : (
-        <div
-          style={{
-            color: primary,
-            fontFamily: uiFont,
-            fontSize: "13px",
-            lineHeight: "18px",
-          }}
-        >
-          Sources will be auto selected
-        </div>
-      )}
+        ) : (
+          <div
+            style={{
+              color: primary,
+              fontFamily: uiFont,
+              fontSize: "13px",
+              lineHeight: "18px",
+            }}
+          >
+            Sources will be auto selected
+          </div>
+        )}
+      </div>
 
       {routeStatus === "insufficient" && routeMessage && (
         <div

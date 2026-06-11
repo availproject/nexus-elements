@@ -26,6 +26,8 @@ interface DepositIdleFormProps {
   calculatingPercent?: number | null;
   isQuoteRefreshing?: boolean;
   showAutoBadge?: boolean;
+  isSourcePickerDisabled?: boolean;
+  reserveSourceRows?: boolean;
 }
 
 const uiFont = '"Geist", system-ui, sans-serif';
@@ -428,6 +430,8 @@ export function DepositIdleForm({
   calculatingPercent,
   isQuoteRefreshing,
   showAutoBadge = true,
+  isSourcePickerDisabled = false,
+  reserveSourceRows = false,
 }: DepositIdleFormProps) {
   const [pendingPercent, setPendingPercent] = useState<number | null>(null);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
@@ -695,7 +699,9 @@ export function DepositIdleForm({
 
       <SharedPayWithSources
         fromTokens={fromTokens}
+        isSourcePickerDisabled={isSourcePickerDisabled}
         onOpenSourcePicker={onOpenSourcePicker}
+        reserveSourceRows={reserveSourceRows}
         routeMessage={routeMessage}
         routeStatus={routeStatus}
         showAutoBadge={showAutoBadge}

@@ -33,6 +33,7 @@ interface SwapIdleFormProps {
   swapType: "exactIn" | "exactOut";
   allowOverBalanceAmounts?: boolean;
   onUpdateTokens?: (tokens: SwapTokenOption[]) => void;
+  isSourcePickerDisabled?: boolean;
 }
 
 /** Chevron down icon used in asset selector pills */
@@ -590,6 +591,7 @@ export function SwapIdleForm({
   swapType,
   allowOverBalanceAmounts = false,
   onUpdateTokens,
+  isSourcePickerDisabled = false,
 }: SwapIdleFormProps) {
   const [focusedPanel, setFocusedPanel] = useState<"send" | "receive" | null>(
     null,
@@ -599,6 +601,25 @@ export function SwapIdleForm({
   const sourceListRef = useRef<HTMLDivElement | null>(null);
   const sourceRowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const previousSourceCountRef = useRef(fromTokens.length);
+  const prevTokensRef = useRef<SwapTokenOption[]>(fromTokens);
+  const [autofocusIndex, setAutofocusIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const prev = prevTokensRef.current;
+    if (fromTokens.length > prev.length) {
+      setAutofocusIndex(fromTokens.length - 1);
+    } else if (fromTokens.length === prev.length) {
+      for (let i = 0; i < fromTokens.length; i++) {
+        const p = prev[i];
+        const c = fromTokens[i];
+        if (p && c && (p.contractAddress !== c.contractAddress || p.chainId !== c.chainId) && !c.userAmount) {
+          setAutofocusIndex(i);
+          break;
+        }
+      }
+    }
+    prevTokensRef.current = fromTokens;
+  }, [fromTokens]);
 
   useEffect(() => {
     const previousSourceCount = previousSourceCountRef.current;
@@ -967,7 +988,7 @@ export function SwapIdleForm({
           </div>
           <button
             type="button"
-            disabled={fromTokens.length === 0}
+            disabled={fromTokens.length === 0 || isSourcePickerDisabled}
             onClick={() => onOpenSourcePicker()}
             style={{
               alignItems: "center",
@@ -977,13 +998,20 @@ export function SwapIdleForm({
               display: "flex",
               gap: "5px",
               padding: "2px 0",
-              color: fromTokens.length > 0 ? "#006BF4" : "#A8A8A6",
-              cursor: fromTokens.length > 0 ? "pointer" : "not-allowed",
+              color:
+                fromTokens.length > 0 && !isSourcePickerDisabled
+                  ? "#006BF4"
+                  : "#A8A8A6",
+              cursor:
+                fromTokens.length > 0 && !isSourcePickerDisabled
+                  ? "pointer"
+                  : "not-allowed",
               fontFamily: '"Geist", system-ui, sans-serif',
               fontSize: "12px",
               fontWeight: 500,
               lineHeight: "18px",
-              opacity: fromTokens.length > 0 ? 1 : 0.75,
+              opacity:
+                fromTokens.length > 0 && !isSourcePickerDisabled ? 1 : 0.75,
             }}
           >
             <span
@@ -1091,6 +1119,13 @@ export function SwapIdleForm({
                             </span>
                           )}
                           <input
+                            ref={(el) => {
+                              if (el && autofocusIndex === index) {
+                                el.focus();
+                                el.select();
+                                setAutofocusIndex(null);
+                              }
+                            }}
                             type="text"
                             placeholder="0"
                             value={
@@ -1165,6 +1200,7 @@ export function SwapIdleForm({
                         </div>
                       ) : (
                         <button
+                          disabled={isSourcePickerDisabled}
                           onClick={() => onOpenSourcePicker(index)}
                           style={{
                             alignItems: "center",
@@ -1181,8 +1217,11 @@ export function SwapIdleForm({
                             paddingLeft: token ? "4px" : "8px",
                             paddingRight: "9px",
                             paddingTop: "4px",
-                            cursor: "pointer",
+                            cursor: isSourcePickerDisabled
+                              ? "not-allowed"
+                              : "pointer",
                             flexShrink: 0,
+                            opacity: isSourcePickerDisabled ? 0.72 : 1,
                           }}
                         >
                           {token ? (

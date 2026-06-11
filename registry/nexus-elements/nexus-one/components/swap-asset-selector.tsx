@@ -2,7 +2,6 @@
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -16,6 +15,7 @@ import {
   CHAIN_METADATA,
   formatTokenBalance,
 } from "@avail-project/nexus-core";
+import { getShortChainName } from "../../common/utils/constant";
 
 const tabularNums: React.CSSProperties = {
   fontFeatureSettings: '"tnum"',
@@ -59,6 +59,9 @@ interface SwapAssetSelectorProps {
   allowSelectedTokenRemoval?: boolean;
   hideCustomTab?: boolean;
   autoSelectFilterTabs?: boolean;
+  initialFilterTab?: FilterTab;
+  filterTabBehavior?: FilterTabBehavior;
+  onFilterTabSelect?: (tab: Exclude<FilterTab, "custom">) => void;
   lockedTokens?: SwapTokenOption[];
   onSelectionChange?: (tokens: SwapTokenOption[]) => void;
   requiredUsd?: string;
@@ -76,17 +79,16 @@ export function deriveTokenOptions(swapBalance: UserAsset[]): SwapTokenOption[] 
         name: bd.symbol ?? asset.symbol,
         logo: asset.icon ?? "",
         decimals: bd.decimals ?? asset.decimals ?? 18,
-        balance:
-          formatTokenBalance(bd.balance, {
-            symbol: bd.symbol ?? asset.symbol,
-            decimals: bd.decimals ?? asset.decimals ?? 18,
-          }) ?? bd.balance,
+        balance: bd.balance,
         balanceInFiat:
           bd.balanceInFiat != null
             ? `$${Number(bd.balanceInFiat).toFixed(2)}`
             : "$0.00",
         chainId: bd.chain?.id,
-        chainName: chainMeta?.name ?? bd.chain?.name,
+        chainName: getShortChainName(
+          bd.chain?.id,
+          chainMeta?.name ?? bd.chain?.name,
+        ),
         chainLogo: chainMeta?.logo ?? bd.chain?.logo,
       });
     }
@@ -165,7 +167,7 @@ const ChainLogos = ({ tokens }: { tokens: SwapTokenOption[] }) => {
         out.push({
           id: t.chainId,
           logo: t.chainLogo,
-          name: t.chainName,
+          name: getShortChainName(t.chainId, t.chainName),
           balance: t.balance,
           balanceInFiat: t.balanceInFiat,
         });
@@ -287,6 +289,7 @@ const ChainLogos = ({ tokens }: { tokens: SwapTokenOption[] }) => {
 
 /* ── Filter tabs ── */
 type FilterTab = "all" | "native" | "stables" | "custom";
+type FilterTabBehavior = "select-all" | "source-pool";
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
   { key: "all", label: "All" },
   { key: "native", label: "Native" },
@@ -385,6 +388,7 @@ export const SWAP_CHAIN_DISPLAY_ORDER = [
   4326, // MegaETH
   4114, // Citrea
   8217, // Kaia
+  534352, // Scroll
 ] as const;
 const SWAP_CHAIN_DISPLAY_ORDER_RANK = new Map<number, number>(
   SWAP_CHAIN_DISPLAY_ORDER.map((chainId, index) => [chainId, index]),
@@ -421,7 +425,14 @@ const escapeRegExp = (value: string) =>
 const getTokenFiatValue = (token: Pick<SwapTokenOption, "balanceInFiat">) =>
   Number(String(token.balanceInFiat ?? "").replace(/[^0-9.]/g, "") || 0);
 
-const formatBalanceWithSymbol = (token: Pick<SwapTokenOption, "balance" | "symbol">) => {
+const formatBalanceWithSymbol = (
+  token: Pick<SwapTokenOption, "balance" | "symbol" | "decimals">,
+) => {
+  const formatted = formatTokenBalance(token.balance, {
+    symbol: token.symbol,
+    decimals: token.decimals,
+  });
+  if (formatted) return formatted;
   const balance = String(token.balance ?? "").trim();
   const symbol = token.symbol?.trim();
   if (!symbol) return balance || "0";
@@ -686,6 +697,11 @@ function sameTokenOption(a?: SwapTokenOption, b?: SwapTokenOption) {
   );
 }
 
+function isSameTokenList(a: SwapTokenOption[], b: SwapTokenOption[]) {
+  if (a.length !== b.length) return false;
+  return a.every((tokenA) => b.some((tokenB) => sameTokenOption(tokenA, tokenB)));
+}
+
 function dedupeTokenOptions(tokens: SwapTokenOption[]) {
   return tokens.reduce<SwapTokenOption[]>((acc, token) => {
     if (!acc.some((item) => sameTokenOption(item, token))) {
@@ -754,18 +770,23 @@ export function SwapAssetSelector({
   allowSelectedTokenRemoval = false,
   hideCustomTab = false,
   autoSelectFilterTabs = false,
+  initialFilterTab = "all",
+  filterTabBehavior = "select-all",
+  onFilterTabSelect,
   lockedTokens = [],
   onSelectionChange,
   requiredUsd,
 }: SwapAssetSelectorProps) {
   const selectorRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
-  const stableListHeightRef = useRef(0);
   const chainCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
-  const [stableListHeight, setStableListHeight] = useState<number | null>(null);
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const normalizedInitialFilterTab =
+    hideCustomTab && initialFilterTab === "custom" ? "all" : initialFilterTab;
+  const [activeTab, setActiveTab] = useState<FilterTab>(
+    normalizedInitialFilterTab,
+  );
   const [showBelowMin, setShowBelowMin] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showChainSelector, setShowChainSelector] = useState(false);
@@ -783,12 +804,29 @@ export function SwapAssetSelector({
       lockedSelectedTokens.some((locked) => sameTokenOption(locked, token)),
     [lockedSelectedTokens],
   );
+  const prevTokensRef = useRef<{
+    selected: SwapTokenOption[];
+    locked: SwapTokenOption[];
+  } | null>(null);
   const [draftSelectedTokens, setDraftSelectedTokens] = useState<SwapTokenOption[]>(
     () => mergeTokenOptions(selectedTokens, lockedSelectedTokens),
   );
   useEffect(() => {
     if (!isMulti) return;
-    setDraftSelectedTokens(mergeTokenOptions(selectedTokens, lockedSelectedTokens));
+
+    const prev = prevTokensRef.current;
+    const hasChanged =
+      !prev ||
+      !isSameTokenList(prev.selected, selectedTokens) ||
+      !isSameTokenList(prev.locked, lockedSelectedTokens);
+
+    if (hasChanged) {
+      setDraftSelectedTokens(mergeTokenOptions(selectedTokens, lockedSelectedTokens));
+      prevTokensRef.current = {
+        selected: selectedTokens,
+        locked: lockedSelectedTokens,
+      };
+    }
   }, [isMulti, lockedSelectedTokens, selectedTokens]);
   const activeSelectedTokens = isMulti ? draftSelectedTokens : selectedTokens;
   const emitSelectionChange = useCallback(
@@ -817,35 +855,18 @@ export function SwapAssetSelector({
   }, [activeTab, hideCustomTab]);
 
   useEffect(() => {
+    setActiveTab((current) =>
+      current === normalizedInitialFilterTab
+        ? current
+        : normalizedInitialFilterTab,
+    );
+  }, [normalizedInitialFilterTab]);
+
+  useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = 0;
     }
   }, [query, activeTab, selectedChainFilter]);
-
-  const preserveListHeight = useCallback(() => {
-    const listEl = listRef.current;
-    if (!listEl) return;
-
-    const nextHeight = Math.ceil(listEl.getBoundingClientRect().height);
-    if (nextHeight <= stableListHeightRef.current) return;
-
-    stableListHeightRef.current = nextHeight;
-    setStableListHeight(nextHeight);
-  }, []);
-
-  useLayoutEffect(() => {
-    preserveListHeight();
-
-    const listEl = listRef.current;
-    if (!listEl || typeof ResizeObserver === "undefined") return;
-
-    const observer = new ResizeObserver(() => {
-      preserveListHeight();
-    });
-    observer.observe(listEl);
-
-    return () => observer.disconnect();
-  }, [preserveListHeight]);
 
   const allTokens = useMemo<SwapTokenOption[]>(() => {
     const baseTokens = staticOptions
@@ -928,7 +949,12 @@ export function SwapAssetSelector({
   );
 
   useEffect(() => {
-    if (!autoSelectFilterTabs || !isMulti || activeTab === "custom") return;
+    if (
+      !autoSelectFilterTabs ||
+      filterTabBehavior === "source-pool" ||
+      !isMulti ||
+      activeTab === "custom"
+    ) return;
     if (activeSelectedTokens.length === 0 && lockedSelectedTokens.length === 0) return;
     if (!selectionMatchesFilterTab(activeTab)) {
       setActiveTab("custom");
@@ -937,6 +963,7 @@ export function SwapAssetSelector({
     activeTab,
     activeSelectedTokens.length,
     autoSelectFilterTabs,
+    filterTabBehavior,
     isMulti,
     lockedSelectedTokens.length,
     selectionMatchesFilterTab,
@@ -1151,9 +1178,16 @@ export function SwapAssetSelector({
     if (
       autoSelectFilterTabs &&
       isMulti &&
-      tab !== "custom" &&
-      onSelectionChange
+      tab !== "custom"
     ) {
+      if (filterTabBehavior === "source-pool") {
+        if (tab === "all") {
+          setDraftSelectedTokens(mergeTokenOptions(selectedTokens, lockedSelectedTokens));
+        }
+        onFilterTabSelect?.(tab);
+        return;
+      }
+      if (!onSelectionChange) return;
       emitSelectionChange(getFilterTabTokens(tab));
     }
   };
@@ -1514,12 +1548,12 @@ export function SwapAssetSelector({
       options.set(chain.id, {
         contractAddress: "",
         symbol: "",
-        name: chain.name,
+        name: getShortChainName(chain.id, chain.name),
         decimals: 18,
         balance: "0",
         balanceInFiat: "$0.00",
         chainId: chain.id,
-        chainName: chain.name,
+        chainName: getShortChainName(chain.id, chain.name),
         chainLogo: chain.logo,
       });
     }
@@ -1559,9 +1593,9 @@ export function SwapAssetSelector({
         ...modalHeightTransitionStyle,
         boxSizing: "border-box",
         display: "flex",
-        flex: "0 1 auto",
+        flex: "1 1 auto",
         flexDirection: "column",
-        height: "auto",
+        height: "100%",
         maxHeight: "100%",
         minHeight: 0,
         overflow: "hidden",
@@ -1691,10 +1725,15 @@ export function SwapAssetSelector({
           <button
             key={tab.key}
             onClick={() => handleFilterTabClick(tab.key)}
+            disabled={tab.key === "custom" && autoSelectFilterTabs}
             style={{
               flex: 1, padding: "6px 0", backgroundColor: activeTab === tab.key ? "#FFFFFE" : "transparent", border: "none",
-              borderRadius: 6, cursor: "pointer", fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, fontWeight: 500,
-              color: activeTab === tab.key ? "#161615" : "#848483", boxShadow: activeTab === tab.key ? "0px 1px 2px rgba(0,0,0,0.05)" : "none",
+              borderRadius: 6,
+              cursor: (tab.key === "custom" && autoSelectFilterTabs) ? "default" : "pointer",
+              fontFamily: '"Geist", system-ui, sans-serif', fontSize: 13, fontWeight: 500,
+              color: activeTab === tab.key ? "#161615" : "#848483",
+              opacity: (tab.key === "custom" && autoSelectFilterTabs && activeTab !== "custom") ? 0.5 : 1,
+              boxShadow: activeTab === tab.key ? "0px 1px 2px rgba(0,0,0,0.05)" : "none",
               transition: "all 0.15s",
             }}
           >
@@ -1708,7 +1747,7 @@ export function SwapAssetSelector({
         ref={listRef}
         style={{
           flex: "1 1 auto",
-          minHeight: stableListHeight ? `${stableListHeight}px` : 0,
+          minHeight: 0,
           overflowY: "auto",
           paddingBottom: 6,
         }}
@@ -1885,7 +1924,7 @@ export function SwapAssetSelector({
 
       {/* Done button */}
       {isMulti && (
-        <div style={{ paddingBottom: 6, marginTop: "auto" }}>
+        <div style={{ flexShrink: 0, paddingBottom: 6, marginTop: "auto" }}>
           {shouldShowSelectionProgress && requiredUsdAmount && (
             <div
               style={{

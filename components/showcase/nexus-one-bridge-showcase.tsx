@@ -3,9 +3,11 @@ import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { useAccount } from "wagmi";
+import { useModal } from "connectkit";
 
 const NexusOneBridgeShowcase = () => {
   const { address } = useAccount();
+  const { setOpen } = useModal();
 
   return (
     <ShowcaseWrapper
@@ -19,7 +21,10 @@ const NexusOneBridgeShowcase = () => {
         }}
       >
         <NexusOne
-          config={{ mode: "swap" }}
+          config={{
+            mode: "swap",
+            onConnectWalletClick: () => setOpen(true),
+          }}
           connectedAddress={address}
         />
       </div>
