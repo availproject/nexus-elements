@@ -5481,6 +5481,9 @@ export function NexusOne({
   /** Start swap flow — SDK will trigger setOnSwapIntentHook for preview */
   const handleEnterPreview = async (options: { background?: boolean } = {}) => {
     const { background = false } = options;
+    if (!background) {
+      consecutiveTimeoutsRef.current = 0;
+    }
     let timeoutTimerId: number | undefined;
     const isExactOutFlow = activeMode === "deposit" || activeMode === "send";
     const quoteInputKey = activeQuoteInputKeyRef.current;
@@ -5635,11 +5638,12 @@ export function NexusOne({
         (swapStepRef.current === "idle" || swapStepRef.current === "preview-intent") &&
         (intentLoadingRef.current || quoteRefreshingRef.current)
       ) {
-        console.warn(`[NexusOne] Intent fetch timed out (10s) for runId ${runId}. Retrying...`);
+        console.warn(`[NexusOne] Intent fetch timed out (25s) for runId ${runId}. Retrying...`);
         swapIntentRef.current?.deny();
         swapIntentRef.current = null;
 
-        if (consecutiveTimeoutsRef.current < 2) {
+        // 1 retry (2 total attempts)
+        if (consecutiveTimeoutsRef.current < 1) {
           consecutiveTimeoutsRef.current += 1;
           void handleEnterPreview({ background });
         } else {
@@ -5647,11 +5651,11 @@ export function NexusOne({
           flushSync(() => {
             setIntentLoading(false);
             setQuoteRefreshing(false);
-            setTxError("Failed to fetch intent quote. Please try again.");
+            setTxError("Failed to fetch intent quote. Please try again later.");
           });
         }
       }
-    }, 10000);
+    }, 25000);
 
     // Claim ownership of global singleton hook before executing SDK swap
     registerIntentHook(runId, quoteInputKey);
@@ -7138,34 +7142,43 @@ export function NexusOne({
   const walletCtaLabel = hasConnectWalletHandler
     ? (walletConnectBusy ? "Connecting..." : "Connect Wallet")
     : "Connect your wallet to proceed";
+  const isIntentFetchError = Boolean(
+    txError && txError.includes("Failed to fetch intent quote"),
+  );
   const isSwapCtaDisabled = needsWalletConnection
     ? (!hasConnectWalletHandler || walletConnectBusy)
-    : !hasReadySwapQuoteInput ||
-      receiveMaxCalculating ||
-      quoteRefreshing ||
-      Boolean(exactOutInsufficientSourceIssue);
+    : !isIntentFetchError && (
+        !hasReadySwapQuoteInput ||
+        receiveMaxCalculating ||
+        quoteRefreshing ||
+        Boolean(exactOutInsufficientSourceIssue)
+      );
   const isDepositCtaDisabled = needsWalletConnection
     ? (!hasConnectWalletHandler || walletConnectBusy)
-    : !hasPositiveRootAmount ||
-      !toToken ||
-      receiveMaxCalculating ||
-      quoteRefreshing ||
-      intentLoading ||
-      (!hasCurrentExactOutPaymentIntent && isQuoteUnavailableForAutoSourceFlow) ||
-      Boolean(exactOutInsufficientSourceIssue);
+    : !isIntentFetchError && (
+        !hasPositiveRootAmount ||
+        !toToken ||
+        receiveMaxCalculating ||
+        quoteRefreshing ||
+        intentLoading ||
+        (!hasCurrentExactOutPaymentIntent && isQuoteUnavailableForAutoSourceFlow) ||
+        Boolean(exactOutInsufficientSourceIssue)
+      );
   const sendNeedsRecipient = activeMode === "send" && !recipientAddress;
   const isSendCtaDisabled = needsWalletConnection
     ? (!hasConnectWalletHandler || walletConnectBusy)
-    : !hasPositiveRootAmount ||
-      !toToken ||
-      hasSameOwnerSendRecipient ||
-      receiveMaxCalculating ||
-      quoteRefreshing ||
-      intentLoading ||
-      (!sendNeedsRecipient &&
-        !hasCurrentExactOutPaymentIntent &&
-        isQuoteUnavailableForAutoSourceFlow) ||
-      Boolean(exactOutInsufficientSourceIssue);
+    : !isIntentFetchError && (
+        !hasPositiveRootAmount ||
+        !toToken ||
+        hasSameOwnerSendRecipient ||
+        receiveMaxCalculating ||
+        quoteRefreshing ||
+        intentLoading ||
+        (!sendNeedsRecipient &&
+          !hasCurrentExactOutPaymentIntent &&
+          isQuoteUnavailableForAutoSourceFlow) ||
+        Boolean(exactOutInsufficientSourceIssue)
+      );
   const isSourcePickerDisabled =
     quoteRefreshing ||
     previewQuoteRefreshing ||
@@ -7173,6 +7186,7 @@ export function NexusOne({
     receiveMaxCalculating;
   const quoteCtaLabel = (fallback: string) => {
     if (needsWalletConnection) return walletCtaLabel;
+    if (isIntentFetchError) return "Retry";
     if (exactOutInsufficientSourceIssue) return "Insufficient balance";
     if (receiveMaxCalculating) return "Calculating...";
     if (quoteRefreshing || intentLoading) {
@@ -7184,6 +7198,7 @@ export function NexusOne({
   };
   const sendCtaLabel = (() => {
     if (needsWalletConnection) return walletCtaLabel;
+    if (isIntentFetchError) return "Retry";
     if (exactOutInsufficientSourceIssue) return "Insufficient balance";
     if (!hasPositiveRootAmount) return "Enter amount";
     if (!toToken) return "Select token";

@@ -2,6 +2,8 @@
 
 A unified component for **swap**, **send**, and **deposit** flows powered by [Avail Nexus](https://www.availproject.org/) intents.
 
+> 💡 **Migrating from legacy standalone elements?** If you are already using elements like `Swap`, `FastBridge`, `FastTransfer`, or `Deposit`, refer to the [Migration Guide](https://elements.nexus.availproject.org/docs/migration-guide) to upgrade to Nexus One.
+
 > **Network support:** Nexus One currently supports mainnet only. Testnet is not supported at the moment.
 
 ## Installation
@@ -205,33 +207,33 @@ export function RestrictedSwap({ address }: { address?: `0x${string}` }) {
 
 ## Configuration
 
-| Prop | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `config` | `object` | ✅ | Selects the workflow and any mode-specific behavior. |
-| `connectedAddress` | `` `0x${string}` `` | | Wallet address. Falls back to connected wagmi account. |
-| `embed` | `boolean` | | Defaults to `true`. Set `false` for modal rendering. |
-| `open`, `onOpenChange`, `defaultOpen` | modal controls | | Control modal rendering when `embed={false}`. |
-| `onComplete` | `(explorerUrl?: string) => void` | | Called on success. |
-| `onStart` | `() => void` | | Called when execution begins. |
-| `onError` | `(message: string) => void` | | Called on failure. |
-| `onClose` | `() => void` | | Close button handler (modal mode only). |
-| `onConnectWallet` | `() => void \| Promise<void>` | | Called when the internal Connect Wallet CTA is clicked. Wire this to your app-level wallet flow. |
+| Prop                                  | Type                             | Required | Notes                                                                                            |
+| ------------------------------------- | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `config`                              | `object`                         | ✅       | Selects the workflow and any mode-specific behavior.                                             |
+| `connectedAddress`                    | `` `0x${string}` ``              |          | Wallet address. Falls back to connected wagmi account.                                           |
+| `embed`                               | `boolean`                        |          | Defaults to `true`. Set `false` for modal rendering.                                             |
+| `open`, `onOpenChange`, `defaultOpen` | modal controls                   |          | Control modal rendering when `embed={false}`.                                                    |
+| `onComplete`                          | `(explorerUrl?: string) => void` |          | Called on success.                                                                               |
+| `onStart`                             | `() => void`                     |          | Called when execution begins.                                                                    |
+| `onError`                             | `(message: string) => void`      |          | Called on failure.                                                                               |
+| `onClose`                             | `() => void`                     |          | Close button handler (modal mode only).                                                          |
+| `onConnectWallet`                     | `() => void \| Promise<void>`    |          | Called when the internal Connect Wallet CTA is clicked. Wire this to your app-level wallet flow. |
 
 ### Config Options
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `mode` | `"swap" \| "send" \| "deposit"` | **Required.** Selects the active flow. |
-| `prefill.amount` | `string` | Prefills the amount input. |
-| `prefill.recipient` | `` `0x${string}` `` | Prefills recipient (send mode). |
-| `prefill.token` | `` `0x${string}` `` | Prefills token address. |
-| `prefill.chain` | `number` | Prefills chain id. |
-| `prefill.source` | `{ token; chain }` | Prefills source token and chain. |
-| `prefill.destination` | `{ token; chain }` | Prefills destination token and chain. |
-| `allowedSourcePairs` | `{ token; chain }[]` | Restricts selectable source pairs. |
-| `allowedDestinationPairs` | `{ token; chain }[]` | Restricts selectable destination pairs. |
-| `deposit` | `object` | Required for deposit mode. |
-| `onConnectWalletClick` | `() => void \| Promise<void>` | Callback triggered when the "Connect Wallet" CTA button is clicked. If omitted, the CTA will instead render as a disabled button reading "Connect your wallet to proceed". |
+| Field                     | Type                            | Notes                                                                                                                                                                      |
+| ------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`                    | `"swap" \| "send" \| "deposit"` | **Required.** Selects the active flow.                                                                                                                                     |
+| `prefill.amount`          | `string`                        | Prefills the amount input.                                                                                                                                                 |
+| `prefill.recipient`       | `` `0x${string}` ``             | Prefills recipient (send mode).                                                                                                                                            |
+| `prefill.token`           | `` `0x${string}` ``             | Prefills token address.                                                                                                                                                    |
+| `prefill.chain`           | `number`                        | Prefills chain id.                                                                                                                                                         |
+| `prefill.source`          | `{ token; chain }`              | Prefills source token and chain.                                                                                                                                           |
+| `prefill.destination`     | `{ token; chain }`              | Prefills destination token and chain.                                                                                                                                      |
+| `allowedSourcePairs`      | `{ token; chain }[]`            | Restricts selectable source pairs.                                                                                                                                         |
+| `allowedDestinationPairs` | `{ token; chain }[]`            | Restricts selectable destination pairs.                                                                                                                                    |
+| `deposit`                 | `object`                        | Required for deposit mode.                                                                                                                                                 |
+| `onConnectWalletClick`    | `() => void \| Promise<void>`   | Callback triggered when the "Connect Wallet" CTA button is clicked. If omitted, the CTA will instead render as a disabled button reading "Connect your wallet to proceed". |
 
 ## References
 

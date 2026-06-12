@@ -1,13 +1,13 @@
 ---
 name: nexus-elements-deposit
-description: "DEPRECATED — The standalone Deposit element (NexusDeposit) has been removed. Use Nexus One (config.mode = \"deposit\" with opportunities) for all deposit flows. Refer to the nexus-sdk-* agent skills for current integration guidance."
+description: "DEPRECATED — The standalone Deposit element (NexusDeposit) has been removed. Use Nexus One (config.mode = \"deposit\") for all deposit flows. Refer to the nexus-one-deposit agent skill for current integration guidance."
 ---
 
-# ⚠️ Deprecated — Use Nexus One
+# ⚠️ Deprecated — Use Nexus One Deposit
 
 **The standalone Deposit element (NexusDeposit) has been removed from Nexus Elements.**
 
-All deposit flows (swap + execute into a protocol) are now handled by **Nexus One** with `config.mode = "deposit"` and an `opportunities` array.
+All deposit flows (swap + execute into a protocol) are now handled by **Nexus One** with `config.mode = "deposit"` and a specific `deposit` config object.
 
 ## Migration
 
@@ -23,26 +23,24 @@ const USDT_ARBITRUM = "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9";
 <NexusOne
   config={{
     mode: "deposit",
-    opportunities: [
-      {
-        title: "Aave",
-        protocol: "Aave",
-        subtitle: "Deposit USDT on Arbitrum",
-        chainId: 42161,
-        tokenSymbol: "USDT",
-        tokenAddress: USDT_ARBITRUM,
-        execute: (amount, connectedAddress) => ({
-          to: AAVE_POOL,
-          data: encodeFunctionData({ /* ... */ }),
-          gas: 300000n,
-          tokenApproval: {
-            token: USDT_ARBITRUM,
-            amount,
-            spender: AAVE_POOL,
-          },
-        }),
-      },
-    ],
+    deposit: {
+      title: "Aave",
+      protocol: "Aave",
+      label: "Deposit USDT on Arbitrum",
+      chainId: 42161,
+      tokenSymbol: "USDT",
+      tokenDecimals: 6,
+      tokenAddress: USDT_ARBITRUM,
+      executeDeposit: (_symbol, tokenAddress, amount, _chainId, user) => ({
+        to: AAVE_POOL,
+        data: encodeFunctionData({ /* ... */ }),
+        tokenApproval: {
+          token: USDT_ARBITRUM,
+          amount,
+          spender: AAVE_POOL,
+        },
+      }),
+    },
   }}
   connectedAddress={address}
 />
@@ -54,15 +52,11 @@ const USDT_ARBITRUM = "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9";
 npx shadcn@latest add @nexus-elements/nexus-one
 ```
 
-## Current skills to use instead
+## Recommended skill to use instead
 
-For integration guidance, refer to the **Nexus SDK agent skills** (`.agents/skills/`):
+For integration guidance, refer to the **Nexus One Deposit agent skill**:
 
-- `nexus-sdk-setup` — SDK initialization and wallet wiring
-- `nexus-sdk-swap-flows` — swapWithExactIn, swapWithExactOut, swapAndExecute
-- `nexus-sdk-hooks-events` — intent hooks and event streaming
-- `nexus-sdk-balances-metadata-utils` — balances, supported chains/tokens, formatters
-- `nexus-sdk-integration` — end-to-end integration guide
+- `nexus-one-deposit` — Setup, prefill config, and contract transaction building for deposits with Nexus One.
 
 ## Documentation
 
