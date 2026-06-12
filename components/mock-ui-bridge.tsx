@@ -1,228 +1,612 @@
 "use client";
 
-import { Edit } from "lucide-react";
-import { Card } from "@/registry/nexus-elements/ui/card";
-import { Label } from "@/registry/nexus-elements/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-} from "@/registry/nexus-elements/ui/select";
+import React from "react";
 import {
   CHAIN_METADATA,
   SUPPORTED_CHAINS,
   TOKEN_METADATA,
 } from "@avail-project/nexus-core";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/registry/nexus-elements/ui/accordion";
-import { Fragment } from "react";
-import { SHORT_CHAIN_NAME } from "@/registry/nexus-elements/common/utils/constant";
-import { Input } from "@/registry/nexus-elements/ui/input";
-import Link from "next/link";
-import { Button } from "@/registry/nexus-elements/ui/button";
 
-const MOCK_BALANCE = {
-  abstracted: true,
-  balance: "1.731490751289602344",
-  balanceInFiat: 1.73,
-  breakdown: [
-    {
-      balance: "1",
-      balanceInFiat: 1,
-      chain: {
-        id: 1,
-        logo: "https://assets.coingecko.com/asset_platforms/images/279/large/ethereum.png",
-        name: "Ethereum Mainnet",
-      },
-      contractAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      decimals: 6,
-      universe: 0,
-    },
-    {
-      balance: "0.150554",
-      balanceInFiat: 0.15,
-      chain: {
-        id: 8453,
-        logo: "https://assets.coingecko.com/asset_platforms/images/131/large/base-network.png",
-        name: "Base",
-      },
-      contractAddress: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-      decimals: 6,
-      universe: 0,
-    },
-    {
-      balance: "0.118598",
-      balanceInFiat: 0.12,
-      chain: {
-        id: 999,
-        logo: "https://assets.coingecko.com/asset_platforms/images/243/large/hyperliquid.png",
-        name: "HyperEVM",
-      },
-      contractAddress: "0xb88339cb7199b77e23db6e890353e22632ba630f",
-      decimals: 6,
-      universe: 0,
-    },
-    {
-      balance: "0.1",
-      balanceInFiat: 0.1,
-      chain: {
-        id: 10,
-        logo: "https://assets.coingecko.com/coins/images/25244/large/Optimism.png",
-        name: "OP Mainnet",
-      },
-      contractAddress: "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
-      decimals: 6,
-      universe: 0,
-    },
-  ],
-  decimals: 18,
-  icon: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png",
-  symbol: "USDC",
-};
+const uiFont = '"Geist", var(--font-geist-sans), system-ui, sans-serif';
+
+/** Chevron down icon used in asset selector pills */
+const ChevronDownIcon = () => (
+  <svg
+    width="10"
+    height="10"
+    viewBox="0 0 10 10"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ width: "12px", height: "12px", flexShrink: 0 }}
+  >
+    <path
+      d="M2 3.5L5 6.5L8 3.5"
+      stroke="#848483"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+);
 
 export default function MockBridgeUI() {
   return (
-    <Card className="w-full max-w-md mx-auto p-8">
-      <div className="space-y-5">
-        <div className="flex flex-col gap-y-5">
-          <Link href={"/docs/components/fast-bridge"}>
-            <Label className=" text-base font-medium">To</Label>
-          </Link>
-          {/* Chain Selector */}
-          <Select value={"10"}>
-            <Link href={"/docs/components/fast-bridge"} className="w-full">
-              <SelectTrigger className=" w-full">
-                <SelectValue>
-                  <div className="flex items-center gap-x-2 w-full">
-                    <img
-                      src={CHAIN_METADATA[SUPPORTED_CHAINS.OPTIMISM].logo}
-                      alt={CHAIN_METADATA[SUPPORTED_CHAINS.OPTIMISM].name}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                    <p className="text-primary test-sm">
-                      {CHAIN_METADATA[SUPPORTED_CHAINS.OPTIMISM].name}
-                    </p>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-            </Link>
-          </Select>
+    <div
+      style={{
+        backgroundColor: "#F9F9F8",
+        backgroundImage:
+          "url(https://files.availproject.org/nexus-elements/nexus-one/card-bg.png)",
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+        borderRadius: "16px",
+        boxShadow: "#5B5B5B0D 0px 1px 12px",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+        height: "fit-content",
+        maxWidth: "450px",
+        width: "100%",
+        padding: "0",
+        position: "relative",
+        fontFamily: uiFont,
+        textAlign: "left",
+      }}
+    >
+      {/* Header Row */}
+      <div
+        style={{
+          alignItems: "center",
+          boxSizing: "border-box",
+          display: "flex",
+          flexShrink: 0,
+          justifyContent: "space-between",
+          paddingLeft: "12px",
+          paddingRight: "12px",
+          paddingTop: "12px",
+          width: "100%",
+          position: "relative",
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            boxSizing: "border-box",
+            color: "#161615",
+            fontSize: "15px",
+            fontWeight: 500,
+            letterSpacing: "0.02em",
+            lineHeight: "18px",
+          }}
+        >
+          Swap
+        </div>
+        <button
+          style={{
+            alignItems: "center",
+            backgroundColor: "#FFFFFE",
+            borderRadius: "8px",
+            boxSizing: "border-box",
+            display: "flex",
+            flexShrink: 0,
+            height: "32px",
+            justifyContent: "center",
+            outline: "1px solid #E8E8E7",
+            width: "32px",
+            cursor: "pointer",
+            border: "none",
+            padding: 0,
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ width: "16px", height: "16px", flexShrink: 0 }}
+          >
+            <path
+              d="M8 4V8L10.5 9.5"
+              stroke="#161615"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C10.196 2 12.117 3.179 13.163 4.936"
+              stroke="#161615"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+            <path
+              d="M13.5 2V5H10.5"
+              stroke="#161615"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
 
-          {/* Token Selector */}
-          <Select value={"10"}>
-            <Link href={"/docs/components/fast-bridge"} className="w-full">
-              <SelectTrigger className=" w-full">
-                <SelectValue>
-                  <div className="flex items-center gap-x-2 w-full">
-                    <img
-                      src={TOKEN_METADATA["USDC"].icon}
-                      alt={TOKEN_METADATA["USDC"].name}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                    <p className="text-primary test-sm">
-                      {TOKEN_METADATA["USDC"].name}
-                    </p>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-            </Link>
-          </Select>
+      {/* Main content area */}
+      <div
+        style={{
+          boxSizing: "border-box",
+          display: "flex",
+          flex: 1,
+          flexDirection: "column",
+          gap: "10px",
+          minHeight: 0,
+          paddingInline: "12px",
+          paddingBottom: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+            width: "100%",
+          }}
+        >
+          {/* ─── SEND PANEL ─── */}
+          <div
+            style={{
+              alignItems: "center",
+              backgroundColor: "#FFFFFE",
+              borderColor: "#E8E8E7",
+              borderRadius: "12px",
+              borderStyle: "solid",
+              borderWidth: "1px",
+              boxShadow: "#1616150A 0px 1px 2px",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              fontVariantNumeric: "tabular-nums",
+              gap: "10px",
+              justifyContent: "center",
+              paddingBlock: "14px",
+              paddingInline: "14px",
+              width: "100%",
+            }}
+          >
+            {/* Header row */}
+            <div
+              style={{
+                alignItems: "center",
+                alignSelf: "stretch",
+                boxSizing: "border-box",
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#848483",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  letterSpacing: "0.08em",
+                  lineHeight: "20px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Send
+              </div>
+              <button
+                type="button"
+                style={{
+                  alignItems: "center",
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "6px",
+                  display: "flex",
+                  gap: "5px",
+                  padding: "2px 0",
+                  color: "#006BF4",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  lineHeight: "18px",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    color: "currentColor",
+                    fontSize: "16px",
+                    lineHeight: "16px",
+                  }}
+                >
+                  +
+                </span>
+                Add more assets
+              </button>
+            </div>
 
-          <div className="flex flex-col gap-y-2 w-full">
-            <Link href={"/docs/components/fast-bridge"} className="w-full">
-              <div className="w-full flex sm:flex-row flex-col border border-border rounded-lg gap-y-2">
-                <Input
+            {/* Input Row */}
+            <div
+              style={{
+                alignItems: "center",
+                alignSelf: "stretch",
+                boxSizing: "border-box",
+                display: "flex",
+                gap: "8px",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <input
                   type="text"
-                  inputMode="decimal"
-                  value={"100"}
-                  onChange={() => {}}
-                  placeholder="Enter Amount"
-                  className="w-full border-none bg-transparent rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none py-0 px-3"
+                  value="100"
+                  readOnly
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#161615",
+                    fontSize: "32px",
+                    fontWeight: 500,
+                    lineHeight: "38px",
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    padding: 0,
+                    width: "100%",
+                    minWidth: 0,
+                  }}
                 />
-                <div className="flex items-center justify-end-safe gap-x-2 sm:gap-x-4 w-fit px-2 border-l border-border">
-                  <p className="text-base font-semibold min-w-max">200 USDC</p>
+              </div>
 
-                  <Button size={"sm"} variant={"ghost"} className="px-0">
-                    Max
-                  </Button>
+              {/* Asset selector pill */}
+              <button
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFE",
+                  borderColor: "#E8E8E7",
+                  borderRadius: "999px",
+                  borderStyle: "solid",
+                  borderWidth: "1px",
+                  boxShadow: "#1616150A 0px 1px 2px",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  gap: "7px",
+                  paddingBottom: "4px",
+                  paddingLeft: "4px",
+                  paddingRight: "9px",
+                  paddingTop: "4px",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    flexShrink: 0,
+                    height: "24px",
+                    position: "relative",
+                    width: "24px",
+                  }}
+                >
+                  {/* Token Logo */}
+                  <img
+                    src={TOKEN_METADATA["USDC"].icon}
+                    alt="USDC"
+                    style={{
+                      backgroundColor: "#FFFFFE",
+                      borderRadius: "999px",
+                      height: "24px",
+                      objectFit: "cover",
+                      width: "24px",
+                    }}
+                  />
+                  {/* Chain Logo overlay */}
+                  <img
+                    src={CHAIN_METADATA[SUPPORTED_CHAINS.ARBITRUM].logo}
+                    alt="Arbitrum"
+                    style={{
+                      backgroundColor: "#FFFFFE",
+                      borderRadius: "999px",
+                      height: "12px",
+                      objectFit: "cover",
+                      outline: "1px solid #FFFFFE",
+                      width: "12px",
+                      bottom: -2,
+                      position: "absolute",
+                      right: -2,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#161615",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    lineHeight: "17px",
+                  }}
+                >
+                  USDC
+                </div>
+                <ChevronDownIcon />
+              </button>
+            </div>
+
+            {/* USD balance row */}
+            <div
+              style={{
+                alignItems: "center",
+                alignSelf: "stretch",
+                boxSizing: "border-box",
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#848483",
+                  fontSize: "13px",
+                  lineHeight: "18px",
+                }}
+              >
+                ≈ $100.00
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#848483",
+                    fontSize: "13px",
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: "18px",
+                  }}
+                >
+                  Asset Balance · 200 USDC
                 </div>
               </div>
-            </Link>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="balance-breakdown">
-                <AccordionTrigger
-                  className="w-fit justify-end items-center py-0 gap-x-0.5 cursor-pointer"
-                  hideChevron={false}
-                >
-                  View Assets
-                </AccordionTrigger>
-                <AccordionContent className="pb-0">
-                  <div className="space-y-3 py-2">
-                    {MOCK_BALANCE?.breakdown.map((chain) => {
-                      if (Number.parseFloat(chain.balance) === 0) return null;
-                      return (
-                        <Fragment key={chain.chain.id}>
-                          <div className="flex items-center justify-between px-2 py-1 rounded-md">
-                            <div className="flex items-center gap-2">
-                              <div className="relative h-6 w-6">
-                                <img
-                                  src={chain?.chain?.logo}
-                                  alt={chain.chain.name}
-                                  sizes="100%"
-                                  className="rounded-full"
-                                  loading="lazy"
-                                  decoding="async"
-                                  width="24"
-                                  height="24"
-                                />
-                              </div>
-                              <span className="text-sm sm:block hidden">
-                                {SHORT_CHAIN_NAME[chain.chain.id]}
-                              </span>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium">
-                                {chain.balance}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                ${chain.balanceInFiat.toFixed(2)}
-                              </p>
-                            </div>
-                          </div>
-                        </Fragment>
-                      );
-                    })}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            </div>
           </div>
 
-          {/* Recipient Address */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center w-full justify-between">
-            <p className="font-semibold w-full">Recipient Address</p>
-            <div className="flex items-center gap-x-3 w-full">
-              <p className="font-semibold">{"0x12312...456789"}</p>
+          {/* ─── RECEIVE PANEL ─── */}
+          <div
+            style={{
+              backgroundColor: "#FFFFFE",
+              borderColor: "#E8E8E7",
+              borderRadius: "12px",
+              borderStyle: "solid",
+              borderWidth: "1px",
+              boxShadow: "#1616150A 0px 1px 2px",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              fontVariantNumeric: "tabular-nums",
+              gap: "10px",
+              paddingBlock: "16px",
+              paddingInline: "14px",
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                alignSelf: "stretch",
+                boxSizing: "border-box",
+                color: "#848483",
+                fontSize: "12px",
+                fontWeight: 500,
+                letterSpacing: "0.08em",
+                lineHeight: "20px",
+                textTransform: "uppercase",
+                width: "100%",
+              }}
+            >
+              Receive
+            </div>
 
-              <Button variant={"ghost"} size={"icon"} className="px-0 size-6">
-                <Edit className="size-6" />
-              </Button>
+            {/* Input Row */}
+            <div
+              style={{
+                alignItems: "center",
+                alignSelf: "stretch",
+                boxSizing: "border-box",
+                display: "flex",
+                gap: "10px",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <input
+                  type="text"
+                  value="99.9"
+                  readOnly
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#161615",
+                    fontSize: "32px",
+                    fontWeight: 500,
+                    lineHeight: "38px",
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    padding: 0,
+                    width: "100%",
+                    minWidth: 0,
+                  }}
+                />
+              </div>
+
+              {/* Asset selector pill */}
+              <button
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFE",
+                  borderColor: "#E8E8E7",
+                  borderRadius: "999px",
+                  borderStyle: "solid",
+                  borderWidth: "1px",
+                  boxShadow: "#1616150A 0px 1px 2px",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  gap: "7px",
+                  paddingBottom: "4px",
+                  paddingLeft: "4px",
+                  paddingRight: "9px",
+                  paddingTop: "4px",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    flexShrink: 0,
+                    height: "24px",
+                    position: "relative",
+                    width: "24px",
+                  }}
+                >
+                  {/* Token Logo */}
+                  <img
+                    src={TOKEN_METADATA["USDC"].icon}
+                    alt="USDC"
+                    style={{
+                      backgroundColor: "#FFFFFE",
+                      borderRadius: "999px",
+                      height: "24px",
+                      objectFit: "cover",
+                      width: "24px",
+                    }}
+                  />
+                  {/* Chain Logo overlay */}
+                  <img
+                    src={CHAIN_METADATA[SUPPORTED_CHAINS.BASE].logo}
+                    alt="Base"
+                    style={{
+                      backgroundColor: "#FFFFFE",
+                      borderRadius: "999px",
+                      height: "12px",
+                      objectFit: "cover",
+                      outline: "1px solid #FFFFFE",
+                      width: "12px",
+                      bottom: -2,
+                      position: "absolute",
+                      right: -2,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#161615",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    lineHeight: "17px",
+                  }}
+                >
+                  USDC
+                </div>
+                <ChevronDownIcon />
+              </button>
+            </div>
+
+            {/* USD balance row */}
+            <div
+              style={{
+                alignItems: "center",
+                alignSelf: "stretch",
+                boxSizing: "border-box",
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#848483",
+                  fontSize: "13px",
+                  lineHeight: "18px",
+                }}
+              >
+                ≈ $99.90
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#848483",
+                    fontSize: "13px",
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: "18px",
+                  }}
+                >
+                  Asset Balance · 0 USDC
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <Link href={"/docs/components/fast-bridge"}>
-          <Button className="w-full">Bridge</Button>
-        </Link>
+        {/* CTA Button */}
+        <div
+          style={{
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <button
+            style={{
+              alignItems: "center",
+              backgroundColor: "#006BF4",
+              border: "none",
+              borderRadius: "8px",
+              color: "#FFFFFE",
+              cursor: "pointer",
+              fontSize: "15px",
+              fontWeight: 600,
+              lineHeight: "22px",
+              paddingBlock: "12px",
+              paddingInline: "14px",
+              textAlign: "center",
+              width: "100%",
+              transition: "background-color 0.2s ease, border-color 0.2s ease",
+            }}
+          >
+            Swap
+          </button>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
