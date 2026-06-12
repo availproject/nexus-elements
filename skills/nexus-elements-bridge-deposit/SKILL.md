@@ -1,13 +1,13 @@
 ---
 name: nexus-elements-bridge-deposit
-description: "DEPRECATED — BridgeDeposit has been removed. Use Nexus One (config.mode = \"deposit\" with opportunities) for all deposit flows. Refer to the nexus-sdk-* agent skills for current integration guidance."
+description: "DEPRECATED — BridgeDeposit has been removed. Use Nexus One (config.mode = \"deposit\") for all deposit flows. Refer to the nexus-one-deposit agent skill for current integration guidance."
 ---
 
-# ⚠️ Deprecated — Use Nexus One
+# ⚠️ Deprecated — Use Nexus One Deposit
 
 **BridgeDeposit has been removed from Nexus Elements.**
 
-All deposit flows (bridge + execute and swap + execute) are now handled by **Nexus One** with `config.mode = "deposit"` and an `opportunities` array.
+All deposit flows (bridge + execute and swap + execute) are now handled by **Nexus One** with `config.mode = "deposit"` and a specific `deposit` config object.
 
 ## Migration
 
@@ -15,29 +15,32 @@ Replace any `BridgeDeposit` usage with `NexusOne`:
 
 ```tsx
 import { NexusOne } from "@/components/nexus-one/nexus-one";
+import { encodeFunctionData } from "viem";
+
+const AAVE_POOL = "0x794a61358D6845594F94dc1DB02A252b5b4814aD";
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 <NexusOne
   config={{
     mode: "deposit",
-    opportunities: [
-      {
-        id: "my-deposit",
-        protocol: "MyProtocol",
-        chainId: 8453,
-        tokenSymbol: "USDC",
-        tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        execute: (amount, connectedAddress) => ({
-          to: "0xContractAddress",
-          data: "0xCalldata",
-          gas: 300000n,
-          tokenApproval: {
-            token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-            amount,
-            spender: "0xContractAddress",
-          },
-        }),
-      },
-    ],
+    deposit: {
+      title: "Aave",
+      protocol: "Aave",
+      label: "Deposit USDC on Base",
+      chainId: 8453,
+      tokenSymbol: "USDC",
+      tokenDecimals: 6,
+      tokenAddress: USDC_BASE,
+      executeDeposit: (_symbol, tokenAddress, amount, _chainId, user) => ({
+        to: AAVE_POOL,
+        data: encodeFunctionData({ /* ... */ }),
+        tokenApproval: {
+          token: USDC_BASE,
+          amount,
+          spender: AAVE_POOL,
+        },
+      }),
+    },
   }}
   connectedAddress={address}
 />
@@ -49,16 +52,11 @@ import { NexusOne } from "@/components/nexus-one/nexus-one";
 npx shadcn@latest add @nexus-elements/nexus-one
 ```
 
-## Current skills to use instead
+## Recommended skill to use instead
 
-For integration guidance, refer to the **Nexus SDK agent skills** (`.agents/skills/`):
+For integration guidance, refer to the **Nexus One Deposit agent skill**:
 
-- `nexus-sdk-setup` — SDK initialization and wallet wiring
-- `nexus-sdk-bridge-flows` — bridge, bridgeAndTransfer, bridgeAndExecute
-- `nexus-sdk-swap-flows` — swapWithExactIn, swapWithExactOut, swapAndExecute
-- `nexus-sdk-hooks-events` — intent hooks and event streaming
-- `nexus-sdk-balances-metadata-utils` — balances, supported chains/tokens, formatters
-- `nexus-sdk-integration` — end-to-end integration guide
+- `nexus-one-deposit` — Setup, prefill config, and contract transaction building for deposits with Nexus One.
 
 ## Documentation
 
