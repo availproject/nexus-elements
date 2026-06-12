@@ -295,7 +295,7 @@ export function useDepositWidget(
             const firstSourceSwap = sourceSwapsFromResult[0];
             const chainMeta =
               CHAIN_METADATA[
-              firstSourceSwap.chainId as keyof typeof CHAIN_METADATA
+                firstSourceSwap.chainId as keyof typeof CHAIN_METADATA
               ];
             const baseUrl = chainMeta?.blockExplorerUrls?.[0] ?? "";
             const sourceExplorerUrl = baseUrl
@@ -362,7 +362,7 @@ export function useDepositWidget(
           });
         })
         .catch((error) => {
-          console.log("ERROR IN SWAP AND EXECUTE", error)
+          console.log("ERROR IN SWAP AND EXECUTE", error);
           const { code, message } = handleNexusError(error);
           const isUserRejectedError =
             code === ERROR_CODES.USER_DENIED_INTENT ||
@@ -446,9 +446,8 @@ export function useDepositWidget(
       }
       let destinationRate: number;
       try {
-        destinationRate = (await resolveTokenUsdRate(
-          destination.tokenSymbol,
-        )) || 0;
+        destinationRate =
+          (await resolveTokenUsdRate(destination.tokenSymbol)) || 0;
       } catch (error) {
         const message =
           error instanceof TokenPricingError
@@ -467,7 +466,8 @@ export function useDepositWidget(
       determiningSwapComplete.current = false;
       denyActiveSwapIntent();
 
-      const tokenAmount = destinationRate > 0 ? totalAmountUsd / destinationRate : totalAmountUsd;
+      const tokenAmount =
+        destinationRate > 0 ? totalAmountUsd / destinationRate : totalAmountUsd;
       const tokenAmountStr = tokenAmount.toFixed(destination.tokenDecimals);
       const parsed = parseUnits(tokenAmountStr, destination.tokenDecimals);
 
@@ -493,7 +493,10 @@ export function useDepositWidget(
             amount: bigint;
             spender: Hex;
           },
-          gas: BigInt(400_000),
+          gas:
+            executeParams.gas !== undefined
+              ? BigInt(executeParams.gas)
+              : BigInt(400_000),
         },
       };
 
@@ -698,9 +701,9 @@ export function useDepositWidget(
   // Polling for simulation refresh
   usePolling(
     pollingEnabled &&
-    state.status === "previewing" &&
-    Boolean(swapIntent.current) &&
-    !state.simulationLoading,
+      state.status === "previewing" &&
+      Boolean(swapIntent.current) &&
+      !state.simulationLoading,
     async () => {
       await refreshSimulation();
     },
