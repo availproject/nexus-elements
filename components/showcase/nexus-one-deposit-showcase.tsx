@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusOne } from "@/registry/nexus-elements/nexus-one/nexus-one";
-import { encodeFunctionData, parseAbi, isAddress } from "viem";
+import { encodeFunctionData, parseAbi, isAddress, maxUint256 } from "viem";
 import { useAccount } from "wagmi";
 import { useModal } from "connectkit";
 
@@ -317,6 +317,13 @@ const NexusOneDepositShowcase = () => {
     tokenDecimals: number;
     tokenLogo?: string;
     executeDeposit: any;
+    targetContract: string;
+    abiText: string;
+    functionName: string;
+    argsText: string;
+    enableApproval: boolean;
+    approvalAmountType: "required" | "infinite";
+    gasLimit: string;
   }>({
     title: "Sandbox",
     protocol: "Sandbox",
@@ -328,6 +335,13 @@ const NexusOneDepositShowcase = () => {
     tokenDecimals: 6,
     tokenLogo:
       "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdc/logo.png",
+    targetContract: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+    abiText: `// Paste JSON ABI or human-readable signatures (one per line)\ndeposit(uint256 assets, address receiver)`,
+    functionName: "deposit",
+    argsText: `["{{amount}}", "{{user}}"]`,
+    enableApproval: true,
+    approvalAmountType: "required",
+    gasLimit: "",
     executeDeposit: (
       symbol: string,
       tokenAddress: `0x${string}`,
@@ -386,7 +400,29 @@ const NexusOneDepositShowcase = () => {
   const [formTokenLogo, setFormTokenLogo] = useState(
     "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdc/logo.png",
   );
+  const [formEnableApproval, setFormEnableApproval] = useState(true);
+  const [formApprovalAmountType, setFormApprovalAmountType] = useState<"required" | "infinite">("required");
+  const [formGasLimit, setFormGasLimit] = useState("");
   const [formError, setFormError] = useState("");
+
+  const openSandboxModal = () => {
+    setFormProtocol(sandboxConfig.protocol);
+    setFormChainId(sandboxConfig.chainId);
+    setFormTokenSymbol(sandboxConfig.tokenSymbol);
+    setFormTokenAddress(sandboxConfig.tokenAddress);
+    setFormTokenDecimals(sandboxConfig.tokenDecimals);
+    setFormTargetContract(sandboxConfig.targetContract);
+    setFormAbiText(sandboxConfig.abiText);
+    setFormFunctionName(sandboxConfig.functionName);
+    setFormArgsText(sandboxConfig.argsText);
+    setFormProtocolLogo(sandboxConfig.depositTargetLogo || "");
+    setFormTokenLogo(sandboxConfig.tokenLogo || "");
+    setFormEnableApproval(sandboxConfig.enableApproval);
+    setFormApprovalAmountType(sandboxConfig.approvalAmountType);
+    setFormGasLimit(sandboxConfig.gasLimit);
+    setFormError("");
+    setIsSandboxModalOpen(true);
+  };
 
   const handleApplySandbox = (e: React.FormEvent) => {
     e.preventDefault();
@@ -468,6 +504,13 @@ const NexusOneDepositShowcase = () => {
       tokenAddress: formTokenAddress as `0x${string}`,
       tokenDecimals: formTokenDecimals,
       tokenLogo: formTokenLogo.trim() || undefined,
+      targetContract: formTargetContract,
+      abiText: formAbiText,
+      functionName: formFunctionName,
+      argsText: formArgsText,
+      enableApproval: formEnableApproval,
+      approvalAmountType: formApprovalAmountType,
+      gasLimit: formGasLimit,
       executeDeposit: (
         symbol: string,
         tokenAddress: `0x${string}`,
@@ -487,19 +530,31 @@ const NexusOneDepositShowcase = () => {
           return arg;
         });
 
-        return {
+        const executeResult: any = {
           to: formTargetContract as `0x${string}`,
           data: encodeFunctionData({
             abi: parsedAbi,
             functionName: formFunctionName,
             args: resolvedArgs,
           }),
-          tokenApproval: {
-            token: tokenAddress,
-            amount,
-            spender: formTargetContract as `0x${string}`,
-          },
         };
+
+        if (formEnableApproval) {
+          executeResult.tokenApproval = {
+            token: tokenAddress,
+            amount: formApprovalAmountType === "infinite" ? maxUint256 : amount,
+            spender: formTargetContract as `0x${string}`,
+          };
+        }
+
+        if (formGasLimit.trim()) {
+          const parsedGas = parseInt(formGasLimit.trim(), 10);
+          if (!isNaN(parsedGas) && parsedGas > 0) {
+            executeResult.gas = BigInt(parsedGas);
+          }
+        }
+
+        return executeResult;
       },
     };
 
@@ -577,7 +632,7 @@ const NexusOneDepositShowcase = () => {
             {selectedOpt === "sandbox" && (
               <button
                 type="button"
-                onClick={() => setIsSandboxModalOpen(true)}
+                onClick={() => openSandboxModal()}
                 className="flex items-center justify-center h-11 w-11 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-semibold cursor-pointer transition-all shadow-sm"
                 title="Configure Sandbox"
               >
@@ -668,7 +723,7 @@ const NexusOneDepositShowcase = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsSandboxModalOpen(true);
+                    openSandboxModal();
                     setIsOpen(false);
                   }}
                   className={`flex items-center justify-between w-full px-3.5 py-2.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all ${
@@ -975,6 +1030,87 @@ const NexusOneDepositShowcase = () => {
                     </code>
                   </div>
                 </div>
+              </div>
+
+              {/* Token Approval Settings */}
+              <div className="border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                      Enable Token Approval
+                    </span>
+                    <span className="text-[10px] text-zinc-400">
+                      Whether the token should be approved before deposit execution
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormEnableApproval(!formEnableApproval)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      formEnableApproval ? "bg-blue-600" : "bg-zinc-200 dark:bg-zinc-800"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        formEnableApproval ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {formEnableApproval && (
+                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-800/80">
+                    <label className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                      Approval Amount
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormApprovalAmountType("required")}
+                        className={`h-9 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                          formApprovalAmountType === "required"
+                            ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
+                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        }`}
+                      >
+                        Required Amount
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormApprovalAmountType("infinite")}
+                        className={`h-9 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                          formApprovalAmountType === "infinite"
+                            ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
+                            : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        }`}
+                      >
+                        Infinite (MAXUint256)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gas Limit Setting */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                  Gas Limit (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formGasLimit}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+$/.test(val)) {
+                      setFormGasLimit(val);
+                    }
+                  }}
+                  className="h-10 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. 300000"
+                />
+                <span className="text-[10px] text-zinc-400 leading-tight">
+                  Manually set gas limit. Saves from simulation/estimation failures on complex contracts.
+                </span>
               </div>
 
               {/* Submit Buttons */}
