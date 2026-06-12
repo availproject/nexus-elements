@@ -1,10 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import NetworkToggle from "../helpers/network-toggle";
 import { PreviewPanel } from "../helpers/preview-panel";
 import { Toggle } from "../ui/toggle";
 import { Check, X } from "lucide-react";
-import { getItem } from "@/lib/local-storage";
+import { getItem, setItem } from "@/lib/local-storage";
 import { NETWORK_KEY } from "@/providers/Web3Provider";
 
 type ElementType =
@@ -16,13 +15,6 @@ type ElementType =
   | "view-history"
   | "nexus-one"
   | "swap-deposit";
-
-const disabledTestnet = new Set<ElementType>([
-  "deposit",
-  "swaps",
-  "nexus-one",
-  "swap-deposit",
-]);
 
 type ToggleControlProps = Omit<
   React.ComponentProps<typeof Toggle>,
@@ -57,7 +49,12 @@ const ShowcaseWrapper = ({
   useEffect(() => {
     // Read from localStorage on client side only
     const storedNetwork = getItem(NETWORK_KEY);
-    setCurrentNetwork(storedNetwork ?? "mainnet");
+    if (storedNetwork === "testnet") {
+      setItem(NETWORK_KEY, "mainnet");
+      setCurrentNetwork("mainnet");
+    } else {
+      setCurrentNetwork(storedNetwork ?? "mainnet");
+    }
   }, []);
 
   const resolvedToggle =
@@ -68,20 +65,14 @@ const ShowcaseWrapper = ({
         onPressedChange !== undefined;
   const isPressed = pressed ?? defaultPressed ?? false;
   const label = toggleLabel ?? "Swap with Exact In";
-  const effectiveNetwork =
-    type === "nexus-one" && currentNetwork === "testnet"
-      ? "mainnet"
-      : currentNetwork;
-  const isTestnetUnsupported =
-    disabledTestnet.has(type) && effectiveNetwork === "testnet";
-  const isNexusOneTestnetUnsupported =
-    type === "nexus-one" && isTestnetUnsupported;
+  const effectiveNetwork = "mainnet";
+  const isTestnetUnsupported = false;
+  const isNexusOneTestnetUnsupported = false;
 
   return (
     <div className="w-full flex flex-col gap-y-4">
-      <div className="flex items-center justify-between w-full">
-        <NetworkToggle disableTestnet={type === "nexus-one"} />
-        {resolvedToggle && (
+      {resolvedToggle && (
+        <div className="flex items-center justify-end w-full">
           <Toggle
             variant={variant}
             size={size}
@@ -97,8 +88,8 @@ const ShowcaseWrapper = ({
               <X className="size-4" />
             )}
           </Toggle>
-        )}
-      </div>
+        </div>
+      )}
       {isNexusOneTestnetUnsupported && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           Testnet is not supported at the moment.

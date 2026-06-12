@@ -151,12 +151,85 @@ Control the modal from app state when needed.
 
 ```tsx showLineNumbers
 const [open, setOpen] = useState(false);
-
+ 
 <NexusOne
   config={depositConfig}
   connectedAddress={address}
   embed={false}
   open={open}
   onOpenChange={setOpen}
-/>;
+/>
+```
+
+## Supporting Multiple Opportunities / Selector UI
+
+Since `NexusOne` is optimized to execute a single, targeted deposit flow, it accepts a single `deposit` configuration block. If your application needs to display multiple opportunities (such as choosing between Aave, Compound, or other vaults), you can build a simple selector in your parent component and render `NexusOne` dynamically with the chosen opportunity:
+
+```tsx showLineNumbers
+import { useState } from "react";
+import { NexusOne } from "@/components/nexus-one/nexus-one";
+import { encodeFunctionData } from "viem";
+
+// Define the Aave & Compound pools/ABIs...
+
+const OPPORTUNITIES = {
+  aave: {
+    chainId: 42161,
+    tokenSymbol: "USDT",
+    tokenDecimals: 6,
+    tokenAddress: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    title: "Aave Market",
+    protocol: "Aave",
+    label: "Deposit USDT into Aave",
+    executeDeposit: (symbol, tokenAddress, amount, chainId, user) => ({
+      to: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
+      data: encodeFunctionData({ /* Aave supply arguments */ }),
+      tokenApproval: { token: tokenAddress, amount, spender: "0x794a61358D6845594F94dc1DB02A252b5b4814aD" }
+    })
+  },
+  compound: {
+    chainId: 8453,
+    tokenSymbol: "USDC",
+    tokenDecimals: 6,
+    tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    title: "Compound Market",
+    protocol: "Compound",
+    label: "Supply USDC into Compound",
+    executeDeposit: (symbol, tokenAddress, amount, chainId, user) => ({
+      to: "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+      data: encodeFunctionData({ /* Compound supply arguments */ }),
+      tokenApproval: { token: tokenAddress, amount, spender: "0xc3d688B66703497DAA19211EEdff47f25384cdc3" }
+    })
+  }
+};
+
+export function MultiDepositShowcase({ address }) {
+  const [selectedOpt, setSelectedOpt] = useState<keyof typeof OPPORTUNITIES>("aave");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-1.5 max-w-xs mx-auto">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Select Opportunity
+        </label>
+        <select
+          value={selectedOpt}
+          onChange={(e) => setSelectedOpt(e.target.value as keyof typeof OPPORTUNITIES)}
+          className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer"
+        >
+          <option value="aave">Aave (USDT on Arbitrum)</option>
+          <option value="compound">Compound (USDC on Base)</option>
+        </select>
+      </div>
+
+      <NexusOne
+        config={{
+          mode: "deposit",
+          deposit: OPPORTUNITIES[selectedOpt]
+        }}
+        connectedAddress={address}
+      />
+    </div>
+  );
+}
 ```
