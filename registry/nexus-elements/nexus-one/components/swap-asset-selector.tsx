@@ -378,7 +378,7 @@ const modalHeightTransitionStyle = {
   interpolateSize: "allow-keywords",
 } as React.CSSProperties;
 const modalHeightTransition = `height ${MODAL_HEIGHT_TRANSITION_MS}ms ease, max-height ${MODAL_HEIGHT_TRANSITION_MS}ms ease`;
-export const EXCLUDED_ASSET_SELECTOR_CHAIN_IDS = new Set([43114, 8217]);
+export const EXCLUDED_ASSET_SELECTOR_CHAIN_IDS = new Set([43114, 8217, 999]);
 export const isAssetSelectorChainAllowed = (chainId?: number) =>
   !chainId || !EXCLUDED_ASSET_SELECTOR_CHAIN_IDS.has(chainId);
 export const SWAP_CHAIN_DISPLAY_ORDER = [
@@ -387,7 +387,6 @@ export const SWAP_CHAIN_DISPLAY_ORDER = [
   8453, // Base
   137, // Polygon
   10, // OP
-  999, // HyperEVM
   56, // BSC
   143, // Monad
   4326, // MegaETH
@@ -420,7 +419,7 @@ export const compareChainsBySwapDisplayOrder = <
   return (a.chainName ?? "").localeCompare(b.chainName ?? "");
 };
 const UNIFIED_MAINNET_CHAIN_IDS = new Set([
-  1, 10, 56, 137, 143, 999, 4114, 8453, 42161, 534352, 4326,
+  1, 10, 56, 137, 143, 4114, 8453, 42161, 534352, 4326,
 ]);
 
 const escapeRegExp = (value: string) =>

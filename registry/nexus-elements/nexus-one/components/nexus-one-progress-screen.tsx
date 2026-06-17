@@ -327,7 +327,8 @@ const buildStatusRows = ({
   const opportunityName = context.opportunityName || "app";
   const hasDestinationSwapStep =
     countListedSteps(swapListSteps, DESTINATION_SWAP_TYPES) > 0 ||
-    countListedSteps(fallbackSteps, DESTINATION_SWAP_TYPES) > 0;
+    countListedSteps(fallbackSteps, DESTINATION_SWAP_TYPES) > 0 ||
+    hasEventType(events, DESTINATION_SWAP_TYPES);
   const receiveStepTypes = hasDestinationSwapStep
     ? DESTINATION_SWAP_TYPES
     : BRIDGE_FILL_TYPES;
@@ -361,7 +362,8 @@ const buildStatusRows = ({
     ]);
   const hasReceiveTokenStep =
     countListedSteps(swapListSteps, receiveStepTypes) > 0 ||
-    countListedSteps(fallbackSteps, receiveStepTypes) > 0;
+    countListedSteps(fallbackSteps, receiveStepTypes) > 0 ||
+    hasEventType(events, receiveStepTypes);
   const receiveStepStarted = hasEventType(events, receiveStepTypes);
   const receiveStepComplete = hasCompletedType(events, steps, receiveStepTypes);
   const legacySwapComplete = hasCompletedType(events, steps, [
@@ -427,10 +429,10 @@ const buildStatusRows = ({
           : undefined,
       label:
         state === "completed"
-          ? `Approved tokens for swap (${immutableApprovalTotal} of ${immutableApprovalTotal})`
+          ? `Approved Swaps (${immutableApprovalTotal} of ${immutableApprovalTotal})`
           : state === "error"
-            ? "Collection failed"
-            : `Approve tokens for swap (${approvalCurrent} of ${immutableApprovalTotal})`,
+            ? "Approve Swaps failed"
+            : `Approve Swaps (${approvalCurrent} of ${immutableApprovalTotal})`,
     });
   }
 

@@ -23,6 +23,7 @@ import {
   SwapAssetSelector,
   type SwapTokenOption,
   deriveTokenOptions,
+  isAssetSelectorChainAllowed,
 } from "./components/swap-asset-selector";
 import {
   SwapIntentPreview,
@@ -542,6 +543,65 @@ const getExplorerTxUrl = (chainId?: number, txHash?: string | null) => {
     (chainMeta as any)?.blockExplorers?.default?.url;
   return baseUrl ? `${String(baseUrl).replace(/\/$/, "")}/tx/${txHash}` : null;
 };
+
+const getFirstString = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+  return null;
+};
+
+const getProgressStepChainId = (step: any) => {
+  const value =
+    step?.chain?.id ??
+    step?.chainId ??
+    step?.data?.chain?.id ??
+    step?.data?.chainId;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
+
+const getProgressStepExplorerUrl = (step: any) => {
+  const explicitUrl = getFirstString(
+    step?.explorerUrl,
+    step?.explorerURL,
+    step?.data?.explorerUrl,
+    step?.data?.explorerURL,
+  );
+  if (explicitUrl) return explicitUrl;
+
+  const txHash = getFirstString(
+    step?.txHash,
+    step?.transactionHash,
+    step?.data?.txHash,
+    step?.data?.transactionHash,
+  );
+  return getExplorerTxUrl(getProgressStepChainId(step), txHash);
+};
+
+const isSourceExplorerStepType = (type: string) =>
+  [
+    "ALLOWANCE_APPROVAL",
+    "BRIDGE_DEPOSIT",
+    "EOA_TO_EPHEMERAL_TRANSFER",
+    "SOURCE_SWAP",
+    "SOURCE_SWAP_BATCH_TX",
+    "SOURCE_SWAP_HASH",
+    "VAULT_DEPOSIT",
+  ].includes(type);
+
+const isDestinationExplorerStepType = (type: string) =>
+  [
+    "DESTINATION_SWAP",
+    "DESTINATION_SWAP_BATCH_TX",
+    "DESTINATION_SWAP_HASH",
+    "EXECUTE_APPROVAL",
+    "EXECUTE_TRANSACTION",
+    "TRANSACTION_CONFIRMED",
+    "TRANSACTION_SENT",
+  ].includes(type);
 
 const getSdkSwapResult = (result: any) => {
   const candidate = result?.swapResult ?? result?.result;
@@ -2853,7 +2913,12 @@ export function NexusOne({
     );
     const seen = new Set<string>();
     return expanded.filter((token) => {
-      if (!token.chainId || !token.contractAddress) return false;
+      if (
+        !token.chainId ||
+        !token.contractAddress ||
+        !isAssetSelectorChainAllowed(token.chainId)
+      )
+        return false;
       const key = `${token.chainId}-${token.contractAddress.toLowerCase()}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -2893,7 +2958,12 @@ export function NexusOne({
   };
 
   const hasGasForSource = (token: SwapTokenOption) => {
-    if (!token.chainId || !token.contractAddress) return false;
+    if (
+      !token.chainId ||
+      !token.contractAddress ||
+      !isAssetSelectorChainAllowed(token.chainId)
+    )
+      return false;
     const tokenBalance = parseFiatNumber(token.balance) ?? new Decimal(0);
     if (tokenBalance.lte(0)) return false;
     if (isNativeTokenAddress(token.contractAddress)) return true;
@@ -2912,6 +2982,7 @@ export function NexusOne({
         if (
           !chainId ||
           !contractAddress ||
+          !isAssetSelectorChainAllowed(chainId) ||
           balance.lte(0) ||
           !fiatBalance ||
           fiatBalance.lt(minimumSourceUsd)
@@ -3683,6 +3754,7 @@ export function NexusOne({
   const resolvePrefillToken = useCallback(
     (pair?: { token: `0x${string}`; chain: number }) => {
       if (!pair?.token || !pair.chain) return undefined;
+      if (!isAssetSelectorChainAllowed(pair.chain)) return undefined;
 
       const normalizeAddress = (address?: string) => {
         if (!address) return "";
@@ -4850,9 +4922,10 @@ export function NexusOne({
         ) {
           markSwapExecutionStarted();
         }
-        if ((step as any)?.data?.explorerURL) {
+        const explorerUrl = getProgressStepExplorerUrl(step);
+        if (explorerUrl) {
           mergeExplorerUrls({
-            destinationExplorerUrl: (step as any).data.explorerURL,
+            destinationExplorerUrl: explorerUrl,
           });
         }
         if ((step as any)?.completed !== false) {
@@ -4901,26 +4974,14 @@ export function NexusOne({
         ) {
           markSwapExecutionStarted();
         }
-        if (
-          (step?.type === "SOURCE_SWAP_HASH" || step?.type === "SOURCE_SWAP") &&
-          step.explorerURL
-        ) {
-          mergeExplorerUrls({ sourceExplorerUrl: step.explorerURL });
-        }
-        if (
-          (step?.type === "DESTINATION_SWAP_HASH" ||
-            step?.type === "DESTINATION_SWAP") &&
-          step.explorerURL
-        ) {
-          mergeExplorerUrls({ destinationExplorerUrl: step.explorerURL });
-        }
-        if (
-          step?.type === "BRIDGE_DEPOSIT" &&
-          (step as any).data?.explorerURL
-        ) {
-          mergeExplorerUrls({
-            sourceExplorerUrl: (step as any).data.explorerURL,
-          });
+        const stepType = getProgressStepType(step);
+        const explorerUrl = getProgressStepExplorerUrl(step);
+        if (explorerUrl) {
+          if (isDestinationExplorerStepType(stepType)) {
+            mergeExplorerUrls({ destinationExplorerUrl: explorerUrl });
+          } else if (isSourceExplorerStepType(stepType)) {
+            mergeExplorerUrls({ sourceExplorerUrl: explorerUrl });
+          }
         }
         if (step?.type === "RFF_ID") {
           const nextIntentId = Number((step as any).data);
@@ -6122,6 +6183,138 @@ export function NexusOne({
     if (sendNeedsRecipient) return "Add recipient";
     return quoteCtaLabel("Review send");
   })();
+  const renderSourcePickerConnectWallet = () => (
+    <div
+      style={{
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        padding: "12px 16px 16px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: "12px",
+          width: "100%",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#D8D8D6",
+            borderRadius: "999px",
+            height: "4px",
+            width: "32px",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          alignItems: "center",
+          display: "flex",
+          gap: "12px",
+          paddingBottom: "14px",
+        }}
+      >
+        <button
+          type="button"
+          onClick={closeDrawerToIdle}
+          aria-label="Back"
+          style={{
+            alignItems: "center",
+            backgroundColor: "#FFFFFE",
+            border: "1px solid #E8E8E7",
+            borderRadius: "8px",
+            cursor: "pointer",
+            display: "flex",
+            flexShrink: 0,
+            height: "32px",
+            justifyContent: "center",
+            padding: 0,
+            width: "32px",
+          }}
+        >
+          <ArrowLeft
+            style={{ color: "#161615", height: "16px", width: "16px" }}
+          />
+        </button>
+        <div
+          style={{
+            color: "#161615",
+            fontFamily: '"Delight-Medium", "Delight", system-ui, sans-serif',
+            fontSize: "18px",
+            fontWeight: 500,
+            lineHeight: "24px",
+          }}
+        >
+          Connect Wallet
+        </div>
+      </div>
+      <div
+        style={{
+          backgroundColor: "#E8E8E7",
+          height: "1px",
+          marginBottom: "16px",
+          width: "100%",
+        }}
+      />
+      <div
+        style={{
+          color: "#848483",
+          fontFamily: '"Geist", system-ui, sans-serif',
+          fontSize: "14px",
+          lineHeight: "20px",
+          marginBottom: "16px",
+        }}
+      >
+        Connect your wallet to load source assets.
+      </div>
+      {txError && (
+        <div
+          style={{
+            color: "#D32F2F",
+            fontFamily: '"Geist", system-ui, sans-serif',
+            fontSize: "13px",
+            lineHeight: "18px",
+            marginBottom: "12px",
+          }}
+        >
+          {txError}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => void handleConnectWallet()}
+        disabled={walletConnectBusy}
+        style={{
+          alignItems: "center",
+          backgroundColor: walletConnectBusy ? "#F0F0EF" : "#006BF4",
+          border: "none",
+          borderRadius: "8px",
+          color: walletConnectBusy ? "#9E9E9C" : "#FFFFFE",
+          cursor: walletConnectBusy ? "default" : "pointer",
+          display: "flex",
+          fontFamily: '"Geist", system-ui, sans-serif',
+          fontSize: "16px",
+          fontWeight: 500,
+          gap: "8px",
+          height: "48px",
+          justifyContent: "center",
+          lineHeight: "24px",
+          width: "100%",
+        }}
+      >
+        {walletConnectBusy && (
+          <Loader2
+            className="animate-spin"
+            style={{ color: "#9E9E9C", height: "16px", width: "16px" }}
+          />
+        )}
+        {walletCtaLabel}
+      </button>
+    </div>
+  );
   const previewIntentSourceUsdNumber = (intentData?.sources ?? []).reduce(
     (sum, source) =>
       sum.plus(parseFiatNumber((source as any).value) ?? new Decimal(0)),
@@ -7458,6 +7651,9 @@ export function NexusOne({
                   : "animate-in slide-in-from-bottom-full duration-300"
               }
             >
+              {needsWalletConnection ? (
+                renderSourcePickerConnectWallet()
+              ) : (
               <SwapAssetSelector
                 title={
                   activeMode === "deposit" || activeMode === "send"
@@ -7715,6 +7911,7 @@ export function NexusOne({
                 }}
                 onBack={closeDrawerToIdle}
               />
+              )}
             </div>
           </div>
         )}
