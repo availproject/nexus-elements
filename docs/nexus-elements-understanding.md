@@ -35,7 +35,7 @@ File: `registry/nexus-elements/nexus/NexusProvider.tsx`
 
 ### What it initializes
 
-- Creates one `NexusSDK` instance.
+- Creates one Nexus SDK client.
 - On `handleInit(provider)`:
   - initializes SDK
   - loads supported chains/tokens (`getSupportedChains`, `getSwapSupportedChainsAndTokens`)
@@ -65,7 +65,7 @@ File: `registry/nexus-elements/nexus-one/nexus-one.tsx`
 | Mode | SDK operations | Behavior |
 |---|---|---|
 | `swap` | `swapWithExactIn`, `swapWithExactOut` | Users choose source and receive assets. Nexus One switches between exact-in and exact-out quoting. Also handles direct bridge paths automatically. |
-| `send` | `swapAndTransfer` | Exact-out. Users choose the token and amount to send, then Nexus resolves the pay-with sources. |
+| `send` | exact-out transfer path | Exact-out. Users choose the token and amount to send, then Nexus resolves the pay-with sources. |
 | `deposit` | `swapAndExecute` | Exact-out. Users enter amount for one configured deposit target, and Nexus executes the deposit. |
 
 ### Configuration model

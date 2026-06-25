@@ -130,7 +130,7 @@ function buildDepositExecuteConfig(
       // Aave reference: supply(asset, amount, onBehalfOf, referralCode)
     }),
     tokenApproval: {
-      token: tokenAddress,
+      toTokenAddress: tokenAddress,
       amount,
       spender: APP_DEPOSIT_CONTRACT,
     },

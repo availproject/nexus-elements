@@ -16,6 +16,30 @@ links:
 
 > **Network support:** Mainnet only. Testnet is not supported at the moment.
 
+## Build with Agent Skills
+
+<span className="block mt-6" />
+
+Nexus Elements ships with agent skills that help you set up providers, integrate components, and ship faster.
+
+Install the skill pack once in your environment:
+
+```bash
+npx skills add availproject/nexus-elements
+```
+
+<span className="block mt-6" />
+
+For more information, view [skills.sh/availproject/nexus-elements](https://skills.sh/availproject/nexus-elements).
+
+<span className="block mt-6" />
+
+Recommended skills for this component:
+
+- `nexus-elements-overview`
+- `nexus-elements-nexus-provider`
+- `nexus-one-send`
+
 ## Installation
 
 ```bash
@@ -52,7 +76,7 @@ export function SendExample({ address }: { address?: `0x${string}` }) {
 
 ## Configuration
 
-Send uses only `mode: "send"`. This mode is exact-out: users enter the token amount to send, pay-with sources are selected, and the flow submits through `swapAndTransfer`.
+Send uses only `mode: "send"`. This mode is exact-out: users enter the token amount to send, pay-with sources are selected, and the flow submits through the v2 transfer execution path.
 
 | Prop | Required | Description |
 | --- | --- | --- |

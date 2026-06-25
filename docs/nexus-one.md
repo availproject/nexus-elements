@@ -46,7 +46,7 @@ Use `config.mode` to select `swap`, `send`, or `deposit`. Optional config fields
 | Mode | SDK call | Behavior |
 |---|---|---|
 | `swap` | `swapWithExactIn` / `swapWithExactOut` | Users choose source and receive assets |
-| `send` | `swapAndTransfer` | Exact-out, users choose token/amount to send |
+| `send` | exact-out transfer path | Exact-out, users choose token/amount to send |
 | `deposit` | `swapAndExecute` | Exact-out, with a configured deposit execute builder |
 
 ## 8) Deposit Config

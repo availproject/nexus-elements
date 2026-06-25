@@ -27,7 +27,7 @@ description: End-to-end integration guidance for Avail Nexus SDK in any JS/TS fr
 5) `nexus-sdk-balances-metadata-utils`
 
 ## Follow this integration checklist (high level)
-- Install dependency `@avail-project/nexus-core`.
+- Install dependency `@avail-project/nexus-sdk-v2` (this branch pins `git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2`).
 - Obtain an EIP-1193 provider from wallet connection.
 - Initialize SDK once and store instance.
 - Attach hooks for intents, allowances, and swap intents (or rely on auto-approve).

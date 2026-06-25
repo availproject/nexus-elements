@@ -14,8 +14,8 @@ All legacy standalone widgets have been **deprecated and removed**. **Nexus One*
 | `FastBridge` | ❌ Removed | `NexusOne` with `config.mode = "swap"` |
 | `FastTransfer` | ❌ Removed | `NexusOne` with `config.mode = "send"` |
 | `SwapWidget` | ❌ Removed | `NexusOne` with `config.mode = "swap"` |
-| `Deposit` | ❌ Removed | `NexusOne` with `config.mode = "deposit"` + `opportunities` |
-| `BridgeDeposit` | ❌ Removed | `NexusOne` with `config.mode = "deposit"` + `opportunities` |
+| `Deposit` | ❌ Removed | `NexusOne` with `config.mode = "deposit"` + `config.deposit` |
+| `BridgeDeposit` | ❌ Removed | `NexusOne` with `config.mode = "deposit"` + `config.deposit` |
 | `UnifiedBalance` | ❌ Removed | Inline balance view in Nexus One |
 | `ViewHistory` | ❌ Removed | Use `sdk.getMyIntents()` directly |
 
@@ -29,7 +29,7 @@ npx shadcn@latest add @nexus-elements/nexus-one
 
 ### 1. Install project deps
 ```bash
-pnpm add @avail-project/nexus-core wagmi viem lucide-react @tanstack/react-query
+pnpm add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2 wagmi viem lucide-react @tanstack/react-query
 ```
 
 ### 2. Configure registry
@@ -63,7 +63,7 @@ export function AppNexusProvider({ children }: { children: React.ReactNode }) {
 
 import { useEffect } from "react";
 import { useAccount, useConnectorClient } from "wagmi";
-import type { EthereumProvider } from "@avail-project/nexus-core";
+import type { EthereumProvider } from "@avail-project/nexus-sdk-v2";
 import { useNexus } from "@/components/nexus/NexusProvider";
 
 export function InitNexusOnConnect() {
@@ -103,7 +103,7 @@ import { NexusOne } from "@/components/nexus-one/nexus-one";
 <NexusOne
   config={{
     mode: "deposit",
-    opportunities: [{ /* ... */ }],
+    deposit: { /* ... */ },
   }}
   connectedAddress={address}
 />

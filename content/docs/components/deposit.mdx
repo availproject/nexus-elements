@@ -89,7 +89,7 @@ function buildDepositExecuteConfig(
       // Aave reference: supply(asset, amount, onBehalfOf, referralCode)
     }),
     tokenApproval: {
-      token: tokenAddress,
+      toTokenAddress: tokenAddress,
       amount,
       spender: APP_DEPOSIT_CONTRACT,
     },
@@ -141,7 +141,7 @@ Deposit uses only `mode: "deposit"`. This mode is exact-out: users enter the des
 | `tokenAddress`      | `` `0x${string}` `` | **Yes**  | The contract address of the destination token on the destination chain.                                                                                                                                                                                  |
 | `tokenSymbol`       | `string`            | **Yes**  | The symbol of the destination token (e.g. `"USDC"`, `"USDT"`).                                                                                                                                                                                           |
 | `tokenDecimals`     | `number`            | **Yes**  | Decimals of the destination token (e.g. `6`, `18`).                                                                                                                                                                                                      |
-| `executeDeposit`    | `function`          | **Yes**  | Callback builder returning transaction execution parameters (target contract, call data, and token approval) for the final transaction: `(tokenSymbol, tokenAddress, amount, chainId, user) => { to, data, tokenApproval: { token, amount, spender } }`. |
+| `executeDeposit`    | `function`          | **Yes**  | Callback builder returning transaction execution parameters (target contract, call data, and token approval) for the final transaction: `(tokenSymbol, tokenAddress, amount, chainId, user) => { to, data, tokenApproval: { toTokenAddress, amount, spender } }`. |
 | `title`             | `string`            |    No    | Display title for the deposit opportunity (highest priority for headers and UI state).                                                                                                                                                                   |
 | `protocol`          | `string`            |    No    | Name of the target protocol/platform (used in fallback headers and progress labels).                                                                                                                                                                     |
 | `tokenLogo`         | `string`            |    No    | Logo URL override for the destination token.                                                                                                                                                                                                             |
@@ -199,7 +199,7 @@ const OPPORTUNITIES = {
         /* Aave supply arguments */
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
       },
@@ -218,7 +218,7 @@ const OPPORTUNITIES = {
         /* Compound supply arguments */
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
       },
