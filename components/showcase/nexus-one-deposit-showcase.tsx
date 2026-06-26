@@ -2,9 +2,15 @@
 import React, { useState } from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusWidget } from "@/registry/nexus-elements/nexus-one/nexus-one";
-import { encodeFunctionData, parseAbi, isAddress, maxUint256 } from "viem";
+import {
+  encodeFunctionData,
+  parseAbi,
+  isAddress,
+  maxUint256,
+  zeroAddress,
+} from "viem";
 import { useAccount } from "wagmi";
-import { useModal } from "connectkit";
+import { useConnectWalletClick } from "../helpers/use-connect-wallet-click";
 
 const AAVE_ABI = [
   {
@@ -105,18 +111,136 @@ const ZENTRA_ABI = [
   },
 ] as const;
 
+type DepositShowcaseToken = {
+  address: `0x${string}`;
+  symbol: string;
+  decimals: number;
+  logo?: string;
+};
+
+type DepositShowcaseOpportunity = {
+  chainId: number;
+  depositTargetLogo?: string;
+  executeDeposit: any;
+  label?: string;
+  protocol: string;
+  targetContract?: string;
+  title?: string;
+  tokenAddress?: `0x${string}`;
+  tokenDecimals?: number;
+  tokenLogo?: string;
+  tokenSymbol?: string;
+  tokens?: readonly DepositShowcaseToken[];
+};
+
+const getOpportunityTokens = (
+  opportunity: DepositShowcaseOpportunity,
+): DepositShowcaseToken[] => {
+  if (opportunity.tokens?.length) return [...opportunity.tokens];
+  if (
+    opportunity.tokenAddress &&
+    opportunity.tokenSymbol &&
+    opportunity.tokenDecimals !== undefined
+  ) {
+    return [
+      {
+        address: opportunity.tokenAddress,
+        decimals: opportunity.tokenDecimals,
+        logo: opportunity.tokenLogo,
+        symbol: opportunity.tokenSymbol,
+      },
+    ];
+  }
+  return [];
+};
+
+const getRequiredOpportunityTokens = (
+  opportunity: DepositShowcaseOpportunity,
+): [DepositShowcaseToken, ...DepositShowcaseToken[]] => {
+  const tokens = getOpportunityTokens(opportunity);
+  if (!tokens.length) {
+    throw new Error(
+      "Deposit showcase requires at least one destination token.",
+    );
+  }
+  return tokens as [DepositShowcaseToken, ...DepositShowcaseToken[]];
+};
+
+const getChainLabel = (chainId: number) =>
+  chainId === 42161
+    ? "Arbitrum"
+    : chainId === 1
+      ? "Ethereum"
+      : chainId === 137
+        ? "Polygon"
+        : chainId === 8453
+          ? "Base"
+          : chainId === 4114
+            ? "Citrea"
+            : `Chain ID: ${chainId}`;
+
+const getOpportunityTokenLabel = (opportunity: DepositShowcaseOpportunity) => {
+  const tokens = getOpportunityTokens(opportunity);
+  if (!tokens.length) return "Token";
+  if (tokens.length === 1) return tokens[0].symbol;
+  return `${tokens[0].symbol} + ${tokens.length - 1}`;
+};
+
+const getOpportunityLabel = (opportunity: DepositShowcaseOpportunity) =>
+  opportunity.label ??
+  `${opportunity.protocol} - ${getOpportunityTokenLabel(opportunity)} (${getChainLabel(opportunity.chainId)})`;
+
+const getOpportunityHeading = (opportunity: DepositShowcaseOpportunity) =>
+  opportunity.title ?? "Deposit";
+
+const resolveDepositAddress = (opportunity: DepositShowcaseOpportunity) => {
+  const token = getOpportunityTokens(opportunity)[0];
+  if (!token) return zeroAddress;
+  if (opportunity.targetContract && isAddress(opportunity.targetContract)) {
+    return opportunity.targetContract as `0x${string}`;
+  }
+  try {
+    const target = opportunity.executeDeposit(
+      token.symbol,
+      token.address,
+      BigInt(1),
+      opportunity.chainId,
+      zeroAddress,
+    )?.to;
+    return target && isAddress(target)
+      ? (target as `0x${string}`)
+      : token.address;
+  } catch {
+    return token.address;
+  }
+};
+
 const OPPORTUNITIES = {
-  // 1. Aave on Arbitrum (USDT)
-  "aave-arb-usdt": {
+  // 1. Aave on Arbitrum
+  "aave-arbitrum": {
+    label: "Aave - Arbitrum",
     protocol: "Aave",
     depositTargetLogo:
       "https://files.availproject.org/uploads/2026-04-16/aave.svg",
     chainId: 42161,
-    tokenSymbol: "USDT",
+    tokenSymbol: "USD₮0",
     tokenAddress: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9" as const,
     tokenDecimals: 6,
-    tokenLogo:
-      "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdt/logo.png",
+    tokenLogo: "https://arbiscan.io/token/images/centre-usdc_28.png",
+    tokens: [
+      {
+        address: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        decimals: 6,
+        logo: "https://arbiscan.io/token/images/usdt0_64.png",
+        symbol: "USD₮0",
+      },
+      {
+        address: "0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
+        decimals: 18,
+        logo: "https://arbiscan.io/token/images/aave_32.svg",
+        symbol: "AAVE",
+      },
+    ],
     executeDeposit: (
       symbol: string,
       tokenAddress: `0x${string}`,
@@ -131,24 +255,56 @@ const OPPORTUNITIES = {
         args: [tokenAddress, amount, user, 0],
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0x794a61358D6845594F94dc1DB02A252b5b4814aD" as const,
       },
     }),
   },
 
-  // 2. Aave on Ethereum (GHO)
-  "aave-eth-gho": {
-    title: "Custom Title Example",
+  // 2. Aave on Ethereum
+  "aave-ethereum": {
+    label: "Aave - Ethereum",
     protocol: "Aave",
     depositTargetLogo:
       "https://files.availproject.org/uploads/2026-04-16/aave.svg",
     chainId: 1,
-    tokenSymbol: "GHO",
-    tokenAddress: "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f" as const,
-    tokenDecimals: 18,
-    tokenLogo: "https://s2.coinmarketcap.com/static/img/coins/64x64/23508.png",
+    tokenSymbol: "USDC",
+    tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const,
+    tokenDecimals: 6,
+    tokenLogo: "https://etherscan.io/token/images/usdc_ofc_32.svg",
+    tokens: [
+      {
+        address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        decimals: 6,
+        logo: "https://etherscan.io/token/images/usdc_ofc_32.svg",
+        symbol: "USDC",
+      },
+      {
+        address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        decimals: 6,
+        logo: "https://etherscan.io/token/images/tethernew_32.svg",
+        symbol: "USDT",
+      },
+      {
+        address: "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+        decimals: 18,
+        logo: "https://etherscan.io/token/images/aavegho_new_32.png",
+        symbol: "GHO",
+      },
+      {
+        address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        decimals: 18,
+        logo: "https://etherscan.io/token/images/dairplce_32.svg",
+        symbol: "DAI",
+      },
+      {
+        address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        decimals: 18,
+        logo: "https://etherscan.io/token/images/weth_28.png",
+        symbol: "WETH",
+      },
+    ],
     executeDeposit: (
       symbol: string,
       tokenAddress: `0x${string}`,
@@ -163,7 +319,7 @@ const OPPORTUNITIES = {
         args: [tokenAddress, amount, user, 0],
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2" as const,
       },
@@ -195,7 +351,7 @@ const OPPORTUNITIES = {
         args: [tokenAddress, amount],
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0xaeB318360f27748Acb200CE616E389A6C9409a07" as const,
       },
@@ -226,7 +382,7 @@ const OPPORTUNITIES = {
         args: [amount, user],
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0xf42f5795D9ac7e9D757dB633D693cD548Cfd9169" as const,
       },
@@ -257,7 +413,7 @@ const OPPORTUNITIES = {
         args: [amount, user],
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0x72f8C254548839Fa1Db4156aE01d8C6ae5885EE4" as const,
       },
@@ -289,7 +445,7 @@ const OPPORTUNITIES = {
         args: [tokenAddress, amount, user, 0],
       }),
       tokenApproval: {
-        token: tokenAddress,
+        toTokenAddress: tokenAddress,
         amount,
         spender: "0xfb7908150b738e7dB9862007c66C9eb7850706F5" as const,
       },
@@ -299,10 +455,10 @@ const OPPORTUNITIES = {
 
 const NexusWidgetDepositShowcase = () => {
   const { address } = useAccount();
-  const { setOpen } = useModal();
+  const openConnectWallet = useConnectWalletClick();
   const [selectedOpt, setSelectedOpt] = useState<
     keyof typeof OPPORTUNITIES | "sandbox"
-  >("aave-arb-usdt");
+  >("aave-arbitrum");
   const [isOpen, setIsOpen] = useState(false);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState(false);
 
@@ -368,7 +524,7 @@ const NexusWidgetDepositShowcase = () => {
           args: [amount, user],
         }),
         tokenApproval: {
-          token: tokenAddress,
+          toTokenAddress: tokenAddress,
           amount,
           spender: "0xE592427A0AEce92De3Edee1F18E0157C05861564" as const,
         },
@@ -401,7 +557,9 @@ const NexusWidgetDepositShowcase = () => {
     "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdc/logo.png",
   );
   const [formEnableApproval, setFormEnableApproval] = useState(true);
-  const [formApprovalAmountType, setFormApprovalAmountType] = useState<"required" | "infinite">("required");
+  const [formApprovalAmountType, setFormApprovalAmountType] = useState<
+    "required" | "infinite"
+  >("required");
   const [formGasLimit, setFormGasLimit] = useState("");
   const [formError, setFormError] = useState("");
 
@@ -541,7 +699,7 @@ const NexusWidgetDepositShowcase = () => {
 
         if (formEnableApproval) {
           executeResult.tokenApproval = {
-            token: tokenAddress,
+            toTokenAddress: tokenAddress,
             amount: formApprovalAmountType === "infinite" ? maxUint256 : amount,
             spender: formTargetContract as `0x${string}`,
           };
@@ -596,20 +754,7 @@ const NexusWidgetDepositShowcase = () => {
                   />
                 )}
                 <span className="font-semibold text-sm">
-                  {currentOpportunity.protocol} -{" "}
-                  {currentOpportunity.tokenSymbol} (
-                  {currentOpportunity.chainId === 42161
-                    ? "Arbitrum"
-                    : currentOpportunity.chainId === 1
-                      ? "Ethereum"
-                      : currentOpportunity.chainId === 137
-                        ? "Polygon"
-                        : currentOpportunity.chainId === 8453
-                          ? "Base"
-                          : currentOpportunity.chainId === 4114
-                            ? "Citrea"
-                            : `Chain ID: ${currentOpportunity.chainId}`}
-                  )
+                  {getOpportunityLabel(currentOpportunity)}
                 </span>
               </div>
 
@@ -685,19 +830,7 @@ const NexusWidgetDepositShowcase = () => {
                           className="w-5 h-5 rounded-full object-contain"
                         />
                       )}
-                      <span>
-                        {opt.protocol} - {opt.tokenSymbol} (
-                        {opt.chainId === 42161
-                          ? "Arbitrum"
-                          : opt.chainId === 1
-                            ? "Ethereum"
-                            : opt.chainId === 137
-                              ? "Polygon"
-                              : opt.chainId === 8453
-                                ? "Base"
-                                : "Citrea"}
-                        )
-                      </span>
+                      <span>{getOpportunityLabel(opt)}</span>
                     </div>
 
                     {selectedOpt === key && (
@@ -785,10 +918,21 @@ const NexusWidgetDepositShowcase = () => {
             key={selectedOpt}
             config={{
               mode: "deposit",
-              deposit: currentOpportunity as any,
+              destination: {
+                chain: currentOpportunity.chainId,
+                tokens: getRequiredOpportunityTokens(currentOpportunity),
+              },
+              depositAddress: resolveDepositAddress(currentOpportunity),
+              executeDeposit: currentOpportunity.executeDeposit,
+              appearance: {
+                appLogoURL: currentOpportunity.depositTargetLogo,
+                appName: currentOpportunity.protocol,
+                heading: getOpportunityHeading(currentOpportunity),
+                mode: "system",
+              },
             }}
             connectedAddress={address}
-            onConnectClick={() => setOpen(true)}
+            onConnectClick={openConnectWallet}
           />
         </div>
       </div>
@@ -1040,14 +1184,17 @@ const NexusWidgetDepositShowcase = () => {
                       Enable Token Approval
                     </span>
                     <span className="text-[10px] text-zinc-400">
-                      Whether the token should be approved before deposit execution
+                      Whether the token should be approved before deposit
+                      execution
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setFormEnableApproval(!formEnableApproval)}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formEnableApproval ? "bg-blue-600" : "bg-zinc-200 dark:bg-zinc-800"
+                      formEnableApproval
+                        ? "bg-blue-600"
+                        : "bg-zinc-200 dark:bg-zinc-800"
                     }`}
                   >
                     <span
@@ -1109,7 +1256,8 @@ const NexusWidgetDepositShowcase = () => {
                   placeholder="e.g. 300000"
                 />
                 <span className="text-[10px] text-zinc-400 leading-tight">
-                  Manually set gas limit. Saves from simulation/estimation failures on complex contracts.
+                  Manually set gas limit. Saves from simulation/estimation
+                  failures on complex contracts.
                 </span>
               </div>
 

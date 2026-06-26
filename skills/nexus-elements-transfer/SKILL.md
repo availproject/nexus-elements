@@ -1,6 +1,6 @@
 ---
 name: nexus-elements-transfer
-description: "DEPRECATED — FastTransfer has been removed. Use Nexus Widget (config.mode = \"send\") for all cross-chain recipient transfer flows. Refer to the nexus-one-send agent skill for current integration guidance."
+description: "DEPRECATED — FastTransfer has been removed. Use Nexus Widget (config.mode = \"send\") for all cross-chain recipient transfer flows. Refer to the nexus-widget-send agent skill for current integration guidance."
 ---
 
 # ⚠️ Deprecated — Use Nexus Widget Send
@@ -40,7 +40,7 @@ npx shadcn@latest add @avail-widgets/nexus
 
 For integration guidance, refer to the **Nexus Widget Send agent skill**:
 
-- `nexus-one-send` — Setup, prefill config, and callbacks for recipient transfers with Nexus Widget.
+- `nexus-widget-send` — Setup, prefill config, and callbacks for recipient transfers with Nexus Widget.
 
 ## Documentation
 

@@ -3,11 +3,11 @@ import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusWidget } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { useAccount } from "wagmi";
-import { useModal } from "connectkit";
+import { useConnectWalletClick } from "../helpers/use-connect-wallet-click";
 
 const NexusWidgetBridgeShowcase = () => {
   const { address } = useAccount();
-  const { setOpen } = useModal();
+  const openConnectWallet = useConnectWalletClick();
 
   return (
     <ShowcaseWrapper
@@ -23,7 +23,7 @@ const NexusWidgetBridgeShowcase = () => {
         <NexusWidget
           config={{ mode: "swap" }}
           connectedAddress={address}
-          onConnectClick={() => setOpen(true)}
+          onConnectClick={openConnectWallet}
         />
       </div>
     </ShowcaseWrapper>

@@ -18,6 +18,7 @@ interface SendIdleFormProps {
   isCalculatingMax?: boolean;
   isQuoteRefreshing?: boolean;
   isRecipientLocked?: boolean;
+  hideDestinationTokenDropdownIcon?: boolean;
   isSourcePickerDisabled?: boolean;
   onAmountChange: (val: string) => void;
   onOpenAssetPicker: () => void;
@@ -583,6 +584,7 @@ export function SendIdleForm({
   calculatingPercent,
   isQuoteRefreshing,
   isRecipientLocked = false,
+  hideDestinationTokenDropdownIcon = false,
   showAutoBadge = true,
   isSourcePickerDisabled = false,
   reserveSourceRows = false,
@@ -868,10 +870,11 @@ export function SendIdleForm({
                 cursor: isAssetPickerDisabled ? "default" : "pointer",
                 display: "inline-flex",
                 flexShrink: 0,
-                gap: "8px",
-                height: "27px",
-                paddingLeft: "3.5px",
+                gap: "6px",
+                paddingBottom: "3px",
+                paddingLeft: toToken ? "3px" : "7px",
                 paddingRight: "8px",
+                paddingTop: "3px",
               }}
               type="button"
             >
@@ -879,20 +882,20 @@ export function SendIdleForm({
                 <div
                   style={{
                     flexShrink: 0,
-                    height: "24px",
+                    height: "20px",
                     position: "relative",
-                    width: "24px",
+                    width: "20px",
                   }}
                 >
                   <TokenLogo
                     label={toToken.symbol}
-                    size={24}
+                    size={20}
                     src={toToken.logo}
                   />
                   {toToken.chainLogo && (
                     <TokenLogo
                       label={toToken.chainName}
-                      size={12}
+                      size={10}
                       src={toToken.chainLogo}
                       style={{
                         bottom: -2,
@@ -912,8 +915,8 @@ export function SendIdleForm({
                     borderWidth: "1.5px",
                     boxSizing: "border-box",
                     flexShrink: 0,
-                    height: "24px",
-                    width: "24px",
+                    height: "18px",
+                    width: "18px",
                   }}
                 />
               )}
@@ -921,20 +924,22 @@ export function SendIdleForm({
                 style={{
                   color: primary,
                   fontFamily: uiFont,
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  lineHeight: "20px",
+                  fontSize: toToken ? "12px" : "14px",
+                  fontWeight: 500,
+                  lineHeight: toToken ? "16px" : "20px",
                 }}
               >
                 {toToken ? toToken.symbol : "Assets"}
               </div>
-              <ChevronDown
-                style={{
-                  color: isAssetPickerDisabled ? "#A8A8A6" : "#5B5B5A",
-                  height: 14,
-                  width: 14,
-                }}
-              />
+              {!hideDestinationTokenDropdownIcon && (
+                <ChevronDown
+                  style={{
+                    color: isAssetPickerDisabled ? "#A8A8A6" : "#5B5B5A",
+                    height: 12,
+                    width: 12,
+                  }}
+                />
+              )}
             </button>
           </div>
 
@@ -996,6 +1001,7 @@ export function SendIdleForm({
                 justifyContent: "flex-end",
                 gap: "5px",
                 flex: 1,
+                minWidth: 0,
               }}
             >
               {toToken && (
@@ -1006,9 +1012,10 @@ export function SendIdleForm({
                       fontFamily: uiFont,
                       fontSize: "11px",
                       lineHeight: "15px",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    Balance:
+                    Bal:
                   </span>
                   <span
                     style={{
@@ -1017,6 +1024,7 @@ export function SendIdleForm({
                       fontSize: "11px",
                       fontWeight: 500,
                       lineHeight: "15px",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {destinationBalanceLabel}

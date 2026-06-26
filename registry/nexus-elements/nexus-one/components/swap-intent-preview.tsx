@@ -742,7 +742,8 @@ export function SwapIntentPreview({
     fallbackSources.length ||
     baseSourceSymbols.length;
   const hasResolvedQuote = Boolean(
-    normalizedIntentDest && normalizedIntentSources.length > 0
+    normalizedIntentDest &&
+      (normalizedIntentSources.length > 0 || isExactOutDisplayFlow)
   );
   const quoteUnavailable = !isLoading && !hasResolvedQuote;
 

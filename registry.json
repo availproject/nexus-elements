@@ -248,7 +248,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "lucide-react",
         "viem"
       ],
@@ -609,7 +609,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "clsx",
         "lucide-react",
         "tailwind-merge",
@@ -807,7 +807,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "lucide-react",
         "viem"
       ],
@@ -873,6 +873,11 @@
       "title": "Nexus Widget",
       "description": "The unified Avail Nexus widget for swap, send, and deposit flows. One component for all cross-chain operations powered by Nexus intents.",
       "files": [
+        {
+          "path": "registry/nexus-elements/nexus-one/components/address-identicon.tsx",
+          "target": "components/nexus/components/address-identicon.tsx",
+          "type": "registry:component"
+        },
         {
           "path": "registry/nexus-elements/nexus-one/components/amount-input-unified.tsx",
           "target": "components/nexus/components/amount-input-unified.tsx",
@@ -1060,7 +1065,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "decimal.js",
         "lucide-react",
         "viem",
@@ -1090,7 +1095,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "wagmi"
       ]
     },
@@ -1343,7 +1348,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "lucide-react",
         "viem"
       ],
@@ -1556,7 +1561,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "lucide-react",
         "viem"
       ],
@@ -1594,7 +1599,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "lucide-react"
       ],
       "registryDependencies": [
@@ -1746,7 +1751,7 @@
         }
       ],
       "dependencies": [
-        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+        "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
         "lucide-react"
       ],
       "registryDependencies": [

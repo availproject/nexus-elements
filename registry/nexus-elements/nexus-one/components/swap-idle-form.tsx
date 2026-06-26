@@ -20,6 +20,7 @@ interface SwapIdleFormProps {
   fromTokens: SwapTokenOption[];
   isAmountReadOnly?: boolean;
   isDestinationPickerDisabled?: boolean;
+  hideDestinationTokenDropdownIcon?: boolean;
   isReceiveAmountLoading?: boolean;
   isReceiveUsdLoading?: boolean;
   isSourcePickerDisabled?: boolean;
@@ -633,6 +634,7 @@ export function SwapIdleForm({
   onUpdateTokens,
   isAmountReadOnly = false,
   isDestinationPickerDisabled = false,
+  hideDestinationTokenDropdownIcon = false,
   isSourcePickerDisabled = false,
 }: SwapIdleFormProps) {
   const [focusedPanel, setFocusedPanel] = useState<"send" | "receive" | null>(
@@ -1811,9 +1813,9 @@ export function SwapIdleForm({
                 boxShadow: toToken ? "#1616150A 0px 1px 2px" : "none",
                 boxSizing: "border-box",
                 display: "flex",
-                gap: "5px",
+                gap: "6px",
                 paddingBottom: "3px",
-                paddingLeft: toToken ? "4px" : "7px",
+                paddingLeft: toToken ? "3px" : "7px",
                 paddingRight: "8px",
                 paddingTop: "3px",
                 cursor: isDestinationPickerDisabled ? "default" : "pointer",
@@ -1872,14 +1874,14 @@ export function SwapIdleForm({
                   boxSizing: "border-box",
                   color: "#161615",
                   fontFamily: '"Geist", system-ui, sans-serif',
-                  fontSize: "14px",
+                  fontSize: toToken ? "12px" : "14px",
                   fontWeight: 500,
-                  lineHeight: "19px",
+                  lineHeight: toToken ? "16px" : "20px",
                 }}
               >
                 {toToken ? toToken.symbol : "Assets"}
               </div>
-              <ChevronDownIcon />
+              {!hideDestinationTokenDropdownIcon && <ChevronDownIcon />}
             </button>
           </div>
 

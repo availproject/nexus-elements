@@ -29,7 +29,7 @@ npx shadcn@latest add @avail-widgets/nexus
 
 ### 1. Install project deps
 ```bash
-pnpm add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2 wagmi viem lucide-react @tanstack/react-query
+pnpm add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3 wagmi viem lucide-react @tanstack/react-query
 ```
 
 ### 2. Configure registry
@@ -103,7 +103,16 @@ import { NexusWidget } from "@/components/nexus/nexus";
 <NexusWidget
   config={{
     mode: "deposit",
-    deposit: { /* ... */ },
+    destination: {
+      chain: 8453,
+      tokens: [{ address: "0xToken...", symbol: "USDC", decimals: 6 }],
+    },
+    depositAddress: "0xContract...",
+    executeDeposit: (_symbol, tokenAddress, amount, _chainId, user) => ({
+      to: "0xContract...",
+      data: "0xCalldata...",
+      tokenApproval: { toTokenAddress: tokenAddress, amount, spender: "0xContract..." },
+    }),
   }}
   connectedAddress={address}
 />
@@ -123,7 +132,7 @@ For detailed SDK integration guidance, use the **Nexus SDK agent skills** (`.age
 ## E2E readiness checklist
 - Confirm wallet connects and `handleInit` runs once per session.
 - Confirm `useNexus().nexusSDK` is non-null after connect.
-- Confirm Nexus Widget renders and responds to mode/prefill config.
+- Confirm Nexus Widget renders and responds to mode, destination, prefill amount, and validation config.
 - Confirm every flow (swap, send, deposit) can reach success.
 - Confirm disconnect clears SDK state (`deinitializeNexus`).
 

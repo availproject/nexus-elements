@@ -1,6 +1,6 @@
 ---
 name: nexus-elements-fast-bridge
-description: "DEPRECATED — FastBridge has been removed. Use Nexus Widget (config.mode = \"swap\") for all cross-chain bridge and swap flows. Refer to the nexus-one-swaps agent skill for current integration guidance."
+description: "DEPRECATED — FastBridge has been removed. Use Nexus Widget (config.mode = \"swap\") for all cross-chain bridge and swap flows. Refer to the nexus-widget-swaps agent skill for current integration guidance."
 ---
 
 # ⚠️ Deprecated — Use Nexus Widget Swaps
@@ -39,7 +39,7 @@ npx shadcn@latest add @avail-widgets/nexus
 
 For integration guidance, refer to the **Nexus Widget Swaps agent skill**:
 
-- `nexus-one-swaps` — Setup, prefill config, and callbacks for swaps and bridging with Nexus Widget.
+- `nexus-widget-swaps` — Setup, prefill config, and callbacks for swaps and bridging with Nexus Widget.
 
 ## Documentation
 

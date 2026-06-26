@@ -7,9 +7,9 @@ description: Set up and initialize Nexus SDK in any JS/TS frontend project. Use 
 
 ## Install dependency
 - Install the SDK package:
-  - `npm install @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2`
-  - or `pnpm add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2`
-  - or `yarn add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2`
+  - `npm install @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#tree/v0.0.3`
+  - or `pnpm add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#tree/v0.0.3`
+  - or `yarn add @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#tree/v0.0.3`
 
 ## Obtain an EIP-1193 provider
 - Use any wallet connection stack to get a provider.

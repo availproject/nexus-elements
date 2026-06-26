@@ -2,14 +2,11 @@
 title: Nexus Widget
 description: A unified element for swap, send, and deposit flows powered by Nexus intents.
 component: true
+preview:
+  name: nexus
+  align: center
+  hideCode: true
 ---
-
-<ComponentPreview
-  name="nexus"
-  description="An all-in-one component for swaps, sends, and protocol deposits."
-  align="center"
-  hideCode
-/>
 
 > **Network support:** Nexus Widget currently supports mainnet only. Testnet is not supported at the moment.
 
@@ -66,7 +63,7 @@ Locks the element to the deposit flow. A single `deposit` config is required.
     <Steps>
       <Step>Install dependencies</Step>
 ```bash
-npm install @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2 decimal.js lucide-react viem wagmi class-variance-authority clsx tailwind-merge
+npm install @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3 decimal.js lucide-react viem wagmi class-variance-authority clsx tailwind-merge
 ```
       <Step>Copy and paste the component code into your project.</Step>
       <div
@@ -103,138 +100,83 @@ export function App({ address }: { address?: `0x${string}` }) {
 
 ## Configuration
 
-`config.mode` is always required. Every other field is optional unless the selected mode makes it conditional.
+`config.mode` is required and must be `"swap"`, `"send"`, or `"deposit"`.
 
-### Required Props
+### Props
 
 | Prop | Type | Notes |
 | --- | --- | --- |
 | `config` | `object` | Selects the workflow and any mode-specific behavior. |
-
-### Optional Props
-
-| Prop | Type | Notes |
-| --- | --- | --- |
 | `connectedAddress` | `` `0x${string}` `` | Wallet address to use. If omitted, Nexus Widget falls back to the connected wagmi wallet account. |
 | `embed` | `boolean` | Defaults to `true`. Set `false` when rendering Nexus Widget as a modal surface. |
-| `open` | `boolean` | Controls the modal when `embed={false}`. |
-| `onOpenChange` | `(open: boolean) => void` | Receives modal state changes when `embed={false}`. |
-| `defaultOpen` | `boolean` | Opens the modal by default in uncontrolled modal mode. |
+| `open`, `onOpenChange`, `defaultOpen` | modal controls | Control modal state when `embed={false}`. |
 | `onComplete` | `(explorerUrl?: string) => void` | Called after a successful swap, send, or deposit. |
 | `onStart` | `() => void` | Called when the user starts execution. |
 | `onError` | `(message: string) => void` | Called when execution fails. |
-| `onClose` | `() => void` | Used by modal mode. The close button is hidden in embedded mode. |
+| `onClose` | `() => void` | Used by modal mode. |
 | `onConnectClick` | `() => void \| Promise<void>` | Called when the internal Connect Wallet CTA is clicked. Use this to open your app/header wallet modal. |
-| `onConnectWallet` | `() => void \| Promise<void>` | Called when the internal Connect Wallet CTA is clicked. Wire this to your app-level wallet flow; it is a no-op when omitted. |
+| `onConnectWallet` | `() => void \| Promise<void>` | Backward-compatible connect callback prop. |
 
-### Optional Config Fields
+### Shared Config
 
-| Field | Type | Notes |
+| Field | Modes | Notes |
 | --- | --- | --- |
-| `prefill.amount` | `string` | Prefills the amount input. |
-| `prefill.recipient` | `` `0x${string}` `` | Prefills the recipient. Most useful in `send` mode. |
-| `prefill.token` | `` `0x${string}` `` | Prefills the token address where supported by the current selector state. |
-| `prefill.chain` | `number` | Prefills the chain id where supported by the current selector state. |
-| `prefill.source` | `{ token; chain }` | Prefills the swap send/source token and chain. |
-| `prefill.destination` | `{ token; chain }` | Prefills the swap receive/destination token and chain. |
-| `allowedSourcePairs` | `{ token; chain }[]` | Restricts selectable source token/chain pairs where supported by your installed element version. |
-| `allowedDestinationPairs` | `{ token; chain }[]` | Restricts selectable destination token/chain pairs where supported by your installed element version. |
-| `amount` | `{ mode?: "user" \| "fixed"; value?: string; min?: string; max?: string }` | Configures amount behavior. Fixed amounts are prefilled and read-only. User amounts can optionally enforce min/max validation. |
-| `appearance` | `{ appName?; widgetHeading?; logoUrl?; themeMode?; primaryColor? }` | Configures app name/logo for deposit receipts, the idle widget heading, theme preference, and CTA primary color. |
-| `destination` | `object` | Configurator destination. Smart-contract destinations render deposit mode. EOA wallet destinations render send mode. |
-| `onConnectWalletClick` | `() => void \| Promise<void>` | Callback triggered when the "Connect Wallet" CTA button is clicked. If omitted, the CTA will instead render as a disabled button reading "Connect your wallet to proceed". |
+| `destination.chain` | all | Required for deposit. Optional for send/swap; when supplied, destination chain selection is restricted. |
+| `destination.tokens` | all | Required for deposit with at least one token. Optional for send/swap; when supplied with `destination.chain`, destination token selection is restricted. |
+| `recipientAddress` | send/swap | Prefills the recipient. In send mode, a supplied recipient is locked. |
+| `prefill.amount` | deposit/send | Optional amount prefill. Must be greater than `0`. |
+| `prefill.token` | send/swap | Optional initial destination/receive token: `{ chain, address, symbol, decimals, logo? }`. It does not restrict later token choices. |
+| `validation.minAmount` | deposit/send | Optional minimum amount. Must be `0` or greater. |
+| `validation.maxAmount` | deposit/send | Optional maximum amount. Must be greater than `0`. |
+| `appearance.heading` | all | Overrides the idle screen heading. |
+| `appearance.appName` | all | App/protocol name used in deposit progress and success UI. |
+| `appearance.appLogoURL` | all | App/protocol logo URL. Must start with `http://` or `https://`. |
+| `appearance.mode` | all | `"system"`, `"light"`, or `"dark"`. |
+| `appearance.primaryColor` | all | Any valid browser-supported CSS color. Text color is chosen automatically for contrast. |
 
-### Conditional Config
+Swap supports `prefill.token` only. It does not support amount prefill or validation yet.
 
-| Mode | Required | Optional | Behavior |
-| --- | --- | --- | --- |
-| `swap` | `config.mode = "swap"` | `prefill`, `allowedSourcePairs`, `allowedDestinationPairs` | Users choose source and receive assets. Nexus Widget switches between exact-in and exact-out quoting based on which amount field the user changes. |
-| `send` | `config.mode = "send"` | `prefill.recipient`, `prefill.amount`, source/destination pair filters | Send is exact-out. Users choose the token and amount to send, then Nexus resolves the pay-with sources. |
-| `deposit` | `config.mode = "deposit"` and `deposit` | `prefill.amount`, source filters | Deposit is exact-out. Nexus Widget opens the deposit form directly for the configured destination and app call. |
+Use `destination.tokens` when you want to restrict the destination/receive selector. Use `prefill.token` when you only want an initial token selected and still want users to choose from the full supported list. If both are supplied, `destination.tokens[0]` is honored and `prefill.token` is ignored.
 
-### Configurator Destination Config
+### Deposit Config
 
-NexusWidget also accepts the configurator shape directly. Use `destination.type = "smartContract"` for a deposit/smart-contract action, or `destination.type = "wallet"` for an EOA send flow.
+Deposit requires a fixed destination chain, at least one destination token, a deposit contract address, and an execution builder.
 
-#### Smart Contract Deposit
-
-```tsx showLineNumbers
-import { NexusWidget } from "@/components/nexus/nexus";
-
-<NexusWidget
-  config={{
-    mode: "deposit",
-    destination: {
-      type: "smartContract",
-      chainId: 42161,
-      contractAddress: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
-      abi: AAVE_ABI,
-      functionName: "supply",
-      args: ["$tokenAddress", "$amount", "$user", 0],
-      gasLimit: "400000",
-      tokens: [
-        {
-          contractAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-          tokenSymbol: "USDC",
-          decimals: 6,
-          logo: "https://raw.githubusercontent.com/availproject/nexus-assets/refs/heads/main/tokens/usdc/logo.png",
-        },
-      ],
-    },
-    amount: { mode: "user", min: "1", max: "1000" },
-    appearance: {
-      appName: "Acme App",
-      widgetHeading: "Deposit on Acme",
-      logoUrl: "https://example.com/logo.svg",
-      themeMode: "auto",
-      primaryColor: "#0A6BEB",
-    },
-  }}
-/>
+```ts
+type NexusWidgetDepositConfig = {
+  mode: "deposit";
+  destination: {
+    chain: number;
+    tokens: {
+      address: `0x${string}`;
+      symbol: string;
+      decimals: number;
+      logo?: string;
+    }[];
+  };
+  depositAddress: `0x${string}`;
+  executeDeposit: (
+    tokenSymbol: string,
+    tokenAddress: `0x${string}`,
+    amount: bigint,
+    chainId: number,
+    user: `0x${string}`,
+  ) => {
+    to: `0x${string}`;
+    data?: `0x${string}`;
+    value?: bigint;
+    gas?: bigint;
+    tokenApproval?: {
+      toTokenAddress: `0x${string}`;
+      amount: bigint;
+      spender: `0x${string}`;
+    };
+  };
+  prefill?: { amount?: string };
+  validation?: { minAmount?: string; maxAmount?: string };
+  appearance?: NexusWidgetAppearance;
+};
 ```
-
-For smart-contract deposits, the destination chain is fixed and the receive token dropdown is limited to `destination.tokens`. If more than one token is supplied, NexusWidget renders the token as an editable dropdown.
-
-#### EOA Send
-
-```tsx showLineNumbers
-<NexusWidget
-  config={{
-    mode: "deposit",
-    destination: {
-      type: "wallet",
-      recipient: "0xF3a15b38e63dBb1a1b2d7842CcD9B9dD8fB9b2E",
-      chainId: 8453,
-      tokens: [
-        {
-          contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          tokenSymbol: "USDC",
-          decimals: 6,
-        },
-      ],
-    },
-    amount: { mode: "fixed", value: "10" },
-  }}
-/>
-```
-
-EOA destinations render send mode. The recipient is locked when supplied. If `chainId` is omitted, users can change the destination chain. If `tokens` is omitted, all supported destination tokens remain available; if `tokens` is supplied, the selector is limited to that list.
-
-## Deposit Config
-
-`deposit` is required only when `mode` is `"deposit"`. It describes the destination asset and the contract execution Nexus should perform after the swap settles.
-
-| Field | Type | Required | Description |
-| --- | --- | :---: | --- |
-| `chainId` | `number` | **Yes** | Chain ID of the destination network. |
-| `tokenAddress` | `` `0x${string}` `` | **Yes** | The contract address of the destination token on the destination chain. |
-| `tokenSymbol` | `string` | **Yes** | The symbol of the destination token (e.g. `"USDC"`, `"USDT"`). |
-| `tokenDecimals` | `number` | **Yes** | Decimals of the destination token (e.g. `6`, `18`). |
-| `executeDeposit` | `function` | **Yes** | Callback builder returning transaction execution parameters (target contract, call data, and token approval) for the final transaction: `(tokenSymbol, tokenAddress, amount, chainId, user) => { to, data, tokenApproval: { toTokenAddress, amount, spender } }`. |
-| `title` | `string` | No | Display title for the deposit opportunity (highest priority for headers and UI state). |
-| `protocol` | `string` | No | Name of the target protocol/platform (used in fallback headers and progress labels). |
-| `tokenLogo` | `string` | No | Logo URL override for the destination token. |
-| `depositTargetLogo` | `string` | No | URL of the protocol/target platform logo (used for selector dropdowns, headers, and transaction complete screens). |
 
 ## Examples
 
@@ -248,15 +190,15 @@ export function SwapExample({ address }: { address?: `0x${string}` }) {
     <NexusWidget
       config={{
         mode: "swap",
-        prefill: {
-          source: {
-            token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-            chain: 42161, // USDC on Arbitrum
-          },
-          destination: {
-            token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-            chain: 8453, // USDC on Base
-          },
+        destination: {
+          chain: 8453,
+          tokens: [
+            {
+              address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+              symbol: "USDC",
+              decimals: 6,
+            },
+          ],
         },
       }}
       connectedAddress={address}
@@ -275,11 +217,19 @@ export function SendExample({ address }: { address?: `0x${string}` }) {
     <NexusWidget
       config={{
         mode: "send",
+        destination: {
+          chain: 8453,
+          tokens: [
+            {
+              address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+              symbol: "USDC",
+              decimals: 6,
+            },
+          ],
+        },
+        recipientAddress: "0xF3a15b38e63dBb1a1b2d7842CcD9B9dD8fB9b2E",
         prefill: {
-          token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          chain: 8453, // USDC on Base
           amount: "0.1",
-          recipient: "0xF3a15b38e63dBb1a1b2d7842CcD9B9dD8fB9b2E",
         },
       }}
       connectedAddress={address}
@@ -338,20 +288,23 @@ function buildDepositExecuteConfig(
 
 const depositConfig = {
   mode: "deposit",
-  deposit: {
-    // Configure the destination asset Nexus should deliver.
-    chainId: DESTINATION_CHAIN_ID,
-    tokenSymbol: DESTINATION_TOKEN_SYMBOL,
-    tokenDecimals: DESTINATION_TOKEN_DECIMALS,
-    tokenAddress: DESTINATION_TOKEN,
-
-    // Configure display metadata for your app/protocol.
-    title: "Your App",
-    protocol: "Your App",
-
-    // Configure the app call Nexus should execute after the swap settles.
-    executeDeposit: (_symbol, tokenAddress, amount, _chainId, user) =>
-      buildDepositExecuteConfig(tokenAddress, amount, user),
+  destination: {
+    chain: DESTINATION_CHAIN_ID,
+    tokens: [
+      {
+        address: DESTINATION_TOKEN,
+        symbol: DESTINATION_TOKEN_SYMBOL,
+        decimals: DESTINATION_TOKEN_DECIMALS,
+      },
+    ],
+  },
+  depositAddress: APP_DEPOSIT_CONTRACT,
+  executeDeposit: (_symbol, tokenAddress, amount, _chainId, user) =>
+    buildDepositExecuteConfig(tokenAddress, amount, user),
+  appearance: {
+    appName: "Your App",
+    heading: "Deposit",
+    mode: "system",
   },
 } as const;
 

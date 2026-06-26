@@ -458,6 +458,8 @@ export function ReceiveAssetSelector({
   const [isLoading, setIsLoading] = useState(true);
   const [dynamicStableSymbols, setDynamicStableSymbols] =
     useState<Set<string>>(STABLE_SYMBOLS);
+  const hasConfiguredTokenList = Boolean(allowedPairs?.length);
+  const showFilterTabs = !hasConfiguredTokenList;
 
   useEffect(() => {
     setPortalRoot(
@@ -579,6 +581,12 @@ export function ReceiveAssetSelector({
       listRef.current.scrollTop = 0;
     }
   }, [query, activeTab, selectedChainFilter]);
+
+  useEffect(() => {
+    if (!showFilterTabs && activeTab !== "all") {
+      setActiveTab("all");
+    }
+  }, [activeTab, showFilterTabs]);
 
   const preserveListHeight = useCallback(() => {
     const listEl = listRef.current;
@@ -811,9 +819,11 @@ export function ReceiveAssetSelector({
     if (query.trim()) {
       result = result.filter((t) => getTokenSearchRank(t, query) !== null);
     }
-    if (activeTab === "native") result = result.filter(isNativeToken);
-    else if (activeTab === "stables")
-      result = result.filter((t) => dynamicStableSymbols.has(t.symbol));
+    if (showFilterTabs) {
+      if (activeTab === "native") result = result.filter(isNativeToken);
+      else if (activeTab === "stables")
+        result = result.filter((t) => dynamicStableSymbols.has(t.symbol));
+    }
 
     return result;
   }, [
@@ -823,6 +833,7 @@ export function ReceiveAssetSelector({
     selectedChainFilter,
     query,
     activeTab,
+    showFilterTabs,
     dynamicStableSymbols,
     sdkSwapSupportedChainIds,
     swapSupportedChainsAndTokens,
@@ -1055,42 +1066,44 @@ export function ReceiveAssetSelector({
         </div>
 
         {/* Filter tabs */}
-        <div
-          style={{
-            display: "flex",
-            gap: 0,
-            backgroundColor: "#F0F0EF",
-            borderRadius: 8,
-            padding: 4,
-          }}
-        >
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1,
-                padding: "6px 0",
-                backgroundColor:
-                  activeTab === tab.key ? "#FFFFFE" : "transparent",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontFamily: '"Geist", system-ui, sans-serif',
-                fontSize: 13,
-                fontWeight: 500,
-                color: activeTab === tab.key ? "#161615" : "#848483",
-                boxShadow:
-                  activeTab === tab.key
-                    ? "0px 1px 2px rgba(0,0,0,0.05)"
-                    : "none",
-                transition: "all 0.15s",
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {showFilterTabs && (
+          <div
+            style={{
+              display: "flex",
+              gap: 0,
+              backgroundColor: "#F0F0EF",
+              borderRadius: 8,
+              padding: 4,
+            }}
+          >
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  flex: 1,
+                  padding: "6px 0",
+                  backgroundColor:
+                    activeTab === tab.key ? "#FFFFFE" : "transparent",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontFamily: '"Geist", system-ui, sans-serif',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: activeTab === tab.key ? "#161615" : "#848483",
+                  boxShadow:
+                    activeTab === tab.key
+                      ? "0px 1px 2px rgba(0,0,0,0.05)"
+                      : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Token list */}

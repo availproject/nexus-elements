@@ -3,13 +3,13 @@ import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
 import { NexusWidget } from "@/registry/nexus-elements/nexus-one/nexus-one";
 import { useAccount } from "wagmi";
-import { useModal } from "connectkit";
+import { useConnectWalletClick } from "../helpers/use-connect-wallet-click";
 
-const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 
 const NexusWidgetTransferShowcase = () => {
   const { address } = useAccount();
-  const { setOpen } = useModal();
+  const openConnectWallet = useConnectWalletClick();
 
   return (
     <ShowcaseWrapper
@@ -26,13 +26,17 @@ const NexusWidgetTransferShowcase = () => {
           config={{
             mode: "send",
             prefill: {
-              token: USDC_BASE,
-              chain: 8453,
               amount: "0.1",
+              token: {
+                address: USDC_BASE,
+                chain: 8453,
+                decimals: 6,
+                symbol: "USDC",
+              },
             },
           }}
           connectedAddress={address}
-          onConnectClick={() => setOpen(true)}
+          onConnectClick={openConnectWallet}
         />
       </div>
     </ShowcaseWrapper>

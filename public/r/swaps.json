@@ -5,7 +5,7 @@
   "title": "Swaps",
   "description": "Deprecated: use Nexus Widget instead. Legacy swap tokens across chains component.",
   "dependencies": [
-    "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.2",
+    "@avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3",
     "lucide-react",
     "viem"
   ],

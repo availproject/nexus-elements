@@ -2,17 +2,14 @@
 title: Swap and Bridge
 description: Swap and bridge assets with the unified Nexus intent flow.
 component: true
+preview:
+  name: nexus-swap
+  align: center
+  hideCode: true
 links:
   doc: https://docs.availproject.org/nexus/avail-nexus-sdk/swap-methods
   api: https://docs.availproject.org/nexus/avail-nexus-sdk/api-reference#swap-operations
 ---
-
-<ComponentPreview
-  name="nexus-swap"
-  description="Swap mode with USDC on Arbitrum prefilled as source and USDC on Base prefilled as receive."
-  align="center"
-  hideCode
-/>
 
 > **Network support:** Mainnet only. Testnet is not supported at the moment.
 
@@ -38,7 +35,7 @@ Recommended skills for this component:
 
 - `nexus-elements-overview`
 - `nexus-elements-nexus-provider`
-- `nexus-one-swaps`
+- `nexus-widget-swaps`
 
 ## Installation
 
@@ -53,8 +50,7 @@ Wrap your app with the Nexus provider first. See [Get Started](/docs/get-started
 ```tsx showLineNumbers
 import { NexusWidget } from "@/components/nexus/nexus";
 
-const USDC_ARBITRUM = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
-const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 
 export function SwapAndBridgeExample({
   address,
@@ -66,16 +62,15 @@ export function SwapAndBridgeExample({
       connectedAddress={address}
       config={{
         mode: "swap",
-        prefill: {
-          amount: "1",
-          source: {
-            token: USDC_ARBITRUM,
-            chain: 42161,
-          },
-          destination: {
-            token: USDC_BASE,
-            chain: 8453,
-          },
+        destination: {
+          chain: 8453,
+          tokens: [
+            {
+              address: USDC_BASE,
+              symbol: "USDC",
+              decimals: 6,
+            },
+          ],
         },
       }}
     />
@@ -90,33 +85,47 @@ Swap and Bridge uses only `mode: "swap"`. This mode is exact-in: users enter the
 | Prop | Required | Description |
 | --- | --- | --- |
 | `config.mode` | Yes | Must be `"swap"`. |
-| `config.prefill.amount` | Optional | Prefills the source amount. |
-| `config.prefill.source` | Optional | Preselects the source token and chain. |
-| `config.prefill.destination` | Optional | Preselects the receive token and chain. |
-| `config.allowedSourcePairs` | Optional | Restricts source token and chain choices. |
-| `config.allowedDestinationPairs` | Optional | Restricts receive token and chain choices. |
+| `config.destination.chain` | Optional | Restricts the receive chain when supplied. |
+| `config.destination.tokens` | Optional | Restricts receive tokens when supplied with `destination.chain`. Each token needs `address`, `symbol`, and `decimals`. |
+| `config.prefill.token` | Optional | Sets the initial receive token without restricting later choices. Ignored when `config.destination.tokens` is supplied. |
+| `config.recipientAddress` | Optional | Prefills the recipient address for custom-recipient swaps. |
+| `config.appearance` | Optional | Supports `heading`, `appName`, `appLogoURL`, `mode`, and `primaryColor`. |
 | `connectedAddress` | Optional | Wallet address to use. If omitted, the connected wagmi account is used. |
 | `embed` | Optional | Defaults to `true`. Set `false` to render as a modal surface. |
 | `onStart`, `onComplete`, `onError`, `onClose` | Optional | Lifecycle callbacks for host apps. |
 
+Swap supports `prefill.token` only. It does not support `prefill.amount` or validation yet.
+
 <CodeCollapsibleWrapper className="mt-4">
 
 ```ts title="SwapAndBridgeConfig"
-type TokenChainPair = {
-  token: `0x${string}`;
-  chain: number;
+type DestinationToken = {
+  address: `0x${string}`;
+  symbol: string;
+  decimals: number;
+  logo?: string;
 };
 
 interface SwapAndBridgeConfig {
   mode: "swap";
-  prefill?: {
-    amount?: string;
-    source?: TokenChainPair;
-    destination?: TokenChainPair;
+  destination?: {
+    chain?: number;
+    tokens?: DestinationToken[];
   };
-  allowedSourcePairs?: TokenChainPair[];
-  allowedDestinationPairs?: TokenChainPair[];
+  prefill?: {
+    token?: DestinationToken & { chain: number };
+  };
+  recipientAddress?: `0x${string}`;
+  appearance?: {
+    heading?: string;
+    appName?: string;
+    appLogoURL?: string;
+    mode?: "system" | "light" | "dark";
+    primaryColor?: string;
+  };
 }
 ```
 
 </CodeCollapsibleWrapper>
+
+Use `destination.tokens` when you want to restrict the receive selector. Use `prefill.token` when you only want the initial receive token selected and still want users to choose from the full supported list. If both are supplied, `destination.tokens[0]` is honored and `prefill.token` is ignored.
