@@ -77,7 +77,10 @@ import {
   type SwapIntentSource,
   SwapIntentPreview,
 } from "./components/swap-intent-preview";
-import { nexusOneTheme } from "./theme";
+import {
+  NEXUS_WIDGET_DEFAULT_PRIMARY_COLOR,
+  nexusOneTheme,
+} from "./theme";
 import {
   type NexusWidgetAppearance,
   type NexusWidgetConfig,
@@ -1112,7 +1115,7 @@ function QuoteRefreshCountdown({
           cx="9"
           cy="9"
           r={radius}
-          stroke="var(--foreground-brand, #006BF4)"
+          stroke="var(--foreground-brand)"
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - clampedProgress)}
           strokeLinecap="round"
@@ -1524,7 +1527,7 @@ function MiniLogo({
         alignItems: "center",
         background: "#E8F0FF",
         borderRadius: "999px",
-        color: "var(--foreground-brand, #006BF4)",
+        color: "var(--foreground-brand)",
         display: "flex",
         fontFamily: uiFont,
         fontSize,
@@ -1646,7 +1649,7 @@ function SourceLogoStack({
 
 function TruncatedAddress({
   address,
-  color = "var(--foreground-brand, #006BF4)",
+  color = "var(--foreground-brand)",
 }: {
   address: string;
   color?: string;
@@ -2134,7 +2137,7 @@ const normalizeSwapIntentData = (intent: any): SwapIntentData | null => {
 const normalizeSwapAndExecuteRequirementIntent = (
   intent: any
 ): SwapIntentData | null => {
-  const requirement = intent?.executionRequirement;
+  const requirement = intent?.executeRequirement ?? intent?.executionRequirement;
   if (!requirement) return null;
   const destination = normalizeSdkIntentDestination({
     amount: requirement?.token?.amount,
@@ -2146,6 +2149,7 @@ const normalizeSwapAndExecuteRequirementIntent = (
   if (!destination) return null;
 
   return {
+    ...intent,
     bridgeProvider: normalizeBridgeProvider(intent?.bridgeProvider),
     destination,
     feesAndBuffer: intent?.feesAndBuffer,
@@ -2569,7 +2573,7 @@ function SwapReceiptPanel({
                 ? "#E92C2C"
                 : isTimeout
                   ? "#B7791F"
-                  : "var(--foreground-brand, #006BF4)",
+                  : "var(--foreground-brand)",
               border: "2px solid #FFFFFE",
               borderRadius: "999px",
               bottom: -2,
@@ -2698,7 +2702,7 @@ function SwapReceiptPanel({
                 alignItems: "center",
                 background: "transparent",
                 border: "none",
-                color: "var(--foreground-brand, #006BF4)",
+                color: "var(--foreground-brand)",
                 cursor: "pointer",
                 display: "inline-flex",
                 fontFamily: uiFont,
@@ -2781,7 +2785,7 @@ function SwapReceiptPanel({
               href={entry.intentExplorerUrl ?? undefined}
               rel="noopener noreferrer"
               style={{
-                color: "var(--foreground-brand, #006BF4)",
+                color: "var(--foreground-brand)",
                 fontFamily: uiFont,
                 fontSize: "13px",
               }}
@@ -2810,7 +2814,7 @@ function SwapReceiptPanel({
               href={entry.finalExplorerUrl}
               rel="noopener noreferrer"
               style={{
-                color: "var(--foreground-brand, #006BF4)",
+                color: "var(--foreground-brand)",
                 fontFamily: uiFont,
                 fontSize: "13px",
               }}
@@ -3175,7 +3179,7 @@ function SwapHistoryPanel({
                   style={{
                     alignItems: "center",
                     boxSizing: "border-box",
-                    color: "var(--foreground-brand, #006BF4)",
+                    color: "var(--foreground-brand)",
                     display: "inline-flex",
                     fontSize: "12px",
                     fontSynthesis: "none",
@@ -3189,7 +3193,7 @@ function SwapHistoryPanel({
                   <span
                     style={{
                       boxSizing: "border-box",
-                      color: "var(--foreground-brand, #006BF4)",
+                      color: "var(--foreground-brand)",
                       fontFamily: uiFont,
                       fontSize: "12px",
                       fontWeight: 500,
@@ -3213,7 +3217,7 @@ function SwapHistoryPanel({
                     <path
                       d="M5 5H9V9"
                       fill="none"
-                      stroke="var(--foreground-brand, #006BF4)"
+                      stroke="var(--foreground-brand)"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="1.4"
@@ -3221,7 +3225,7 @@ function SwapHistoryPanel({
                     <path
                       d="M5 9L9 5"
                       fill="none"
-                      stroke="var(--foreground-brand, #006BF4)"
+                      stroke="var(--foreground-brand)"
                       strokeLinecap="round"
                       strokeWidth="1.4"
                     />
@@ -3278,7 +3282,7 @@ export function NexusWidget(props: NexusWidgetProps) {
           <button
             onClick={() => window.location.reload()}
             style={{
-              backgroundColor: "var(--foreground-brand, #006BF4)",
+              backgroundColor: "var(--foreground-brand)",
               border: "none",
               borderRadius: "8px",
               color: "#FFFFFE",
@@ -3366,8 +3370,8 @@ function NexusOneInner({
       ...nexusOneTheme,
       colors: {
         ...nexusOneTheme.colors,
-        primary: primaryColor ?? nexusOneTheme.colors.primary,
-        primaryText: primaryColor ?? nexusOneTheme.colors.primaryText,
+        primary: "var(--foreground-brand)",
+        primaryText: "var(--foreground-brand)",
       },
     }),
     [primaryColor]
@@ -9439,8 +9443,12 @@ function NexusOneInner({
   const exactOutDestinationCoverage = getExactOutDestinationBalanceCoverage({
     requestedAmount: previewExactOutDestinationAmount,
     requestedUsd: previewExactOutDestinationUsdNumber,
-    producedAmount: parseFiatNumber(intentData?.destination?.amount),
-    producedUsd: parseFiatNumber(intentData?.destination?.value),
+    producedAmount: hasIntentSources
+      ? parseFiatNumber(intentData?.destination?.amount)
+      : undefined,
+    producedUsd: hasIntentSources
+      ? parseFiatNumber(intentData?.destination?.value)
+      : undefined,
     token: toTokenWithFetchedBalance,
   });
   const destinationBalanceDisplayToken = buildDestinationBalanceDisplayToken(
@@ -9575,13 +9583,13 @@ function NexusOneInner({
       data-nexus-widget-root
       style={{
         ["--nexus-widget-primary" as any]:
-          primaryColor ?? nexusOneTheme.colors.primary,
+          primaryColor ?? NEXUS_WIDGET_DEFAULT_PRIMARY_COLOR,
         ["--nexus-widget-primary-foreground" as any]:
           primaryButtonForeground,
         ["--foreground-brand" as any]:
-          primaryColor ?? nexusOneTheme.colors.primary,
+          primaryColor ?? NEXUS_WIDGET_DEFAULT_PRIMARY_COLOR,
         ["--interactive-button-primary-background" as any]:
-          primaryColor ?? nexusOneTheme.colors.primary,
+          primaryColor ?? NEXUS_WIDGET_DEFAULT_PRIMARY_COLOR,
         ["--interactive-button-primary-foreground" as any]:
           primaryButtonForeground,
         backgroundColor: theme.colors.surface,

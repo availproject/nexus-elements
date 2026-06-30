@@ -7,9 +7,11 @@ const ink = {
   300: "#C9C9C5",
 } as const;
 
+export const NEXUS_WIDGET_DEFAULT_PRIMARY_COLOR = "rgb(0, 107, 244)" as const;
+
 const blue = {
-  700: "#006BF4",
-  500: "#3D7BFF",
+  700: "var(--foreground-brand)",
+  500: "var(--foreground-brand)",
   100: "#EAF1FF",
   50: "#E5EEFF",
   tab: "#F0F3F9",

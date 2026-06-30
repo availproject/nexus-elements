@@ -72,7 +72,7 @@ export function PayUsingSelector({
             fontSize: "13px",
             fontWeight: 500,
             color:
-              "var(--interactive-button-primary-background, var(--foreground-brand, #006BF4))",
+              "var(--interactive-button-primary-background, var(--foreground-brand))",
           }}
         >
           <Pencil className="w-3 h-3" />

@@ -51,7 +51,7 @@ const fontFamily = '"Geist", var(--font-geist-sans), system-ui, sans-serif';
 const primary = "var(--foreground-primary, #161615)";
 const muted = "var(--foreground-muted, #848483)";
 const border = "var(--border-default, #E8E8E7)";
-const brand = "var(--foreground-brand, #006BF4)";
+const brand = "var(--foreground-brand)";
 const danger = "var(--foreground-negative, #E92C2C)";
 
 const parseDecimal = (value: unknown) => {

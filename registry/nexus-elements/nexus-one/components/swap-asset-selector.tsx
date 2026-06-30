@@ -37,7 +37,7 @@ const tabularNums: React.CSSProperties = {
   fontVariantNumeric: "tabular-nums",
 };
 
-const brand = "var(--foreground-brand, #006BF4)";
+const brand = "var(--foreground-brand)";
 
 export interface SwapTokenOption {
   balance: string;

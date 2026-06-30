@@ -90,7 +90,7 @@ const fontFamily = '"Geist", var(--font-geist-sans), system-ui, sans-serif';
 const primary = "var(--foreground-primary, #161615)";
 const muted = "var(--foreground-muted, #848483)";
 const border = "var(--border-default, #E8E8E7)";
-const brand = "var(--foreground-brand, #006BF4)";
+const brand = "var(--foreground-brand)";
 
 const stripNumeric = (value: unknown) => String(value).replace(/[^0-9.-]/g, "");
 
@@ -765,24 +765,34 @@ export function SwapIntentPreview({
     : undefined;
   const quotedDestinationAmount = parseDecimal(normalizedIntentDest?.amount);
   const destinationBalanceAmount = parseDecimal(toToken?.balance);
-  const displayOnlyDestinationCoverage =
-    requestedDestinationAmount &&
-    requestedDestinationAmount.gt(0) &&
-    quotedDestinationAmount &&
-    requestedDestinationAmount.gt(quotedDestinationAmount) &&
-    destinationBalanceAmount &&
-    destinationBalanceAmount.gt(0)
-      ? Decimal.min(
-          requestedDestinationAmount.minus(quotedDestinationAmount),
-          destinationBalanceAmount
-        )
-      : undefined;
-  const displayOnlyDestinationSourceAmount =
-    isExactOutDisplayFlow &&
-    destinationBalanceAmount &&
-    destinationBalanceAmount.gt(0)
-      ? destinationBalanceAmount
-      : undefined;
+  const displayOnlyDestinationCoverage = (() => {
+    if (
+      !isExactOutDisplayFlow ||
+      !requestedDestinationAmount ||
+      requestedDestinationAmount.lte(0) ||
+      !destinationBalanceAmount ||
+      destinationBalanceAmount.lte(0)
+    ) {
+      return undefined;
+    }
+
+    const externallyProducedAmount =
+      normalizedIntentSources.length > 0 &&
+      quotedDestinationAmount &&
+      quotedDestinationAmount.gt(0)
+        ? quotedDestinationAmount
+        : new Decimal(0);
+    const destinationBalanceAmountNeeded = Decimal.max(
+      requestedDestinationAmount.minus(externallyProducedAmount),
+      0
+    );
+    const coveredAmount = Decimal.min(
+      destinationBalanceAmountNeeded,
+      destinationBalanceAmount
+    );
+    return coveredAmount.gt(0) ? coveredAmount : undefined;
+  })();
+  const displayOnlyDestinationSourceAmount = displayOnlyDestinationCoverage;
   const requestedDestinationUsd = parseDecimal(toAmountUsd);
   const destinationDisplayUsdRate =
     requestedDestinationAmount &&
