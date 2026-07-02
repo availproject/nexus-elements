@@ -17,7 +17,7 @@ npx shadcn@latest add @avail-widgets/nexus
 1. Install dependencies:
 
 ```bash
-npm install @avail-project/nexus-sdk-v2@git+https://github.com/availproject/nexus-sdk-v2.git#v0.0.3 decimal.js lucide-react viem wagmi class-variance-authority clsx tailwind-merge
+npm install @avail-project/nexus-core@2.0.0 decimal.js lucide-react viem wagmi class-variance-authority clsx tailwind-merge
 ```
 
 2. Copy the component source code into your project.

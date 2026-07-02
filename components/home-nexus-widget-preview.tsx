@@ -2,7 +2,7 @@
 
 import { useAccount } from "wagmi";
 import { useConnectWalletClick } from "@/components/helpers/use-connect-wallet-click";
-import { NexusWidget } from "@/registry/nexus-elements/nexus-one/nexus-one";
+import { NexusWidget } from "@/registry/avail-widgets/nexus-one/nexus-one";
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 

@@ -2,11 +2,11 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { ComponentSource } from "./component-source";
 import { ComponentPreviewTabs } from "./component-preview-tabs";
-import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
+import { Skeleton } from "@/registry/avail-widgets/ui/skeleton";
 
 type ComponentPreviewProps = React.ComponentProps<"div"> & {
   name: string;
-  styleName?: "nexus-elements";
+  styleName?: "avail-widgets";
   align?: "center" | "start" | "end";
   hideCode?: boolean;
   chromeLessOnMobile?: boolean;
@@ -44,7 +44,7 @@ const SHOWCASE_MAP: Record<
 
 export function ComponentPreview({
   name,
-  styleName = "nexus-elements",
+  styleName = "avail-widgets",
   className,
   align = "center",
   hideCode = false,

@@ -11,7 +11,7 @@ import {
   type RegistryProcessedFile,
 } from "./registry-code-browser";
 export const STYLES = [
-  { name: "nexus-elements" as const, title: "Nexus Elements" },
+  { name: "avail-widgets" as const, title: "Avail Widgets" },
 ] as const;
 export type Style = (typeof STYLES)[number];
 
@@ -49,7 +49,7 @@ export async function ComponentSource({
   language,
   collapsible = true,
   className,
-  styleName = "nexus-elements",
+  styleName = "avail-widgets",
   showAllFiles = false,
 }: React.ComponentProps<"div"> & {
   name?: string;

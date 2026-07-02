@@ -61,11 +61,11 @@ Use `config.mode` to select `swap`, `send`, or `deposit`. Optional config fields
 
 ## 10) Module layout
 
-- `registry/nexus-elements/nexus-one/nexus-one.tsx` — main component
-- `registry/nexus-elements/nexus-one/components/*` — mode-specific UI
-- `registry/nexus-elements/nexus-one/hooks/*` — flow hooks
-- `registry/nexus-elements/nexus-one/types.ts` — shared types
-- `registry/nexus-elements/nexus/NexusProvider.tsx` — SDK provider (shared)
+- `registry/avail-widgets/nexus-one/nexus-one.tsx` — main component
+- `registry/avail-widgets/nexus-one/components/*` — mode-specific UI
+- `registry/avail-widgets/nexus-one/hooks/*` — flow hooks
+- `registry/avail-widgets/nexus-one/types.ts` — shared types
+- `registry/avail-widgets/nexus/NexusProvider.tsx` — SDK provider (shared)
 
 ## 11) What was deprecated
 

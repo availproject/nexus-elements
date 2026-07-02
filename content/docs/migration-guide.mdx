@@ -9,7 +9,7 @@ This guide outlines the steps to migrate your application from the legacy standa
 
 ## What Changed?
 
-Nexus Elements simplifies the architecture by consolidating all standalone cross-chain widgets into `NexusWidget`.
+Avail Widgets simplifies the architecture by consolidating all standalone cross-chain widgets into `NexusWidget`.
 
 ### Component Replacements
 
@@ -27,12 +27,12 @@ Nexus Elements simplifies the architecture by consolidating all standalone cross
 
 ## 1. Registry Updates
 
-Update the registry mapping in your project's `components.json` to configure the `@nexus-elements` namespace if you haven't already:
+Update the registry mapping in your project's `components.json` to configure the `@avail-widgets` namespace if you haven't already:
 
 ```json title="components.json"
 {
   "registries": {
-    "@nexus-elements": "https://elements.nexus.availproject.org/r/{name}.json"
+    "@avail-widgets": "https://elements.nexus.availproject.org/r/{name}.json"
   }
 }
 ```
@@ -54,7 +54,7 @@ npx shadcn@latest add @avail-widgets/nexus
 Replace `SwapWidget` or `FastBridge` imports and elements:
 
 ```diff
--import { SwapWidget } from "@/components/nexus-elements/swaps";
+-import { SwapWidget } from "@/components/avail-widgets/swaps";
 +import { NexusWidget } from "@/components/nexus/nexus";
 
 -<SwapWidget
@@ -79,7 +79,7 @@ Replace `SwapWidget` or `FastBridge` imports and elements:
 Replace `FastTransfer` imports and elements:
 
 ```diff
--import { FastTransfer } from "@/components/nexus-elements/transfer";
+-import { FastTransfer } from "@/components/avail-widgets/transfer";
 +import { NexusWidget } from "@/components/nexus/nexus";
 
 -<FastTransfer
@@ -108,7 +108,7 @@ Replace `FastTransfer` imports and elements:
 Replace legacy `NexusDeposit` or `BridgeDeposit` elements:
 
 ```diff
--import { NexusDeposit } from "@/components/nexus-elements/deposit";
+-import { NexusDeposit } from "@/components/avail-widgets/deposit";
 +import { NexusWidget } from "@/components/nexus/nexus";
 
 -<NexusDeposit
@@ -157,7 +157,7 @@ Initialize the SDK by resolving the EIP-1193 provider from your wallet client (e
 "use client";
 import { useEffect } from "react";
 import { useAccount, useConnectorClient } from "wagmi";
-import type { EthereumProvider } from "@avail-project/nexus-sdk-v2";
+import type { EthereumProvider } from "@avail-project/nexus-core";
 import { useNexus } from "@/components/nexus/NexusProvider";
 
 export function InitNexusOnConnect() {
@@ -193,20 +193,20 @@ export function InitNexusOnConnect() {
 
 ## 4. Warning: Handling Custom shadcn Modifications
 
-If you or your team previously customized the source code of the legacy components or common folders (e.g. custom theme colors, analytics hooks, or transaction overrides inside `components/nexus-elements/common/*`), note the following:
+If you or your team previously customized the source code of the legacy components or common folders (e.g. custom theme colors, analytics hooks, or transaction overrides inside `components/avail-widgets/common/*`), note the following:
 
 <Callout type="warning">
   **Modifications May Be Overwritten!** Running the CLI command `npx
   shadcn@latest add @avail-widgets/nexus` installs new files under
   `components/nexus/`. Any custom modifications made
-  to `components/nexus-elements/common/` will **not** be automatically
+  to `components/avail-widgets/common/` will **not** be automatically
   transferred to the new component. If you delete the legacy folders, those
   local modifications will be lost.
 </Callout>
 
 ### Recommended Migration Workflow for Custom Logic
 
-1. **Create a Backup:** Copy your entire existing `components/nexus-elements/` folder to a backup directory outside of your git workspace.
+1. **Create a Backup:** Copy your entire existing `components/avail-widgets/` folder to a backup directory outside of your git workspace.
 2. **Install Nexus Widget:** Run `npx shadcn@latest add @avail-widgets/nexus` to install the new clean codebase.
 3. **Use Component Callbacks first:** Before rewriting custom logic, check if you can use the supported callbacks on `NexusWidget`:
    - `onStart`: Triggered when the transaction pipeline begins.
@@ -214,4 +214,4 @@ If you or your team previously customized the source code of the legacy componen
    - `onError`: Triggered when failing. Receives the `message`.
    - `onConnectClick`: Triggered when the user clicks the "Connect Wallet" CTA inside the widget. Use this to open your app/header wallet modal.
 4. **Port Custom UI Styles:** If you customized the design, update `components/nexus/nexus.tsx` or its child styling files using Tailwind CSS or standard theme classes matching your design system.
-5. **Clean Up:** Once the new component is fully verified, delete the old `components/nexus-elements/` directories to keep the workspace clean.
+5. **Clean Up:** Once the new component is fully verified, delete the old `components/avail-widgets/` directories to keep the workspace clean.

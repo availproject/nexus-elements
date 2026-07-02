@@ -85,8 +85,8 @@ function toTargetPath(
   }
 
   // For registry components, convert to target prefix
-  // registry/nexus-elements/ui/button.tsx -> components/ui/button.tsx
-  // registry/nexus-elements/deposit/deposit.tsx -> components/deposit/deposit.tsx
+  // registry/avail-widgets/ui/button.tsx -> components/ui/button.tsx
+  // registry/avail-widgets/deposit/deposit.tsx -> components/deposit/deposit.tsx
   const registryPrefix = config.registryPath + "/";
   if (registryPath.startsWith(registryPrefix)) {
     let relativePath = registryPath.slice(registryPrefix.length);

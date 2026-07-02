@@ -1,11 +1,11 @@
 ---
 name: nexus-migration-guide
-description: Detailed guidelines for LLMs and developer agents on migrating codebases from legacy standalone Nexus Elements widgets (swaps, fast-bridge, transfer, deposit) to the unified Nexus Widget component.
+description: Detailed guidelines for LLMs and developer agents on migrating codebases from legacy standalone Avail Widgets widgets (swaps, fast-bridge, transfer, deposit) to the unified Nexus Widget component.
 ---
 
-# Nexus Elements - Migration Guide for Agents & LLMs
+# Avail Widgets - Migration Guide for Agents & LLMs
 
-Use this skill when migrating legacy Nexus elements to the unified `NexusWidget`.
+Use this skill when migrating legacy Avail widgets to the unified `NexusWidget`.
 
 ## Replacement Mapping
 
@@ -30,8 +30,8 @@ npx shadcn@latest add @avail-widgets/nexus
 Update imports:
 
 ```diff
--import { SwapWidget } from "@/components/nexus-elements/swaps";
--import { FastTransfer } from "@/components/nexus-elements/transfer";
+-import { SwapWidget } from "@/components/avail-widgets/swaps";
+-import { FastTransfer } from "@/components/avail-widgets/transfer";
 +import { NexusWidget } from "@/components/nexus/nexus";
 +import NexusProvider from "@/components/nexus/NexusProvider";
 ```

@@ -1,10 +1,10 @@
 "use client";
-import { Button } from "@/registry/nexus-elements/ui/button";
+import { Button } from "@/registry/avail-widgets/ui/button";
 import { ConnectKitButton } from "connectkit";
-import { truncateAddress } from "@avail-project/nexus-sdk-v2/utils";
+import { truncateAddress } from "@avail-project/nexus-core/utils";
 import { Loader2 } from "lucide-react";
 import { useConnectWalletClick } from "./use-connect-wallet-click";
-import { AddressIdenticon } from "@/registry/nexus-elements/nexus-one/components/address-identicon";
+import { AddressIdenticon } from "@/registry/avail-widgets/nexus-one/components/address-identicon";
 
 const ConnectWalletButton = () => {
   const openConnectWallet = useConnectWalletClick();

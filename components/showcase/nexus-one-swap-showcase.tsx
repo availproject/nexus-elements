@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import ShowcaseWrapper from "./showcase-wrapper";
-import { NexusWidget } from "@/registry/nexus-elements/nexus-one/nexus-one";
+import { NexusWidget } from "@/registry/avail-widgets/nexus-one/nexus-one";
 import { useAccount } from "wagmi";
 import { useConnectWalletClick } from "../helpers/use-connect-wallet-click";
 

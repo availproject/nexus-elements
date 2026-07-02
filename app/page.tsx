@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/registry/nexus-elements/ui/button";
+import { Button } from "@/registry/avail-widgets/ui/button";
 import { Check, Terminal, Zap, Shield, Globe, Box } from "lucide-react";
 import { CopyButton } from "@/components/helpers/copy-button";
 import { HomeNexusWidgetPreview } from "@/components/home-nexus-widget-preview";

@@ -3,12 +3,12 @@ import { notFound } from "next/navigation";
 import { findNeighbour } from "fumadocs-core/page-tree";
 import { source } from "@/lib/source";
 import { mdxComponents } from "@/components/mdx/mdx-components";
-import { Button } from "@/registry/nexus-elements/ui/button";
+import { Button } from "@/registry/avail-widgets/ui/button";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { OnThisPage } from "@/components/helpers/on-this-page";
 import fm from "front-matter";
 import { z } from "zod";
-import { Badge } from "@/registry/nexus-elements/ui/badge";
+import { Badge } from "@/registry/avail-widgets/ui/badge";
 import { DocsCopyPage } from "@/components/mdx/docs-copy-page";
 import { absoluteUrl } from "@/lib/utils";
 import { ComponentPreview } from "@/components/mdx/component-preview";
@@ -86,7 +86,7 @@ export default async function Page(props: {
           hideCode: z.boolean().optional(),
           chromeLessOnMobile: z.boolean().optional(),
           showAllFiles: z.boolean().optional(),
-          styleName: z.literal("nexus-elements").optional(),
+          styleName: z.literal("avail-widgets").optional(),
         })
         .optional(),
     })

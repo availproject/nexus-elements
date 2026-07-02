@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/registry/nexus-elements/ui/skeleton";
+import { Skeleton } from "@/registry/avail-widgets/ui/skeleton";
 
 const MobileNav = dynamic(() => import("./mobile-nav").then((m) => m.default), {
   loading: () => <Skeleton className="w-24 h-9" />,
@@ -85,14 +85,14 @@ export default function Topbar() {
           <Link href={"/"} className={cn("cursor-pointer hidden sm:block")}>
             <Image
               src="/avail-logo-dark.svg"
-              alt="Nexus Elements"
+              alt="Avail Widgets"
               width={100}
               height={100}
               className="w-[100px] h-[100px] dark:hidden block"
             />
             <Image
               src="/avail-logo-light.svg"
-              alt="Nexus Elements"
+              alt="Avail Widgets"
               width={100}
               height={100}
               className="w-[100px] h-[100px] hidden dark:block"

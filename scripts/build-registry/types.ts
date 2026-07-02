@@ -2,9 +2,9 @@
  * Configuration for the registry builder
  */
 export interface RegistryConfig {
-  /** Registry name (e.g., "nexus-elements") */
+  /** Registry name (e.g., "avail-widgets") */
   name: string;
-  /** Namespace for shadcn CLI (e.g., "nexus-elements") */
+  /** Namespace for shadcn CLI (e.g., "avail-widgets") */
   namespace: string;
   /** Homepage URL */
   homepage: string;
